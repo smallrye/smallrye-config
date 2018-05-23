@@ -1,0 +1,14 @@
+[[index]]
+= SmallRye Config Documentation
+:ext-relative: {outfilesuffix}
+:toc!:
+
+Welcome to the Documentation for SmallRye Config.
+
+SmallRye Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
+
+[[more-resources]]
+== More Resources
+
+* https://github.com/smallrye/smallrye-config/[GitHub project repository]
+* https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config]
