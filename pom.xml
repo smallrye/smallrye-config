@@ -47,8 +47,8 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://github.com/smallrye/smallrye-config.git</connection>
-    <developerConnection>scm:git:https://github.com/smallrye/smallrye-config.git</developerConnection>
+    <connection>scm:git:git@github.com:smallrye/smallrye-config.git</connection>
+    <developerConnection>scm:git:git@github.com:smallrye/smallrye-config.git</developerConnection>
     <url>https://github.com/smallrye/smallrye-config/</url>
     <tag>HEAD</tag>
   </scm>
