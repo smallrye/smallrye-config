@@ -20,7 +20,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.smallrye</groupId>
+  <parent>
+    <groupId>io.smallrye</groupId>
+    <artifactId>smallrye-parent</artifactId>
+    <version>1</version>
+  </parent>
+
   <artifactId>smallrye-config-parent</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
@@ -39,20 +44,6 @@
     <version.org.jboss.logging>2.0.1.Final</version.org.jboss.logging>
     <version.org.jboss.weld>2.3.SP2</version.org.jboss.weld>
     <version.org.jboss.weld.core.impl>2.3.5.Final</version.org.jboss.weld.core.impl>
-
-    <!-- ************** -->
-    <!-- Build settings -->
-    <!-- ************** -->
-
-    <!-- Cross plugins settings -->
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <!-- maven-compiler-plugin -->
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
-    <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
   </properties>
 
   <scm>
