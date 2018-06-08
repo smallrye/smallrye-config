@@ -29,6 +29,10 @@
 
   <name>SmallRye: MicroProfile Config Documentation</name>
 
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
   <build>
     <pluginManagement>
       <plugins>
