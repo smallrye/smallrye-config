@@ -13,10 +13,10 @@ import java.util.logging.Logger;
 
 /**
  * MicroProfile Config Source that is backed by Zookeeper.
- *
+ * <p>
  * The Config Source itself needs configuration which is handled by other Config Sources.
  * Properties prefixed with io.streamzi.zk will be ignored by this Config Source.
- *
+ * <p>
  * author: Simon Woodman <swoodman@redhat.com>
  */
 public class ZkConfigSource implements ConfigSource {
@@ -87,8 +87,7 @@ public class ZkConfigSource implements ConfigSource {
          * Explicitly ignore all keys that are prefixed with the prefix used to configure the Zookeeper connection.
          * Other wise a stack overflow obviously happens.
          */
-        if(key.startsWith(ignoredPrefix))
-        {
+        if (key.startsWith(ignoredPrefix)) {
             return null;
         }
         try {
