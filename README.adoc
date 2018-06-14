@@ -26,4 +26,3 @@ mvn clean install
 
 * http://github.com/smallrye/smallrye-config/[Project Homepage]
 * {microprofile-config}[Eclipse MicroProfile Config]
-
