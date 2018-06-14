@@ -1,4 +1,4 @@
-package io.streamzi.config;
+package io.streamzi.config.zk;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
