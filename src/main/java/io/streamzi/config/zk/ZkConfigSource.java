@@ -9,6 +9,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -30,13 +31,15 @@ public class ZkConfigSource implements ConfigSource {
     private String applicationId;
 
     //Prefix of ignored properties
-    private String ignoredPrefix = "io.streamzi.zk";
+    private final String ignoredPrefix = "io.streamzi.zk";
 
     //Property the URL of the Zookeeper instance will be read from
-    private String zkUrkKey = "io.streamzi.zk.zkUrl";
+    private final String zkUrkKey = "io.streamzi.zk.zkUrl";
 
     //Property of the Application Id. This will be the root znode for an application's properties
-    private String applicationIdKey = "io.streamzi.zk.applicationId";
+    private final String applicationIdKey = "io.streamzi.zk.applicationId";
+
+    public final String ZK_CONFIG_NAME = "io.streamzi.zk.ZkConfigSource";
 
     public ZkConfigSource() {
     }
@@ -49,12 +52,13 @@ public class ZkConfigSource implements ConfigSource {
     @Override
     public Set<String> getPropertyNames() {
 
-        Set<String> propertyNames = new HashSet<>();
+        final Set<String> propertyNames = new HashSet();
 
         try {
-            List<String> children = getCuratorClient().getChildren().forPath(applicationId);
+            final List<String> children = getCuratorClient().getChildren().forPath(applicationId);
             propertyNames.addAll(children);
         } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
             e.printStackTrace();
         }
 
@@ -64,24 +68,24 @@ public class ZkConfigSource implements ConfigSource {
     @Override
     public Map<String, String> getProperties() {
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap();
 
         try {
-            List<String> children = getCuratorClient().getChildren().forPath(applicationId);
-            for (String key : children) {
-                String value = new String(getCuratorClient().getData().forPath(applicationId + "/" + key));
+            final List<String> children = getCuratorClient().getChildren().forPath(applicationId);
+            for (final String key : children) {
+                final String value = new String(getCuratorClient().getData().forPath(applicationId + "/" + key));
                 props.put(key, value);
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
 
         return props;
     }
 
     @Override
-    public String getValue(String key) {
+    public String getValue(final String key) {
 
         /*
          * Explicitly ignore all keys that are prefixed with the prefix used to configure the Zookeeper connection.
@@ -91,7 +95,7 @@ public class ZkConfigSource implements ConfigSource {
             return null;
         }
         try {
-            Stat stat = getCuratorClient().checkExists().forPath(applicationId + "/" + key);
+            final Stat stat = getCuratorClient().checkExists().forPath(applicationId + "/" + key);
 
             if (stat != null) {
                 return new String(getCuratorClient().getData().forPath(applicationId + "/" + key));
@@ -100,7 +104,7 @@ public class ZkConfigSource implements ConfigSource {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         return null;
     }
@@ -108,14 +112,14 @@ public class ZkConfigSource implements ConfigSource {
 
     @Override
     public String getName() {
-        return "io.streamzi.xk.ZkConfigSource";
+        return ZK_CONFIG_NAME;
     }
 
     private CuratorFramework getCuratorClient() {
         if (curatorClient == null) {
 
-            Config cfg = ConfigProvider.getConfig();
-            String zkUrl = cfg.getValue(zkUrkKey, String.class);
+            final Config cfg = ConfigProvider.getConfig();
+            final String zkUrl = cfg.getValue(zkUrkKey, String.class);
 
             applicationId = cfg.getValue(applicationIdKey, String.class);
 
