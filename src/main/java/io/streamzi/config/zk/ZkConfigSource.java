@@ -125,20 +125,19 @@ public class ZkConfigSource implements ConfigSource {
             final Optional<String> optApplicationId = cfg.getOptionalValue(applicationIdKey, String.class);
 
             //Only create the ZK Client if the properties exist.
-            if (zkUrl .isPresent() && optApplicationId.isPresent()) {
+            if (zkUrl.isPresent() && optApplicationId.isPresent()) {
 
                 logger.info("Configuring ZKConfigSource using zkUrl: " + zkUrl + ", applicationId: " + optApplicationId.get());
 
                 applicationId = optApplicationId.get();
 
                 if (!applicationId.startsWith("/")) {
-                    applicationId =  "/" + applicationId;
+                    applicationId = "/" + applicationId;
                 }
 
                 curatorClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
                 curatorClient.start();
-            }
-            else {
+            } else {
                 logger.warning("Please set properties for \"io.streamzi.zk.zkUrl\" and \"io.streamzi.zk.applicationId\"");
             }
         }
