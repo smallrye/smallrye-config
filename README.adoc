@@ -45,6 +45,10 @@ final Config cfg = ConfigProvider.getConfig();
 final String strProp = cfg.getValue("propertyName", String.class);
 ```
 
+== Example
+
+An example of how to use the Config Source is supplied in the Example directory:
+
 include::example/Readme.adoc[]
 
 == Todo
