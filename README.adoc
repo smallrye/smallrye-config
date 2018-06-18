@@ -1,0 +1,54 @@
+= ZkMicroProfileConfig
+
+Implementation of a https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc[MicroProfile ConfigSource] that is backed by Apache Zookeeper.
+
+Using the MicroProfile Configuration API is a really convenient way to configure your application.
+The standard MicroProfile Confuration Sources are Environment Variables, System Variables and via a microprofile-config.properties file in the Classpath.
+This project enables MicroProfile Conifugurations to be obtained from Apache Zookeeper.
+The benefits are that configurations can be shared across applications and a future version will allow applications to subscribe to updates to the conifiguration parameters.
+
+== Usage
+
+To use the Zookeeper MicroProfile Config source, add the following to your Maven `pom.xml`
+
+```xml
+<dependency>
+    <groupId>io.streamzi</groupId>
+    <artifactId>ZkMicroProfileConfigSource</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+You will need to boostrap your application with the location of your Zookeeper server and a unique identifier for your applciation.
+Add the following to `src/main/resources/META-INF/mircoprofile-config.properties` or create equivalent Environment Variables.
+
+```bash
+io.streamzi.zk.zkUrl=localhost:2181
+io.streamzi.zk.applicationId=com.example.my-application
+```
+
+Following this any properties that are looked up via the Config API or Injected will be looked up in Zookeeper in addition to the standard MicroProfile Config locations.
+The `ZKMicroProfileConfigSource` has a lower Ordinal than the standard locations and thus *will not* override property files or Environment Variables.
+
+The ConfigSource will store the following znodes in the specified Zookeeper server `/applicationId/propertyName = value`.
+
+The snippet below shows how to parameterise your application with either injected values or looking them up using a ConfigProvider
+
+```java
+@Inject
+@ConfigProperty(name = "propertyName", defaultValue = "default_value")
+String strProp;
+
+//Or
+
+final Config cfg = ConfigProvider.getConfig();
+final String strProp = cfg.getValue("propertyName", String.class);
+```
+
+include::example/Readme.adoc[]
+
+== Todo
+
+* Extension that will notify configuration changes
+** Library that uses the notification changes to reconnect to Kafka
+
