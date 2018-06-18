@@ -95,6 +95,7 @@ public class ZkConfigSource implements ConfigSource {
             return null;
         }
         try {
+
             final Stat stat = getCuratorClient().checkExists().forPath(applicationId + "/" + key);
 
             if (stat != null) {
@@ -119,15 +120,29 @@ public class ZkConfigSource implements ConfigSource {
         if (curatorClient == null) {
 
             final Config cfg = ConfigProvider.getConfig();
-            final String zkUrl = cfg.getValue(zkUrlKey, String.class);
 
-            applicationId = cfg.getValue(applicationIdKey, String.class);
+            final Optional<String> zkUrl = cfg.getOptionalValue(zkUrlKey, String.class);
+            final Optional<String> optApplicationId = cfg.getOptionalValue(applicationIdKey, String.class);
 
-            curatorClient = CuratorFrameworkFactory.newClient(zkUrl, new ExponentialBackoffRetry(1000, 3));
-            curatorClient.start();
+            //Only create the ZK Client if the properties exist.
+            if (zkUrl .isPresent() && optApplicationId.isPresent()) {
+
+                logger.info("Configuring ZKConfigSource using zkUrl: " + zkUrl + ", applicationId: " + optApplicationId.get());
+
+                applicationId = optApplicationId.get();
+
+                if (!applicationId.startsWith("/")) {
+                    applicationId =  "/" + applicationId;
+                }
+
+                curatorClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
+                curatorClient.start();
+            }
+            else {
+                logger.warning("Please set properties for \"io.streamzi.zk.zkUrl\" and \"io.streamzi.zk.applicationId\"");
+            }
         }
         return curatorClient;
     }
-
 }
 
