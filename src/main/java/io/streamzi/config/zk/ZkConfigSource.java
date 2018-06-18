@@ -34,7 +34,7 @@ public class ZkConfigSource implements ConfigSource {
     private final String ignoredPrefix = "io.streamzi.zk";
 
     //Property the URL of the Zookeeper instance will be read from
-    private final String zkUrkKey = "io.streamzi.zk.zkUrl";
+    private final String zkUrlKey = "io.streamzi.zk.zkUrl";
 
     //Property of the Application Id. This will be the root znode for an application's properties
     private final String applicationIdKey = "io.streamzi.zk.applicationId";
@@ -119,7 +119,7 @@ public class ZkConfigSource implements ConfigSource {
         if (curatorClient == null) {
 
             final Config cfg = ConfigProvider.getConfig();
-            final String zkUrl = cfg.getValue(zkUrkKey, String.class);
+            final String zkUrl = cfg.getValue(zkUrlKey, String.class);
 
             applicationId = cfg.getValue(applicationIdKey, String.class);
 
