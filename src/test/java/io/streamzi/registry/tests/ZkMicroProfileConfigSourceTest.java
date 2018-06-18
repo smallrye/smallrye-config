@@ -30,7 +30,9 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
+
 
 /**
  * Test the ConfigSource
@@ -66,6 +68,7 @@ public class ZkMicroProfileConfigSourceTest {
         final File[] curatorTestFiles = Maven.resolver().resolve("org.apache.curator:curator-test:2.12.0").withTransitivity().asFile();
         final File[] guavaFiles = Maven.resolver().resolve("com.google.guava:guava:25.1-jre").withTransitivity().asFile();
         final File[] swarmMPCFiles = Maven.resolver().resolve("org.wildfly.swarm:microprofile-config:1.0.1").withoutTransitivity().asFile();
+        final File[] assertJFiles = Maven.resolver().resolve("org.assertj:assertj-core:3.10.0").withoutTransitivity().asFile();
 
         return ShrinkWrap.create(WebArchive.class, "ZkMicroProfileConfigTest.war")
                 .addPackage(ZkConfigSource.class.getPackage())
@@ -73,6 +76,7 @@ public class ZkMicroProfileConfigSourceTest {
                 .addAsLibraries(swarmMPCFiles)
                 .addAsLibraries(curatorTestFiles)
                 .addAsLibraries(guavaFiles)
+                .addAsLibraries(assertJFiles)
                 .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
                 .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"), "META-INF/microprofile-config.properties")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -93,12 +97,12 @@ public class ZkMicroProfileConfigSourceTest {
 
     @Test
     public void testGettingProperty() {
-        logger.info("ZkMicroProfileConfigSourceTest.registerKey");
+        logger.info("ZkMicroProfileConfigSourceTest.testGettingProperty");
 
         Config cfg = ConfigProvider.getConfig();
 
         //Check that the ZK ConfigSource will work
-        assertNotEquals(null, cfg.getValue("io.streamzi.zk.zkUrl", String.class));
+        assertThat(cfg.getValue("io.streamzi.zk.zkUrl", String.class)).isNotNull();
 
         //Check that a property doesn't exist yet
         try {
@@ -108,29 +112,27 @@ public class ZkMicroProfileConfigSourceTest {
         }
 
         //Check that the optional version of the property is not present
-        assertTrue(!cfg.getOptionalValue(PROPERTY_NAME, String.class).isPresent());
-
+        assertThat(cfg.getOptionalValue(PROPERTY_NAME, String.class)).isNotPresent();
         //setup the property in ZK
         try {
             curatorClient.createContainers(ZK_KEY);
             curatorClient.setData().forPath(ZK_KEY, PROPERTY_VALUE.getBytes());
         } catch (Exception e) {
-            logger.severe("Cannot set property PROPERTY_VALUE directly in Zookeeper");
-            fail();
+            fail("Cannot set property PROPERTY_VALUE directly in Zookeeper");
         }
 
         //check the property can be optained by a property
-        assertEquals(PROPERTY_VALUE, cfg.getValue(PROPERTY_NAME, String.class));
+        assertThat(cfg.getValue(PROPERTY_NAME, String.class)).isEqualTo(PROPERTY_VALUE);
 
         Set<String> propertyNames = new HashSet<>();
         cfg.getPropertyNames().forEach(propertyNames::add);
-        assertTrue(propertyNames.contains(PROPERTY_NAME));
+        assertThat(propertyNames).contains(PROPERTY_NAME);
     }
 
     @Test
     public void testInjection() {
-        assertEquals("injected.property.value", injectedProperty);
-        assertEquals(17, injectedIntProperty);
+        assertThat(injectedProperty).isEqualTo("injected.property.value");
+        assertThat(injectedIntProperty).isEqualTo(17);
     }
 
 }
