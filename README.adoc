@@ -49,7 +49,7 @@ final String strProp = cfg.getValue("propertyName", String.class);
 
 An example of how to use the Config Source is supplied in the Example directory:
 
-include::example/Readme.adoc[]
+include::example/README.adoc[]
 
 == Todo
 
