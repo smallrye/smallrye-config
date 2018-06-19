@@ -116,7 +116,7 @@ public class ZkConfigSource implements ConfigSource {
         return ZK_CONFIG_NAME;
     }
 
-    private CuratorFramework getCuratorClient() {
+    private CuratorFramework getCuratorClient() throws ZkConfigException{
         if (curatorClient == null) {
 
             final Config cfg = ConfigProvider.getConfig();
@@ -138,7 +138,7 @@ public class ZkConfigSource implements ConfigSource {
                 curatorClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
                 curatorClient.start();
             } else {
-                logger.warning("Please set properties for \"io.streamzi.zk.zkUrl\" and \"io.streamzi.zk.applicationId\"");
+                throw new ZkConfigException("Please set properties for \"io.streamzi.zk.zkUrl\" and \"io.streamzi.zk.applicationId\"");
             }
         }
         return curatorClient;
