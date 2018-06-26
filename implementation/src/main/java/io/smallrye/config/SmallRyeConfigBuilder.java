@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -208,7 +209,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         Map<Type, Converter> configConverters = new HashMap<>();
         converters.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));
-        return new SmallRyeConfig(sources, configConverters);
+        return newConfig(sources, configConverters);
+    }
+
+    protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter> configConverters) {
+        ServiceLoader<ConfigFactory> factoryLoader = ServiceLoader.load(ConfigFactory.class, this.classLoader);
+        Iterator<ConfigFactory> iter = factoryLoader.iterator();
+        if ( !iter.hasNext() ) {
+            return new SmallRyeConfig(sources, configConverters);
+        }
+
+        ConfigFactory factory = iter.next();
+        return factory.newConfig(sources, configConverters);
     }
 
     private static class ConverterWithPriority {
