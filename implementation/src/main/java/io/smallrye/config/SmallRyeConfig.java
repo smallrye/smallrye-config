@@ -41,7 +41,7 @@ public class SmallRyeConfig implements Config, Serializable {
     private final List<ConfigSource> configSources;
     private Map<Type, Converter> converters;
 
-    SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter> converters) {
+    protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter> converters) {
         this.configSources = configSources;
         this.converters = new HashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
@@ -105,7 +105,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return null;
     }
 
-    private <T> Converter getConverter(Class<T> asType) {
+    protected <T> Converter getConverter(Class<T> asType) {
         if (asType.isArray()) {
             return getConverter(asType.getComponentType());
         } else {

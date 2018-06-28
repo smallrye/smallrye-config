@@ -54,6 +54,7 @@ public class EnvConfigSource implements ConfigSource, Serializable {
 
         // replace non-alphanumeric characters by underscores
         name = name.replaceAll("[^a-zA-Z0-9_]", "_");
+
         value = System.getenv(name);
         if (value != null) {
             return value;
