@@ -1,0 +1,45 @@
+== Example
+
+The example shows how to develop a Wildfly Swarm application using the Zookeeper MicroProfile ConfigSource.
+
+An JAX-RS endpoint is provided that has two parameters injected to demonstrate how to read the configuration properties.
+Initially these properties will return the default values as Zookeeper does not contain data to override them.
+A Java client is provided which will set the Zookeeper configuration to non-default values.
+Before running the example you will need a local installation of https://zookeeper.apache.org/[Apache ZooKeeper].
+If you have chosen a non-standard hostname and port (default is localhost:2181) you will need to edit the values in `src/main/resources/META-INF/microrofile-config.properties`
+
+. Build the ZkMicroProfileConfigSource library
++
+```bash
+$ mvn clean install
+```
+. Deploy the example application
++
+```bash
+$ cd example
+$ mvn clean package wildfly-swarm:run
+```
+. Go to http://localhost:8080/rest/zkmpcs/injectedValues and the response should be
++
+```
+*** Injected Property Values ***
+strProp: default_value
+intProp: 8
+```
+. Run the client to add these values to Zookeeper.
++
+```bash
+$ mvn clean package exec:java
+```
+. Go to http://localhost:8080/rest/zkmpcs/values and the response will be different.
++
+This endpoint has loaded the properties on demand rather than injecting them.
+Given that the client has updated Zookeeper with new values for these properties the non-default values are returned.
++
+```
+*** Retrieved Property Values ***
+refreshedStrProp: zk_value
+refreshedIntProp: 17
+```
+. If you stop and re-start the Wildfly Swarm application the injected values will come from the ZooKeeper server
+
