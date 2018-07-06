@@ -2,14 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.streamzi</groupId>
-    <artifactId>ZkMicroProfileConfigExample</artifactId>
+    <groupId>io.smallrye</groupId>
+    <artifactId>zookeeper-config-source-example</artifactId>
 
     <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
     <properties>
         <version.wildfly.swarm>2018.5.0</version.wildfly.swarm>
+        <version.maven.exec>1.6.0</version.maven.exec>
+        <version.javaee>7.0</version.javaee>
+        <version.zookeeper-configsource>1.0.0-SNAPSHOT</version.zookeeper-configsource>
+
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <failOnMissingWebXml>false</failOnMissingWebXml>
@@ -31,7 +35,7 @@
     </dependencyManagement>
 
     <build>
-        <finalName>zkmp-cs-example</finalName>
+        <finalName>example</finalName>
         <plugins>
             <plugin>
                 <groupId>org.wildfly.swarm</groupId>
@@ -49,7 +53,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>${version.maven.exec}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -58,7 +62,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>io.streamzi.zkMicroProfileConfig.client.SetupZK</mainClass>
+                    <mainClass>io.smallrye.configsource.example.client.SetupZooKeeper</mainClass>
                 </configuration>
             </plugin>
         </plugins>
@@ -69,7 +73,7 @@
         <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>
-            <version>7.0</version>
+            <version>${version.javaee}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -92,9 +96,9 @@
         </dependency>
 
         <dependency>
-            <groupId>io.streamzi</groupId>
-            <artifactId>ZkMicroProfileConfigSource</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <groupId>io.smallrye</groupId>
+            <artifactId>zookeeper-config-source</artifactId>
+            <version>${version.zookeeper-configsource}</version>
         </dependency>
     </dependencies>
 </project>

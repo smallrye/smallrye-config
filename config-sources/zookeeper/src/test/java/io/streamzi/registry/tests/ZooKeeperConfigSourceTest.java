@@ -5,7 +5,7 @@
  */
 package io.streamzi.registry.tests;
 
-import io.streamzi.config.zk.ZkConfigSource;
+import io.smallrye.configsource.ZooKeeperConfigSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -38,9 +38,9 @@ import static org.assertj.core.api.Fail.fail;
  * Test the ConfigSource
  */
 @RunWith(Arquillian.class)
-public class ZkMicroProfileConfigSourceTest {
+public class ZooKeeperConfigSourceTest {
 
-    private static final Logger logger = Logger.getLogger(ZkMicroProfileConfigSourceTest.class.getName());
+    private static final Logger logger = Logger.getLogger(ZooKeeperConfigSourceTest.class.getName());
 
     private CuratorFramework curatorClient;
 
@@ -49,7 +49,7 @@ public class ZkMicroProfileConfigSourceTest {
     private final String ZK_KEY = "/" + APPLICATION_ID + "/" + PROPERTY_NAME;
     private final String PROPERTY_VALUE = "some.value";
 
-    public ZkMicroProfileConfigSourceTest() {
+    public ZooKeeperConfigSourceTest() {
     }
 
     @Inject
@@ -71,7 +71,7 @@ public class ZkMicroProfileConfigSourceTest {
         final File[] assertJFiles = Maven.resolver().resolve("org.assertj:assertj-core:3.10.0").withoutTransitivity().asFile();
 
         return ShrinkWrap.create(WebArchive.class, "ZkMicroProfileConfigTest.war")
-                .addPackage(ZkConfigSource.class.getPackage())
+                .addPackage(ZooKeeperConfigSource.class.getPackage())
                 .addAsLibraries(curatorFiles)
                 .addAsLibraries(swarmMPCFiles)
                 .addAsLibraries(curatorTestFiles)
@@ -97,12 +97,12 @@ public class ZkMicroProfileConfigSourceTest {
 
     @Test
     public void testGettingProperty() {
-        logger.info("ZkMicroProfileConfigSourceTest.testGettingProperty");
+        logger.info("ZooKeeperConfigSourceTest.testGettingProperty");
 
         Config cfg = ConfigProvider.getConfig();
 
         //Check that the ZK ConfigSource will work
-        assertThat(cfg.getValue("io.streamzi.zk.zkUrl", String.class)).isNotNull();
+        assertThat(cfg.getValue("io.smallrye.configsource.zookeeper.url", String.class)).isNotNull();
 
         //Check that a property doesn't exist yet
         try {

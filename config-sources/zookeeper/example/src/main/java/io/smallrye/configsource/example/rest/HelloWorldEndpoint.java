@@ -1,4 +1,4 @@
-package io.streamzi.zkMicroProfileConfig.rest;
+package io.smallrye.configsource.example.rest;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
