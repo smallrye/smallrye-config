@@ -1,4 +1,4 @@
-package io.streamzi.config.zk;
+package io.smallrye.configsource;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -20,9 +20,9 @@ import java.util.logging.Logger;
  * <p>
  * author: Simon Woodman <swoodman@redhat.com>
  */
-public class ZkConfigSource implements ConfigSource {
+public class ZooKeeperConfigSource implements ConfigSource {
 
-    private static final Logger logger = Logger.getLogger(ZkConfigSource.class.getName());
+    private static final Logger logger = Logger.getLogger(ZooKeeperConfigSource.class.getName());
 
     //Apache Curator framework used to access Zookeeper
     private CuratorFramework curatorClient;
@@ -31,17 +31,18 @@ public class ZkConfigSource implements ConfigSource {
     private String applicationId;
 
     //Prefix of ignored properties
-    private final String ignoredPrefix = "io.streamzi.zk";
+    private static final String IGNORED_PREFIX = "io.smallrye.configsource.zookeeper";
 
     //Property the URL of the Zookeeper instance will be read from
-    private final String zkUrlKey = "io.streamzi.zk.zkUrl";
+    private static final String ZOOKEEPER_URL_KEY = "io.smallrye.configsource.zookeeper.url";
 
     //Property of the Application Id. This will be the root znode for an application's properties
-    private final String applicationIdKey = "io.streamzi.zk.applicationId";
+    private static final String APPLICATION_ID_KEY = "io.smallrye.configsource.zookeeper.applicationId";
 
-    public final String ZK_CONFIG_NAME = "io.streamzi.zk.ZkConfigSource";
+    //Name of this ConfigSource
+    private static final String ZOOKEEPER_CONFIG_SOURCE_NAME = "io.smallrye.configsource.zookeeper";
 
-    public ZkConfigSource() {
+    public ZooKeeperConfigSource() {
     }
 
     @Override
@@ -52,14 +53,13 @@ public class ZkConfigSource implements ConfigSource {
     @Override
     public Set<String> getPropertyNames() {
 
-        final Set<String> propertyNames = new HashSet();
+        final Set<String> propertyNames = new HashSet<>();
 
         try {
             final List<String> children = getCuratorClient().getChildren().forPath(applicationId);
             propertyNames.addAll(children);
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
-            e.printStackTrace();
         }
 
         return propertyNames;
@@ -68,7 +68,7 @@ public class ZkConfigSource implements ConfigSource {
     @Override
     public Map<String, String> getProperties() {
 
-        final Map<String, String> props = new HashMap();
+        final Map<String, String> props = new HashMap<>();
 
         try {
             final List<String> children = getCuratorClient().getChildren().forPath(applicationId);
@@ -76,7 +76,6 @@ public class ZkConfigSource implements ConfigSource {
                 final String value = new String(getCuratorClient().getData().forPath(applicationId + "/" + key));
                 props.put(key, value);
             }
-
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
@@ -91,11 +90,10 @@ public class ZkConfigSource implements ConfigSource {
          * Explicitly ignore all keys that are prefixed with the prefix used to configure the Zookeeper connection.
          * Other wise a stack overflow obviously happens.
          */
-        if (key.startsWith(ignoredPrefix)) {
+        if (key.startsWith(IGNORED_PREFIX)) {
             return null;
         }
         try {
-
             final Stat stat = getCuratorClient().checkExists().forPath(applicationId + "/" + key);
 
             if (stat != null) {
@@ -103,7 +101,6 @@ public class ZkConfigSource implements ConfigSource {
             } else {
                 return null;
             }
-
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
@@ -113,16 +110,16 @@ public class ZkConfigSource implements ConfigSource {
 
     @Override
     public String getName() {
-        return ZK_CONFIG_NAME;
+        return ZOOKEEPER_CONFIG_SOURCE_NAME;
     }
 
-    private CuratorFramework getCuratorClient() throws ZkConfigException{
+    private CuratorFramework getCuratorClient() throws ZooKeeperConfigException {
         if (curatorClient == null) {
 
             final Config cfg = ConfigProvider.getConfig();
 
-            final Optional<String> zkUrl = cfg.getOptionalValue(zkUrlKey, String.class);
-            final Optional<String> optApplicationId = cfg.getOptionalValue(applicationIdKey, String.class);
+            final Optional<String> zkUrl = cfg.getOptionalValue(ZOOKEEPER_URL_KEY, String.class);
+            final Optional<String> optApplicationId = cfg.getOptionalValue(APPLICATION_ID_KEY, String.class);
 
             //Only create the ZK Client if the properties exist.
             if (zkUrl.isPresent() && optApplicationId.isPresent()) {
@@ -138,7 +135,7 @@ public class ZkConfigSource implements ConfigSource {
                 curatorClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
                 curatorClient.start();
             } else {
-                throw new ZkConfigException("Please set properties for \"io.streamzi.zk.zkUrl\" and \"io.streamzi.zk.applicationId\"");
+                throw new ZooKeeperConfigException("Please set properties for \"" + ZOOKEEPER_URL_KEY + "\" and \"" + APPLICATION_ID_KEY + "\"");
             }
         }
         return curatorClient;

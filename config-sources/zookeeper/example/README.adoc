@@ -1,6 +1,6 @@
 == Example
 
-The example shows how to develop a Wildfly Swarm application using the Zookeeper MicroProfile ConfigSource.
+The example shows how to develop a Wildfly Swarm application using the SmallRye Zookeeper ConfigSource.
 
 An JAX-RS endpoint is provided that has two parameters injected to demonstrate how to read the configuration properties.
 Initially these properties will return the default values as Zookeeper does not contain data to override them.

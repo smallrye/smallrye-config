@@ -9,9 +9,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -23,7 +21,7 @@ import java.util.logging.Logger;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    ZkMicroProfileConfigSourceTest.class
+        ZooKeeperConfigSourceTest.class
 })
 public class TestSuite {
     private static final Logger logger = Logger.getLogger(TestSuite.class.getName());
