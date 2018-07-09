@@ -1,0 +1,28 @@
+:microprofile-config: https://github.com/eclipse/microprofile-config/
+
+image:https://semaphoreci.com/api/v1/smallrye/smallrye-config/branches/master/badge.svg["Semaphore CI", link="https://semaphoreci.com/smallrye/smallrye-config"]
+image:https://img.shields.io/github/license/thorntail/thorntail.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
+
+= SmallRye Config
+
+SmallRye Config is an implementation of {microprofile-config}[Eclipse MicroProfile Config].
+
+== Instructions
+
+Compile and install this project:
+
+[source,bash]
+----
+mvn clean install
+----
+
+=== Project structure
+
+* link:implementation[] - Implementation of the Eclipse MicroProfile Config API.
+* link:tck[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
+* link:docs[] - Project documentation.
+
+=== Links
+
+* http://github.com/smallrye/smallrye-config/[Project Homepage]
+* {microprofile-config}[Eclipse MicroProfile Config]
