@@ -56,7 +56,6 @@
     <module>implementation</module>
     <module>tck</module>
     <module>docs</module>
-    <module>config-sources/zookeeper</module>
   </modules>
 
   <dependencyManagement>
