@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.streamzi.registry.tests;
+package io.smallrye.configsource.zookeeper.tests;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -27,7 +27,7 @@ public class TestSuite {
     private static final Logger logger = Logger.getLogger(TestSuite.class.getName());
 
     private static TestingServer testServer;
-    
+
     @BeforeClass
     public static void setUpClass() throws Exception {
         logger.info("Setup Class");
