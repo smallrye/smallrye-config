@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * The Config Source itself needs configuration which is handled by other Config Sources.
  * Properties prefixed with io.smallrye.configsource.zookeeper will be ignored by this Config Source.
  * <p>
- * author: Simon Woodman <swoodman@redhat.com>
+ * author: Simon Woodman swoodman@redhat.com
  */
 public class ZooKeeperConfigSource implements ConfigSource {
 
