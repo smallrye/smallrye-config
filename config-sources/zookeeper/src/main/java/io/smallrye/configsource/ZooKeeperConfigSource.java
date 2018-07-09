@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * MicroProfile Config Source that is backed by Zookeeper.
  * <p>
  * The Config Source itself needs configuration which is handled by other Config Sources.
- * Properties prefixed with io.streamzi.zk will be ignored by this Config Source.
+ * Properties prefixed with io.smallrye.configsource.zookeeper will be ignored by this Config Source.
  * <p>
  * author: Simon Woodman <swoodman@redhat.com>
  */
@@ -127,7 +127,7 @@ public class ZooKeeperConfigSource implements ConfigSource {
             //Only create the ZK Client if the properties exist.
             if (zkUrl.isPresent() && optApplicationId.isPresent()) {
 
-                logger.info("Configuring ZKConfigSource using zkUrl: " + zkUrl + ", applicationId: " + optApplicationId.get());
+                logger.info("Configuring ZooKeeperConfigSource using zkUrl: " + zkUrl + ", applicationId: " + optApplicationId.get());
 
                 applicationId = optApplicationId.get();
 
