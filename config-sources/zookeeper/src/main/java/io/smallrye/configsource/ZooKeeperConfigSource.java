@@ -9,6 +9,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ public class ZooKeeperConfigSource implements ConfigSource {
     private static final Logger logger = Logger.getLogger(ZooKeeperConfigSource.class.getName());
 
     //Apache Curator framework used to access Zookeeper
-    private CuratorFramework curatorClient;
+    private AtomicReference<CuratorFramework> curatorReference = new AtomicReference<>();
 
     //Root node of an application's configuration
     private String applicationId;
@@ -114,7 +115,9 @@ public class ZooKeeperConfigSource implements ConfigSource {
     }
 
     private CuratorFramework getCuratorClient() throws ZooKeeperConfigException {
-        if (curatorClient == null) {
+
+        CuratorFramework cachedClient = curatorReference.get();
+        if (cachedClient == null) {
 
             final Config cfg = ConfigProvider.getConfig();
 
@@ -131,14 +134,15 @@ public class ZooKeeperConfigSource implements ConfigSource {
                 if (!applicationId.startsWith("/")) {
                     applicationId = "/" + applicationId;
                 }
+                cachedClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
+                curatorReference.compareAndSet(null, cachedClient);
+                cachedClient.start();
 
-                curatorClient = CuratorFrameworkFactory.newClient(zkUrl.get(), new ExponentialBackoffRetry(1000, 3));
-                curatorClient.start();
             } else {
                 throw new ZooKeeperConfigException("Please set properties for \"" + ZOOKEEPER_URL_KEY + "\" and \"" + APPLICATION_ID_KEY + "\"");
             }
         }
-        return curatorClient;
+        return cachedClient;
     }
 }
 
