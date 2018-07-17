@@ -46,7 +46,7 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
     @Deployment
     public static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
-                .create(JavaArchive.class, "CollectionTest.jar")
+                .create(JavaArchive.class, "CollectionWithConfiguredValueTest.jar")
                 .addClasses(CollectionWithConfiguredValueTest.class, CollectionBean.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsManifestResource(new StringAsset(
@@ -54,7 +54,7 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
                 ), "microprofile-config.properties")
                 .as(JavaArchive.class);
         WebArchive war = ShrinkWrap
-                .create(WebArchive.class, "CollectionTest.war")
+                .create(WebArchive.class, "CollectionWithConfiguredValueTest.war")
                 .addAsLibrary(testJar);
         return war;
     }
@@ -75,7 +75,6 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
         assertEquals(listPets, new ArrayList<>(Arrays.asList("snake", "ox")));
 
         Set<String> setPets = bean.getSetPets();
-        System.out.println("setPets = " + setPets);
         assertNotNull(setPets);
         assertEquals(setPets.size(), 2);
         assertEquals(setPets, new HashSet<>(Arrays.asList("snake", "ox")));

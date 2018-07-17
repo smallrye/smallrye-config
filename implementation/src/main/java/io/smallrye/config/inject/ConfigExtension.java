@@ -16,12 +16,14 @@
 
 package io.smallrye.config.inject;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -108,16 +110,36 @@ public class ConfigExtension implements Extension {
                         deploymentProblems.add("No Config Value exists for " + key);
                     }
                 }
+            } else if (type instanceof ParameterizedType) {
+                ParameterizedType parameterizedType = (ParameterizedType) type;
+                Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
+                // for collections, we only check if the property config exists without trying to convert it
+                if (Collection.class.isAssignableFrom(rawType)) {
+                    String key = getConfigKey(injectionPoint, configProperty);
+                    if (!config.getOptionalValue(key, String.class).isPresent()) {
+                        String defaultValue = configProperty.defaultValue();
+                        if (defaultValue == null ||
+                                defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                            deploymentProblems.add("No Config Value exists for " + key);
+                        }
+                    }
+                }
             }
         }
 
         if (!deploymentProblems.isEmpty()) {
-            add.addDeploymentProblem(new DeploymentException("Error while validating Configuration\n"
+            add.addDeploymentProblem(new DeploymentException("Error while validating Configuration:\n"
                     + String.join("\n", deploymentProblems)));
         }
 
     }
 
+    private <T> Class<T> unwrapType(Type type) {
+        if (type instanceof ParameterizedType) {
+            type = ((ParameterizedType) type).getRawType();
+        }
+        return (Class<T>) type;
+    }
     static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
         String key = configProperty.name();
         if (!key.trim().isEmpty()) {

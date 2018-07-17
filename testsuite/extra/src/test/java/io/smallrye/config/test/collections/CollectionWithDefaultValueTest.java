@@ -47,12 +47,12 @@ public class CollectionWithDefaultValueTest extends Arquillian {
     @Deployment
     public static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
-                .create(JavaArchive.class, "CollectionTest.jar")
+                .create(JavaArchive.class, "CollectionWithDefaultValueTest.jar")
                 .addClasses(CollectionWithDefaultValueTest.class, CollectionBean.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .as(JavaArchive.class);
         WebArchive war = ShrinkWrap
-                .create(WebArchive.class, "CollectionTest.war")
+                .create(WebArchive.class, "CollectionWithDefaultValueTest.war")
                 .addAsLibrary(testJar);
         return war;
     }
