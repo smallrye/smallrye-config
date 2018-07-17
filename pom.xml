@@ -43,6 +43,7 @@
     <version.org.jboss.logging>2.0.1.Final</version.org.jboss.logging>
     <version.org.jboss.weld>2.3.SP2</version.org.jboss.weld>
     <version.org.jboss.weld.core.impl>2.3.5.Final</version.org.jboss.weld.core.impl>
+    <version.org.testng>6.9.9</version.org.testng>
   </properties>
 
   <scm>
@@ -54,7 +55,7 @@
 
   <modules>
     <module>implementation</module>
-    <module>tck</module>
+    <module>testsuite</module>
     <module>docs</module>
   </modules>
 
@@ -132,6 +133,24 @@
         <version>${version.org.jboss.arquillian}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.arquillian.testng</groupId>
+        <artifactId>arquillian-testng-container</artifactId>
+        <version>${version.org.jboss.arquillian}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testng</groupId>
+        <artifactId>testng</artifactId>
+        <version>${version.org.testng}</version>
+        <scope>compile</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <!-- Dependencies provided by the project -->
