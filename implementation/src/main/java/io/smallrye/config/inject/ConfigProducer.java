@@ -119,7 +119,7 @@ public class ConfigProducer implements Serializable{
             valueType = (Class<T>) String.class;
         }
         HashSet<T> s = new HashSet<>();
-        String stringValue = getStringValue(ip);
+        String stringValue = getValue(ip, String.class);
         String[] split = StringUtil.split(stringValue);
         Config config = getConfig(ip);
         for(int i = 0 ; i < split.length ; i++) {
@@ -143,7 +143,7 @@ public class ConfigProducer implements Serializable{
             valueType = (Class<T>) String.class;
         }
         ArrayList<T> s = new ArrayList<>();
-        String stringValue = getStringValue(ip);
+        String stringValue = getValue(ip, String.class);
         String[] split = StringUtil.split(stringValue);
         Config config = getConfig(ip);
         for(int i = 0 ; i < split.length ; i++) {
@@ -180,20 +180,6 @@ public class ConfigProducer implements Serializable{
                 }
             }
         } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    private String getStringValue(InjectionPoint injectionPoint) {
-        Config config = getConfig(injectionPoint);
-        String name = getName(injectionPoint);
-        if (name == null) {
-            return null;
-        }
-        Optional<String> optionalValue = config.getOptionalValue(name, String.class);
-        if (optionalValue.isPresent()) {
-            return optionalValue.get();
-        } else {
             return null;
         }
     }
