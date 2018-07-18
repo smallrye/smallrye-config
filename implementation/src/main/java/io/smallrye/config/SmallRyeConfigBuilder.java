@@ -211,6 +211,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 if ( v1 < v2 ) {
                     return +1;
                 }
+                // if 2 config sources have the same ordinal,
+                // provide consistent order by sorting them
+                // according to their name.
+                if (o2.getName() != null && o1.getName() != null) {
+                    return o2.getName().compareTo(o1.getName());
+                }
                 return 0;
             }
         });
