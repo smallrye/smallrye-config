@@ -96,13 +96,12 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
             // handle Provider<T>
             if (rawType instanceof Class && ((Class) rawType).isAssignableFrom(Provider.class) && paramType.getActualTypeArguments().length == 1) {
-                Class clazz = (Class) paramType.getActualTypeArguments()[0]; //X TODO check type again, etc
-                return (T) new ConfigValueProvider(getConfig(), key, clazz);
+                Class clazz = (Class) paramType.getActualTypeArguments()[0];
+                return (T) getConfig().getValue(key, clazz);
             }
         } else {
             Class clazz = (Class) annotated.getBaseType();
             if (defaultValue == null || defaultValue.length() == 0) {
-                Object value = getConfig().getValue(key, clazz);
                 return (T) getConfig().getValue(key, clazz);
             } else {
                 Config config = getConfig();
@@ -175,29 +174,6 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
         public String defaultValue() {
             return "";
         }
-    }
-
-    public static class ConfigValueProvider<T> implements Provider<T>, Serializable {
-        private transient Config config;
-        private final String key;
-        private final Class<T> type;
-
-        ConfigValueProvider(Config config, String key, Class<T> type) {
-            this.config = config;
-            this.key = key;
-            this.type = type;
-        }
-
-        @Override
-        public T get() {
-            return (T) config.getValue(key, type);
-        }
-
-        private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-            in.defaultReadObject();
-            config = ConfigProviderResolver.instance().getConfig();
-        }
-
     }
 
     private static class InjectionPointMetadataInjectionPoint implements InjectionPoint {
