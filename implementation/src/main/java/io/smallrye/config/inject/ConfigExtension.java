@@ -83,11 +83,7 @@ public class ConfigExtension implements Extension {
                         && ip.getType() != Float.class
                         && ip.getType() != Float.TYPE
                         && ip.getType() != Double.class
-                        && ip.getType() != Double.TYPE
-                        && ip.getType() != Duration.class
-                        && ip.getType() != LocalDate.class
-                        && ip.getType() != LocalTime.class
-                        && ip.getType() != LocalDateTime.class)
+                        && ip.getType() != Double.TYPE)
                 .map(ip -> (Class) ip.getType())
                 .collect(Collectors.toSet());
         types.forEach(type -> abd.addBean(new ConfigInjectionBean(bm, type)));
