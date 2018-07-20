@@ -57,6 +57,7 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
+    <module>config-sources</module>
   </modules>
 
   <dependencyManagement>
