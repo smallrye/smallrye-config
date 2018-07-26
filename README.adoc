@@ -19,8 +19,9 @@ mvn clean install
 === Project structure
 
 * link:implementation[] - Implementation of the Eclipse MicroProfile Config API.
-* link:tck[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
+* link:testsuite[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
 * link:docs[] - Project documentation.
+* link:config-sources[] - Implementation of different Eclipse MicroProfile ConfigSources
 
 === Links
 
