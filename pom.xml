@@ -40,7 +40,7 @@
     <version.junit>4.11</version.junit>
     <version.org.jboss.arquillian>1.1.13.Final</version.org.jboss.arquillian>
     <version.org.jboss.arquillian.container.weld-embedded>2.0.0.Beta5</version.org.jboss.arquillian.container.weld-embedded>
-    <version.org.jboss.logging>2.0.1.Final</version.org.jboss.logging>
+    <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
     <version.org.jboss.weld>2.3.SP2</version.org.jboss.weld>
     <version.org.jboss.weld.core.impl>2.3.5.Final</version.org.jboss.weld.core.impl>
     <version.org.testng>6.9.9</version.org.testng>
@@ -84,13 +84,8 @@
       </dependency>
       <dependency>
         <groupId>org.jboss.logging</groupId>
-        <artifactId>jboss-logging-annotations</artifactId>
-        <version>${version.org.jboss.logging}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.logging</groupId>
-        <artifactId>jboss-logging-processor</artifactId>
-        <version>${version.org.jboss.logging}</version>
+        <artifactId>jboss-logging</artifactId>
+        <version>${version.org.jboss.logging.jboss-logging}</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
