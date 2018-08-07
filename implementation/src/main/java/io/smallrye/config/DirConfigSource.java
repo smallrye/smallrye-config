@@ -33,7 +33,8 @@ public class DirConfigSource implements ConfigSource {
 
     private static final Logger LOG = Logger.getLogger(DirConfigSource.class);
 
-    private static final int DEFAULT_ORDINAL = 100;
+    private static final String CONFIG_ORDINAL_KEY = "config_ordinal";
+    private static final String CONFIG_ORDINAL_DEFAULT_VALUE = "100";
 
     private final File dir;
     private final int ordinal;
@@ -45,8 +46,12 @@ public class DirConfigSource implements ConfigSource {
 
     public DirConfigSource(File dir, int ordinal) {
         this.dir = dir;
-        this.ordinal = ordinal;
         this.props = scan();
+        if (props.containsKey(CONFIG_ORDINAL_KEY)) {
+            this.ordinal = Integer.valueOf(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
+        } else {
+            this.ordinal = ordinal;
+        }
     }
 
     private Map<String, String> scan() {
