@@ -24,11 +24,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class DirConfigSource implements ConfigSource {
+
+    private static final Logger LOG = Logger.getLogger(DirConfigSource.class);
 
     private static final int DEFAULT_ORDINAL = 100;
 
@@ -59,9 +62,8 @@ public class DirConfigSource implements ConfigSource {
                 String key = file.getName();
                 String value = readContent(file);
                 props.put(key, value);
-            } catch (IOException e) {
-                e.printStackTrace();
-                // should log some errors...
+            } catch (Throwable t) {
+                LOG.warnf("Unable to read content from file %s", file.getAbsolutePath());
             }
         }
         return props;
