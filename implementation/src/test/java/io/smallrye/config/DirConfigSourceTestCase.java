@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.Test;
 
 /**
@@ -34,7 +35,10 @@ public class DirConfigSourceTestCase {
         URL configDirURL = this.getClass().getResource("configDir");
         File dir = new File(configDirURL.toURI());
 
-        DirConfigSource configSource = new DirConfigSource(dir);
+        ConfigSource configSource = new DirConfigSource(dir);
+
+        assertEquals(4567, configSource.getOrdinal());
+
         assertEquals("myValue1", configSource.getValue("myKey1"));
         assertEquals("true", configSource.getValue("myKey2"));
     }
