@@ -16,6 +16,8 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.SecuritySupport.getContextClassLoader;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,7 +37,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig() {
-        return getConfig(Thread.currentThread().getContextClassLoader());
+        return getConfig(getContextClassLoader());
     }
 
     @Override

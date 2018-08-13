@@ -16,6 +16,8 @@
 
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.SecuritySupport.getContextClassLoader;
+
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -48,8 +50,7 @@ public class ConfigProducer implements Serializable{
     @Produces
     Config getConfig(InjectionPoint injectionPoint) {
         // return the Config for the TCCL
-        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        return ConfigProvider.getConfig(tccl);
+        return ConfigProvider.getConfig(getContextClassLoader());
     }
 
     @Dependent
@@ -202,4 +203,5 @@ public class ConfigProducer implements Serializable{
         }
         return null;
     }
+
 }
