@@ -16,6 +16,12 @@
 
 package io.smallrye.config.inject;
 
+/**
+ * A relatively generic Exception that encapsulates the configuration
+ * property's name.
+ * 
+ * @author Steve Moyer - The Pennsylvania State University
+ */
 public class ConfigException extends Exception {
 
     private static final long serialVersionUID = 1L;
