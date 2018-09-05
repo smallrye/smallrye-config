@@ -18,14 +18,8 @@ package io.smallrye.config.inject;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,7 +30,6 @@ import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
@@ -71,7 +64,7 @@ public class ConfigExtension implements Extension {
 
     public void registerConfigProducer(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // excludes type that are already produced by ConfigProducer
-        Set<Class> types = injectionPoints.stream()
+        Set<Class<?>> types = injectionPoints.stream()
                 .filter(ip -> ip.getType() instanceof Class
                         && ip.getType() != String.class
                         && ip.getType() != Boolean.class
@@ -84,13 +77,12 @@ public class ConfigExtension implements Extension {
                         && ip.getType() != Float.TYPE
                         && ip.getType() != Double.class
                         && ip.getType() != Double.TYPE)
-                .map(ip -> (Class) ip.getType())
+                .map(ip -> (Class<?>) ip.getType())
                 .collect(Collectors.toSet());
         types.forEach(type -> abd.addBean(new ConfigInjectionBean(bm, type)));
     }
 
-    public void validate(@Observes AfterDeploymentValidation add, BeanManager bm) {
-        List<String> deploymentProblems = new ArrayList<>();
+    public void validate(@Observes AfterDeploymentValidation adv, BeanManager bm) {
 
         Config config = ConfigProvider.getConfig();
         for (InjectionPoint injectionPoint : injectionPoints) {
@@ -98,36 +90,38 @@ public class ConfigExtension implements Extension {
             ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
             if (type instanceof Class) {
                 String key = getConfigKey(injectionPoint, configProperty);
-
-                if (!config.getOptionalValue(key, (Class)type).isPresent()) {
-                    String defaultValue = configProperty.defaultValue();
-                    if (defaultValue == null ||
-                            defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                        deploymentProblems.add("No Config Value exists for " + key);
+                try {
+                    if (!config.getOptionalValue(key, (Class<?>)type).isPresent()) {
+                        String defaultValue = configProperty.defaultValue();
+                        if (defaultValue == null ||
+                                defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                            adv.addDeploymentProblem(new ConfigException(key,"No Config Value exists for required property " + key));
+                        }
                     }
+                } catch(IllegalArgumentException cause) {
+                    String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
+                    adv.addDeploymentProblem(new ConfigException(key, message, cause));
                 }
             } else if (type instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) type;
                 Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
                 // for collections, we only check if the property config exists without trying to convert it
                 if (Collection.class.isAssignableFrom(rawType)) {
                     String key = getConfigKey(injectionPoint, configProperty);
-                    if (!config.getOptionalValue(key, String.class).isPresent()) {
-                        String defaultValue = configProperty.defaultValue();
-                        if (defaultValue == null ||
-                                defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                            deploymentProblems.add("No Config Value exists for " + key);
+                    try {
+                        if (!config.getOptionalValue(key, String.class).isPresent()) {
+                            String defaultValue = configProperty.defaultValue();
+                            if (defaultValue == null ||
+                                    defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                                adv.addDeploymentProblem(new ConfigException(key,"No Config Value exists for required property " + key));
+                            }
                         }
+                    } catch(IllegalArgumentException cause) {
+                        String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
+                        adv.addDeploymentProblem(new ConfigException(key, message, cause));
                     }
                 }
             }
         }
-
-        if (!deploymentProblems.isEmpty()) {
-            add.addDeploymentProblem(new DeploymentException("Error while validating Configuration:\n"
-                    + String.join("\n", deploymentProblems)));
-        }
-
     }
 
     private <T> Class<T> unwrapType(Type type) {
