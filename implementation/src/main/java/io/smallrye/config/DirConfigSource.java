@@ -31,7 +31,7 @@ import org.jboss.logging.Logger;
  */
 public class DirConfigSource implements ConfigSource {
 
-    private static final Logger LOG = Logger.getLogger(DirConfigSource.class);
+    private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
     private static final String CONFIG_ORDINAL_KEY = "config_ordinal";
     private static final String CONFIG_ORDINAL_DEFAULT_VALUE = "100";

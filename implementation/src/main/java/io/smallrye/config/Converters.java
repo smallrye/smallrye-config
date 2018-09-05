@@ -61,7 +61,7 @@ class Converters {
     @SuppressWarnings("unchecked")
     static final Converter<Class<?>> CLASS_CONVERTER = (Converter & Serializable) value -> {
         try {
-            return value != null ? Class.forName(value, true, Thread.currentThread().getContextClassLoader()) : null;
+            return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
