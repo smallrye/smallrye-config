@@ -12,19 +12,20 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * @author kg6zvp
  */
 public class StringInterpolator {
-    public static final Pattern configPattern = Pattern.compile("\\$\\{(.*?)\\}");
+    public static final Pattern VAR_PATTERN = Pattern.compile("(?<!\\\\)\\$\\{(.*?)\\}");
+    public static final Pattern ESCAPED_PATTERN = Pattern.compile("\\\\\\$\\{(.*?)\\}");
 
     public static String interpolate(String value) {
-        Matcher m = configPattern.matcher(value);
-        Map<String, String> vars = new HashMap<>();
-        while(m.find()) {
-            String varName = m.group(1);
-            vars.put(varName, ConfigProvider.getConfig().getValue(varName, String.class));
-        }
+        Matcher varMatcher = VAR_PATTERN.matcher(value);
         String outputString = value;
-        for(String key : vars.keySet()) {
-            outputString = outputString.replaceAll(Pattern.quote("${" + key + "}"), vars.get(key));
+        String varName;
+        while(varMatcher.find()) {
+            varName = varMatcher.group(1);
+            outputString = outputString.replaceAll(Pattern.quote("${" + varName + "}"),
+                                                   ConfigProvider.getConfig()
+                                                        .getValue(varName, String.class));
         }
+        outputString = outputString.replaceAll(ESCAPED_PATTERN.toString(), "\\${$1}");
         return outputString;
     }
 }
