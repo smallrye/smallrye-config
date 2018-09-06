@@ -66,9 +66,6 @@
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>
           <argLine>-Xmx512m</argLine>
-          <includes>
-            <include>**/*TestCase.java</include>
-          </includes>
           <forkMode>once</forkMode>
         </configuration>
       </plugin>
