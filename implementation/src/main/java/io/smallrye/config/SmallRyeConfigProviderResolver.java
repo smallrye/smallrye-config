@@ -43,17 +43,20 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Override
     public Config getConfig(ClassLoader classLoader) {
         Config config = configsForClassLoader.get(classLoader);
-        if (config != null) {
-            return config;
-        } else {
-            config = getBuilder().forClassLoader(classLoader)
-                    .addDefaultSources()
-                    .addDiscoveredSources()
-                    .addDiscoveredConverters()
-                    .build();
-            registerConfig(config, classLoader);
-            return config;
+        if (config == null) {
+            synchronized (this) {
+                config = configsForClassLoader.get(classLoader);
+                if (config == null) {
+                    config = getBuilder().forClassLoader(classLoader)
+                            .addDefaultSources()
+                            .addDiscoveredSources()
+                            .addDiscoveredConverters()
+                            .build();
+                    registerConfig(config, classLoader);
+                }
+            }
         }
+        return config;
     }
 
     @Override
@@ -63,20 +66,22 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
-        configsForClassLoader.put(classLoader, config);
+        synchronized (this) {
+            configsForClassLoader.put(classLoader, config);
+        }
     }
 
     @Override
     public void releaseConfig(Config config) {
-        Iterator<Map.Entry<ClassLoader, Config>> iterator = configsForClassLoader.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<ClassLoader, Config> entry = iterator.next();
-            if (entry.getValue() == config) {
-                iterator.remove();
-                return;
+        synchronized (this) {
+            Iterator<Map.Entry<ClassLoader, Config>> iterator = configsForClassLoader.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<ClassLoader, Config> entry = iterator.next();
+                if (entry.getValue() == config) {
+                    iterator.remove();
+                    return;
+                }
             }
-
-
         }
     }
 }
