@@ -42,32 +42,16 @@ public class ConfigProducerUtil {
         return valueType;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Set<T> setConfigProperty(InjectionPoint injectionPoint, Config config) {
+    public static <C extends Collection<T>, T> C collectionConfigProperty(InjectionPoint injectionPoint, Config config, C collection) {
         Type type = injectionPoint.getAnnotated().getBaseType();
         final Class<T> valueType = resolveValueType(type);
-        HashSet<T> s = new HashSet<>();
         String stringValue = getValue(injectionPoint, String.class, config);
         String[] split = StringUtil.split(stringValue);
         for (String aSplit : split) {
             T item = ((SmallRyeConfig) config).convert(aSplit, valueType);
-            s.add(item);
+            collection.add(item);
         }
-        return s;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> listConfigProperty(InjectionPoint injectionPoint, Config config) {
-        Type type = injectionPoint.getAnnotated().getBaseType();
-        final Class<T> valueType = resolveValueType(type);
-        ArrayList<T> s = new ArrayList<>();
-        String stringValue = getValue(injectionPoint, String.class, config);
-        String[] split = StringUtil.split(stringValue);
-        for (String aSplit : split) {
-            T item = ((SmallRyeConfig) config).convert(aSplit, valueType);
-            s.add(item);
-        }
-        return s;
+        return collection;
     }
 
     @SuppressWarnings("unchecked")
