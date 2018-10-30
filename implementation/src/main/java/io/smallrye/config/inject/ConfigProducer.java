@@ -88,13 +88,13 @@ public class ConfigProducer implements Serializable{
     @Dependent
     @Produces @ConfigProperty
     <T> Set<T> producesSetConfigPropery(InjectionPoint ip) {
-        return ConfigProducerUtil.setConfigProperty(ip, getConfig(ip));
+        return ConfigProducerUtil.collectionConfigProperty(ip, getConfig(ip), new HashSet<>());
     }
 
     @Dependent
     @Produces @ConfigProperty
     <T> List<T> producesListConfigPropery(InjectionPoint ip) {
-        return ConfigProducerUtil.listConfigProperty(ip, getConfig(ip));
+        return ConfigProducerUtil.collectionConfigProperty(ip, getConfig(ip), new ArrayList<T>());
     }
 
 }
