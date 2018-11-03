@@ -42,6 +42,7 @@ class Converters {
                     || "JA".equalsIgnoreCase(value)
                     || "J".equalsIgnoreCase(value)
                     || "SI".equalsIgnoreCase(value)
+                    || "SIM".equalsIgnoreCase(value)
                     || "OUI".equalsIgnoreCase(value);
         }
         return null;
