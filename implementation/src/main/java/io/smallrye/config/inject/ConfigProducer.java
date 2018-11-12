@@ -33,11 +33,12 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
-import io.smallrye.config.StringUtil;
-import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.StringUtil;
 
 /**
  * CDI producer for {@link Config} bean.
@@ -156,7 +157,7 @@ public class ConfigProducer implements Serializable{
 
     private <T> Class<T> unwrapType(Type type) {
         if (type instanceof ParameterizedType) {
-            type = ((ParameterizedType) type).getRawType();
+            type = ((ParameterizedType) type).getActualTypeArguments()[0];
         }
         return (Class<T>) type;
     }
