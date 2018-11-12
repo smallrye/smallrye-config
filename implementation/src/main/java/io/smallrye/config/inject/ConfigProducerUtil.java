@@ -57,7 +57,7 @@ public class ConfigProducerUtil {
     @SuppressWarnings("unchecked")
     private static <T> Class<T> unwrapType(Type type) {
         if (type instanceof ParameterizedType) {
-            type = ((ParameterizedType) type).getRawType();
+            type = ((ParameterizedType) type).getActualTypeArguments()[0];
         }
         return (Class<T>) type;
     }
