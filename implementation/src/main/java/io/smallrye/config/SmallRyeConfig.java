@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
@@ -68,6 +71,39 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
         return Optional.empty();
+    }
+
+    public OptionalInt getOptionalIntValue(String name) {
+        for (ConfigSource configSource : configSources) {
+            String value = configSource.getValue(name);
+            // treat empty value as null
+            if (value != null && value.length() > 0) {
+                return convert(value, OptionalInt.class);
+            }
+        }
+        return OptionalInt.empty();
+    }
+
+    public OptionalLong getOptionalLongValue(String name) {
+        for (ConfigSource configSource : configSources) {
+            String value = configSource.getValue(name);
+            // treat empty value as null
+            if (value != null && value.length() > 0) {
+                return convert(value, OptionalLong.class);
+            }
+        }
+        return OptionalLong.empty();
+    }
+
+    public OptionalDouble getOptionalDoubleValue(String name) {
+        for (ConfigSource configSource : configSources) {
+            String value = configSource.getValue(name);
+            // treat empty value as null
+            if (value != null && value.length() > 0) {
+                return convert(value, OptionalDouble.class);
+            }
+        }
+        return OptionalDouble.empty();
     }
 
     @Override
