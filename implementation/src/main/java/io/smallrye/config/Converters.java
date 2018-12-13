@@ -72,11 +72,11 @@ class Converters {
         }
     };
 
-    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = (Converter<OptionalInt> & Serializable) value -> value != null ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty();
+    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty() ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty();
 
-    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = (Converter<OptionalLong> & Serializable) value -> value != null ? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty();
+    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty();
 
-    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = (Converter<OptionalDouble> & Serializable) value -> value != null ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty();
+    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty();
 
     public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
 
