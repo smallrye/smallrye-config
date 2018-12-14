@@ -19,14 +19,16 @@ package io.smallrye.config;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import javax.annotation.Priority;
 
@@ -46,6 +48,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     // sources are not sorted by their ordinals
     private List<ConfigSource> sources = new ArrayList<>();
+    private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
@@ -135,6 +138,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    // no @Override
+    public SmallRyeConfigBuilder withWrapper(UnaryOperator<ConfigSource> wrapper) {
+        sourceWrappers = sourceWrappers.andThen(wrapper);
+        return this;
+    }
+
     private static void addConverter(Type type, int priority, Converter converter, Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
         ConverterWithPriority oldConverter = converters.get(type);
@@ -216,6 +225,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return 0;
             }
         });
+        // wrap all
+        final Function<ConfigSource, ConfigSource> sourceWrappers = this.sourceWrappers;
+        final ListIterator<ConfigSource> it = sources.listIterator();
+        while (it.hasNext()) {
+            it.set(sourceWrappers.apply(it.next()));
+        }
 
         Map<Type, Converter> configConverters = new HashMap<>();
         converters.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));
