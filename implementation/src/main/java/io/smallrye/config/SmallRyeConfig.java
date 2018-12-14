@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
@@ -54,6 +57,16 @@ public class SmallRyeConfig implements Config, Serializable {
             if (value != null) {
                 return convert(value, aClass);
             }
+        }
+
+        // check for  Optional numerical types to return their empty()
+        // if the property is not found
+        if (aClass.isAssignableFrom(OptionalInt.class)) {
+            return aClass.cast(OptionalInt.empty());
+        } else if (aClass.isAssignableFrom(OptionalLong.class)) {
+            return aClass.cast(OptionalLong.empty());
+        } else if (aClass.isAssignableFrom(OptionalDouble.class)) {
+            return aClass.cast(OptionalDouble.empty());
         }
         throw new NoSuchElementException("Property " + name + " not found");
     }
