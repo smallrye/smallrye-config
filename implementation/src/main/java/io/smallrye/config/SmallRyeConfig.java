@@ -21,6 +21,7 @@ import static java.lang.reflect.Array.newInstance;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -48,6 +50,22 @@ public class SmallRyeConfig implements Config, Serializable {
         this.configSources = configSources;
         this.converters = new HashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
+    }
+
+    // no @Override
+    public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
+        for (ConfigSource configSource : configSources) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                String[] itemStrings = StringUtil.split(value);
+                final C collection = collectionFactory.apply(itemStrings.length);
+                for (String itemString : itemStrings) {
+                    collection.add(convert(itemString, itemClass));
+                }
+                return collection;
+            }
+        }
+        return collectionFactory.apply(0);
     }
 
     @Override
