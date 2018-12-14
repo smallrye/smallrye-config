@@ -19,6 +19,7 @@ package io.smallrye.config;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -69,17 +70,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<ConfigSource> discoverSources() {
         List<ConfigSource> discoveredSources = new ArrayList<>();
         ServiceLoader<ConfigSource> configSourceLoader = ServiceLoader.load(ConfigSource.class, classLoader);
-        configSourceLoader.forEach(configSource -> {
-            discoveredSources.add(configSource);
-        });
+        configSourceLoader.forEach(discoveredSources::add);
 
         // load all ConfigSources from ConfigSourceProviders
         ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class, classLoader);
         configSourceProviderLoader.forEach(configSourceProvider -> {
             configSourceProvider.getConfigSources(classLoader)
-                    .forEach(configSource -> {
-                        discoveredSources.add(configSource);
-                    });
+                    .forEach(discoveredSources::add);
         });
         return discoveredSources;
     }
@@ -87,9 +84,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<Converter> discoverConverters() {
         List<Converter> converters = new ArrayList<>();
         ServiceLoader<Converter> converterLoader = ServiceLoader.load(Converter.class, classLoader);
-        converterLoader.forEach(converter -> {
-            converters.add(converter);
-        });
+        converterLoader.forEach(converters::add);
         return converters;
     }
 
@@ -118,9 +113,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public ConfigBuilder withSources(ConfigSource... configSources) {
-        for (ConfigSource source: configSources) {
-            this.sources.add(source);
-        }
+        Collections.addAll(sources, configSources);
         return this;
     }
 
