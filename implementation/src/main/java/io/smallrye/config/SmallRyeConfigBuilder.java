@@ -124,23 +124,23 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             if (type == null) {
                 throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
             }
-            addConverter(type, getPriority(converter), converter);
+            addConverter(type, getPriority(converter), converter, this.converters);
         }
         return this;
     }
 
     @Override
     public <T> ConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
-        addConverter(type, priority, converter);
+        addConverter(type, priority, converter, converters);
         return this;
     }
 
-    private void addConverter(Type type, int priority, Converter converter) {
+    private static void addConverter(Type type, int priority, Converter converter, Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
-        ConverterWithPriority oldConverter = this.converters.get(type);
+        ConverterWithPriority oldConverter = converters.get(type);
         int newPriority = getPriority(converter);
         if (oldConverter == null || priority > oldConverter.priority) {
-            this.converters.put(type, new ConverterWithPriority(converter, newPriority));
+            converters.put(type, new ConverterWithPriority(converter, newPriority));
         }
     }
 
@@ -165,7 +165,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return getConverterType(clazz.getSuperclass());
     }
 
-    private int getPriority(Converter<?> converter) {
+    private static int getPriority(Converter<?> converter) {
         int priority = 100;
         Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
         if (priorityAnnotation != null) {
@@ -176,6 +176,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public Config build() {
+        final List<ConfigSource> sources = new ArrayList<>(this.sources);
         if (addDiscoveredSources) {
             sources.addAll(discoverSources());
         }
@@ -183,13 +184,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             sources.addAll(getDefaultSources());
         }
 
+        final Map<Type, ConverterWithPriority> converters = new HashMap<>(this.converters);
+
         if (addDiscoveredConverters) {
             for(Converter converter : discoverConverters()) {
                 Type type = getConverterType(converter.getClass());
                 if (type == null) {
                     throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
                 }
-                addConverter(type, getPriority(converter), converter);
+                addConverter(type, getPriority(converter), converter, converters);
             }
         }
 
