@@ -184,7 +184,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public Config build() {
+    public SmallRyeConfig build() {
         final List<ConfigSource> sources = new ArrayList<>(this.sources);
         if (addDiscoveredSources) {
             sources.addAll(discoverSources());
