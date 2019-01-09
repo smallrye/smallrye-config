@@ -208,21 +208,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         Collections.sort(sources, new Comparator<ConfigSource>() {
             @Override
             public int compare(ConfigSource o1, ConfigSource o2) {
-                int v1 = o1.getOrdinal();
-                int v2 = o2.getOrdinal();
-                if ( v1 > v2 ) {
-                    return -11;
-                }
-                if ( v1 < v2 ) {
-                    return +1;
-                }
+                int res = Integer.signum(o2.getOrdinal() - o1.getOrdinal());
                 // if 2 config sources have the same ordinal,
                 // provide consistent order by sorting them
                 // according to their name.
-                if (o2.getName() != null && o1.getName() != null) {
-                    return o2.getName().compareTo(o1.getName());
-                }
-                return 0;
+                return res != 0 ? res : o2.getName().compareTo(o1.getName());
             }
         });
         // wrap all
