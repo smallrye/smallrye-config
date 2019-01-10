@@ -24,8 +24,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import javax.annotation.Priority;
 
@@ -45,6 +48,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     // sources are not sorted by their ordinals
     private List<ConfigSource> sources = new ArrayList<>();
+    private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
@@ -69,17 +73,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<ConfigSource> discoverSources() {
         List<ConfigSource> discoveredSources = new ArrayList<>();
         ServiceLoader<ConfigSource> configSourceLoader = ServiceLoader.load(ConfigSource.class, classLoader);
-        configSourceLoader.forEach(configSource -> {
-            discoveredSources.add(configSource);
-        });
+        configSourceLoader.forEach(discoveredSources::add);
 
         // load all ConfigSources from ConfigSourceProviders
         ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class, classLoader);
         configSourceProviderLoader.forEach(configSourceProvider -> {
             configSourceProvider.getConfigSources(classLoader)
-                    .forEach(configSource -> {
-                        discoveredSources.add(configSource);
-                    });
+                    .forEach(discoveredSources::add);
         });
         return discoveredSources;
     }
@@ -87,9 +87,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<Converter> discoverConverters() {
         List<Converter> converters = new ArrayList<>();
         ServiceLoader<Converter> converterLoader = ServiceLoader.load(Converter.class, classLoader);
-        converterLoader.forEach(converter -> {
-            converters.add(converter);
-        });
+        converterLoader.forEach(converters::add);
         return converters;
     }
 
@@ -118,9 +116,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public ConfigBuilder withSources(ConfigSource... configSources) {
-        for (ConfigSource source: configSources) {
-            this.sources.add(source);
-        }
+        Collections.addAll(sources, configSources);
         return this;
     }
 
@@ -131,23 +127,29 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             if (type == null) {
                 throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
             }
-            addConverter(type, getPriority(converter), converter);
+            addConverter(type, getPriority(converter), converter, this.converters);
         }
         return this;
     }
 
     @Override
     public <T> ConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
-        addConverter(type, priority, converter);
+        addConverter(type, priority, converter, converters);
         return this;
     }
 
-    private void addConverter(Type type, int priority, Converter converter) {
+    // no @Override
+    public SmallRyeConfigBuilder withWrapper(UnaryOperator<ConfigSource> wrapper) {
+        sourceWrappers = sourceWrappers.andThen(wrapper);
+        return this;
+    }
+
+    private static void addConverter(Type type, int priority, Converter converter, Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
-        ConverterWithPriority oldConverter = this.converters.get(type);
+        ConverterWithPriority oldConverter = converters.get(type);
         int newPriority = getPriority(converter);
         if (oldConverter == null || priority > oldConverter.priority) {
-            this.converters.put(type, new ConverterWithPriority(converter, newPriority));
+            converters.put(type, new ConverterWithPriority(converter, newPriority));
         }
     }
 
@@ -172,7 +174,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return getConverterType(clazz.getSuperclass());
     }
 
-    private int getPriority(Converter<?> converter) {
+    private static int getPriority(Converter<?> converter) {
         int priority = 100;
         Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
         if (priorityAnnotation != null) {
@@ -183,6 +185,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public Config build() {
+        final List<ConfigSource> sources = new ArrayList<>(this.sources);
         if (addDiscoveredSources) {
             sources.addAll(discoverSources());
         }
@@ -190,36 +193,34 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             sources.addAll(getDefaultSources());
         }
 
+        final Map<Type, ConverterWithPriority> converters = new HashMap<>(this.converters);
+
         if (addDiscoveredConverters) {
             for(Converter converter : discoverConverters()) {
                 Type type = getConverterType(converter.getClass());
                 if (type == null) {
                     throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
                 }
-                addConverter(type, getPriority(converter), converter);
+                addConverter(type, getPriority(converter), converter, converters);
             }
         }
 
         Collections.sort(sources, new Comparator<ConfigSource>() {
             @Override
             public int compare(ConfigSource o1, ConfigSource o2) {
-                int v1 = o1.getOrdinal();
-                int v2 = o2.getOrdinal();
-                if ( v1 > v2 ) {
-                    return -11;
-                }
-                if ( v1 < v2 ) {
-                    return +1;
-                }
+                int res = Integer.signum(o2.getOrdinal() - o1.getOrdinal());
                 // if 2 config sources have the same ordinal,
                 // provide consistent order by sorting them
                 // according to their name.
-                if (o2.getName() != null && o1.getName() != null) {
-                    return o2.getName().compareTo(o1.getName());
-                }
-                return 0;
+                return res != 0 ? res : o2.getName().compareTo(o1.getName());
             }
         });
+        // wrap all
+        final Function<ConfigSource, ConfigSource> sourceWrappers = this.sourceWrappers;
+        final ListIterator<ConfigSource> it = sources.listIterator();
+        while (it.hasNext()) {
+            it.set(sourceWrappers.apply(it.next()));
+        }
 
         Map<Type, Converter> configConverters = new HashMap<>();
         converters.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));

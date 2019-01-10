@@ -20,6 +20,9 @@ import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -69,6 +72,12 @@ class Converters {
         }
     };
 
+    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty() ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty();
+
+    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty();
+
+    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty();
+
     public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
 
     static {
@@ -90,5 +99,9 @@ class Converters {
         ALL_CONVERTERS.put(Integer.TYPE, INTEGER_CONVERTER);
 
         ALL_CONVERTERS.put(Class.class, CLASS_CONVERTER);
+
+        ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
+        ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
+        ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
     }
 }
