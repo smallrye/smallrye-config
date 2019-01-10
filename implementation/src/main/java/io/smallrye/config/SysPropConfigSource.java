@@ -17,8 +17,11 @@
 package io.smallrye.config;
 
 import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -32,8 +35,8 @@ class SysPropConfigSource implements ConfigSource, Serializable {
 
     @Override
     public Map<String, String> getProperties() {
-        Map<String, String> map = new HashMap(System.getProperties());
-        return map;
+        Properties properties = AccessController.doPrivileged((PrivilegedAction<Properties>) System::getProperties);
+        return (Map<String, String>) new HashMap(properties);
     }
 
     @Override
@@ -43,7 +46,7 @@ class SysPropConfigSource implements ConfigSource, Serializable {
 
     @Override
     public String getValue(String s) {
-        return System.getProperty(s);
+        return AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(s));
     }
 
     @Override

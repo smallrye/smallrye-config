@@ -17,6 +17,8 @@
 package io.smallrye.config;
 
 import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 
@@ -32,7 +34,8 @@ public class EnvConfigSource implements ConfigSource, Serializable {
 
     @Override
     public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(System.getenv());
+        Map<String, String> env = AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv);
+        return Collections.unmodifiableMap(env);
     }
 
     @Override
@@ -47,21 +50,21 @@ public class EnvConfigSource implements ConfigSource, Serializable {
         }
 
         // exact match
-        String value = System.getenv(name);
+        String value = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(name));
         if (value != null) {
             return value;
         }
 
         // replace non-alphanumeric characters by underscores
-        name = name.replaceAll("[^a-zA-Z0-9_]", "_");
+        String sanitizedName = name.replaceAll("[^a-zA-Z0-9_]", "_");
 
-        value = System.getenv(name);
+        value = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(sanitizedName));
         if (value != null) {
             return value;
         }
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
-        return System.getenv(name.toUpperCase());
+        return AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(sanitizedName.toUpperCase()));
     }
 
     @Override
