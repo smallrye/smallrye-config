@@ -67,7 +67,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
         synchronized (this) {
-            configsForClassLoader.put(classLoader, config);
+            configsForClassLoader.put(classLoader != null ? classLoader : getContextClassLoader(), config);
         }
     }
 
