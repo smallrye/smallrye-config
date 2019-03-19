@@ -27,6 +27,27 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 
 /**
+ * Read configuration from a file directory.
+ *
+ * Each file in the directory corresponds to a property where the file name is the property key
+ * and the file textual content is the property value.
+ *
+ * For example, if a directory structure looks like:
+ *
+ * <pre><code>
+ * foo/
+ * ├── num.max
+ * └── num.size
+ * </code></pre>
+ *
+ * <code>new DirConfigSource("foo")</code> will provide 2 properties:
+ * <ul>
+ *     <li><code>num.max</code></li>
+ *     <li><code>num.size</code></li>
+ * </ul>
+ *
+ * Nested directories are not supported.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class DirConfigSource implements ConfigSource {
