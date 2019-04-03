@@ -18,6 +18,8 @@ package io.smallrye.config;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
@@ -78,6 +80,14 @@ class Converters {
 
     static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty();
 
+    static final Converter<InetAddress> INET_ADDRESS_CONVERTER = (Converter<InetAddress> & Serializable) value -> {
+        try {
+            return value != null && !value.isEmpty() ? InetAddress.getByName(value) : null;
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(e);
+        }
+    };
+
     public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
 
     static {
@@ -99,6 +109,7 @@ class Converters {
         ALL_CONVERTERS.put(Integer.TYPE, INTEGER_CONVERTER);
 
         ALL_CONVERTERS.put(Class.class, CLASS_CONVERTER);
+        ALL_CONVERTERS.put(InetAddress.class, INET_ADDRESS_CONVERTER);
 
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
