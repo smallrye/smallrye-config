@@ -27,12 +27,17 @@ public class StringUtil {
     private static final Pattern DELIMITER = Pattern.compile("(?<!\\\\),+");
     private static final String[] NO_STRINGS = new String[0];
     private static final Pattern ESCAPED_COMMA = Pattern.compile("\\\\,");
+    private static final Pattern LEADING_COMMAS = Pattern.compile("^,+");
 
     public static String[] split(String text) {
         if (text == null || text.isEmpty()) {
             return NO_STRINGS;
         }
+        text = LEADING_COMMAS.matcher(text).replaceAll("");
         String[] split = DELIMITER.split(text);
+        if (split.length == 0) {
+            return NO_STRINGS;
+        }
         for (int i = 0 ;i < split.length ; i++) {
             split[i] = ESCAPED_COMMA.matcher(split[i]).replaceAll(",");
         }
