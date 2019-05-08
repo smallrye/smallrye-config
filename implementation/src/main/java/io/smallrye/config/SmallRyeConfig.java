@@ -44,7 +44,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class SmallRyeConfig implements Config, Serializable {
 
     private final List<ConfigSource> configSources;
-    private Map<Type, Converter<?>> converters;
+    private final Map<Type, Converter<?>> converters;
 
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
         this.configSources = configSources;
