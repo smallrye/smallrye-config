@@ -134,7 +134,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return null;
     }
 
-    protected <T> Converter<T> getConverter(Class<T> asType) {
+    public <T> Converter<T> getConverter(Class<T> asType) {
         @SuppressWarnings("unchecked")
         Converter<T> converter = (Converter<T>) converters.get(asType);
         if (converter == null) {
