@@ -35,7 +35,7 @@ public class StringUtil {
         }
         text = LEADING_COMMAS.matcher(text).replaceAll("");
         String[] split = DELIMITER.split(text);
-        if (split.length == 0) {
+        if (split.length == 0 || split.length == 1 && split[0].isEmpty()) {
             return NO_STRINGS;
         }
         for (int i = 0 ;i < split.length ; i++) {
