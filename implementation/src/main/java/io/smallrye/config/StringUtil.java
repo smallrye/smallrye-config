@@ -23,10 +23,11 @@ public class StringUtil {
 
     // delimiter is a comma that is not preceded by a \
     private static final String DELIMITER = "(?<!\\\\),";
+    private static final String[] NO_STRINGS = new String[0];
 
     public static String[] split(String text) {
         if (text == null) {
-            return new String[0];
+            return NO_STRINGS;
         }
         String[] split = text.split(DELIMITER);
         for (int i = 0 ;i < split.length ; i++) {
