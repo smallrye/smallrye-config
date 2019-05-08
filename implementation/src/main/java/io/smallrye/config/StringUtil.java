@@ -22,7 +22,7 @@ package io.smallrye.config;
 public class StringUtil {
 
     // delimiter is a comma that is not preceded by a \
-    private static final String DELIMITER = "(?<!\\\\),";
+    private static final String DELIMITER = "(?<!\\\\),+";
     private static final String[] NO_STRINGS = new String[0];
 
     public static String[] split(String text) {
