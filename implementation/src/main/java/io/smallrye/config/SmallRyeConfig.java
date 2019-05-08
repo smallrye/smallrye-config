@@ -44,9 +44,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class SmallRyeConfig implements Config, Serializable {
 
     private final List<ConfigSource> configSources;
-    private Map<Type, Converter> converters;
+    private Map<Type, Converter<?>> converters;
 
-    protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter> converters) {
+    protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
         this.configSources = configSources;
         this.converters = new HashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
@@ -121,11 +121,9 @@ public class SmallRyeConfig implements Config, Serializable {
             if (isArray) {
                 String[] split = StringUtil.split(value);
                 Class<?> componentType = asType.getComponentType();
-                T array =  (T)newInstance(componentType, split.length);
-                Converter<T> converter = getConverter(asType);
+                T array = asType.cast(newInstance(componentType, split.length));
                 for (int i = 0 ; i < split.length ; i++) {
-                    T s = converter.convert(split[i]);
-                    Array.set(array, i, s);
+                    Array.set(array, i, convert(split[i], componentType));
                 }
                 return array;
             } else {
@@ -136,22 +134,19 @@ public class SmallRyeConfig implements Config, Serializable {
         return null;
     }
 
-    protected <T> Converter getConverter(Class<T> asType) {
-        if (asType.isArray()) {
-            return getConverter(asType.getComponentType());
-        } else {
-            Converter converter = converters.get(asType);
-            if (converter == null) {
-                // look for implicit converters
-                synchronized (converters) {
-                    converter = ImplicitConverters.getConverter(asType);
-                    converters.putIfAbsent(asType, converter);
-                }
+    protected <T> Converter<T> getConverter(Class<T> asType) {
+        @SuppressWarnings("unchecked")
+        Converter<T> converter = (Converter<T>) converters.get(asType);
+        if (converter == null) {
+            // look for implicit converters
+            synchronized (converters) {
+                converter = ImplicitConverters.getConverter(asType);
+                converters.putIfAbsent(asType, converter);
             }
-            if (converter == null) {
-                throw new IllegalArgumentException("No Converter registered for class " + asType);
-            }
-            return converter;
         }
+        if (converter == null) {
+            throw new IllegalArgumentException("No Converter registered for class " + asType);
+        }
+        return converter;
     }
 }

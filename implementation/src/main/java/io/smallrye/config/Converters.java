@@ -88,7 +88,7 @@ class Converters {
         }
     };
 
-    public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
+    public static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
         ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
