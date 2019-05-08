@@ -16,20 +16,22 @@
 
 package io.smallrye.config;
 
+import java.util.regex.Pattern;
+
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class StringUtil {
 
     // delimiter is a comma that is not preceded by a \
-    private static final String DELIMITER = "(?<!\\\\),+";
+    private static final Pattern DELIMITER = Pattern.compile("(?<!\\\\),+");
     private static final String[] NO_STRINGS = new String[0];
 
     public static String[] split(String text) {
         if (text == null || text.isEmpty()) {
             return NO_STRINGS;
         }
-        String[] split = text.split(DELIMITER);
+        String[] split = DELIMITER.split(text);
         for (int i = 0 ;i < split.length ; i++) {
             split[i] = split[i].replace("\\,", ",");
         }
