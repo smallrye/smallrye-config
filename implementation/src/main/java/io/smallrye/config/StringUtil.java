@@ -16,6 +16,7 @@
 
 package io.smallrye.config;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -38,8 +39,15 @@ public class StringUtil {
         if (split.length == 0 || split.length == 1 && split[0].isEmpty()) {
             return NO_STRINGS;
         }
-        for (int i = 0 ;i < split.length ; i++) {
-            split[i] = ESCAPED_COMMA.matcher(split[i]).replaceAll(",");
+        final Matcher ecMatcher = ESCAPED_COMMA.matcher(split[0]);
+        if (ecMatcher.find()) {
+            split[0] = ecMatcher.replaceAll(",");
+        }
+        for (int i = 1; i < split.length; i++) {
+            ecMatcher.reset(split[i]);
+            if (ecMatcher.find()) {
+                split[i] = ecMatcher.replaceAll(",");
+            }
         }
         return split;
     }
