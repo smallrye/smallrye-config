@@ -15,9 +15,8 @@
  */
 package io.smallrye.config;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,92 +32,174 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 class ImplicitConverters {
 
-    static Converter getConverter(Class<?> clazz) {
-        for (Converter converter : new Converter[] {
-                // implicit converters required by the specification
-                getConverterFromStaticMethod(clazz, "of", String.class),
-                getConverterFromStaticMethod(clazz, "valueOf", String.class),
-                getConverterFromConstructor(clazz, String.class),
-                getConverterFromStaticMethod(clazz, "parse", CharSequence.class),
-
-                // additional implicit converters
-                getConverterFromConstructor(clazz, CharSequence.class),
-                getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class),
-                getConverterFromStaticMethod(clazz, "parse", String.class),
-        }) {
-            if (converter != null) {
-                return converter;
+    static <T> Converter<T> getConverter(Class<T> clazz) {
+        // implicit converters required by the specification
+        Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
+        if (converter == null) {
+            converter = getConverterFromStaticMethod(clazz, "valueOf", String.class);
+            if (converter == null) {
+                converter = getConverterFromConstructor(clazz, String.class);
+                if (converter == null) {
+                    converter = getConverterFromStaticMethod(clazz, "parse", CharSequence.class);
+                    if (converter == null) {
+                        // additional implicit converters
+                        converter = getConverterFromConstructor(clazz, CharSequence.class);
+                        if (converter == null) {
+                            converter = getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class);
+                            if (converter == null) {
+                                converter = getConverterFromStaticMethod(clazz, "parse", String.class);
+                            }
+                        }
+                    }
+                }
             }
         }
-        return null;
+        return converter;
     }
 
-    private static Converter getConverterFromConstructor(Class<?> clazz, Class<?> paramType) {
+    private static <T> Converter<T> getConverterFromConstructor(Class<T> clazz, Class<? super String> paramType) {
         try {
-            final Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(paramType);
+            final Constructor<T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
             if (!declaredConstructor.isAccessible()) {
                 declaredConstructor.setAccessible(true);
             }
-            return value -> {
-                try {
-                    return declaredConstructor.newInstance(value);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException(e);
-                }
-            };
+            return new ConstructorConverter<>(declaredConstructor);
         } catch (NoSuchMethodException e) {
         }
         return null;
     }
 
-    private static Converter getConverterFromStaticMethod(Class<?> clazz, String methodName, Class<?> paramType) {
+    private static <T> Converter<T> getConverterFromStaticMethod(Class<T> clazz, String methodName, Class<? super String> paramType) {
         try {
             final Method method = clazz.getMethod(methodName, paramType);
+            if (clazz != method.getReturnType()) {
+                // doesn't meet requirements of the spec
+                return null;
+            }
             if (!method.isAccessible()) {
                 method.setAccessible(true);
             }
             if (Modifier.isStatic(method.getModifiers())) {
-                return new StaticMethodConverter(method);
+                return new StaticMethodConverter<T>(clazz, method);
             }
         } catch (NoSuchMethodException e) {
         }
         return null;
     }
 
-    private static class StaticMethodConverter<T> implements Converter<T>, Serializable {
+    static class StaticMethodConverter<T> implements Converter<T>, Serializable {
 
-        StaticMethodConverter(Method method) {
+        private static final long serialVersionUID = 3350265927359848883L;
+
+        private final Class<T> clazz;
+        private final Method method;
+
+        StaticMethodConverter(Class<T> clazz, Method method) {
+            assert clazz == method.getReturnType();
+            this.clazz = clazz;
             this.method = method;
         }
 
         @Override
         public T convert(String value) {
             try {
-                return (T) this.method.invoke(null, value);
+                return clazz.cast(method.invoke(null, value));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new IllegalArgumentException(e);
             }
         }
 
-        private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
-            String clsName = in.readUTF();
-            String methodName = in.readUTF();
-            String paramTypeName = in.readUTF();
-            Class paramType = Class.forName(paramTypeName);
-            Class  cls = Class.forName(clsName);
+        Object writeReplace() {
+            return new Serialized(method.getDeclaringClass(), method.getName(), method.getParameterTypes()[0]);
+        }
+
+        static final class Serialized implements Serializable {
+            private static final long serialVersionUID = - 6334004040897615452L;
+
+            private final Class<?> c;
+            private final String m;
+            private final Class<?> p;
+
+            Serialized(final Class<?> c, final String m, final Class<?> p) {
+                this.c = c;
+                this.m = m;
+                this.p = p;
+            }
+
+            Object readResolve() throws ObjectStreamException {
+                if (! p.isAssignableFrom(String.class)) {
+                    throw new InvalidObjectException("Invalid parameter type");
+                }
+                final Method method;
+                try {
+                    method = c.getMethod(m, p);
+                } catch (NoSuchMethodException e) {
+                    throw new InvalidObjectException("No matching method found");
+                }
+                if (c != method.getReturnType()) {
+                    // doesn't meet requirements of the spec
+                    throw new InvalidObjectException("Deserialized method has invalid return type");
+                }
+                if (! method.isAccessible()) {
+                    throw new InvalidObjectException("Deserialized method is not accessible");
+                }
+                if (! Modifier.isStatic(method.getModifiers())) {
+                    throw new InvalidObjectException("Non static method " + method);
+                }
+                return new StaticMethodConverter<>(method.getReturnType(), method);
+            }
+        }
+    }
+
+    static class ConstructorConverter<T> implements Converter<T>, Serializable {
+
+        private static final long serialVersionUID = 3350265927359848883L;
+
+        private final Constructor<T> ctor;
+
+        public ConstructorConverter(final Constructor<T> ctor) {
+            this.ctor = ctor;
+        }
+
+        @Override
+        public T convert(String value) {
             try {
-                this.method = cls.getMethod(methodName, paramType);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
+                return ctor.newInstance(value);
+            } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                throw new IllegalArgumentException(e);
             }
         }
 
-        private void writeObject(ObjectOutputStream out) throws IOException {
-            out.writeUTF( this.method.getDeclaringClass().getName() );
-            out.writeUTF( this.method.getName() );
-            out.writeUTF( this.method.getParameters()[0].getType().getName());
+        Object writeReplace() {
+            return new Serialized(ctor.getDeclaringClass(), ctor.getParameterTypes()[0]);
         }
 
-        transient private Method method;
+        static final class Serialized implements Serializable {
+            private static final long serialVersionUID = - 2903564775826815453L;
+
+            private final Class<?> c;
+            private final Class<?> p;
+
+            Serialized(final Class<?> c, final Class<?> p) {
+                this.c = c;
+                this.p = p;
+            }
+
+            Object readResolve() throws ObjectStreamException {
+                if (! p.isAssignableFrom(String.class)) {
+                    throw new InvalidObjectException("Invalid parameter type");
+                }
+                final Constructor<?> ctor;
+                try {
+                    ctor = c.getConstructor(p);
+                } catch (NoSuchMethodException e) {
+                    throw new InvalidObjectException("No matching constructor found");
+                }
+                if (! ctor.isAccessible()) {
+                    throw new InvalidObjectException("Deserialized constructor is not accessible");
+                }
+                return new ConstructorConverter<>(ctor);
+            }
+        }
     }
 }

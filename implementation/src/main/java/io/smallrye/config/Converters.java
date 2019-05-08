@@ -16,6 +16,8 @@
 
 package io.smallrye.config;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
@@ -34,10 +36,10 @@ import org.eclipse.microprofile.config.spi.Converter;
 class Converters {
 
     @SuppressWarnings("unchecked")
-    static final Converter<String> STRING_CONVERTER = (Converter & Serializable) value -> value;
+    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, (Converter & Serializable) value -> value);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Boolean> BOOLEAN_CONVERTER = (Converter & Serializable) value -> {
+    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, (Converter & Serializable) value -> {
         if (value != null) {
             return "TRUE".equalsIgnoreCase(value)
                     || "1".equalsIgnoreCase(value)
@@ -51,44 +53,44 @@ class Converters {
                     || "OUI".equalsIgnoreCase(value);
         }
         return null;
-    };
+    });
 
     @SuppressWarnings("unchecked")
-    static final Converter<Double> DOUBLE_CONVERTER = (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null;
+    static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2, (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Float> FLOAT_CONVERTER = (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null;
+    static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3, (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Long> LONG_CONVERTER = (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null;
+    static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4, (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Integer> INTEGER_CONVERTER = (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null;
+    static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5, (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Class<?>> CLASS_CONVERTER = (Converter & Serializable) value -> {
+    static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, (Converter & Serializable) value -> {
         try {
             return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
-    };
+    });
 
-    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty() ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty();
+    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7, (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty() ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty());
 
-    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty();
+    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8, (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty());
 
-    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty();
+    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9, (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty());
 
-    static final Converter<InetAddress> INET_ADDRESS_CONVERTER = (Converter<InetAddress> & Serializable) value -> {
+    static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10, (Converter<InetAddress> & Serializable) value -> {
         try {
             return value != null && !value.isEmpty() ? InetAddress.getByName(value) : null;
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException(e);
         }
-    };
+    });
 
-    public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
+    public static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
         ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
@@ -114,5 +116,54 @@ class Converters {
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
+    }
+
+    static final class BuiltInConverter<T> implements Converter<T>, Serializable {
+        private final int id;
+        private final Converter<T> function;
+
+        static <T> BuiltInConverter<T> of(int id, Converter<T> function) {
+            return new BuiltInConverter<>(id, function);
+        }
+
+        private BuiltInConverter(final int id, final Converter<T> function) {
+            this.id = id;
+            this.function = function;
+        }
+
+        public T convert(final String value) {
+            return function.convert(value);
+        }
+
+        Object writeReplace() {
+            return new Ser(id);
+        }
+    }
+
+    static final class Ser implements Serializable {
+        private static final long serialVersionUID = 5646753664957303950L;
+
+        private final short id;
+
+        Ser(final int id) {
+            this.id = (short) id;
+        }
+
+        Object readResolve() throws ObjectStreamException {
+            switch (id) {
+                case 0: return STRING_CONVERTER;
+                case 1: return BOOLEAN_CONVERTER;
+                case 2: return DOUBLE_CONVERTER;
+                case 3: return FLOAT_CONVERTER;
+                case 4: return LONG_CONVERTER;
+                case 5: return INTEGER_CONVERTER;
+                case 6: return CLASS_CONVERTER;
+                case 7: return INET_ADDRESS_CONVERTER;
+                case 8: return OPTIONAL_INT_CONVERTER;
+                case 9: return OPTIONAL_LONG_CONVERTER;
+                case 10: return OPTIONAL_DOUBLE_CONVERTER;
+                default: throw new InvalidObjectException("Unknown converter ID");
+            }
+        }
     }
 }

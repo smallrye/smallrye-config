@@ -222,12 +222,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             it.set(sourceWrappers.apply(it.next()));
         }
 
-        Map<Type, Converter> configConverters = new HashMap<>();
+        Map<Type, Converter<?>> configConverters = new HashMap<>();
         converters.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));
         return newConfig(sources, configConverters);
     }
 
-    protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter> configConverters) {
+    protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters) {
         ServiceLoader<ConfigFactory> factoryLoader = ServiceLoader.load(ConfigFactory.class, this.classLoader);
         Iterator<ConfigFactory> iter = factoryLoader.iterator();
         if ( !iter.hasNext() ) {
