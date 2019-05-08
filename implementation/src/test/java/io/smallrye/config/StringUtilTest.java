@@ -34,4 +34,14 @@ public class StringUtilTest {
         assertEquals("medium:chicken", split[1]);
         assertEquals("small:pepperoni", split[2]);
     }
+
+    @Test
+    public void testTrailingSegmentsIgnored() {
+        String text = "foo,bar,baz,,,,,";
+        final String[] split = StringUtil.split(text);
+        assertEquals(3, split.length);
+        assertEquals("foo", split[0]);
+        assertEquals("bar", split[1]);
+        assertEquals("baz", split[2]);
+    }
 }
