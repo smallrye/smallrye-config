@@ -33,29 +33,34 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 class ImplicitConverters {
 
-    static Converter getConverter(Class<?> clazz) {
-        for (Converter converter : new Converter[] {
-                // implicit converters required by the specification
-                getConverterFromStaticMethod(clazz, "of", String.class),
-                getConverterFromStaticMethod(clazz, "valueOf", String.class),
-                getConverterFromConstructor(clazz, String.class),
-                getConverterFromStaticMethod(clazz, "parse", CharSequence.class),
-
-                // additional implicit converters
-                getConverterFromConstructor(clazz, CharSequence.class),
-                getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class),
-                getConverterFromStaticMethod(clazz, "parse", String.class),
-        }) {
-            if (converter != null) {
-                return converter;
+    static <T> Converter<T> getConverter(Class<T> clazz) {
+        // implicit converters required by the specification
+        Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
+        if (converter == null) {
+            converter = getConverterFromStaticMethod(clazz, "valueOf", String.class);
+            if (converter == null) {
+                converter = getConverterFromConstructor(clazz, String.class);
+                if (converter == null) {
+                    converter = getConverterFromStaticMethod(clazz, "parse", CharSequence.class);
+                    if (converter == null) {
+                        // additional implicit converters
+                        converter = getConverterFromConstructor(clazz, CharSequence.class);
+                        if (converter == null) {
+                            converter = getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class);
+                            if (converter == null) {
+                                converter = getConverterFromStaticMethod(clazz, "parse", String.class);
+                            }
+                        }
+                    }
+                }
             }
         }
-        return null;
+        return converter;
     }
 
-    private static Converter getConverterFromConstructor(Class<?> clazz, Class<?> paramType) {
+    private static <T> Converter<T> getConverterFromConstructor(Class<T> clazz, Class<? super String> paramType) {
         try {
-            final Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(paramType);
+            final Constructor<T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
             if (!declaredConstructor.isAccessible()) {
                 declaredConstructor.setAccessible(true);
             }
@@ -71,14 +76,14 @@ class ImplicitConverters {
         return null;
     }
 
-    private static Converter getConverterFromStaticMethod(Class<?> clazz, String methodName, Class<?> paramType) {
+    private static <T> Converter<T> getConverterFromStaticMethod(Class<T> clazz, String methodName, Class<? super String> paramType) {
         try {
             final Method method = clazz.getMethod(methodName, paramType);
             if (!method.isAccessible()) {
                 method.setAccessible(true);
             }
             if (Modifier.isStatic(method.getModifiers())) {
-                return new StaticMethodConverter(method);
+                return new StaticMethodConverter<T>(method);
             }
         } catch (NoSuchMethodException e) {
         }
