@@ -71,4 +71,11 @@ public class StringUtilTest {
         final String[] split = StringUtil.split(text);
         assertEquals(0, split.length);
     }
+
+    @Test
+    public void testTwoEmptySegments() {
+        String text = ",";
+        final String[] split = StringUtil.split(text);
+        assertEquals(0, split.length);
+    }
 }
