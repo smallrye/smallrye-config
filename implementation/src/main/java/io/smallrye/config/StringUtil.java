@@ -26,6 +26,7 @@ public class StringUtil {
     // delimiter is a comma that is not preceded by a \
     private static final Pattern DELIMITER = Pattern.compile("(?<!\\\\),+");
     private static final String[] NO_STRINGS = new String[0];
+    private static final Pattern ESCAPED_COMMA = Pattern.compile("\\\\,");
 
     public static String[] split(String text) {
         if (text == null || text.isEmpty()) {
@@ -33,7 +34,7 @@ public class StringUtil {
         }
         String[] split = DELIMITER.split(text);
         for (int i = 0 ;i < split.length ; i++) {
-            split[i] = split[i].replace("\\,", ",");
+            split[i] = ESCAPED_COMMA.matcher(split[i]).replaceAll(",");
         }
         return split;
     }
