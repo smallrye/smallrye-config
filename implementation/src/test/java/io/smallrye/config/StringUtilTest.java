@@ -64,4 +64,11 @@ public class StringUtilTest {
         assertEquals("bar", split[1]);
         assertEquals("baz", split[2]);
     }
+
+    @Test
+    public void testAllEmptySegments() {
+        String text = ",,,,,";
+        final String[] split = StringUtil.split(text);
+        assertEquals(0, split.length);
+    }
 }
