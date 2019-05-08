@@ -26,7 +26,7 @@ public class StringUtil {
     private static final String[] NO_STRINGS = new String[0];
 
     public static String[] split(String text) {
-        if (text == null) {
+        if (text == null || text.isEmpty()) {
             return NO_STRINGS;
         }
         String[] split = text.split(DELIMITER);
