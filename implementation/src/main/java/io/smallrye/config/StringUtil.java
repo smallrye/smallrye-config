@@ -16,6 +16,7 @@
 
 package io.smallrye.config;
 
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,31 +25,63 @@ import java.util.regex.Pattern;
  */
 public class StringUtil {
 
-    // delimiter is a comma that is not preceded by a \
-    private static final Pattern DELIMITER = Pattern.compile("(?<!\\\\),+");
     private static final String[] NO_STRINGS = new String[0];
-    private static final Pattern ESCAPED_COMMA = Pattern.compile("\\\\,");
-    private static final Pattern LEADING_COMMAS = Pattern.compile("^,+");
+
+    private static final Pattern ITEM_PATTERN = Pattern.compile("(,+)|([^\\\\,]+)|\\\\(.)");
 
     public static String[] split(String text) {
         if (text == null || text.isEmpty()) {
             return NO_STRINGS;
         }
-        text = LEADING_COMMAS.matcher(text).replaceAll("");
-        String[] split = DELIMITER.split(text);
-        if (split.length == 0 || split.length == 1 && split[0].isEmpty()) {
-            return NO_STRINGS;
-        }
-        final Matcher ecMatcher = ESCAPED_COMMA.matcher(split[0]);
-        if (ecMatcher.find()) {
-            split[0] = ecMatcher.replaceAll(",");
-        }
-        for (int i = 1; i < split.length; i++) {
-            ecMatcher.reset(split[i]);
-            if (ecMatcher.find()) {
-                split[i] = ecMatcher.replaceAll(",");
+        final Matcher matcher = ITEM_PATTERN.matcher(text);
+        String item = null;
+        StringBuilder b = null;
+        ArrayList<String> list = new ArrayList<>(4);
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                // delimiter
+                if (item != null) {
+                    list.add(item);
+                    item = null;
+                }
+            } else if (matcher.group(2) != null) {
+                // regular text blob
+                assert item == null : "Regular expression matching malfunctioned";
+                item = matcher.group(2);
+            } else if (matcher.group(3) != null) {
+                // escaped text
+                if (b == null) {
+                    b = new StringBuilder();
+                }
+                if (item != null) {
+                    b.append(item);
+                    item = null;
+                }
+                b.append(matcher.group(3));
+                while (matcher.find()) {
+                    if (matcher.group(1) != null) {
+                        // delimiter
+                        break;
+                    } else if (matcher.group(2) != null) {
+                        // regular text blob
+                        b.append(matcher.group(2));
+                    } else if (matcher.group(3) != null) {
+                        b.append(matcher.group(3));
+                    } else {
+                        // unreachable
+                        throw new IllegalStateException();
+                    }
+                }
+                list.add(b.toString());
+                b.setLength(0);
+            } else {
+                // unreachable
+                throw new IllegalStateException();
             }
         }
-        return split;
+        if (item != null) {
+            list.add(item);
+        }
+        return list.toArray(NO_STRINGS);
     }
 }
