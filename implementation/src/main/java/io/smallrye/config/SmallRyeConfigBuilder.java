@@ -16,7 +16,6 @@
 
 package io.smallrye.config;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,7 +122,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     @Override
     public ConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter: converters) {
-            Type type = getConverterType(converter.getClass());
+            Type type = Converters.getConverterType(converter.getClass());
             if (type == null) {
                 throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
             }
@@ -153,27 +152,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private Type getConverterType(Class clazz) {
-        if (clazz.equals(Object.class)) {
-            return null;
-        }
-
-        for (Type type : clazz.getGenericInterfaces()) {
-            if (type instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType) type;
-                if (pt.getRawType().equals(Converter.class)) {
-                    Type[] typeArguments = pt.getActualTypeArguments();
-                    if (typeArguments.length != 1) {
-                        throw new IllegalStateException("Converter " + clazz + " must be parameterized with a single type");
-                    }
-                    return typeArguments[0];
-                }
-            }
-        }
-
-        return getConverterType(clazz.getSuperclass());
-    }
-
     private static int getPriority(Converter<?> converter) {
         int priority = 100;
         Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
@@ -197,7 +175,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         if (addDiscoveredConverters) {
             for(Converter converter : discoverConverters()) {
-                Type type = getConverterType(converter.getClass());
+                Type type = Converters.getConverterType(converter.getClass());
                 if (type == null) {
                     throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
                 }

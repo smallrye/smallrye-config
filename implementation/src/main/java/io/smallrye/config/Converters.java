@@ -19,6 +19,7 @@ package io.smallrye.config;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,9 +32,12 @@ import java.util.OptionalLong;
 import org.eclipse.microprofile.config.spi.Converter;
 
 /**
+ * General converter utilities and constants.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-class Converters {
+public final class Converters {
+    private Converters() {}
 
     @SuppressWarnings("unchecked")
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, (Converter & Serializable) value -> value);
@@ -90,7 +94,7 @@ class Converters {
         }
     });
 
-    public static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
+    static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
         ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
@@ -116,6 +120,35 @@ class Converters {
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
+    }
+
+    /**
+     * Get the type of the converter specified by {@code clazz}.  If the given class is not a valid
+     * converter, then {@code null} is returned.
+     *
+     * @param clazz the converter class (must not be {@code null})
+     * @return the converter target type, or {@code null} if the class does not represent a valid configuration
+     * @throws IllegalStateException if the given converter class is not properly parameterized
+     */
+    public static Type getConverterType(Class<?> clazz) {
+        if (clazz.equals(Object.class)) {
+            return null;
+        }
+
+        for (Type type : clazz.getGenericInterfaces()) {
+            if (type instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType) type;
+                if (pt.getRawType().equals(Converter.class)) {
+                    Type[] typeArguments = pt.getActualTypeArguments();
+                    if (typeArguments.length != 1) {
+                        throw new IllegalStateException("Converter " + clazz + " must be parameterized with a single type");
+                    }
+                    return typeArguments[0];
+                }
+            }
+        }
+
+        return getConverterType(clazz.getSuperclass());
     }
 
     static final class BuiltInConverter<T> implements Converter<T>, Serializable {
