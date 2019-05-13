@@ -57,6 +57,10 @@ public class SmallRyeConfig implements Config, Serializable {
         for (ConfigSource configSource : configSources) {
             String value = configSource.getValue(name);
             if (value != null) {
+                if (value.isEmpty()) {
+                    // empty collection
+                    break;
+                }
                 String[] itemStrings = StringUtil.split(value);
                 final C collection = collectionFactory.apply(itemStrings.length);
                 for (String itemString : itemStrings) {
@@ -65,6 +69,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 return collection;
             }
         }
+        // value not found
         return collectionFactory.apply(0);
     }
 
@@ -73,6 +78,10 @@ public class SmallRyeConfig implements Config, Serializable {
         for (ConfigSource configSource : configSources) {
             String value = configSource.getValue(name);
             if (value != null) {
+                if (value.isEmpty()) {
+                    // treat empty value as non-present
+                    break;
+                }
                 return convert(value, aClass);
             }
         }
@@ -93,11 +102,12 @@ public class SmallRyeConfig implements Config, Serializable {
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
         for (ConfigSource configSource : configSources) {
             String value = configSource.getValue(name);
-            // treat empty value as null
-            if (value != null && value.length() > 0) {
-                return Optional.of(convert(value, aClass));
+            if (value != null) {
+                // treat empty value as non-present
+                return value.isEmpty() ? Optional.empty() : Optional.of(convert(value, aClass));
             }
         }
+        // value not found
         return Optional.empty();
     }
 
