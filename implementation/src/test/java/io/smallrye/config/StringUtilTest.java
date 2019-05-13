@@ -83,4 +83,14 @@ public class StringUtilTest {
     public void testEmptyString() {
         assertEquals(0, StringUtil.split("").length);
     }
+
+    @Test
+    public void testIffyEscapingSituations() {
+        String text = "foo\\\\,bar\\x,,,baz";
+        final String[] split = StringUtil.split(text);
+        assertEquals(3, split.length);
+        assertEquals("foo\\", split[0]);
+        assertEquals("barx", split[1]);
+        assertEquals("baz", split[2]);
+    }
 }
