@@ -21,7 +21,10 @@ import static java.lang.reflect.Array.newInstance;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +35,9 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
+import java.util.function.UnaryOperator;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -43,18 +48,29 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 public class SmallRyeConfig implements Config, Serializable {
 
-    private final List<ConfigSource> configSources;
+    static final Comparator<ConfigSource> CONFIG_SOURCE_COMPARATOR = new Comparator<ConfigSource>() {
+        @Override
+        public int compare(ConfigSource o1, ConfigSource o2) {
+            int res = Integer.signum(o2.getOrdinal() - o1.getOrdinal());
+            // if 2 config sources have the same ordinal,
+            // provide consistent order by sorting them
+            // according to their name.
+            return res != 0 ? res : o2.getName().compareTo(o1.getName());
+        }
+    };
+
+    private final AtomicReference<List<ConfigSource>> configSourcesRef;
     private final Map<Type, Converter<?>> converters;
 
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
-        this.configSources = configSources;
+        configSourcesRef = new AtomicReference<>(Collections.unmodifiableList(configSources));
         this.converters = new HashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
     }
 
     // no @Override
     public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : configSources) {
+        for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
                 if (value.isEmpty()) {
@@ -75,7 +91,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T getValue(String name, Class<T> aClass) {
-        for (ConfigSource configSource : configSources) {
+        for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
                 if (value.isEmpty()) {
@@ -100,7 +116,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
-        for (ConfigSource configSource : configSources) {
+        for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
                 // treat empty value as non-present
@@ -114,7 +130,7 @@ public class SmallRyeConfig implements Config, Serializable {
     @Override
     public Iterable<String> getPropertyNames() {
         Set<String> names = new HashSet<>();
-        for (ConfigSource configSource : configSources) {
+        for (ConfigSource configSource : getConfigSources()) {
             names.addAll(configSource.getProperties().keySet());
         }
         return names;
@@ -122,7 +138,26 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public Iterable<ConfigSource> getConfigSources() {
-        return configSources;
+        return configSourcesRef.get();
+    }
+
+    /**
+     * Add a configuration source to the configuration object.  The list of configuration sources is re-sorted
+     * to insert the new source into the correct position.  Configuration source wrappers configured with
+     * {@link SmallRyeConfigBuilder#withWrapper(UnaryOperator)} will not be applied.
+     *
+     * @param configSource the new config source (must not be {@code null})
+     */
+    public void addConfigSource(ConfigSource configSource) {
+        List<ConfigSource> oldVal, newVal;
+        int oldSize;
+        do {
+            oldVal = configSourcesRef.get();
+            oldSize = oldVal.size();
+            newVal = Arrays.asList(oldVal.toArray(new ConfigSource[oldSize + 1]));
+            newVal.set(oldSize, configSource);
+            newVal.sort(CONFIG_SOURCE_COMPARATOR);
+        } while (! configSourcesRef.compareAndSet(oldVal, Collections.unmodifiableList(newVal)));
     }
 
     public <T> T convert(String value, Class<T> asType) {
