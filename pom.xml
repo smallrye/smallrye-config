@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>3</version>
+    <version>4</version>
   </parent>
 
   <artifactId>smallrye-config-parent</artifactId>
@@ -33,8 +33,6 @@
 
   <properties>
     <version.eclipse.microprofile.config>1.3</version.eclipse.microprofile.config>
-    <version.org.jboss.weld.core.impl>2.3.5.Final</version.org.jboss.weld.core.impl>
-    <version.org.testng>6.14.3</version.org.testng>
   </properties>
 
   <scm>
@@ -72,7 +70,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>${version.org.testng}</version>
+        <version>${version.testng}</version>
         <scope>compile</scope>
         <exclusions>
           <exclusion>
