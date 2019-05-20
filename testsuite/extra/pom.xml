@@ -29,10 +29,6 @@
 
   <name>SmallRye: MicroProfile Config Test Suite - Extra</name>
 
-  <properties>
-    <maven.deploy.skip>true</maven.deploy.skip>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>io.smallrye</groupId>
