@@ -8,7 +8,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>release</artifactId>
+    <artifactId>smallrye-config-release-1.3</artifactId>
 
     <name>Empty Release Project to Avoid Maven Bug</name>
     <description>Empty Release Project to Avoid Maven Bug</description>
