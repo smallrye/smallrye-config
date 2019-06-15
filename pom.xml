@@ -49,7 +49,8 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
-    <module>config-sources</module>
+    <module>config-sources</module><!-- deprecated: moved to extensions -->
+    <module>extensions</module>
   </modules>
 
   <dependencyManagement>
