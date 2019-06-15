@@ -21,31 +21,28 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-sources</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-sources</artifactId>
+    <artifactId>smallrye-config-extensions-source-filebase</artifactId>
     
-    <packaging>pom</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Sources</name>
+    <packaging>jar</packaging>
+    <name>SmallRye: MicroProfile Config Extensions: Sources - Filebase</name>
     
-    <modules>
-        <module>base</module>
-        <module>filebase</module>
-    </modules>
+    <description>A config that provides default behavior for file based sources</description>
     
     <dependencies>
-        <!-- Lombok -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>smallrye-config-extensions-source-base</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <scope>provided</scope>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>smallrye-config-extensions-events</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
+    
 </project>
