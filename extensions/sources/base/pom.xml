@@ -21,30 +21,14 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-sources</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-sources</artifactId>
+    <artifactId>smallrye-config-extensions-source-base</artifactId>
     
-    <packaging>pom</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Sources</name>
+    <packaging>jar</packaging>
+    <name>SmallRye: MicroProfile Config Extensions: Sources - Base</name>
+    <description>A config that provides default config_ordinal override behavior</description>
     
-    <modules>
-        <module>base</module>
-    </modules>
-    
-    <dependencies>
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 </project>
