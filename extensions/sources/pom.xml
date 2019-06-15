@@ -33,6 +33,7 @@
     <modules>
         <module>base</module>
         <module>filebase</module>
+        <module>properties</module>
     </modules>
     
     <dependencies>
