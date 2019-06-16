@@ -25,14 +25,19 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>configsource-properties</artifactId>
+    <artifactId>configsource-yaml</artifactId>
     
     <packaging>jar</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Sources - Properties</name>
+    <name>SmallRye: MicroProfile Config Extensions: Sources - Yaml</name>
     
-    <description>A config that gets its values from a properties file(s) at a URL</description>
-
+    <description>A config that gets its values from a yaml file(s) at a URL</description>
+    
     <dependencies>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.24</version>            
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>configsource-filebase</artifactId>

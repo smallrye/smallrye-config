@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.smallrye.ext.config.source.properties;
+package io.smallrye.ext.config.source.yaml;
 
 import java.io.File;
 import java.util.List;
@@ -63,13 +63,13 @@ public class ListTest {
     public static WebArchive createDeployment() {
         final File[] thorntailMPConfigFiles = Maven.resolver().resolve("io.thorntail:microprofile-config:2.4.0.Final").withoutTransitivity().asFile();
         
-        return ShrinkWrap.create(WebArchive.class, "PropertiesConfigSourceTest.war")
-                .addPackage(PropertiesConfigSource.class.getPackage())
+        return ShrinkWrap.create(WebArchive.class, "YamlConfigSourceTest.war")
+                .addPackage(YamlConfigSource.class.getPackage())
                 .addAsLibraries(thorntailMPConfigFiles)
                 .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
-    
+
     @Test
     public void testStringList() {
         Assert.assertEquals("item1,item2,item3\\,stillItem3", stringList);

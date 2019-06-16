@@ -13,90 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.smallrye.ext.config.source.properties;
+package io.smallrye.ext.config.source.yaml;
 
 import java.io.File;
-import java.util.List;
-import java.util.Set;
+import java.util.NoSuchElementException;
 import javax.inject.Inject;
 import lombok.extern.java.Log;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.Config;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Testing some list behavior
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Log
 @RunWith(Arquillian.class)
-public class ListTest {
+public class DisabledWhenEnabledKeyIsFalseTest {
 
     @Inject
-    @ConfigProperty(name = "listTest", defaultValue = "")
-    String stringList; 
-    
-    @Inject
-    @ConfigProperty(name = "listTest", defaultValue = "")
-    List<String> listList;
-    
-    @Inject
-    @ConfigProperty(name = "listTest", defaultValue = "")
-    Set<String> setList;
-    
-    @Inject
-    @ConfigProperty(name = "listTest", defaultValue = "")
-    String[] arrayList; 
-    
-    @Inject
-    @ConfigProperty(name = "deepList.level1", defaultValue = "")
-    List<String> deepList;
-    
+    Config config;
+
     @Deployment
     public static WebArchive createDeployment() {
+        
         final File[] thorntailMPConfigFiles = Maven.resolver().resolve("io.thorntail:microprofile-config:2.4.0.Final").withoutTransitivity().asFile();
         
-        return ShrinkWrap.create(WebArchive.class, "PropertiesConfigSourceTest.war")
-                .addPackage(PropertiesConfigSource.class.getPackage())
+        return ShrinkWrap.create(WebArchive.class, "YamlConfigSourceTest.war")
+                .addPackage(YamlConfigSource.class.getPackage())
                 .addAsLibraries(thorntailMPConfigFiles)
                 .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
+                .addAsResource(DisabledWhenEnabledKeyIsFalseTest.class.getClassLoader().getResource("config-disabled.properties"), "META-INF/microprofile-config.properties")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
-    @Test
-    public void testStringList() {
-        Assert.assertEquals("item1,item2,item3\\,stillItem3", stringList);
+    @Test(expected = NoSuchElementException.class)
+    public void testPropertyFailsWhenExplicitlyDisabled() {
+        config.getValue("test.property", String.class);
     }
 
-    @Test
-    public void testListList() {
-        Assert.assertNotNull(listList);
-        Assert.assertEquals(3, listList.size());
-        
-    }
-    
-    @Test
-    public void testSetList() {
-        Assert.assertNotNull(setList);
-        Assert.assertEquals(3, setList.size());
-    }
-    
-    @Test
-    public void testArrayList() {
-        Assert.assertNotNull(arrayList);
-        Assert.assertEquals(3, arrayList.length);
-    }
-    
-    @Test
-    public void testDeepList(){
-        Assert.assertNotNull(deepList);
-        Assert.assertEquals(2, deepList.size());        
-    }
 }
