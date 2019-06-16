@@ -25,7 +25,7 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-source-filebase</artifactId>
+    <artifactId>configsource-filebase</artifactId>
     
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Sources - Filebase</name>
@@ -35,12 +35,12 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>smallrye-config-extensions-source-base</artifactId>
+            <artifactId>configsource-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>smallrye-config-extensions-events</artifactId>
+            <artifactId>config-events</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

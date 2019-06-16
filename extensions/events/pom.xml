@@ -25,7 +25,7 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-events</artifactId>
+    <artifactId>config-events</artifactId>
     
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Events</name>
