@@ -15,68 +15,62 @@
  */
 package io.smallrye.ext.config.source.properties;
 
-import io.smallrye.config.ConfigFactory;
-import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.config.inject.ConfigProducer;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-import javax.enterprise.inject.spi.Extension;
 import javax.inject.Inject;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
+ * Testing some list behavior
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Ignore
 @Log
 @RunWith(Arquillian.class)
 public class ListTest {
 
     @Inject
-    @ConfigProperty(name = "listTest")
+    @ConfigProperty(name = "listTest", defaultValue = "")
     String stringList; 
     
     @Inject
-    @ConfigProperty(name = "listTest")
+    @ConfigProperty(name = "listTest", defaultValue = "")
     List<String> listList;
     
     @Inject
-    @ConfigProperty(name = "listTest")
+    @ConfigProperty(name = "listTest", defaultValue = "")
     Set<String> setList;
     
     @Inject
-    @ConfigProperty(name = "listTest")
+    @ConfigProperty(name = "listTest", defaultValue = "")
     String[] arrayList; 
     
     @Inject
-    @ConfigProperty(name = "deepList.level1")
+    @ConfigProperty(name = "deepList.level1", defaultValue = "")
     List<String> deepList;
     
     @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, ConfigFactory.class.getPackage())
-                .addPackages(true, ConfigProducer.class.getPackage())
-                .addAsServiceProviderAndClasses(Extension.class, ConfigExtension.class)
-                .addAsServiceProviderAndClasses(ConfigSource.class, PropertiesConfigSource.class)
-                .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
-                .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"), "META-INF/microprofile-config.properties")
-                .addAsManifestResource("META-INF/beans.xml");
-
+    public static WebArchive createDeployment() {
+        final File[] thorntailMPConfigFiles = Maven.resolver().resolve("io.thorntail:microprofile-config:2.4.0.Final").withoutTransitivity().asFile();
         
+        return ShrinkWrap.create(WebArchive.class, "PropertiesConfigSourceTest.war")
+                .addPackage(PropertiesConfigSource.class.getPackage())
+                .addAsLibraries(thorntailMPConfigFiles)
+                .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
+                .addAsResource(ListTest.class.getClassLoader().getResource("list.properties"), "META-INF/microprofile-config.properties")
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
-
+    
     @Test
     public void testStringList() {
         Assert.assertEquals("item1,item2,item3\\,stillItem3", stringList);

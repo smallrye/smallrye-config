@@ -15,27 +15,22 @@
  */
 package io.smallrye.ext.config.source.properties;
 
-import io.smallrye.config.ConfigFactory;
-import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.config.inject.ConfigProducer;
 import java.io.File;
 import java.util.NoSuchElementException;
-import javax.enterprise.inject.spi.Extension;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Ignore;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:dpmoore@acm.org">Derek P. Moore</a>
  */
-@Ignore
 @RunWith(Arquillian.class)
 public class DisabledWhenEnabledKeyIsFalseTest {
 
@@ -43,16 +38,16 @@ public class DisabledWhenEnabledKeyIsFalseTest {
     Config config;
 
     @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, ConfigFactory.class.getPackage())
-                .addPackages(true, ConfigProducer.class.getPackage())
-                .addAsServiceProviderAndClasses(Extension.class, ConfigExtension.class)
-                .addAsServiceProviderAndClasses(ConfigSource.class, PropertiesConfigSource.class)
-                .addAsResource(DisabledWhenEnabledKeyIsFalseTest.class.getClassLoader().getResource("config-disabled.properties"), "META-INF/microprofile-config.properties")
+    public static WebArchive createDeployment() {
+        
+        final File[] thorntailMPConfigFiles = Maven.resolver().resolve("io.thorntail:microprofile-config:2.4.0.Final").withoutTransitivity().asFile();
+        
+        return ShrinkWrap.create(WebArchive.class, "PropertiesConfigSourceTest.war")
+                .addPackage(PropertiesConfigSource.class.getPackage())
+                .addAsLibraries(thorntailMPConfigFiles)
                 .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
-                .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"), "META-INF/microprofile-config.properties")
-                .addAsManifestResource("META-INF/beans.xml");
+                .addAsResource(DisabledWhenEnabledKeyIsFalseTest.class.getClassLoader().getResource("config-disabled.properties"), "META-INF/microprofile-config.properties")
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
     @Test(expected = NoSuchElementException.class)
