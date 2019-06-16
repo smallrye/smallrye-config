@@ -21,34 +21,33 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-sources</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>config-events</artifactId>
+    <artifactId>configsource-json</artifactId>
     
     <packaging>jar</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Events</name>
-    <description>A library to make it easy to add config events</description>
+    <name>SmallRye: MicroProfile Config Extensions: Sources - Json</name>
+    
+    <description>A config that gets its values from a json file(s) at a URL</description>
     
     <dependencies>
-        <!-- Lombok -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>configsource-filebase</artifactId>
+            <version>${project.version}</version>
         </dependency>
-        <!-- CDI -->
-         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- Annotations -->
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
             <scope>provided</scope>
+        </dependency>  
+        <!-- Test -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -35,6 +35,7 @@
         <module>filebase</module>
         <module>properties</module>
         <module>yaml</module>
+        <module>json</module>
     </modules>
     
     <dependencies>
