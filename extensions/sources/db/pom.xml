@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- ~  Copyright 2017 Red Hat, Inc.
+ ~  Copyright 2019 Red Hat, Inc.
  ~
  ~  Licensed under the Apache License, Version 2.0 (the "License");
  ~  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Sources - DB</name>
     
-    <description>A config that gets its values from a Database</description>
+    <description>A config source that gets its values from a Database</description>
     
     <properties>
         <junit.jupiter.version>5.3.2</junit.jupiter.version>
