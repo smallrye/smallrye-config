@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+    <test>
+        <property>a-string-value</property>
+    </test>
+    <deepList>
+        <level1>l1</level1>
+        <level1>l2</level1>
+    </deepList>
+    
+    <listTest>item1</listTest>
+    <listTest>item2</listTest>
+    <listTest>item3,stillItem3</listTest>
+    
+</root>

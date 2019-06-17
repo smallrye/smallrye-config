@@ -36,6 +36,7 @@
         <module>properties</module>
         <module>yaml</module>
         <module>json</module>
+        <module>xml</module>
     </modules>
     
     <dependencies>
