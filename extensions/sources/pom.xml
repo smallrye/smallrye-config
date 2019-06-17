@@ -39,6 +39,7 @@
         <module>xml</module>
         <module>memory</module>
         <module>etcd</module>
+        <module>db</module>
     </modules>
     
     <dependencies>

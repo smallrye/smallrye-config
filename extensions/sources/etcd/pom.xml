@@ -30,7 +30,7 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Sources - Etcd</name>
     
-    <description>A config that gets its values from a json file(s) at a URL</description>
+    <description>A config that gets its values from a Etcd server</description>
     
     <dependencies>
         <dependency>
