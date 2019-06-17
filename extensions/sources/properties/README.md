@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Properties Config Source
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-properties/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-properties)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configsource-properties.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configsource-properties)
 
 This source gets values from some properties file(s).
 
@@ -12,7 +7,7 @@ This source gets values from some properties file(s).
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
+        <groupId>io.smallrye.ext</groupId>
         <artifactId>configsource-properties</artifactId>
         <version>XXXXX</version>
         <scope>runtime</scope>

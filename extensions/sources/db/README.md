@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Database config source
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-db/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-db)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configsource-db.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configsource-db)
 
 An Eclipse MicroProfile config extension which uses a database as source.
 
@@ -15,7 +10,7 @@ The eclipse microprofile config framework is a simple yet powerful configuration
 ## Usage
 ```xml
         <dependency>
-            <groupId>org.microprofile-ext.config-ext</groupId>
+            <groupId>io.smallrye.ext</groupId>
             <artifactId>configsource-db</artifactId>
             <version>1.x</version>
         </dependency>

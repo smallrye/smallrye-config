@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Memory config source
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-memory/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-memory)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configsource-memory.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configsource-memory)
 
 This source gets and sets values in memory. Useful when you want to change config during runtime.
 
@@ -12,7 +7,7 @@ This source gets and sets values in memory. Useful when you want to change confi
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
+        <groupId>io.smallrye.ext</groupId>
         <artifactId>configsource-memory</artifactId>
         <version>XXXX</version>
     </dependency>
@@ -25,11 +20,11 @@ You can do this by using the REST API to change the config values:
 
 ```
 
-    GET /microprofile-ext/memoryconfigsource/sources - list all config sources
-    GET /microprofile-ext/memoryconfigsource/all - get all configurations
-    GET /microprofile-ext/memoryconfigsource/key/{key} - get the configured value for {key}
-    PUT /microprofile-ext/memoryconfigsource/key/{key} - set the value for {key}
-    DELETE /microprofile-ext/memoryconfigsource/key/{key} - delete the configured value for {key}
+    GET /smallrye/config/sources - list all config sources
+    GET /smallrye/config/all - get all configurations
+    GET /smallrye/config/key/{key} - get the configured value for {key}
+    PUT /smallrye/config/key/{key} - set the value for {key}
+    DELETE /smallrye/config/key/{key} - delete the configured value for {key}
 
 ```
 
@@ -38,25 +33,25 @@ You can do this by using the REST API to change the config values:
 Add a property to `some.key` with value `some value`:
 
 ```
-    curl -X PUT "http://localhost:8080/config-example/api/microprofile-ext/memoryconfigsource/key/some.key" -H  "accept: */*" -H  "Content-Type: text/plain" -d "some value"
+    curl -X PUT "http://localhost:8080/config-example/api//smallrye/config/key/some.key" -H  "accept: */*" -H  "Content-Type: text/plain" -d "some value"
 ```
 
 Get the property `some.key`:
 
 ```
-    curl -X GET "http://localhost:8080/config-example/api/microprofile-ext/memoryconfigsource/key/some.key" -H  "accept: */*"
+    curl -X GET "http://localhost:8080/config-example/api/smallrye/config/key/some.key" -H  "accept: */*"
 ```
 
 Get the property `some.key` but only at the `SystemProperty` source:
 
 ```
-    curl -X GET "http://localhost:8080/config-example/api/microprofile-ext/memoryconfigsource/key/some.key?configsource=SysPropConfigSource" -H  "accept: */*"
+    curl -X GET "http://localhost:8080/config-example/api/smallrye/config/key/some.key?configsource=SysPropConfigSource" -H  "accept: */*"
 ```
 
 Delete the property `some.key`
 
 ```
-    curl -X DELETE "http://localhost:8080/config-example/api/microprofile-ext/memoryconfigsource/key/some.key" -H  "accept: */*"
+    curl -X DELETE "http://localhost:8080/config-example/api/smallrye/config/key/some.key" -H  "accept: */*"
 ```
 
 ## Events

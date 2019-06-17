@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Json Config Source
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-json/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-json)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configsource-json.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configsource-json)
 
 This source gets values from some json file(s).
 
@@ -12,7 +7,7 @@ This source gets values from some json file(s).
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
+        <groupId>io.smallrye.ext</groupId>
         <artifactId>configsource-json</artifactId>
         <version>XXXXX</version>
         <scope>runtime</scope>
@@ -26,16 +21,16 @@ This source gets values from some json file(s).
     
     {
 	"location": {
-		"protocol": "http",
-		"host": "localhost",
-		"port": 8080,
-		"path": "/some/path",
-		"jedis": [
-			"Yoda",
-			"Qui-Gon Jinn",
-			"Obi-Wan Kenobi",
-			"Luke Skywalker"
-		]
+            "protocol": "http",
+            "host": "localhost",
+            "port": 8080,
+            "path": "/some/path",
+            "jedis": [
+                "Yoda",
+                "Qui-Gon Jinn",
+                "Obi-Wan Kenobi",
+                "Luke Skywalker"
+            ]
 	}
     }
     

@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Json converter
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configconverter-json/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configconverter-json)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configconverter-json.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configconverter-json)
 
 This extension allows you to inject a JsonObject or JsonArray as a ConfigProperty
 
@@ -12,8 +7,8 @@ This extension allows you to inject a JsonObject or JsonArray as a ConfigPropert
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
-        <artifactId>configconverter-json</artifactId>
+        <groupId>io.smallrye.ext</groupId>
+        <artifactId>configconverters-json</artifactId>
         <version>XXXX</version>
         <scope>runtime</scope>
     </dependency>

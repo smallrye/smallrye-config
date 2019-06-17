@@ -1,5 +1,3 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Example Application
 
 This is a very basic example application to demonstrate the Config extensions.

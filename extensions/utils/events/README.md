@@ -1,9 +1,4 @@
-TODO: Change for Smallrye
-
 # Config events
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/config-events/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/config-events)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/config-events.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/config-events)
 
 Util library for config sources that fire events on changes
 
@@ -12,7 +7,7 @@ Util library for config sources that fire events on changes
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
+        <groupId>io.smallrye.ext</groupId>
         <artifactId>config-events</artifactId>
         <version>XXXX</version>
     </dependency>

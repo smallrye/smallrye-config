@@ -1,9 +1,4 @@
-[Back to config-ext](https://github.com/microprofile-extensions/config-ext/blob/master/README.md)
-
 # Xml Config Source
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-xml/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.microprofile-ext.config-ext/configsource-xml)
-[![Javadocs](https://www.javadoc.io/badge/org.microprofile-ext.config-ext/configsource-xml.svg)](https://www.javadoc.io/doc/org.microprofile-ext.config-ext/configsource-xml)
 
 This source gets values from some xml file(s).
 
@@ -12,7 +7,7 @@ This source gets values from some xml file(s).
 ```xml
 
     <dependency>
-        <groupId>org.microprofile-ext.config-ext</groupId>
+        <groupId>io.smallrye.ext</groupId>
         <artifactId>configsource-xml</artifactId>
         <version>XXXXX</version>
         <scope>runtime</scope>
@@ -52,7 +47,6 @@ will create the following properties:
     "location.jedis": "Yoda, Qui-Gon Jinn, Obi-Wan Kenobi, Luke Skywalker"
 
 ```
-
 
 You can `inject` the jedis using any of the following:
 
