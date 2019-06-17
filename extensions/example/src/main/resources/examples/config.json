@@ -1,0 +1,15 @@
+{
+    "jsomekey": "somevalue",
+    "jlocation": {
+        "protocol": "http",
+        "host": "localhost",
+        "port": 8080,
+        "path": "/some/path",
+        "jedis": [
+            "Yoda",
+            "Qui-Gon Jinn",
+            "Obi-Wan Kenobi",
+            "Luke Skywalker"
+        ]
+    }
+}

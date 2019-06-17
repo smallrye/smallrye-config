@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+    <xsomekey>somevalue</xsomekey>
+    <xlocation>
+        <protocol>http</protocol>
+        <host>localhost</host>
+        <port>8080</port>
+        <path>/some/path</path>
+        <jedis>Yoda</jedis>
+        <jedis>Qui-Gon Jinn</jedis>
+        <jedis>Obi-Wan Kenobi</jedis>
+        <jedis>Luke Skywalker</jedis>
+    </xlocation>
+</root>

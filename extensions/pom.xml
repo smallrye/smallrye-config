@@ -35,6 +35,7 @@
         <module>sources</module>
         <module>utils</module>
         <module>converters</module>
+        <module>example</module>
     </modules>
     
     <properties>
