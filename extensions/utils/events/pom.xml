@@ -21,16 +21,14 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-utils</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-utils</artifactId>
+    <artifactId>config-events</artifactId>
     
-    <packaging>pom</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Utils</name>
-    <modules>
-        <module>providers</module>
-        <module>events</module>
-    </modules>
+    <packaging>jar</packaging>
+    <name>SmallRye: MicroProfile Config Extensions: Utils - Events</name>
+    <description>A library to make it easy to add config events</description>
+    
 </project>

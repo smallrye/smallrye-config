@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- ~  Copyright 2017 Red Hat, Inc.
+ ~  Copyright 2019 Red Hat, Inc.
  ~
  ~  Licensed under the Apache License, Version 2.0 (the "License");
  ~  you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-converters</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
     <artifactId>config-events</artifactId>
     
     <packaging>jar</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Events</name>
-    <description>A library to make it easy to add config events</description>
+    <name>SmallRye: MicroProfile Config Extensions: Converters - List</name>
+    <description>A library to convert Lists</description>
     
 </project>
