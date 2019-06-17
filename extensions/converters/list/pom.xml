@@ -25,7 +25,7 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>config-events</artifactId>
+    <artifactId>configconverters-list</artifactId>
     
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Converters - List</name>

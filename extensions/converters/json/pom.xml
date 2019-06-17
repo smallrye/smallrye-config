@@ -21,16 +21,13 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-converters</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>smallrye-config-extensions-converters</artifactId>
+    <artifactId>configconverters-json</artifactId>
     
-    <packaging>pom</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Converters</name>
-    <modules>
-        <module>list</module>
-        <module>json</module>
-    </modules>
+    <packaging>jar</packaging>
+    <name>SmallRye: MicroProfile Config Extensions: Converters - Json</name>
+    <description>A library to convert Json</description>
 </project>
