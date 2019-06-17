@@ -41,6 +41,7 @@
         <module>etcd</module>
         <module>db</module>
         <module>consul</module>
+        <module>typesafe</module>
     </modules>
     
     <dependencies>
