@@ -37,20 +37,10 @@
         <module>yaml</module>
         <module>json</module>
         <module>xml</module>
+        <module>memory</module>
     </modules>
     
     <dependencies>
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>

@@ -21,14 +21,32 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-sources</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>config-events</artifactId>
+    <artifactId>configsource-memory</artifactId>
     
     <packaging>jar</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Events</name>
-    <description>A library to make it easy to add config events</description>
+    <name>SmallRye: MicroProfile Config Extensions: Sources - Memory</name>
     
+    <description>A config that gets its values from memory</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>configsource-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>config-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>configsource-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

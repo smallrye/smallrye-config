@@ -21,14 +21,14 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions</artifactId>
+        <artifactId>smallrye-config-extensions-utils</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     
-    <artifactId>config-events</artifactId>
+    <artifactId>configsource-providers</artifactId>
     
     <packaging>jar</packaging>
-    <name>SmallRye: MicroProfile Config Extensions: Events</name>
-    <description>A library to make it easy to add config events</description>
+    <name>SmallRye: MicroProfile Config Extensions: Utils - Providers</name>
     
+    <description>Some CDI Providers for config sources</description>  
 </project>
