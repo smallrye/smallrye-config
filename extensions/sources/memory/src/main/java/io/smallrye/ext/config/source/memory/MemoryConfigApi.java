@@ -63,10 +63,10 @@ public class MemoryConfigApi {
     @Inject @ConfigSourceMap
     private Map<String,ConfigSource> configSourceMap;
     
-    @Inject @ConfigProperty(name = "MemoryConfigSource.enabled", defaultValue = "true")
+    @Inject @ConfigProperty(name = "io.smallrye.ext.config.source.memory.enabled", defaultValue = "true")
     private boolean enabled;
     
-    @Inject @ConfigProperty(name = "MemoryConfigSource.notifyOnChanges", defaultValue = "true")
+    @Inject @ConfigProperty(name = "io.smallrye.ext.config.source.memory.notifyOnChanges", defaultValue = "true")
     private boolean notifyOnChange;
     
     @GET
@@ -196,6 +196,6 @@ public class MemoryConfigApi {
     }
     
     private static final String REASON = "reason";
-    private static final String NOT_ENABLED = "The Memory config source REST API is disabled [MemoryConfigSource.enabled=false]"; 
+    private static final String NOT_ENABLED = "The Memory config source REST API is disabled [io.smallrye.ext.config.source.memory.enabled=false]"; 
     private static final String NO_SUCH_CONFIGSOURCE = "No content source with that name available"; 
 }

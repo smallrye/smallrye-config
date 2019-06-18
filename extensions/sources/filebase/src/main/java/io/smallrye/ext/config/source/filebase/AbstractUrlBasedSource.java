@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import lombok.extern.java.Log;
+import org.eclipse.microprofile.config.Config;
 
 
 /**
@@ -49,6 +50,8 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     private FileResourceWatcher fileResourceWatcher = null;
     private WebResourceWatcher webResourceWatcher = null;
     
+    private Config config;
+    
     public AbstractUrlBasedSource(){
         init();
     }
@@ -56,6 +59,7 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     private void init(){
         String ext = getFileExtension();
         log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext);
+        this.config = super.getConfig();
         this.keySeparator = loadPropertyKeySeparator();
         this.notifyOnChanges = loadNotifyOnChanges();
         this.pollForChanges = loadPollForChanges();
@@ -75,7 +79,7 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     @Override
     public String getValue(String key) {
         // in case we are about to configure ourselves we simply ignore that key
-        if(super.isEnabled() && !key.startsWith(getPrefix())){
+        if(super.isEnabled() && !key.startsWith(getPrefix()) && !key.startsWith(getKey(null))){
             return this.properties.get(key);
         }
         return null;
@@ -187,30 +191,42 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
         }
     }
     
+    private String loadPropertyKeySeparator(){
+        return config.getOptionalValue(getKey(KEY_SEPARATOR), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_SEPARATOR), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DOT));
+    }
+    
+    private boolean loadPollForChanges(){
+        return config.getOptionalValue(getKey(POLL_FOR_CHANGES), Boolean.class)
+            .orElse(config.getOptionalValue(getConfigKey(POLL_FOR_CHANGES), Boolean.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_POLL_FOR_CHANGES));
+    }
+    
+    private boolean loadNotifyOnChanges(){
+        return config.getOptionalValue(getKey(NOTIFY_ON_CHANGES), Boolean.class)
+            .orElse(config.getOptionalValue(getConfigKey(NOTIFY_ON_CHANGES), Boolean.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_NOTIFY_ON_CHANGES));    
+    }
+    
+    private int loadPollInterval(){
+        return config.getOptionalValue(getKey(POLL_INTERVAL), Integer.class)
+            .orElse(config.getOptionalValue(getConfigKey(POLL_INTERVAL), Integer.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_POLL_INTERVAL));    
+    }
+    
+    private String loadUrlPath(){
+        return config.getOptionalValue(getKey(URL), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(URL), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(getDefaultUrl()));    
+    }
+    
+    @Deprecated
     private String getConfigKey(String subKey){
         return getPrefix() + subKey;
     }
     
-    private String loadPropertyKeySeparator(){
-        return getConfig().getOptionalValue(getConfigKey(KEY_SEPARATOR), String.class).orElse(DOT);
-    }
-    
-    private boolean loadPollForChanges(){
-        return getConfig().getOptionalValue(getConfigKey(POLL_FOR_CHANGES), Boolean.class).orElse(DEFAULT_POLL_FOR_CHANGES);
-    }
-    
-    private boolean loadNotifyOnChanges(){
-        return getConfig().getOptionalValue(getConfigKey(NOTIFY_ON_CHANGES), Boolean.class).orElse(DEFAULT_NOTIFY_ON_CHANGES);
-    }
-    
-    private int loadPollInterval(){
-        return getConfig().getOptionalValue(getConfigKey(POLL_INTERVAL), Integer.class).orElse(DEFAULT_POLL_INTERVAL);
-    }
-    
-    private String loadUrlPath(){
-        return getConfig().getOptionalValue(getConfigKey(URL), String.class).orElse(getDefaultUrl());
-    }
-    
+    @Deprecated
     private String getPrefix(){
         return CONFIGSOURCE + DOT + getFileExtension() + DOT;
     }
@@ -226,7 +242,6 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     }
     
     private static final String COMMA = ",";
-    private static final String UNDERSCORE = "_";
     private static final String DOT = ".";
     private static final String URL = "url";
     private static final String KEY_SEPARATOR = "keyseparator";

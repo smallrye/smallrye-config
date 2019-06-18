@@ -39,7 +39,7 @@ class RepositoryTest {
     public void init() {
         Config config = mock(Config.class);
         when(config.getOptionalValue(Mockito.anyString(), Mockito.any())).thenReturn(Optional.empty());
-        repository = new Repository(config);
+        repository = new Repository();
     }
 
     @Test

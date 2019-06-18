@@ -76,15 +76,15 @@ You can `inject` the jedis using any of the following:
 
 By default the config source will look for a file called `application.xml`. You can set the location(s) of the files:
 
-    configsource.xml.url=<here the url(s)>
+    io.smallrye.ext.config.source.xml.url=<here the url(s)>
 
 example:
 
-    configsource.xml.url=file:/tmp/myconfig.xml
+    io.smallrye.ext.config.source.xml.url=file:/tmp/myconfig.xml
 
 You can also add more than one location by comma-separating the location:
 
-    configsource.xml.url=file:/tmp/myconfig.xml,http://localhost/myconfig.xml
+    io.smallrye.ext.config.source.xml.url=file:/tmp/myconfig.xml,http://localhost/myconfig.xml
 
 The latest files will override properties in previous files. As example, if using above configuration, property `foo=bar` in `file:/tmp/myconfig.xml` will be override if it's added to `http://localhost/myconfig.xml`.
 
@@ -92,11 +92,11 @@ The latest files will override properties in previous files. As example, if usin
 
 You can watch the resource for changes. This feature is disabled by default. To enable:
 
-    configsource.xml.pollForChanges=true
+    io.smallrye.ext.config.source.xml.pollForChanges=true
 
 By default it will poll every **5 seconds**. You can change that, example to poll every 5 minutes:
 
-    configsource.xml.pollInterval=300
+    io.smallrye.ext.config.source.xml.pollInterval=300
 
 ### Events
 
@@ -104,9 +104,9 @@ This config source fires CDI Events on changes (if above detecting for changes i
 
 Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
-You can disable this with the `configsource.xml.notifyOnChanges` property:
+You can disable this with the `io.smallrye.ext.config.source.xml.notifyOnChanges` property:
 
-    configsource.xml.notifyOnChanges=false
+    io.smallrye.ext.config.source.xml.notifyOnChanges=false
 
 If you added more than one resource as source, the event will only fire if the resulting file change also changed the global source change, as one file takes priority over the other.
 
@@ -119,9 +119,9 @@ By default the separator used in the key is a DOT (.) example:
     "location.protocol": "http"
 ```
 
-You can change this by setting `configsource.xml.keyseparator` to the desired separator, example:
+You can change this by setting `io.smallrye.ext.config.source.xml.keyseparator` to the desired separator, example:
 
-    configsource.xml.keyseparator=_
+    io.smallrye.ext.config.source.xml.keyseparator=_
 
 will create:
 
@@ -133,7 +133,7 @@ will create:
 
 By default the root element of the XML is ignored. You can include the root by setting this property:
 
-    configsource.xml.ignoreRoot=false
+    io.smallrye.ext.config.source.xml.ignoreRoot=false
     
 Using the example above, this will create the following properties:
 

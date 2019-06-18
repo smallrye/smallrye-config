@@ -56,7 +56,9 @@ public abstract class EnabledConfigSource extends BaseConfigSource {
     }
 
     protected String getKey(String key){
-        return getClass().getPackage().getName() + "." + key;
+        String prefix = getClass().getPackage().getName() + ".";
+        if(key==null)return prefix;
+        return prefix + key;
     }
     
     protected String getClassKeyPrefix(){

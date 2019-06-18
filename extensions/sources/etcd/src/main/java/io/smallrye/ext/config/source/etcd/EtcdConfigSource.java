@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import lombok.extern.java.Log;
+import org.eclipse.microprofile.config.Config;
 
 /**
  * Etcd config source
@@ -43,25 +44,12 @@ public class EtcdConfigSource extends EnabledConfigSource {
     
     private static final String NAME = "EtcdConfigSource";
 
-    private static final String KEY_PREFIX = "configsource.etcd.";
-    
-    private static final String KEY_SCHEME = KEY_PREFIX + "scheme";
-    private static final String DEFAULT_SCHEME = "http";
-
-    private static final String KEY_HOST = KEY_PREFIX + "host";
-    private static final String DEFAULT_HOST = "localhost";
-
-    private static final String KEY_PORT = KEY_PREFIX + "port";
-    private static final Integer DEFAULT_PORT = 2379;
-
-    private static final String KEY_USER = KEY_PREFIX + "user";
-    private static final String KEY_PASSWORD = KEY_PREFIX + "password";
-    private static final String KEY_AUTHORITY = KEY_PREFIX + "authority";
-    
     private Client client = null;
-
+    private final Config config;
+    
     public EtcdConfigSource(){
         super.initOrdinal(320);
+        this.config = getConfig();
     }
     
     @Override
@@ -89,7 +77,7 @@ public class EtcdConfigSource extends EnabledConfigSource {
 
     @Override
     public String getValue(String key) {
-        if (key.startsWith(KEY_PREFIX)) {
+        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKey(null))) {
             // in case we are about to configure ourselves we simply ignore that key
             return null;
         }
@@ -123,13 +111,13 @@ public class EtcdConfigSource extends EnabledConfigSource {
         if(this.client == null ){
             log.info("Loading [etcd] MicroProfile ConfigSource");
 
-            String scheme = getConfig().getOptionalValue(KEY_SCHEME, String.class).orElse(DEFAULT_SCHEME);
-            String host = getConfig().getOptionalValue(KEY_HOST, String.class).orElse(DEFAULT_HOST);
-            Integer port = getConfig().getOptionalValue(KEY_PORT, Integer.class).orElse(DEFAULT_PORT);
+            String scheme = loadScheme();
+            String host = loadHost();
+            Integer port = loadPort();
             
-            String user = getConfig().getOptionalValue(KEY_USER, String.class).orElse(null);
-            String password = getConfig().getOptionalValue(KEY_PASSWORD, String.class).orElse(null);
-            String authority = getConfig().getOptionalValue(KEY_AUTHORITY, String.class).orElse(null);
+            String user = loadUser();
+            String password = loadPassword();
+            String authority = loadAuthority();
             
             String endpoint = String.format("%s://%s:%d",scheme,host,port);
             log.log(Level.INFO, "Using [{0}] as etcd server endpoint", endpoint);
@@ -152,6 +140,61 @@ public class EtcdConfigSource extends EnabledConfigSource {
         return this.client;
     }
     
-    private static final String EMPTY = "";
+    private String loadScheme(){
+        return config.getOptionalValue(getKey(KEY_SCHEME), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_SCHEME), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_SCHEME)); 
+    }
+    
+    private String loadHost(){
+        return config.getOptionalValue(getKey(KEY_HOST), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_HOST), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_HOST)); 
+    }
+    
+    private Integer loadPort(){
+        return config.getOptionalValue(getKey(KEY_PORT), Integer.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_PORT), Integer.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_PORT)); 
+    }
+    
+    private String loadUser(){
+        return config.getOptionalValue(getKey(KEY_USER), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_USER), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(null)); 
+    }
+    
+    private String loadPassword(){
+        return config.getOptionalValue(getKey(KEY_PASSWORD), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_PASSWORD), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(null)); 
+    }
+    
+    private String loadAuthority(){
+        return config.getOptionalValue(getKey(KEY_AUTHORITY), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_AUTHORITY), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(null)); 
+    }
+    
+    @Deprecated
+    private String getConfigKey(String subKey){
+        return KEY_PREFIX + subKey;
+    }
+    
+    private static final String KEY_PREFIX = "configsource.etcd.";
+    
+    private static final String KEY_SCHEME = "scheme";
+    private static final String DEFAULT_SCHEME = "http";
 
+    private static final String KEY_HOST = "host";
+    private static final String DEFAULT_HOST = "localhost";
+
+    private static final String KEY_PORT = "port";
+    private static final Integer DEFAULT_PORT = 2379;
+
+    private static final String KEY_USER = "user";
+    private static final String KEY_PASSWORD = "password";
+    private static final String KEY_AUTHORITY = "authority";
+    
+    private static final String EMPTY = "";
 }

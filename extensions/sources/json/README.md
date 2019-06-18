@@ -77,15 +77,15 @@ You can `inject` the jedis using any of the following:
 
 By default the config source will look for a file called `application.json`. You can set the location(s) of the files:
 
-    configsource.json.url=<here the url(s)>
+    io.smallrye.ext.config.source.json.url=<here the url(s)>
 
 example:
 
-    configsource.json.url=file:/tmp/myconfig.json
+    io.smallrye.ext.config.source.json.url=file:/tmp/myconfig.json
 
 You can also add more than one location by comma-separating the location:
 
-    configsource.json.url=file:/tmp/myconfig.json,http://localhost/myconfig.json
+    io.smallrye.ext.config.source.json.url=file:/tmp/myconfig.json,http://localhost/myconfig.json
 
 The latest files will override properties in previous files. As example, if using above configuration, property `foo=bar` in `file:/tmp/myconfig.json` will be override if it's added to `http://localhost/myconfig.json`.
 
@@ -93,11 +93,11 @@ The latest files will override properties in previous files. As example, if usin
 
 You can watch the resource for changes. This feature is disabled by default. To enable:
 
-    configsource.json.pollForChanges=true
+    io.smallrye.ext.config.source.json.pollForChanges=true
 
 By default it will poll every **5 seconds**. You can change that, example to poll every 5 minutes:
 
-    configsource.json.pollInterval=300
+    io.smallrye.ext.config.source.json.pollInterval=300
 
 ### Events
 
@@ -105,9 +105,9 @@ This config source fires CDI Events on changes (if above detecting for changes i
 
 Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
-You can disable this with the `configsource.json.notifyOnChanges` property:
+You can disable this with the `io.smallrye.ext.config.source.json.notifyOnChanges` property:
 
-    configsource.json.notifyOnChanges=false
+    io.smallrye.ext.config.source.json.notifyOnChanges=false
 
 If you added more than one resource as source, the event will only fire if the resulting file change also changed the global source change, as one file takes priority over the other.
 
@@ -120,9 +120,9 @@ By default the separator used in the key is a DOT (.) example:
     "location.protocol": "http"
 ```
 
-You can change this by setting `configsource.json.keyseparator` to the desired separator, example:
+You can change this by setting `io.smallrye.ext.config.source.json.keyseparator` to the desired separator, example:
 
-    configsource.json.keyseparator=_
+    io.smallrye.ext.config.source.json.keyseparator=_
 
 will create:
 

@@ -60,7 +60,7 @@ This config source fires CDI Events on PUT and DELETE:
 
 Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
-You can disable this with the `MemoryConfigSource.notifyOnChanges` property
+You can disable this with the `io.smallrye.ext.config.source.memory.notifyOnChanges` property
 
 ## Configure options
 
@@ -70,6 +70,6 @@ You can disable the config source by setting this config:
 
 You can disable the change notification events on changes by setting this config:
     
-    MemoryConfigSource.notifyOnChanges=false
+    io.smallrye.ext.config.source.memory.notifyOnChanges=false
 
 ![REST API](https://raw.githubusercontent.com/smallrye/smallrye-config/master/extensions/sources/memory/screenshot.png)

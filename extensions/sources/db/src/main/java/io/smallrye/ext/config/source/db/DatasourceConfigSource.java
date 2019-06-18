@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import lombok.extern.java.Log;
+import org.eclipse.microprofile.config.Config;
 
 @Log
 public class DatasourceConfigSource extends EnabledConfigSource {
@@ -34,9 +35,23 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     private Long validity = null;
     private final boolean notifyOnChanges;
     
+    private final String datasource;
+    private final String table;
+    private final String keyColumn;
+    private final String valueColumn;
+        
+    private final Config config;
+    
     public DatasourceConfigSource() {
         log.info("Loading [db] MicroProfile ConfigSource");
+        this.config = getConfig();
         this.notifyOnChanges = loadNotifyOnChanges();
+        
+        this.datasource = loadDatasource();
+        this.table = loadTable();
+        this.keyColumn = loadKeyColumn();
+        this.valueColumn = loadValueColumn();
+        
         super.initOrdinal(120);
     }
 
@@ -100,22 +115,51 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     private void initRepository(){
         if (repository == null) {
             // late initialization is needed because of the EE datasource.
-            repository = new Repository(getConfig());
+            repository = new Repository(datasource,table,keyColumn,valueColumn);
         }
     }
     
     private void initValidity(){
         if (validity == null) {
-            validity = getConfig().getOptionalValue("configsource.db.validity", Long.class).orElse(30000L);
+            validity = config.getOptionalValue(getKey(VALIDITY), Long.class)
+            .orElse(config.getOptionalValue(getConfigKey(VALIDITY), Long.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAUTL_VALIDITY));
         }
     }
     
+    @Deprecated
     private String getConfigKey(String subKey){
         return "configsource.db." + subKey;
     }
     
     private boolean loadNotifyOnChanges(){
-        return getConfig().getOptionalValue(getConfigKey(NOTIFY_ON_CHANGES), Boolean.class).orElse(DEFAULT_NOTIFY_ON_CHANGES);
+        return config.getOptionalValue(getKey(NOTIFY_ON_CHANGES), Boolean.class)
+            .orElse(config.getOptionalValue(getConfigKey(NOTIFY_ON_CHANGES), Boolean.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_NOTIFY_ON_CHANGES)); 
+    }
+    
+    private String loadDatasource(){
+        return config.getOptionalValue(getKey(DATASOURCE), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(DATASOURCE), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_DATASOURCE)); 
+    }
+    
+    private String loadTable(){
+        return config.getOptionalValue(getKey(TABLE), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(TABLE), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_TABLE)); 
+    }   
+    
+    private String loadKeyColumn(){
+        return config.getOptionalValue(getKey(KEY_COL), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(KEY_COL), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_KEY_COL)); 
+    }
+    
+    private String loadValueColumn(){
+        return config.getOptionalValue(getKey(VAL_COL), String.class)
+            .orElse(config.getOptionalValue(getConfigKey(VAL_COL), String.class)// For backward compatibility with MicroProfile-ext
+            .orElse(DEFAULT_VAL_COL)); 
     }
     
     class TimedEntry {
@@ -136,6 +180,22 @@ public class DatasourceConfigSource extends EnabledConfigSource {
         }
     }
     
+    private static final String VALIDITY = "validity";
+    private static final long DEFAUTL_VALIDITY = 30000L;
+    
     private static final String NOTIFY_ON_CHANGES = "notifyOnChanges";
     private static final boolean DEFAULT_NOTIFY_ON_CHANGES = true;
+    
+    private static final String DATASOURCE = "datasource";
+    private static final String DEFAULT_DATASOURCE = "java:comp/DefaultDataSource";
+
+    private static final String TABLE = "table";
+    private static final String DEFAULT_TABLE = "configuration";
+    
+    private static final String KEY_COL = "key-column";
+    private static final String DEFAULT_KEY_COL = "key";
+    
+    private static final String VAL_COL = "value";
+    private static final String DEFAULT_VAL_COL = "value-column";
+    
 }
