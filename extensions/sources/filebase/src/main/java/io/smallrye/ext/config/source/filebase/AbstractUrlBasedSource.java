@@ -83,7 +83,7 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
 
     @Override
     public String getName() {
-        return getClassKeyPrefix() + UNDERSCORE + this.urlInputString;
+        return getClassKeyPrefix();
     }
     
     @Override
