@@ -27,4 +27,4 @@ Use [etcd](https://coreos.com/etcd/) to get config values. You can define the se
 
 You can disable the config source by setting this config:
     
-    EtcdConfigSource.enabled=false  
+    io.smallrye.ext.config.source.etcd.enabled=false  

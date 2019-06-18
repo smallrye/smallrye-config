@@ -24,6 +24,10 @@ Currently there are 5 values you can configure, either through Java system prope
 * **configsource.db.value-column** name of the column containing the value, default value is "value"
 * **configsource.db.validity** how long to cache values (in seconds), default is 30s
 
+You can disable the config source by setting this config:
+    
+    io.smallrye.ext.config.source.db.enabled=false
+
 ### Events
 
 This config source fires CDI Events on changes

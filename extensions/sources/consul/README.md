@@ -25,7 +25,7 @@ Values are cached to reduce calls to consul. This config source does not support
 
 You can disable the config source by setting this config:
     
-    ConsulConfigSource.enabled=false  
+    io.smallrye.ext.config.source.consul.enabled=false  
 
 ## Links
 * https://github.com/rikcarve/consulkv-maven-plugin

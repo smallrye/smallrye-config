@@ -49,20 +49,28 @@ public abstract class EnabledConfigSource extends BaseConfigSource {
 
     protected boolean isEnabled() {
         Config cnf = getConfig();
-        return cnf.getOptionalValue(getInstanceEnableKey(), Boolean.class)
-                .orElse(cnf.getOptionalValue(getClassEnableKey(), Boolean.class)
-                        .orElse(true));
+        return cnf.getOptionalValue(getKey(ENABLED), Boolean.class)
+                .orElse(cnf.getOptionalValue(getClassEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
+                .orElse(cnf.getOptionalValue(getInstanceEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
+                .orElse(true)));
     }
 
+    protected String getKey(String key){
+        return getClass().getPackage().getName() + "." + key;
+    }
+    
     protected String getClassKeyPrefix(){
         return getClass().getSimpleName();
     }
-    
+    @Deprecated
     private String getClassEnableKey(){
-        return getClassKeyPrefix() + ".enabled";
+        return getClassKeyPrefix() + DOT + ENABLED;
+    }
+    @Deprecated
+    private String getInstanceEnableKey(){
+        return getName() + DOT + ENABLED;
     }
     
-    private String getInstanceEnableKey(){
-        return getName() + ".enabled";
-    }
+    private static final String ENABLED = "enabled";
+    private static final String DOT= ".";
 }

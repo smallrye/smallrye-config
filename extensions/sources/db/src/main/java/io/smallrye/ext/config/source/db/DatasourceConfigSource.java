@@ -32,7 +32,7 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     private final Map<String, TimedEntry> cache = new ConcurrentHashMap<>();
     Repository repository = null;
     private Long validity = null;
-    private boolean notifyOnChanges;
+    private final boolean notifyOnChanges;
     
     public DatasourceConfigSource() {
         log.info("Loading [db] MicroProfile ConfigSource");

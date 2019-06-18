@@ -66,9 +66,9 @@ You can disable this with the `MemoryConfigSource.notifyOnChanges` property
 
 You can disable the config source by setting this config:
     
-    MemoryConfigSource.enabled=false
+    io.smallrye.ext.config.source.memory.enabled=false
 
-You can disable the change notification eventson changes by setting this config:
+You can disable the change notification events on changes by setting this config:
     
     MemoryConfigSource.notifyOnChanges=false
 

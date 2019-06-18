@@ -145,3 +145,9 @@ Using the example above, this will create the following properties:
     "root.location.port": "8080"
     "root.location.path": "/some/path"
     "root.location.jedis": "[Yoda, Qui-Gon Jinn, Obi-Wan Kenobi, Luke Skywalker]"    
+
+### Enable
+
+You can disable this config source:
+
+    io.smallrye.ext.config.source.xml.enabled=false

@@ -124,3 +124,9 @@ will create:
     
     "location_protocol": "http"
 ```
+
+### Enable
+
+You can disable this config source:
+    
+    io.smallrye.ext.config.source.yaml.enabled=false
