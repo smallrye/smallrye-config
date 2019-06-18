@@ -12,6 +12,7 @@ Here you will find some extra Config sources, Config converters and some utils f
 * [DB Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/db)
 * [Consul Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/consul)
 * [TypeSafe Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/typesafe)
+* [ZooKeeper Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/zookeeper)
 
 ### Config utils
 * [Config events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)

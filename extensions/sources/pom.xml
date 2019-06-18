@@ -42,6 +42,7 @@
         <module>db</module>
         <module>consul</module>
         <module>typesafe</module>
+        <module>zookeeper</module>
     </modules>
     
     <dependencies>

@@ -18,15 +18,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.smallrye</groupId>
-        <artifactId>smallrye-config-sources</artifactId>
+        <groupId>io.smallrye.ext</groupId>
+        <artifactId>smallrye-config-extensions-sources</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
-
+    
     <artifactId>zookeeper-config-source-1.3</artifactId><!-- Consider rename to be the same as other config sources ? -->
     <packaging>jar</packaging>
 
     <name>SmallRye: MicroProfile Config Extensions: Sources - ZooKeeper</name>
+    
     <properties>
         <version.curator>4.2.0</version.curator>
         <version.assertj>3.12.2</version.assertj>
