@@ -83,7 +83,7 @@ By default it will poll every **5 seconds**. You can change that, example to pol
 
 This config source fires CDI Events on changes (if above detecting for changes is enabled).
 
-Read more about [Config Events](https://github.com/microprofile-extensions/config-ext/blob/master/config-events/README.md)
+Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
 You can disable this with the `configsource.properties.notifyOnChanges` property:
 

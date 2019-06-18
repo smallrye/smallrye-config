@@ -33,7 +33,7 @@ You can do this by using the REST API to change the config values:
 Add a property to `some.key` with value `some value`:
 
 ```
-    curl -X PUT "http://localhost:8080/config-example/api//smallrye/config/key/some.key" -H  "accept: */*" -H  "Content-Type: text/plain" -d "some value"
+    curl -X PUT "http://localhost:8080/config-example/api/smallrye/config/key/some.key" -H  "accept: */*" -H  "Content-Type: text/plain" -d "some value"
 ```
 
 Get the property `some.key`:
@@ -58,7 +58,7 @@ Delete the property `some.key`
 
 This config source fires CDI Events on PUT and DELETE:
 
-Read more about [Config Events](https://github.com/microprofile-extensions/config-ext/blob/master/config-events/README.md)
+Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
 You can disable this with the `MemoryConfigSource.notifyOnChanges` property
 
@@ -72,4 +72,4 @@ You can disable the change notification eventson changes by setting this config:
     
     MemoryConfigSource.notifyOnChanges=false
 
-![REST API](https://github.com/microprofile-extensions/config-ext/raw/master/configsource-memory/screenshot.png)
+![REST API](https://raw.githubusercontent.com/smallrye/smallrye-config/master/extensions/sources/memory/screenshot.png)

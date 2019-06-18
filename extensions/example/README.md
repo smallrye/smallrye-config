@@ -5,7 +5,6 @@ This is a very basic example application to demonstrate the Config extensions.
 ## Running the example.
 
 Using maven, you can start this application using Thorntail, Payara or OpenLiberty:
-
     
 ```
     mvn -Pthorntail clean install

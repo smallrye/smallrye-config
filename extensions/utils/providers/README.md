@@ -1,6 +1,6 @@
 # Configsource providers
 
-Util library that makes all Configsources available via CDI
+Util library that makes all Config sources available via CDI
 
 ## Usage
 

@@ -28,7 +28,7 @@ Currently there are 5 values you can configure, either through Java system prope
 
 This config source fires CDI Events on changes
 
-Read more about [Config Events](https://github.com/microprofile-extensions/config-ext/blob/master/config-events/README.md)
+Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
 You can disable this with the `configsource.db.notifyOnChanges` property:
 

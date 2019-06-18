@@ -132,9 +132,9 @@ You can Match on the following fields of the `ChangeEvent` object:
 
 ## Implementing this for your own Config source
 
-An example of a source that uses this is [Memory Config source](https://github.com/microprofile-extensions/config-ext/blob/master/configsource-memory/README.md)
+An example of a source that uses this is [Memory Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/memory)
 
-`org.microprofileext.config.event.ChangeEventNotifier` is a bean that makes it easy to detect changes and fire the appropriate events. 
+`io.smallrye.ext.config.events.ChangeEventNotifier` is a bean that makes it easy to detect changes and fire the appropriate events. 
 
 To use it in your own source:
 
