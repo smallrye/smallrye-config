@@ -18,9 +18,9 @@ Values are cached to reduce calls to consul. This config source does not support
 
 ## Configure options
 
-    configsource.consul.host (defaults to localhost)
-    configsource.consul.prefix (default no prefix)
-    configsource.consul.validity (default 30s)
+    io.smallrye.ext.config.source.consul.host (default to localhost)
+    io.smallrye.ext.config.source.consul.prefix (default no prefix)
+    io.smallrye.ext.config.source.consul.validity (default 30s)
   
 
 You can disable the config source by setting this config:

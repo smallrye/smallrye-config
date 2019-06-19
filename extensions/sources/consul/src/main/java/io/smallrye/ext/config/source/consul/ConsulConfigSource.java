@@ -27,6 +27,7 @@ import com.ecwid.consul.v1.kv.model.GetValue;
 import io.smallrye.ext.config.source.base.EnabledConfigSource;
 
 import lombok.extern.java.Log;
+import org.eclipse.microprofile.config.Config;
 
 /**
  * Consul config source
@@ -37,13 +38,6 @@ public class ConsulConfigSource extends EnabledConfigSource {
     
     private static final String NAME = "ConsulConfigSource";
 
-    private static final String KEY_PREFIX = "configsource.consul.";
-    private static final String KEY_HOST = KEY_PREFIX + "host";
-    private static final String DEFAULT_HOST = "localhost";
-    private static final String KEY_VALIDITY = KEY_PREFIX + "validity";
-    private static final Long DEFAULT_VALIDITY = 30L;
-    private static final String KEY_CONSUL_PREFIX = KEY_PREFIX + "prefix";
-
     // enable variable substitution for configsource config (e.g. consul host might be injected by the environment, but with a different key)
     // TODO verify if still needed
     private final StringSubstitutor substitutor = new StringSubstitutor(s -> getConfig().getOptionalValue(s, String.class).orElse(""));
@@ -51,16 +45,21 @@ public class ConsulConfigSource extends EnabledConfigSource {
     ConsulClient client = null;
     private Long validity = null;
     private String prefix = null;
+    private String host = null;
     
     private final Map<String, TimedEntry> cache = new ConcurrentHashMap<>();
+    private final Config config;
     
     public ConsulConfigSource() {
         super.initOrdinal(320);
+        this.config = getConfig();
     }
     
     // used for tests
     public ConsulConfigSource(ConsulClient client) {
+        super.initOrdinal(320);
         this.client = client;
+        this.config = getConfig();
     }
 
     @Override
@@ -76,7 +75,7 @@ public class ConsulConfigSource extends EnabledConfigSource {
 
     @Override
     public String getValue(String key) {
-        if (key.startsWith(KEY_PREFIX)) {
+        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKey(null))) {
             // in case we are about to configure ourselves we simply ignore that key
             return null;
         }
@@ -110,24 +109,42 @@ public class ConsulConfigSource extends EnabledConfigSource {
         return NAME;
     }
 
+    @Deprecated
+    private String getConfigKey(String subKey){
+        return KEY_PREFIX + subKey;
+    }
+    
     private Long getValidity() {
         if (validity == null) {
-            validity = getConfig().getOptionalValue(KEY_VALIDITY, Long.class).orElse(DEFAULT_VALIDITY) * 1000L;
+            validity = config.getOptionalValue(getKey(KEY_VALIDITY), Long.class)
+                .orElse(config.getOptionalValue(getConfigKey(KEY_VALIDITY), Long.class)// For backward compatibility with MicroProfile-ext
+                .orElse(DEFAULT_VALIDITY) * 1000L); 
         }
         return validity;
     }
 
     private String getPrefix() {
         if (prefix == null) {
-            prefix = getConfig().getOptionalValue(KEY_CONSUL_PREFIX, String.class).map(s -> s + "/").orElse("");
+            prefix = config.getOptionalValue(getKey(KEY_CONSUL_PREFIX), String.class).map(s -> s + "/")
+                .orElse(config.getOptionalValue(getConfigKey(KEY_CONSUL_PREFIX), String.class).map(s -> s + "/")// For backward compatibility with MicroProfile-ext
+                .orElse(DEFAULT_CONSUL_PREFIX)); 
         }
         return prefix;
     }
 
+    private String getHost() {
+        if (host == null) {
+            host = config.getOptionalValue(getKey(KEY_HOST), String.class)
+                .orElse(config.getOptionalValue(getConfigKey(KEY_HOST), String.class)// For backward compatibility with MicroProfile-ext
+                .orElse(DEFAULT_HOST)); 
+        }
+        return host;
+    }
+    
     private ConsulClient getClient() {
         if (client == null ) {
             log.info("Loading [consul] MicroProfile ConfigSource");
-            client = new ConsulClient(substitutor.replace(getConfig().getOptionalValue(KEY_HOST, String.class).orElse(DEFAULT_HOST)));
+            client = new ConsulClient(substitutor.replace(getHost()));
         }
         return client;
     }
@@ -150,4 +167,15 @@ public class ConsulConfigSource extends EnabledConfigSource {
         }
     }
 
+    private static final String KEY_PREFIX = "configsource.consul.";
+    
+    private static final String KEY_HOST = "host";
+    private static final String DEFAULT_HOST = "localhost";
+    
+    private static final String KEY_VALIDITY = "validity";
+    private static final Long DEFAULT_VALIDITY = 30L;
+
+    private static final String KEY_CONSUL_PREFIX = "prefix";
+    private static final String DEFAULT_CONSUL_PREFIX = "";
+    
 }
