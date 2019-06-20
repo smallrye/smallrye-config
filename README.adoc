@@ -1,6 +1,7 @@
 :microprofile-config: https://github.com/eclipse/microprofile-config/
 
 image:https://semaphoreci.com/api/v1/smallrye/smallrye-config/branches/master/badge.svg["Semaphore CI", link="https://semaphoreci.com/smallrye/smallrye-config"]
+image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-config&metric=alert_status["Quality Gate Status", link="https://sonarcloud.io/dashboard?id=smallrye_smallrye-config"]
 image:https://img.shields.io/github/license/thorntail/thorntail.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
 
 = SmallRye Config
