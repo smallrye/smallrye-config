@@ -121,7 +121,7 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     
     private void initValidity(){
         if (validity == null) {
-            validity = config.getOptionalValue(getKey(VALIDITY), Long.class)
+            validity = config.getOptionalValue(getKeyWithPrefix(VALIDITY), Long.class)
             .orElse(config.getOptionalValue(getConfigKey(VALIDITY), Long.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAUTL_VALIDITY));
         }
@@ -133,31 +133,31 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     }
     
     private boolean loadNotifyOnChanges(){
-        return config.getOptionalValue(getKey(NOTIFY_ON_CHANGES), Boolean.class)
+        return config.getOptionalValue(getKeyWithPrefix(NOTIFY_ON_CHANGES), Boolean.class)
             .orElse(config.getOptionalValue(getConfigKey(NOTIFY_ON_CHANGES), Boolean.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_NOTIFY_ON_CHANGES)); 
     }
     
     private String loadDatasource(){
-        return config.getOptionalValue(getKey(DATASOURCE), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(DATASOURCE), String.class)
             .orElse(config.getOptionalValue(getConfigKey(DATASOURCE), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_DATASOURCE)); 
     }
     
     private String loadTable(){
-        return config.getOptionalValue(getKey(TABLE), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(TABLE), String.class)
             .orElse(config.getOptionalValue(getConfigKey(TABLE), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_TABLE)); 
     }   
     
     private String loadKeyColumn(){
-        return config.getOptionalValue(getKey(KEY_COL), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_COL), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_COL), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_KEY_COL)); 
     }
     
     private String loadValueColumn(){
-        return config.getOptionalValue(getKey(VAL_COL), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(VAL_COL), String.class)
             .orElse(config.getOptionalValue(getConfigKey(VAL_COL), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_VAL_COL)); 
     }

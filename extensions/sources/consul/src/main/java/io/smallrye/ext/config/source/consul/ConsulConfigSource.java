@@ -75,7 +75,7 @@ public class ConsulConfigSource extends EnabledConfigSource {
 
     @Override
     public String getValue(String key) {
-        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKey(null))) {
+        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKeyWithPrefix(null))) {
             // in case we are about to configure ourselves we simply ignore that key
             return null;
         }
@@ -116,7 +116,7 @@ public class ConsulConfigSource extends EnabledConfigSource {
     
     private Long getValidity() {
         if (validity == null) {
-            validity = config.getOptionalValue(getKey(KEY_VALIDITY), Long.class)
+            validity = config.getOptionalValue(getKeyWithPrefix(KEY_VALIDITY), Long.class)
                 .orElse(config.getOptionalValue(getConfigKey(KEY_VALIDITY), Long.class)// For backward compatibility with MicroProfile-ext
                 .orElse(DEFAULT_VALIDITY) * 1000L); 
         }
@@ -125,7 +125,7 @@ public class ConsulConfigSource extends EnabledConfigSource {
 
     private String getPrefix() {
         if (prefix == null) {
-            prefix = config.getOptionalValue(getKey(KEY_CONSUL_PREFIX), String.class).map(s -> s + "/")
+            prefix = config.getOptionalValue(getKeyWithPrefix(KEY_CONSUL_PREFIX), String.class).map(s -> s + "/")
                 .orElse(config.getOptionalValue(getConfigKey(KEY_CONSUL_PREFIX), String.class).map(s -> s + "/")// For backward compatibility with MicroProfile-ext
                 .orElse(DEFAULT_CONSUL_PREFIX)); 
         }
@@ -134,7 +134,7 @@ public class ConsulConfigSource extends EnabledConfigSource {
 
     private String getHost() {
         if (host == null) {
-            host = config.getOptionalValue(getKey(KEY_HOST), String.class)
+            host = config.getOptionalValue(getKeyWithPrefix(KEY_HOST), String.class)
                 .orElse(config.getOptionalValue(getConfigKey(KEY_HOST), String.class)// For backward compatibility with MicroProfile-ext
                 .orElse(DEFAULT_HOST)); 
         }

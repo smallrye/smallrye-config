@@ -49,18 +49,12 @@ public abstract class EnabledConfigSource extends BaseConfigSource {
 
     protected boolean isEnabled() {
         Config cnf = getConfig();
-        return cnf.getOptionalValue(getKey(ENABLED), Boolean.class)
+        return cnf.getOptionalValue(getKeyWithPrefix(ENABLED), Boolean.class)
                 .orElse(cnf.getOptionalValue(getClassEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
                 .orElse(cnf.getOptionalValue(getInstanceEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
                 .orElse(true)));
     }
 
-    protected String getKey(String key){
-        String prefix = getClass().getPackage().getName() + ".";
-        if(key==null)return prefix;
-        return prefix + key;
-    }
-    
     protected String getClassKeyPrefix(){
         return getClass().getSimpleName();
     }
@@ -74,5 +68,4 @@ public abstract class EnabledConfigSource extends BaseConfigSource {
     }
     
     private static final String ENABLED = "enabled";
-    private static final String DOT= ".";
 }

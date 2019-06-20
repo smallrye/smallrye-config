@@ -63,6 +63,5 @@ public class PropertiesConfigSource extends AbstractUrlBasedSource {
         return nprops;
     }
     
-    private static final String DOT = ".";
     private static final String WHACK_WHACK = "\\";
 }

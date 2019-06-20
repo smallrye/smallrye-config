@@ -73,7 +73,7 @@ public class XmlConfigSource extends AbstractUrlBasedSource {
         private int depth = -1;
         
         public Handler(Config cfg,String keySeparator){
-            this.ignoreRoot = cfg.getOptionalValue(getKey("ignoreRoot"), Boolean.class).orElse(true);
+            this.ignoreRoot = cfg.getOptionalValue(getKeyWithPrefix("ignoreRoot"), Boolean.class).orElse(true);
             this.keySeparator = keySeparator;
         }
         

@@ -69,6 +69,12 @@ public abstract class BaseConfigSource implements ConfigSource {
         }
     }
 
+    protected String getKeyWithPrefix(String key){
+        String prefix = getClass().getPackage().getName() + DOT;
+        if(key==null)return prefix;
+        return prefix + key;
+    }
+    
     private Config createConfig(){
         return ConfigProviderResolver.instance()
             .getBuilder()
@@ -76,4 +82,5 @@ public abstract class BaseConfigSource implements ConfigSource {
             .build();
     }
     
+    protected static final String DOT= ".";
 }

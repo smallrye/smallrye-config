@@ -77,7 +77,7 @@ public class EtcdConfigSource extends EnabledConfigSource {
 
     @Override
     public String getValue(String key) {
-        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKey(null))) {
+        if (key.startsWith(KEY_PREFIX) || key.startsWith(getKeyWithPrefix(null))) {
             // in case we are about to configure ourselves we simply ignore that key
             return null;
         }
@@ -141,37 +141,37 @@ public class EtcdConfigSource extends EnabledConfigSource {
     }
     
     private String loadScheme(){
-        return config.getOptionalValue(getKey(KEY_SCHEME), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_SCHEME), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_SCHEME), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_SCHEME)); 
     }
     
     private String loadHost(){
-        return config.getOptionalValue(getKey(KEY_HOST), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_HOST), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_HOST), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_HOST)); 
     }
     
     private Integer loadPort(){
-        return config.getOptionalValue(getKey(KEY_PORT), Integer.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_PORT), Integer.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_PORT), Integer.class)// For backward compatibility with MicroProfile-ext
             .orElse(DEFAULT_PORT)); 
     }
     
     private String loadUser(){
-        return config.getOptionalValue(getKey(KEY_USER), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_USER), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_USER), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(null)); 
     }
     
     private String loadPassword(){
-        return config.getOptionalValue(getKey(KEY_PASSWORD), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_PASSWORD), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_PASSWORD), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(null)); 
     }
     
     private String loadAuthority(){
-        return config.getOptionalValue(getKey(KEY_AUTHORITY), String.class)
+        return config.getOptionalValue(getKeyWithPrefix(KEY_AUTHORITY), String.class)
             .orElse(config.getOptionalValue(getConfigKey(KEY_AUTHORITY), String.class)// For backward compatibility with MicroProfile-ext
             .orElse(null)); 
     }
