@@ -24,7 +24,6 @@
     <properties>
         <lombok.version>1.18.8</lombok.version>
         <microProfile.version>2.2</microProfile.version>
-        <arquillian.version>1.4.1.Final</arquillian.version>
     </properties>
     
     <dependencyManagement>
@@ -46,11 +45,9 @@
             </dependency>
             <!-- For testing -->
             <dependency>
-                <groupId>org.jboss.arquillian</groupId>
-                <artifactId>arquillian-bom</artifactId>
-                <version>${arquillian.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
+                <groupId>org.jboss.arquillian.testng</groupId>
+                <artifactId>arquillian-testng-container</artifactId>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
