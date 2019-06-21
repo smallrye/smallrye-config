@@ -18,14 +18,14 @@ Values are cached to reduce calls to consul. This config source does not support
 
 ## Configure options
 
-    io.smallrye.ext.config.source.consul.host (default to localhost)
-    io.smallrye.ext.config.source.consul.prefix (default no prefix)
-    io.smallrye.ext.config.source.consul.validity (default 30s)
+    io.smallrye.config.source.consul.host (default to localhost)
+    io.smallrye.config.source.consul.prefix (default no prefix)
+    io.smallrye.config.source.consul.validity (default 30s)
   
 
 You can disable the config source by setting this config:
     
-    io.smallrye.ext.config.source.consul.enabled=false  
+    io.smallrye.config.source.consul.enabled=false  
 
 ## Links
 * https://github.com/rikcarve/consulkv-maven-plugin

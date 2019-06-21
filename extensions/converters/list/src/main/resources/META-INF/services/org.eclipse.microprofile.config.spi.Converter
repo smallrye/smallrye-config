@@ -1,2 +1,2 @@
-io.smallrye.ext.config.converter.list.ListConverter
-io.smallrye.ext.config.converter.list.ArrayConverter
+io.smallrye.config.converter.list.ListConverter
+io.smallrye.config.converter.list.ArrayConverter

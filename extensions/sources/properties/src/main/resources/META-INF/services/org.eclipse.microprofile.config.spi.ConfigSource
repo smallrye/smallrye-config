@@ -1,1 +1,1 @@
-io.smallrye.ext.config.source.properties.PropertiesConfigSource
+io.smallrye.config.source.properties.PropertiesConfigSource

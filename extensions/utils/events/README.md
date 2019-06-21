@@ -134,7 +134,7 @@ You can Match on the following fields of the `ChangeEvent` object:
 
 An example of a source that uses this is [Memory Config source](https://github.com/smallrye/smallrye-config/tree/master/extensions/sources/memory)
 
-`io.smallrye.ext.config.events.ChangeEventNotifier` is a bean that makes it easy to detect changes and fire the appropriate events. 
+`io.smallrye.config.events.ChangeEventNotifier` is a bean that makes it easy to detect changes and fire the appropriate events. 
 
 To use it in your own source:
 

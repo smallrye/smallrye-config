@@ -1,5 +1,5 @@
 thorntail:
     logging:
         loggers:
-            org.microprofileext.config:
+            io.smallrye.config.example:
                 level: FINEST

@@ -1,1 +1,1 @@
-io.smallrye.ext.config.source.db.DatasourceConfigSource
+io.smallrye.config.source.db.DatasourceConfigSource

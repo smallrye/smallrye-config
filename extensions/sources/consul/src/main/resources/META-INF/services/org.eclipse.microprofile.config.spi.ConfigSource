@@ -1,1 +1,1 @@
-io.smallrye.ext.config.source.consul.ConsulConfigSource
+io.smallrye.config.source.consul.ConsulConfigSource

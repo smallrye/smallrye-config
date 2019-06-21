@@ -17,13 +17,13 @@ Use [etcd](https://coreos.com/etcd/) to get config values. You can define the se
 
 ## Configure options
 
-    io.smallrye.ext.config.source.etcd.scheme=http (default)
-    io.smallrye.ext.config.source.etcd.host=localhost (default)
-    io.smallrye.ext.config.source.etcd.port=2379 (default)
-    io.smallrye.ext.config.source.etcd.user (default no user)
-    io.smallrye.ext.config.source.etcd.password (default no password)
-    io.smallrye.ext.config.source.etcd.authority (default no authority)
+    io.smallrye.config.source.etcd.scheme=http (default)
+    io.smallrye.config.source.etcd.host=localhost (default)
+    io.smallrye.config.source.etcd.port=2379 (default)
+    io.smallrye.config.source.etcd.user (default no user)
+    io.smallrye.config.source.etcd.password (default no password)
+    io.smallrye.config.source.etcd.authority (default no authority)
 
 You can disable the config source by setting this config:
     
-    io.smallrye.ext.config.source.etcd.enabled=false  
+    io.smallrye.config.source.etcd.enabled=false  

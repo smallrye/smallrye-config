@@ -23,8 +23,8 @@ You will need to boostrap your application with the location of your Zookeeper s
 Add the following to `src/main/resources/META-INF/mircoprofile-config.properties` or create equivalent Environment Variables.
 
 ```bash
-io.smallrye.configsource.zookeeper.url=localhost:2181
-io.smallrye.configsource.zookeeper.applicationId=com.example.my-application
+io.smallrye.config.source.zookeeper.url=localhost:2181
+io.smallrye.config.source.zookeeper.applicationId=com.example.my-application
 ```
 
 Following this any properties that are looked up via the Config API or Injected will be looked up in Zookeeper in addition to the standard MicroProfile Config locations.

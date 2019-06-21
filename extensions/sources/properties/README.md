@@ -57,15 +57,15 @@ You can `inject` the jedis using any of the following:
 
 By default the config source will look for a file called `application.properties`. You can set the location(s) of the files:
 
-    io.smallrye.ext.config.source.properties.url=<here the url(s)>
+    io.smallrye.config.source.properties.url=<here the url(s)>
 
 example:
 
-    io.smallrye.ext.config.source.properties.url=file:/tmp/myconfig.properties
+    io.smallrye.config.source.properties.url=file:/tmp/myconfig.properties
 
 You can also add more than one location by comma-separating the location:
 
-    io.smallrye.ext.config.source.properties.url=file:/tmp/myconfig.properties,http://localhost/myconfig.properties
+    io.smallrye.config.source.properties.url=file:/tmp/myconfig.properties,http://localhost/myconfig.properties
 
 The latest files will override properties in previous files. As example, if using above configuration, property `foo=bar` in `file:/tmp/myconfig.properties` will be override if it's added to `http://localhost/myconfig.properties`.
 
@@ -73,7 +73,7 @@ The latest files will override properties in previous files. As example, if usin
 
 You can watch the resource for changes. This feature is disabled by default. To enable:
 
-    io.smallrye.ext.config.source.properties.pollForChanges=true
+    io.smallrye.config.source.properties.pollForChanges=true
 
 By default it will poll every **5 seconds**. You can change that, example to poll every 5 minutes:
 
@@ -85,9 +85,9 @@ This config source fires CDI Events on changes (if above detecting for changes i
 
 Read more about [Config Events](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/events)
 
-You can disable this with the `io.smallrye.ext.config.source.properties.notifyOnChanges` property:
+You can disable this with the `io.smallrye.config.source.properties.notifyOnChanges` property:
 
-    io.smallrye.ext.config.source.properties.notifyOnChanges=false
+    io.smallrye.config.source.properties.notifyOnChanges=false
 
 If you added more than one resource as source, the event will only fire if the resulting file change also changed the global source change, as one file takes priority over the other.
 
@@ -100,9 +100,9 @@ By default the separator used in the key is a DOT (.) example:
     "location.protocol": "http"
 ```
 
-You can change this by setting `io.smallrye.ext.config.source.properties.keyseparator` to the desired separator, example:
+You can change this by setting `io.smallrye.config.source.properties.keyseparator` to the desired separator, example:
 
-    io.smallrye.ext.config.source.properties.keyseparator=_
+    io.smallrye.config.source.properties.keyseparator=_
 
 will create:
 
@@ -115,4 +115,4 @@ will create:
 
 You can disable this config source:
 
-    io.smallrye.ext.config.source.properties.enabled=false
+    io.smallrye.config.source.properties.enabled=false

@@ -1,1 +1,1 @@
-io.smallrye.ext.config.source.etcd.EtcdConfigSource
+io.smallrye.config.source.etcd.EtcdConfigSource
