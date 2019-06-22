@@ -50,7 +50,7 @@ public class Repository {
         }
     }
     
-    public Map<String, String> getAllConfigValues() {
+    public synchronized Map<String, String> getAllConfigValues() {
         Map<String, String> result = new HashMap<>();
         if (selectAll != null) {
             try {
@@ -65,7 +65,7 @@ public class Repository {
         return result;
     }
     
-    public String getConfigValue(String key) {
+    public synchronized String getConfigValue(String key) {
         if (selectOne != null) {
             try {
                 selectOne.setString(1, key);
