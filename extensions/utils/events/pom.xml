@@ -14,4 +14,16 @@
     <name>SmallRye: MicroProfile Config Extensions: Utils - Events</name>
     <description>A library to make it easy to add config events</description>
     
+    <dependencies>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>

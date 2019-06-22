@@ -24,6 +24,7 @@
     <properties>
         <lombok.version>1.18.8</lombok.version>
         <microProfile.version>2.2</microProfile.version>
+        <openapi-version>1.1</openapi-version>
     </properties>
     
     <dependencyManagement>
@@ -36,6 +37,14 @@
                 <type>pom</type>
                 <scope>provided</scope>
             </dependency>
+            <!-- Not sure why this is not pulled from above dependency -->
+            <dependency>
+                <groupId>org.eclipse.microprofile.openapi</groupId>
+                <artifactId>microprofile-openapi-api</artifactId>
+                <version>${openapi-version}</version>
+                <scope>provided</scope>
+            </dependency> 
+             
             <!-- Lombok -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -54,9 +63,8 @@
     
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.microprofile</groupId>
-            <artifactId>microprofile</artifactId>
-            <type>pom</type>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

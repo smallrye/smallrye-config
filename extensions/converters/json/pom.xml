@@ -13,4 +13,12 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Converters - Json</name>
     <description>A library to convert Json</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>

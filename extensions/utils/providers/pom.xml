@@ -13,5 +13,13 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Extensions: Utils - Providers</name>
     
-    <description>Some CDI Providers for config sources</description>  
+    <description>Some CDI Providers for config sources</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>
