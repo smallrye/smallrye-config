@@ -51,14 +51,14 @@
         <!-- Memory -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configsource-memory</artifactId>
+            <artifactId>configsource-memory-1.3</artifactId>
             <version>${project.version}</version>
         </dependency>
         
         <!-- Yaml file -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configsource-yaml</artifactId>
+            <artifactId>configsource-yaml-1.3</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -66,7 +66,7 @@
         <!-- Json file -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configsource-json</artifactId>
+            <artifactId>configsource-json-1.3</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -74,7 +74,7 @@
         <!-- Xml file -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configsource-xml</artifactId>
+            <artifactId>configsource-xml-1.3</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -82,7 +82,7 @@
         <!-- Properties file -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configsource-properties</artifactId>
+            <artifactId>configsource-properties-1.3</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
