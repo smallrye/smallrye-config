@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.smallrye.config.source.filebase;
+package io.smallrye.config.source.file;
 
 import io.smallrye.config.events.ChangeEventNotifier;
 import io.smallrye.config.source.EnabledConfigSource;

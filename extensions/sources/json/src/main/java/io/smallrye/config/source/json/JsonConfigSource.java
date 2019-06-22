@@ -15,7 +15,7 @@
  */
 package io.smallrye.config.source.json;
 
-import io.smallrye.config.source.filebase.AbstractUrlBasedSource;
+import io.smallrye.config.source.file.AbstractUrlBasedSource;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;

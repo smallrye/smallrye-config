@@ -15,7 +15,7 @@
  */
 package io.smallrye.config.source.xml;
 
-import io.smallrye.config.source.filebase.AbstractUrlBasedSource;
+import io.smallrye.config.source.file.AbstractUrlBasedSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
