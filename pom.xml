@@ -48,7 +48,7 @@
   <modules>
     <module>implementation</module>
     <module>testsuite</module>
-    <module>docs</module><!-- deprecated: moved to extensions -->
+    <module>docs</module>
     <module>extensions</module>
   </modules>
 

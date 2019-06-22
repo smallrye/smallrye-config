@@ -25,6 +25,10 @@
         <lombok.version>1.18.8</lombok.version>
         <microProfile.version>2.2</microProfile.version>
         <openapi-version>1.1</openapi-version>
+        
+        <mockito.version>2.23.4</mockito.version>
+        <junit.jupiter.version>5.3.2</junit.jupiter.version>
+        <junit.platform.version>1.3.2</junit.platform.version>
     </properties>
     
     <dependencyManagement>
@@ -56,6 +60,24 @@
             <dependency>
                 <groupId>org.jboss.arquillian.testng</groupId>
                 <artifactId>arquillian-testng-container</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-runner</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
