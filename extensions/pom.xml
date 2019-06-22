@@ -31,7 +31,6 @@
         <module>sources/typesafe</module>
         <module>sources/zookeeper</module>
         
-        <module>converters/list</module>
         <module>converters/json</module>
         
         <module>example</module>
