@@ -4,7 +4,7 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions-utils</artifactId>
+        <artifactId>smallrye-config-extensions</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     

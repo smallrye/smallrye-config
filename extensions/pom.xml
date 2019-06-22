@@ -15,10 +15,27 @@
     <name>SmallRye: MicroProfile Config Extensions</name>
     
     <modules>
-        <module>sources</module>
-        <module>utils</module>
-        <module>converters</module>
+        <module>utils/providers</module>
+        <module>utils/events</module>
+        
+        <module>sources/base</module>
+        <module>sources/abstract-file</module>
+        <module>sources/properties</module>
+        <module>sources/yaml</module>
+        <module>sources/json</module>
+        <module>sources/xml</module>
+        <module>sources/memory</module>
+        <module>sources/etcd</module>
+        <module>sources/db</module>
+        <module>sources/consul</module>
+        <module>sources/typesafe</module>
+        <module>sources/zookeeper</module>
+        
+        <module>converters/list</module>
+        <module>converters/json</module>
+        
         <module>example</module>
+        
     </modules>
     
     <properties>
@@ -93,6 +110,43 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        
+        <!-- Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-config-1.3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-weld-embedded</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-core-impl</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
