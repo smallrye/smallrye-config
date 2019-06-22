@@ -48,8 +48,6 @@ public class FileResourceWatcher {
     private final long pollInterval;
     private final Reloadable reloadable;
     
-    private final ScheduledExecutorService scheduledThreadPool = Executors.newSingleThreadScheduledExecutor();
-    
     public FileResourceWatcher(Reloadable reloadable, long pollInterval){
         this.reloadable = reloadable;
         this.pollInterval = pollInterval;
@@ -82,13 +80,17 @@ public class FileResourceWatcher {
             filters.add(filter);
             FILTER_MAP.put(path, filters);
             
+            ScheduledExecutorService scheduledThreadPool = Executors.newSingleThreadScheduledExecutor();
             try {
                 WatchKey key = path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
                 DIRECTORY_WATCHERS.put(key, path);
                 // Here start Runable
                 scheduledThreadPool.schedule(new Poller(),this.pollInterval,TimeUnit.SECONDS);
+                
             } catch (IOException ex) {
                 log.log(Level.WARNING, "Could not register directory [{0}] to watch for changes - {1}", new Object[]{path, ex.getMessage()});
+            } finally {
+                scheduledThreadPool.shutdown();
             }
         }
     }

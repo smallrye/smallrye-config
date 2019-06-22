@@ -190,12 +190,12 @@
                                         <argument>-s</argument>
                                         <argument>${project.build.directory}${file.separator}project-defaults.yml</argument>
                                         <argument>-Sdev</argument>
-                                        <argument>-Dconfigsource.yaml.pollForChanges=true</argument>
-<!--                                        <argument>-Dconfigsource.yaml.notifyOnChanges=false</argument>-->
-                                        <argument>-Dconfigsource.yaml.url=${config.yaml}</argument>
-                                        <argument>-Dconfigsource.json.url=${config.json}</argument>
-                                        <argument>-Dconfigsource.xml.url=${config.xml}</argument>
-                                        <argument>-Dconfigsource.properties.url=${config.properties}</argument>
+                                        <argument>-Dio.smallrye.config.source.yaml.pollForChanges=true</argument>
+<!--                                        <argument>-Dio.smallrye.config.source.yaml.notifyOnChanges=false</argument>-->
+                                        <argument>-Dio.smallrye.config.source.yaml.url=${config.yaml}</argument>
+                                        <argument>-Dio.smallrye.config.source.json.url=${config.json}</argument>
+                                        <argument>-Dio.smallrye.config.source.xml.url=${config.xml}</argument>
+                                        <argument>-Dio.smallrye.config.source.properties.url=${config.properties}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -269,27 +269,27 @@
                             </commandLineOptions>
                             <javaCommandLineOptions>
                                 <option>
-                                    <key>-Dconfigsource.yaml.pollForChanges</key>
+                                    <key>-Dio.smallrye.config.source.yaml.pollForChanges</key>
                                     <value>true</value>
                                 </option>
 <!--                                <option>
-                                    <key>-Dconfigsource.yaml.notifyOnChanges</key>
+                                    <key>-Dio.smallrye.config.source.yaml.notifyOnChanges</key>
                                     <value>false</value>
                                 </option>-->
                                 <option>
-                                    <key>-Dconfigsource.yaml.url</key>
+                                    <key>-Dio.smallrye.config.source.yaml.url</key>
                                     <value>${config.yaml}</value>
                                 </option>
                                 <option>
-                                    <key>-Dconfigsource.json.url</key>
+                                    <key>-Dio.smallrye.config.source.json.url</key>
                                     <value>${config.json}</value>
                                 </option>
                                 <option>
-                                    <key>-Dconfigsource.xml.url</key>
+                                    <key>-Dio.smallrye.config.source.xml.url</key>
                                     <value>${config.xml}</value>
                                 </option>
 <!--                                <option>
-                                    <key>-Dconfigsource.properties.url</key>
+                                    <key>-Dio.smallrye.config.source.properties.url</key>
                                     <value>${config.properties}</value>
                                 </option>-->
                             </javaCommandLineOptions>
@@ -444,12 +444,12 @@
                                         <httpsPort>${openliberty.https.port}</httpsPort>
                                     </bootstrapProperties>
                                     <jvmOptions>
-                                        <param>-Dconfigsource.yaml.pollForChanges=true</param>
-                                        <!--<param>-Dconfigsource.yaml.notifyOnChanges=false</param>-->
-                                        <param>-Dconfigsource.yaml.url=${config.yaml}</param>
-                                        <param>-Dconfigsource.json.url=${config.json}</param>
-                                        <param>-Dconfigsource.xml.url=${config.xml}</param>
-                                        <param>-Dconfigsource.properties.url=${config.properties}</param>
+                                        <param>-Dio.smallrye.config.source.yaml.pollForChanges=true</param>
+                                        <!--<param>-Dio.smallrye.config.source.yaml.notifyOnChanges=false</param>-->
+                                        <param>-Dio.smallrye.config.source.yaml.url=${config.yaml}</param>
+                                        <param>-Dio.smallrye.config.source.json.url=${config.json}</param>
+                                        <param>-Dio.smallrye.config.source.xml.url=${config.xml}</param>
+                                        <param>-Dio.smallrye.config.source.properties.url=${config.properties}</param>
                                     </jvmOptions>
                                 </configuration>
                             </execution>
