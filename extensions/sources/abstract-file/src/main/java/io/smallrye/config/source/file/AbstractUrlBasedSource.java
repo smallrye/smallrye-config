@@ -40,24 +40,20 @@ import org.eclipse.microprofile.config.Config;
 public abstract class AbstractUrlBasedSource extends EnabledConfigSource implements Reloadable {
     private final LinkedHashMap<URL,Map<String, String>> propertiesMap = new LinkedHashMap<>();
     private final Map<String, String> properties = new HashMap<>();
-    private String urlInputString;
-    private String keySeparator;
-    private boolean pollForChanges;
-    private int pollInterval;
-    private boolean notifyOnChanges;
+    private final String urlInputString;
+    private final String keySeparator;
+    private final boolean pollForChanges;
+    private final int pollInterval;
+    private final boolean notifyOnChanges;
     
     private FileResourceWatcher fileResourceWatcher = null;
     private WebResourceWatcher webResourceWatcher = null;
     
-    private Config config;
+    private final Config config;
     
     public AbstractUrlBasedSource(){
-        init();
-    }
-    
-    private void init(){
         String ext = getFileExtension();
-        log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext);
+        log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext); // Only used for backward compatible with MicroProfile-ext
         this.config = super.getConfig();
         this.keySeparator = loadPropertyKeySeparator();
         this.notifyOnChanges = loadNotifyOnChanges();
