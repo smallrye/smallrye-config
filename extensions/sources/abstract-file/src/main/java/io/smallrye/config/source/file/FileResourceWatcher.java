@@ -43,20 +43,12 @@ import lombok.extern.java.Log;
 @Log
 public class FileResourceWatcher {
 
-    private WatchService watcher;
-    
     private final long pollInterval;
     private final Reloadable reloadable;
     
     public FileResourceWatcher(Reloadable reloadable, long pollInterval){
         this.reloadable = reloadable;
         this.pollInterval = pollInterval;
-        
-        try {
-            this.watcher = FileSystems.getDefault().newWatchService();
-        } catch (IOException ex) {
-            log.log(Level.SEVERE, null, ex);
-        }
     }
     
     public void startWatching(URL url){
@@ -82,10 +74,11 @@ public class FileResourceWatcher {
             
             ScheduledExecutorService scheduledThreadPool = Executors.newSingleThreadScheduledExecutor();
             try {
-                WatchKey key = path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
+                WatchService ws = getWatcherService();
+                WatchKey key = path.register(ws, StandardWatchEventKinds.ENTRY_MODIFY);
                 DIRECTORY_WATCHERS.put(key, path);
                 // Here start Runable
-                scheduledThreadPool.schedule(new Poller(),this.pollInterval,TimeUnit.SECONDS);
+                scheduledThreadPool.schedule(new Poller(ws),this.pollInterval,TimeUnit.SECONDS);
                 
             } catch (IOException ex) {
                 log.log(Level.WARNING, "Could not register directory [{0}] to watch for changes - {1}", new Object[]{path, ex.getMessage()});
@@ -100,16 +93,33 @@ public class FileResourceWatcher {
         return (WatchEvent<T>)event;
     }
     
-    class Poller implements Runnable{
+    private WatchService getWatcherService() throws IOException{
+        if(this.watcher!=null)return this.watcher;
+        
+        try {
+            this.watcher = FileSystems.getDefault().newWatchService();
+            return this.watcher;
+        } catch (IOException ex) {
+            log.log(Level.SEVERE, "Could not start watcher service [{0}]", ex.getMessage());
+            throw ex;
+        }
+        
+    }
     
+    class Poller implements Runnable{
+        final WatchService ws;
+        Poller(WatchService ws){
+            this.ws = ws;
+        }
+        
         @Override
         public void run() {
             WatchKey key;
             try {
-                key = watcher.take();
+                key = ws.take();
             } catch (InterruptedException x) {
                 return;
-             }
+            }
 
             Path d = DIRECTORY_WATCHERS.get(key);
             if (d != null) {
@@ -142,4 +152,5 @@ public class FileResourceWatcher {
     
     private static final Map<WatchKey,Path> DIRECTORY_WATCHERS = new ConcurrentHashMap<>();
     private static final Map<Path,List<String>> FILTER_MAP = new ConcurrentHashMap<>();
+    private WatchService watcher = null;
 }
