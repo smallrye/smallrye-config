@@ -29,7 +29,7 @@ import org.eclipse.microprofile.config.Config;
  *
  * @author <a href="mailto:dpmoore@acm.org">Derek P. Moore</a>
  */
-public abstract class EnabledConfigSource extends BaseConfigSource {
+public abstract class EnabledConfigSource extends SelfConfiguringConfigSource {
 
     /**
      * Called to return the properties in this config source when it is enabled

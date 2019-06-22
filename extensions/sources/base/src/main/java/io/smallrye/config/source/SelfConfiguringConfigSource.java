@@ -31,13 +31,13 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * @author <a href="mailto:dpmoore@acm.org">Derek P. Moore</a>
  */
 @Log
-public abstract class BaseConfigSource implements ConfigSource {
+public abstract class SelfConfiguringConfigSource implements ConfigSource {
     
     @Getter
     private final Config config;
     private int ordinal = 1000; // default
 
-    public BaseConfigSource(){
+    public SelfConfiguringConfigSource(){
         super();
         this.config = createConfig();
     }
