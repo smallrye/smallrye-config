@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.Config;
@@ -46,10 +48,12 @@ public class EtcdConfigSource extends EnabledConfigSource {
 
     private Client client = null;
     private final Config config;
+    private final long timeout;
     
     public EtcdConfigSource(){
         super.initOrdinal(320);
         this.config = getConfig();
+        timeout = loadTimeout();
     }
     
     @Override
@@ -60,7 +64,7 @@ public class EtcdConfigSource extends EnabledConfigSource {
 
         CompletableFuture<GetResponse> getFuture = getClient().getKVClient().get(bsKey);
         try {
-            GetResponse response = getFuture.get();
+            GetResponse response = getFuture.get(timeout, TimeUnit.SECONDS);
             List<KeyValue> kvs = response.getKvs();
 
             for(KeyValue kv:kvs){
@@ -68,7 +72,10 @@ public class EtcdConfigSource extends EnabledConfigSource {
                 String value = kv.getValue().toStringUtf8();
                 m.put(key, value);
             }
-        } catch (InterruptedException | ExecutionException ex) {
+        } catch (InterruptedException ex){
+            Thread.currentThread().interrupt();
+            log.log(Level.FINEST, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
+        } catch (ExecutionException | TimeoutException ex) {
             log.log(Level.FINEST, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
         }
         
@@ -85,10 +92,13 @@ public class EtcdConfigSource extends EnabledConfigSource {
             ByteSequence bsKey = ByteSequence.fromString(key);
             CompletableFuture<GetResponse> getFuture = getClient().getKVClient().get(bsKey);
             try {
-                GetResponse response = getFuture.get();
+                GetResponse response = getFuture.get(timeout, TimeUnit.SECONDS);
                 String value = toString(response);
                 return value;
-            } catch (InterruptedException | ExecutionException ex) {
+            } catch (InterruptedException ex){
+                Thread.currentThread().interrupt();
+                log.log(Level.FINEST, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
+            } catch (ExecutionException | TimeoutException ex){
                 log.log(Level.FINEST, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
             }
         }
@@ -176,6 +186,11 @@ public class EtcdConfigSource extends EnabledConfigSource {
             .orElse(null)); 
     }
     
+    private Long loadTimeout(){
+        return config.getOptionalValue(getKeyWithPrefix(KEY_TIMEOUT), Long.class)
+            .orElse(DEFAULT_TIMEOUT); 
+    }
+    
     @Deprecated
     private String getConfigKey(String subKey){
         return KEY_PREFIX + subKey;
@@ -195,6 +210,9 @@ public class EtcdConfigSource extends EnabledConfigSource {
     private static final String KEY_USER = "user";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_AUTHORITY = "authority";
+    
+    private static final String KEY_TIMEOUT = "timeout";
+    private static final Long DEFAULT_TIMEOUT = 10L;
     
     private static final String EMPTY = "";
 }
