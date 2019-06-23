@@ -74,9 +74,9 @@ public class EtcdConfigSource extends EnabledConfigSource {
             }
         } catch (InterruptedException ex){
             Thread.currentThread().interrupt();
-            log.log(Level.FINEST, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
+            log.log(Level.SEVERE, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
         } catch (ExecutionException | TimeoutException ex) {
-            log.log(Level.FINEST, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
+            log.log(Level.SEVERE, "Can not get all config keys and values from etcd Config source: {1}", new Object[]{ex.getMessage()});
         }
         
         return m;
@@ -97,9 +97,9 @@ public class EtcdConfigSource extends EnabledConfigSource {
                 return value;
             } catch (InterruptedException ex){
                 Thread.currentThread().interrupt();
-                log.log(Level.FINEST, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
+                log.log(Level.SEVERE, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
             } catch (ExecutionException | TimeoutException ex){
-                log.log(Level.FINEST, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
+                log.log(Level.SEVERE, "Can not get config value for [{0}] from etcd Config source: {1}", new Object[]{key, ex.getMessage()});
             }
         }
         return null;
