@@ -87,6 +87,14 @@
             <scope>runtime</scope>
         </dependency>
         
+        <!-- JsonConverter -->
+        <dependency>
+            <groupId>io.smallrye.ext</groupId>
+            <artifactId>configconverters-json</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        
         <!-- TODO: Change to Smallrye - OpenApi UI, for demo purpose -->
         <dependency>
             <groupId>org.microprofile-ext.openapi-ext</groupId>

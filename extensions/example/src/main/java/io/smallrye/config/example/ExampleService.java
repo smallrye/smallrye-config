@@ -19,7 +19,9 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -49,8 +51,17 @@ public class ExampleService {
     @Inject
     private Config config;
     
-    @Inject @ConfigProperty(name="ysomekey")
+    @Inject @ConfigProperty(name = "ysomekey")
     private Provider<String> ysomekey;
+    
+    @Inject @ConfigProperty(name = "someJsonObject",defaultValue = "")
+    private JsonObject someJsonObject;
+    
+    @Inject @ConfigProperty(name = "unconfiguredJsonObject",defaultValue = "")
+    private JsonObject unconfiguredJsonObject;
+    
+    @Inject @ConfigProperty(name = "someJsonArray",defaultValue = "")
+    private JsonArray someJsonArray;
     
     @GET
     @Path("/all")
@@ -96,5 +107,32 @@ public class ExampleService {
             arrayBuilder.add(Json.createObjectBuilder().add(String.valueOf(source.getOrdinal()), source.getName()).build());
         }
         return Response.ok(arrayBuilder.build()).build();
+    }
+    
+    @GET
+    @Path("/someJsonObject")
+    @Operation(operationId = "valueSomeJsonObject", description = "Getting the value for someJsonObject")
+    @APIResponse(responseCode = "200", description = "Successful, returning the value")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getValueSomeJsonObject() {
+        return Response.ok(someJsonObject).build();   
+    }
+    
+    @GET
+    @Path("/someJsonArray")
+    @Operation(operationId = "valueSomeJsonArray", description = "Getting the value for someJsonArray")
+    @APIResponse(responseCode = "200", description = "Successful, returning the value")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getValueSomeJsonArray() {
+        return Response.ok(someJsonArray).build();   
+    }
+    
+    @GET
+    @Path("/unconfiguredJsonObject")
+    @Operation(operationId = "valueUnconfiguredJsonObject", description = "Getting the value for unconfiguredJsonObject")
+    @APIResponse(responseCode = "200", description = "Successful, returning the value")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getValueUnconfiguredJsonObject() {
+        return Response.ok(unconfiguredJsonObject).build();   
     }
 }
