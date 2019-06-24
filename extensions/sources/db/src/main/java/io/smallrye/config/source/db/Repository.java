@@ -21,15 +21,14 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import lombok.extern.java.Log;
-
-@Log
 public class Repository {
+    private static final Logger log = Logger.getLogger(Repository.class.getName());
     
     PreparedStatement selectOne = null;
     PreparedStatement selectAll = null;

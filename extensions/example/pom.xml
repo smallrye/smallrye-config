@@ -90,7 +90,7 @@
         <!-- JsonConverter -->
         <dependency>
             <groupId>io.smallrye.ext</groupId>
-            <artifactId>configconverters-json</artifactId>
+            <artifactId>configconverters-json-1.3</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>

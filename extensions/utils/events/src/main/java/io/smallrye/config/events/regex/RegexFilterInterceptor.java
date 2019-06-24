@@ -24,14 +24,14 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import io.smallrye.config.events.ChangeEvent;
-import lombok.extern.java.Log;
+import java.util.logging.Logger;
 
-@Log    
 @RegexFilter(value = "")
 @Interceptor
 @Priority(100)
 public class RegexFilterInterceptor {
-
+    private static final Logger log = Logger.getLogger(RegexFilterInterceptor.class.getName());
+    
     @AroundInvoke
     public Object observer(InvocationContext ctx) throws Exception {
         

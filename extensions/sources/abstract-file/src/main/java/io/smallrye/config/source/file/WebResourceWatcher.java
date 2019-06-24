@@ -25,15 +25,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import lombok.extern.java.Log;
+import java.util.logging.Logger;
 
 /**
  * Watching web resources for changes
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class WebResourceWatcher {
-
+    private static final Logger log = Logger.getLogger(WebResourceWatcher.class.getName());
     private final long pollInterval;
     private final Reloadable reloadable;
     

@@ -25,22 +25,20 @@ import org.apache.commons.text.StringSubstitutor;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.kv.model.GetValue;
 import io.smallrye.config.source.EnabledConfigSource;
-
-import lombok.extern.java.Log;
-import org.eclipse.microprofile.config.Config;
+import java.util.logging.Logger;
 
 /**
  * Consul config source
  * @author Arik Dasen
  */
-@Log
 public class ConsulConfigSource extends EnabledConfigSource {
+    private static final Logger log = Logger.getLogger(ConsulConfigSource.class.getName());
     
     private static final String NAME = "ConsulConfigSource";
 
     // enable variable substitution for configsource config (e.g. consul host might be injected by the environment, but with a different key)
     // TODO verify if still needed
-    private final StringSubstitutor substitutor = new StringSubstitutor(s -> getConfig().getOptionalValue(s, String.class).orElse(""));
+    private final StringSubstitutor substitutor = new StringSubstitutor(s -> config.getOptionalValue(s, String.class).orElse(""));
 
     ConsulClient client = null;
     private Long validity = null;
@@ -48,18 +46,15 @@ public class ConsulConfigSource extends EnabledConfigSource {
     private String host = null;
     
     private final Map<String, TimedEntry> cache = new ConcurrentHashMap<>();
-    private final Config config;
     
     public ConsulConfigSource() {
         super.initOrdinal(320);
-        this.config = getConfig();
     }
     
     // used for tests
     public ConsulConfigSource(ConsulClient client) {
         super.initOrdinal(320);
         this.client = client;
-        this.config = getConfig();
     }
 
     @Override

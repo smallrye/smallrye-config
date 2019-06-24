@@ -17,7 +17,6 @@ package io.smallrye.config.source;
 
 import java.util.Collections;
 import java.util.Map;
-import org.eclipse.microprofile.config.Config;
 
 /**
  * A config source that can be disabled by class or by instance (all vs each).
@@ -48,10 +47,9 @@ public abstract class EnabledConfigSource extends SelfConfiguringConfigSource {
     }
 
     protected boolean isEnabled() {
-        Config cnf = getConfig();
-        return cnf.getOptionalValue(getKeyWithPrefix(ENABLED), Boolean.class)
-                .orElse(cnf.getOptionalValue(getClassEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
-                .orElse(cnf.getOptionalValue(getInstanceEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
+        return config.getOptionalValue(getKeyWithPrefix(ENABLED), Boolean.class)
+                .orElse(config.getOptionalValue(getClassEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
+                .orElse(config.getOptionalValue(getInstanceEnableKey(), Boolean.class)// For backward compatibility with MicroProfile-ext
                 .orElse(true)));
     }
 

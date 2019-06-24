@@ -25,9 +25,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.Config;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -38,8 +38,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * Xml config source
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class XmlConfigSource extends AbstractUrlBasedSource {
+    private static final Logger log = Logger.getLogger(XmlConfigSource.class.getName());
     
     @Override
     protected String getFileExtension() {
@@ -52,13 +52,13 @@ public class XmlConfigSource extends AbstractUrlBasedSource {
             InputSource inputSource = new InputSource(inputStream);
             return parse(inputSource);
         } catch (SAXException | IOException | ParserConfigurationException ex) {
-            log.log(Level.WARNING, "Could not create properties from XML [{0}]", ex.getMessage());
+            log.log(Level.SEVERE, "Could not create properties from XML [{0}]", ex.getMessage());
             return new HashMap<>();
         }
     }
     
     private Map<String, String> parse(InputSource inputSource) throws SAXException, IOException, ParserConfigurationException {
-        final Handler handler = new Handler(getConfig(),super.getKeySeparator());
+        final Handler handler = new Handler(config,super.getKeySeparator());
         SAXParserFactory.newInstance().newSAXParser().parse(inputSource, handler);
         return handler.result;
     }

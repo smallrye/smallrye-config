@@ -21,14 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import lombok.extern.java.Log;
 import org.yaml.snakeyaml.Yaml;
 
 /**
  * Yaml config source
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class YamlConfigSource extends AbstractUrlBasedSource {
 
     @Override

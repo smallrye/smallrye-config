@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
-import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -34,7 +33,6 @@ import org.junit.runner.RunWith;
 /**
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 @RunWith(Arquillian.class)
 public class ListTest {
 

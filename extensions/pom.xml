@@ -38,7 +38,6 @@
     </modules>
     
     <properties>
-        <lombok.version>1.18.8</lombok.version>
         <microProfile.version>2.2</microProfile.version>
         <openapi-version>1.1</openapi-version>
         
@@ -69,14 +68,7 @@
                 <version>${openapi-version}</version>
                 <scope>provided</scope>
             </dependency> 
-             
-            <!-- Lombok -->
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-                <scope>provided</scope>
-            </dependency>
+        
             <!-- For testing -->
             <dependency>
                 <groupId>org.jboss.arquillian.testng</groupId>
@@ -108,11 +100,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
         

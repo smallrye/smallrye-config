@@ -18,14 +18,14 @@ package io.smallrye.config.source.memory;
 import io.smallrye.config.source.EnabledConfigSource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.extern.java.Log;
+import java.util.logging.Logger;
 
 /**
  * In memory config source. Use the REST Endpoint to populate values
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class MemoryConfigSource extends EnabledConfigSource {
+    private static final Logger log = Logger.getLogger(MemoryConfigSource.class.getName());
     
     public static final String NAME = "MemoryConfigSource";
     private static final Map<String,String> PROPERTIES = new ConcurrentHashMap<>();

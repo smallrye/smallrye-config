@@ -29,8 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-import lombok.extern.java.Log;
-import org.eclipse.microprofile.config.Config;
+import java.util.logging.Logger;
 
 /**
  * Etcd config source
@@ -41,18 +40,16 @@ import org.eclipse.microprofile.config.Config;
  *          Watch.Watcher watch = this.client.getWatchClient().watch(bsKey);
  *          watch.listen();
  */
-@Log
 public class EtcdConfigSource extends EnabledConfigSource {
+    private static final Logger log = Logger.getLogger(EtcdConfigSource.class.getName());
     
     private static final String NAME = "EtcdConfigSource";
 
     private Client client = null;
-    private final Config config;
     private final long timeout;
     
     public EtcdConfigSource(){
         super.initOrdinal(320);
-        this.config = getConfig();
         timeout = loadTimeout();
     }
     

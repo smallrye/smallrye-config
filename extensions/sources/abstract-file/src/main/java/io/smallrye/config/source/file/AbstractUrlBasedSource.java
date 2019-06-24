@@ -27,8 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
-import lombok.extern.java.Log;
-import org.eclipse.microprofile.config.Config;
+import java.util.logging.Logger;
 
 /**
  * URL Based property files
@@ -36,8 +35,9 @@ import org.eclipse.microprofile.config.Config;
  * Load some file from a file and convert to properties.
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public abstract class AbstractUrlBasedSource extends EnabledConfigSource implements Reloadable {
+    private static final Logger log = Logger.getLogger(AbstractUrlBasedSource.class.getName());
+    
     private final LinkedHashMap<URL,Map<String, String>> propertiesMap = new LinkedHashMap<>();
     private final Map<String, String> properties = new HashMap<>();
     private final String urlInputString;
@@ -49,12 +49,9 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     private FileResourceWatcher fileResourceWatcher = null;
     private WebResourceWatcher webResourceWatcher = null;
     
-    private final Config config;
-    
     public AbstractUrlBasedSource(){
-        String ext = getFileExtension();
-        log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext); // Only used for backward compatible with MicroProfile-ext
-        this.config = super.getConfig();
+        String ext = getFileExtension();// Only used for backward compatible with MicroProfile-ext
+        log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext);
         this.keySeparator = loadPropertyKeySeparator();
         this.notifyOnChanges = loadNotifyOnChanges();
         this.pollForChanges = loadPollForChanges();

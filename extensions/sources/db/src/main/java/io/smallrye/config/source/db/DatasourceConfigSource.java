@@ -22,12 +22,11 @@ import io.smallrye.config.source.EnabledConfigSource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import lombok.extern.java.Log;
-import org.eclipse.microprofile.config.Config;
-
-@Log
 public class DatasourceConfigSource extends EnabledConfigSource {
+    private static final Logger log = Logger.getLogger(DatasourceConfigSource.class.getName());
+    
     private static final String NAME = "DatasourceConfigSource";
     
     private final Map<String, TimedEntry> cache = new ConcurrentHashMap<>();
@@ -40,19 +39,15 @@ public class DatasourceConfigSource extends EnabledConfigSource {
     private final String keyColumn;
     private final String valueColumn;
         
-    private final Config config;
-    
     public DatasourceConfigSource() {
         log.info("Loading [db] MicroProfile ConfigSource");
-        this.config = getConfig();
-        this.notifyOnChanges = loadNotifyOnChanges();
+        super.initOrdinal(120);
         
+        this.notifyOnChanges = loadNotifyOnChanges();
         this.datasource = loadDatasource();
         this.table = loadTable();
         this.keyColumn = loadKeyColumn();
         this.valueColumn = loadValueColumn();
-        
-        super.initOrdinal(120);
     }
 
     @Override

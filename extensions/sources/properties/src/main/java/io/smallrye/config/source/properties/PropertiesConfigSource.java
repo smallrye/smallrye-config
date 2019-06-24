@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
-import lombok.extern.java.Log;
+import java.util.logging.Logger;
 
 /**
  * Properties config source
@@ -30,9 +30,9 @@ import lombok.extern.java.Log;
  * @author <a href="mailto:dpmoore@acm.org">Derek P. Moore</a>
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class PropertiesConfigSource extends AbstractUrlBasedSource {
-
+    private static final Logger log = Logger.getLogger(PropertiesConfigSource.class.getName());
+    
     @Override
     protected String getFileExtension() {
         return "properties";

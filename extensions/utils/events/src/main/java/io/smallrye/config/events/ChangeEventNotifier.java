@@ -26,7 +26,6 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import lombok.extern.java.Log;
 
 /**
  * Easy way to fire a change event
@@ -36,7 +35,6 @@ import lombok.extern.java.Log;
  * For some reason, CDI.current() is only working on Payara, and not on Thorntail and OpenLiberty, so this ugly footwork is to
  * get around that.
  */
-@Log
 @ApplicationScoped
 public class ChangeEventNotifier {
 

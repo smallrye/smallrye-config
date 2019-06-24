@@ -19,14 +19,12 @@ import java.io.StringReader;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonReader;
-import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Converts a json string to a JSonArray
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class JsonArrayConverter implements Converter<JsonArray> {
 
     @Override

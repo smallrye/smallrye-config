@@ -16,8 +16,7 @@
 package io.smallrye.config.source;
 
 import java.util.logging.Level;
-import lombok.Getter;
-import lombok.extern.java.Log;
+import java.util.logging.Logger;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
@@ -30,11 +29,10 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * @author <a href="mailto:gpetracek@apache.org">Gerhard Petracek</a>
  * @author <a href="mailto:dpmoore@acm.org">Derek P. Moore</a>
  */
-@Log
 public abstract class SelfConfiguringConfigSource implements ConfigSource {
+    private static final Logger log = Logger.getLogger(SelfConfiguringConfigSource.class.getName());
     
-    @Getter
-    private final Config config;
+    protected final Config config;
     private int ordinal = 1000; // default
 
     public SelfConfiguringConfigSource(){
@@ -46,7 +44,7 @@ public abstract class SelfConfiguringConfigSource implements ConfigSource {
     public int getOrdinal() {
         return ordinal;
     }
-
+    
     /**
      * Init method e.g. for initializing the ordinal.
      * This method can be used from a subclass to determine

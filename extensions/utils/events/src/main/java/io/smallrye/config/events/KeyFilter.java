@@ -22,8 +22,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import javax.enterprise.util.AnnotationLiteral;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 /**
  * Filter the event on the key
@@ -36,9 +34,12 @@ import lombok.NoArgsConstructor;
 public @interface KeyFilter {
     String value();
     
-    @AllArgsConstructor @NoArgsConstructor
     class KeyFilterLiteral extends AnnotationLiteral<KeyFilter> implements KeyFilter {
-        private String key;
+        private final String key;
+        
+        KeyFilterLiteral(String key){
+            this.key = key;
+        }
         
         @Override
         public String value(){

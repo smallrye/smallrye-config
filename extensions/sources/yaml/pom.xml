@@ -15,11 +15,15 @@
     
     <description>A config that gets its values from a yaml file(s) at a URL</description>
     
+    <properties>
+        <snakeyaml.version>1.24</snakeyaml.version>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.24</version>            
+            <version>${snakeyaml.version}</version>            
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

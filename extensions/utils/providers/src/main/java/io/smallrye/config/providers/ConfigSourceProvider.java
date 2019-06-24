@@ -18,21 +18,21 @@ package io.smallrye.config.providers;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
-import lombok.extern.java.Log;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Making the Config sources available via CDI
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 @Dependent
 public class ConfigSourceProvider {
-
+    private static final Logger log = Logger.getLogger(ConfigSourceProvider.class.getName());
+    
     @Inject @ConfigSourceMap
     private Map<String,ConfigSource> configSourceMap;
     

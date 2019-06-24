@@ -29,13 +29,11 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
-import lombok.extern.java.Log;
 
 /**
  * Json config source
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@Log
 public class JsonConfigSource extends AbstractUrlBasedSource {
 
     @Override
