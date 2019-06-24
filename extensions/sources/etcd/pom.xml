@@ -4,8 +4,9 @@
     
     <parent>
         <groupId>io.smallrye.ext</groupId>
-        <artifactId>smallrye-config-extensions-sources</artifactId>
+        <artifactId>smallrye-config-extensions-1.3</artifactId>
         <version>1.0.1-SNAPSHOT</version>
+        <relativePath>../../</relativePath>
     </parent>
     
     <artifactId>configsource-etcd-1.3</artifactId>
