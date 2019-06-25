@@ -53,14 +53,6 @@
     
     <dependencyManagement>
         <dependencies>
-            <!-- MicroProfile bom -->
-            <dependency>
-                <groupId>org.eclipse.microprofile</groupId>
-                <artifactId>microprofile</artifactId>
-                <version>${microProfile.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
                     
             <!-- For testing -->
             <dependency>

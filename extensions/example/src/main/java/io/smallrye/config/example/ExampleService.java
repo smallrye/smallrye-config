@@ -48,19 +48,19 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class ExampleService {
     
     @Inject
-    private Config config;
+    Config config;
     
     @Inject @ConfigProperty(name = "ysomekey")
-    private Provider<String> ysomekey;
+    Provider<String> ysomekey;
     
     @Inject @ConfigProperty(name = "someJsonObject",defaultValue = "")
-    private JsonObject someJsonObject;
+    JsonObject someJsonObject;
     
     @Inject @ConfigProperty(name = "unconfiguredJsonObject",defaultValue = "")
-    private JsonObject unconfiguredJsonObject;
+    JsonObject unconfiguredJsonObject;
     
     @Inject @ConfigProperty(name = "someJsonArray",defaultValue = "")
-    private JsonArray someJsonArray;
+    JsonArray someJsonArray;
     
     @GET
     @Path("/all")

@@ -38,7 +38,8 @@ import org.eclipse.microprofile.openapi.annotations.servers.Server;
                 url = "http://www.phillip-kruger.com")
         ),
         servers = {
-            @Server(url = "/config-example",description = "localhost")        
+//            @Server(url = "/config-example",description = "localhost"),
+            @Server(url = "/",description = "localhost")
         }
 )
 public class ApplicationConfig extends Application {

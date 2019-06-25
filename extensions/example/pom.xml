@@ -23,6 +23,7 @@
         <config.xml>file:${basedir}${file.separator}src${file.separator}main${file.separator}resources${file.separator}examples${file.separator}config.xml,http://localhost/config.xml</config.xml>
         <config.properties>file:${basedir}${file.separator}src${file.separator}main${file.separator}resources${file.separator}examples${file.separator}config.properties,http://localhost/config.properties</config.properties>
         
+        <microprofile.openapi.version>1.1</microprofile.openapi.version>
     </properties>
     
     <dependencies>
@@ -46,6 +47,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
+            <version>${microprofile.openapi.version}</version>
             <scope>provided</scope>
         </dependency>    
         <!-- Memory -->
@@ -111,6 +113,105 @@
     
     <profiles>
         
+        <!-- Run Quarkus -->
+        <profile>
+            <id>quarkus</id>
+            <activation>
+                <property>
+                    <name>quarkus</name>
+                </property>
+            </activation>
+            
+            <properties>
+                <quarkus.version>0.17.0</quarkus.version>
+            </properties>
+            
+            <dependencyManagement>
+                <dependencies>
+                    <dependency> 
+                        <groupId>io.quarkus</groupId>
+                        <artifactId>quarkus-bom</artifactId>
+                        <version>${quarkus.version}</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+
+            <dependencies>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-resteasy</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-resteasy-jsonb</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-jsonp</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-arc</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-smallrye-openapi</artifactId>
+                </dependency>
+            </dependencies>
+            
+            <build>
+                <plugins>
+                    <plugin> 
+                        <groupId>io.quarkus</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <version>${quarkus.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>1</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <environmentVariables>
+                                        <io.smallrye.config.source.yaml.pollForChanges>true</io.smallrye.config.source.yaml.pollForChanges>
+                                        <io.smallrye.config.source.yaml.notifyOnChanges>true</io.smallrye.config.source.yaml.notifyOnChanges>
+                                        <io.smallrye.config.source.yaml.url>${config.yaml}</io.smallrye.config.source.yaml.url>
+                                        <io.smallrye.config.source.json.url>${config.json}</io.smallrye.config.source.json.url>
+                                        <io.smallrye.config.source.xml.url>${config.xml}</io.smallrye.config.source.xml.url>
+                                        <io.smallrye.config.source.properties.url>${config.properties}</io.smallrye.config.source.properties.url>
+                                    </environmentVariables>
+                                    <arguments>
+                                        <argument>-jar</argument>
+                                        <argument>${project.build.directory}${file.separator}${project.build.finalName}-runner.jar</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        
+                    </plugin>
+
+                </plugins>
+            </build>
+            
+        </profile>
+        
         <!-- Run Thorntail -->
         <profile>
             <id>thorntail</id>
@@ -172,11 +273,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <properties>
-                                <thorntail.context.path>/${project.build.finalName}</thorntail.context.path>
-                            </properties>
-                        </configuration>
                     </plugin>
                     
                     <plugin>
