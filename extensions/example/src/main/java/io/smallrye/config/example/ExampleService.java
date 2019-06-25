@@ -56,9 +56,6 @@ public class ExampleService {
     @Inject @ConfigProperty(name = "someJsonObject",defaultValue = "")
     JsonObject someJsonObject;
     
-    @Inject @ConfigProperty(name = "unconfiguredJsonObject",defaultValue = "")
-    JsonObject unconfiguredJsonObject;
-    
     @Inject @ConfigProperty(name = "someJsonArray",defaultValue = "")
     JsonArray someJsonArray;
     
@@ -124,14 +121,5 @@ public class ExampleService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getValueSomeJsonArray() {
         return Response.ok(someJsonArray).build();   
-    }
-    
-    @GET
-    @Path("/unconfiguredJsonObject")
-    @Operation(operationId = "valueUnconfiguredJsonObject", description = "Getting the value for unconfiguredJsonObject")
-    @APIResponse(responseCode = "200", description = "Successful, returning the value")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getValueUnconfiguredJsonObject() {
-        return Response.ok(unconfiguredJsonObject).build();   
     }
 }

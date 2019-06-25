@@ -17,8 +17,7 @@
     <keyStore id="defaultKeyStore" password="0p3nL1b3ry"/>
     
     <application location="${project.build.finalName}.war" type="war" id="${project.build.finalName}"
-                 name="${project.build.finalName}" context-root="/${project.build.finalName}">
-    
+                 name="${project.build.finalName}" context-root="/">
     </application>
     
     <logging traceSpecification="${log.name}.*=${log.level}"/>

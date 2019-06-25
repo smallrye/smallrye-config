@@ -359,6 +359,7 @@
                         <version>${payara-micro.maven.version}</version>
                         
                         <configuration>
+                            
                             <artifactItem>
                                 <groupId>fish.payara.extras</groupId>
                                 <artifactId>payara-micro</artifactId>
@@ -370,16 +371,17 @@
                                     <key>--rootdir</key>
                                     <value>${payara-micro.installDir}</value>
                                 </option>
+                                
                             </commandLineOptions>
                             <javaCommandLineOptions>
                                 <option>
                                     <key>-Dio.smallrye.config.source.yaml.pollForChanges</key>
                                     <value>true</value>
                                 </option>
-<!--                                <option>
+                                <option>
                                     <key>-Dio.smallrye.config.source.yaml.notifyOnChanges</key>
-                                    <value>false</value>
-                                </option>-->
+                                    <value>true</value>
+                                </option>
                                 <option>
                                     <key>-Dio.smallrye.config.source.yaml.url</key>
                                     <value>${config.yaml}</value>
@@ -392,10 +394,10 @@
                                     <key>-Dio.smallrye.config.source.xml.url</key>
                                     <value>${config.xml}</value>
                                 </option>
-<!--                                <option>
+                                <option>
                                     <key>-Dio.smallrye.config.source.properties.url</key>
                                     <value>${config.properties}</value>
-                                </option>-->
+                                </option>
                             </javaCommandLineOptions>
                             <deployArtifacts>
                                 <artifactItem>
@@ -409,6 +411,7 @@
                         
                             <useUberJar>false</useUberJar>
                             <daemon>false</daemon>
+                            <contextRoot>/</contextRoot>
                             <deployWar>true</deployWar>
                         </configuration>
                         <executions>
