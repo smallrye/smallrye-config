@@ -19,7 +19,6 @@ Here you will find some extra Config sources, Config converters and some utils f
 * [Config source CDI Providers](https://github.com/smallrye/smallrye-config/tree/master/extensions/utils/providers)
 
 ### Config Converters
-* [List Config converter](https://github.com/smallrye/smallrye-config/tree/master/extensions/converters/list)
 * [Json Config converter](https://github.com/smallrye/smallrye-config/tree/master/extensions/converters/json)
 
 ## Example
