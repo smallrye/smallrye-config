@@ -26,7 +26,7 @@ You can then go to http://localhost:8080/api/openapi-ui
 
 ### See the events in action
 
-If you want to see the events in action, look at the log file file changing a value in `src/main/resources/examples/config.yaml`
+If you want to see the events in action, look at the log file while changing a value in `src/main/resources/examples/config.yaml`
 
 You should see the event printing out, example:
 
