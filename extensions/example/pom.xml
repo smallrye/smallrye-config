@@ -190,12 +190,17 @@
                                 <configuration>
                                     <executable>java</executable>
                                     <environmentVariables>
-                                        <io.smallrye.config.source.yaml.pollForChanges>true</io.smallrye.config.source.yaml.pollForChanges>
-                                        <io.smallrye.config.source.yaml.notifyOnChanges>true</io.smallrye.config.source.yaml.notifyOnChanges>
                                         <io.smallrye.config.source.yaml.url>${config.yaml}</io.smallrye.config.source.yaml.url>
+                                        <io.smallrye.config.source.yaml.pollForChanges>true</io.smallrye.config.source.yaml.pollForChanges>
+                                        
                                         <io.smallrye.config.source.json.url>${config.json}</io.smallrye.config.source.json.url>
+                                        <io.smallrye.config.source.json.pollForChanges>true</io.smallrye.config.source.json.pollForChanges>
+                                        
                                         <io.smallrye.config.source.xml.url>${config.xml}</io.smallrye.config.source.xml.url>
+                                        <io.smallrye.config.source.xml.pollForChanges>true</io.smallrye.config.source.xml.pollForChanges>
+                                        
                                         <io.smallrye.config.source.properties.url>${config.properties}</io.smallrye.config.source.properties.url>
+                                        <io.smallrye.config.source.properties.pollForChanges>true</io.smallrye.config.source.properties.pollForChanges>
                                     </environmentVariables>
                                     <arguments>
                                         <argument>-jar</argument>
@@ -294,12 +299,17 @@
                                         <argument>-s</argument>
                                         <argument>${project.build.directory}${file.separator}project-defaults.yml</argument>
                                         <argument>-Sdev</argument>
-                                        <argument>-Dio.smallrye.config.source.yaml.pollForChanges=true</argument>
-<!--                                        <argument>-Dio.smallrye.config.source.yaml.notifyOnChanges=false</argument>-->
                                         <argument>-Dio.smallrye.config.source.yaml.url=${config.yaml}</argument>
+                                        <argument>-Dio.smallrye.config.source.yaml.pollForChanges=true</argument>
+                                        
                                         <argument>-Dio.smallrye.config.source.json.url=${config.json}</argument>
+                                        <argument>-Dio.smallrye.config.source.json.pollForChanges=true</argument>
+                                        
                                         <argument>-Dio.smallrye.config.source.xml.url=${config.xml}</argument>
+                                        <argument>-Dio.smallrye.config.source.xml.pollForChanges=true</argument>
+                                        
                                         <argument>-Dio.smallrye.config.source.properties.url=${config.properties}</argument>
+                                        <argument>-Dio.smallrye.config.source.properties.pollForChanges=true</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

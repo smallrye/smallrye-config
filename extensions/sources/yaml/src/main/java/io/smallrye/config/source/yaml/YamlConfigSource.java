@@ -52,13 +52,18 @@ public class YamlConfigSource extends AbstractUrlBasedSource {
         if (o instanceof Map) {
             Map map = (Map)o;
             for (Object mapKey : map.keySet()) {
-                populateEntry(properties, key,mapKey.toString(),map);
+                populateEntry(properties, key,String.valueOf(mapKey),map);
             }
         } else if (o instanceof List) {
             List<String> l = toStringList((List)o);
             properties.put(key,String.join(COMMA, l));
         } else{
-            if(o!=null)properties.put(key,o.toString());
+            if(o!=null){
+                properties.put(key,String.valueOf(o));
+            }else{
+                properties.put(key,null);
+            }
+            
         }
     }
     
@@ -71,7 +76,12 @@ public class YamlConfigSource extends AbstractUrlBasedSource {
             List<String> l = toStringList((List)map.get(mapKey));
             properties.put(String.format(format, key, mapKey),String.join(COMMA, l));
         } else {
-            properties.put(String.format(format, key, mapKey), map.get(mapKey).toString());
+            Object value = map.get(mapKey);
+            if(value!=null){
+                properties.put(String.format(format, key, mapKey), String.valueOf(value));
+            }else{
+                properties.put(String.format(format, key, mapKey), null);
+            }
         }   
     }
     

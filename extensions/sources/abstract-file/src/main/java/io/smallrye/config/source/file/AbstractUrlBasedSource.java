@@ -46,12 +46,13 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     private final int pollInterval;
     private final boolean notifyOnChanges;
     
-    private FileResourceWatcher fileResourceWatcher = null;
-    private WebResourceWatcher webResourceWatcher = null;
+    private final FileResourceWatcher fileResourceWatcher = new FileResourceWatcher();
+    private final WebResourceWatcher webResourceWatcher = new WebResourceWatcher();
     
     public AbstractUrlBasedSource(){
         String ext = getFileExtension();// Only used for backward compatible with MicroProfile-ext
         log.log(Level.INFO, "Loading [{0}] MicroProfile ConfigSource", ext);
+        
         this.keySeparator = loadPropertyKeySeparator();
         this.notifyOnChanges = loadNotifyOnChanges();
         this.pollForChanges = loadPollForChanges();
@@ -61,7 +62,6 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
         
         super.initOrdinal(500); 
     }
-    
     
     @Override
     protected Map<String, String> getPropertiesIfEnabled() {
@@ -92,23 +92,12 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     }
     
     private void initialLoad(URL url){
-        
-        log.log(Level.INFO, "Using [{0}] as {1} URL", new Object[]{url.toString(), getFileExtension()});
-        
-        InputStream inputStream = null;
-        
-        try {
-            inputStream = url.openStream();
+        try (InputStream inputStream = url.openStream()){
             if (inputStream != null) {
                 this.propertiesMap.put(url, toMap(inputStream));
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "Unable to read URL [{0}] - {1}", new Object[]{url, e.getMessage()});
-        } finally {
-            try {
-                if (inputStream != null)inputStream.close();
-            // no worries, means that the file is already closed
-            } catch (IOException e) {}
         }
     }
     
@@ -130,15 +119,16 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
     private void loadUrl(String url) {
         try {
             URL u = new URL(url);
+            log.log(Level.INFO, "Using [{0}] as {1} URL", new Object[]{u.toString(), getFileExtension()});
             initialLoad(u);
             
             if(shouldPollForChanges()){
                 // Local (file://...)
                 if(isLocalResource(u)){
-                    enableLocalResourceWatching(u);
+                    this.fileResourceWatcher.startWatching(u, this);
                 // Web (http://...)
                 }else if(isWebResource(u)){
-                    enableWebResourceWatching(u);
+                    this.webResourceWatcher.startWatching(u, this, pollInterval);
                 // TODO: Add support for other protocols ?     
                 }else{
                     log.log(Level.WARNING, "Can not detect changes on resource {0}", u.getFile());
@@ -146,20 +136,6 @@ public abstract class AbstractUrlBasedSource extends EnabledConfigSource impleme
             }
         } catch (MalformedURLException ex) {
             log.log(Level.WARNING, "Can not load URL [" + url + "]", ex);
-        }
-    }
-    
-    private void enableLocalResourceWatching(URL u){
-        if(isLocalResource(u)){
-            if(this.fileResourceWatcher==null)this.fileResourceWatcher = new FileResourceWatcher(this,pollInterval);
-            this.fileResourceWatcher.startWatching(u);
-        }
-    }
-    
-    private void enableWebResourceWatching(URL u){
-        if(isWebResource(u)){
-            if(this.webResourceWatcher==null)this.webResourceWatcher = new WebResourceWatcher(this,pollInterval);
-            this.webResourceWatcher.startWatching(u);
         }
     }
     

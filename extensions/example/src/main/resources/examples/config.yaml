@@ -1,9 +1,11 @@
 ysomekey: "somevalue"
 ylocation:
     protocol: "http"
-    host: "localhosts"
+    host: "localhost"
     port: 8080
     path: "/some/path"
+    user: 
+    password:
     jedis:
         - Yoda
         - Qui-Gon Jinn

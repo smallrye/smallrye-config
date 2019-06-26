@@ -37,7 +37,7 @@ import javax.inject.Inject;
  */
 @ApplicationScoped
 public class ChangeEventNotifier {
-
+    
     @Inject
     private Event<ChangeEvent> broadcaster;
     
@@ -47,7 +47,7 @@ public class ChangeEventNotifier {
     }
  
     public static ChangeEventNotifier getInstance(){
-        //return CDI.current().select(ChangeEventNotifier.class).get();
+//        return CDI.current().select(ChangeEventNotifier.class).get();
         return INSTANCE;
     }
     
@@ -60,7 +60,10 @@ public class ChangeEventNotifier {
                 String oldValue = beforeEntry.getValue();
                 if(after.containsKey(key)){
                     String newValue = after.get(key);
-                    if(!newValue.equals(oldValue)){
+                    // Value can be null !
+                    if((oldValue!=null && newValue==null) || 
+                            (newValue!=null && oldValue==null) || 
+                            (newValue!=null && oldValue!=null && !newValue.equals(oldValue))){
                         // Update
                         changes.add(new ChangeEvent(Type.UPDATE, key, getOptionalOldValue(oldValue), newValue, fromSource));
                     }
@@ -70,14 +73,12 @@ public class ChangeEventNotifier {
                     changes.add(new ChangeEvent(Type.REMOVE, key, getOptionalOldValue(oldValue), null, fromSource));
                 }
             }
-            
             Set<Map.Entry<String, String>> newEntries = after.entrySet();
             for(Map.Entry<String,String> newEntry:newEntries){
                 // New
                 changes.add(new ChangeEvent(Type.NEW, newEntry.getKey(), Optional.empty(), newEntry.getValue(), fromSource));
             }
         }
-        
         if(!changes.isEmpty())fire(changes);
     }
     

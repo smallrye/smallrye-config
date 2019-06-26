@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,22 +32,22 @@ import java.util.logging.Logger;
  */
 public class WebResourceWatcher {
     private static final Logger log = Logger.getLogger(WebResourceWatcher.class.getName());
-    private final long pollInterval;
-    private final Reloadable reloadable;
     
     private final ScheduledExecutorService scheduledThreadPool = Executors.newSingleThreadScheduledExecutor();
     
-    public WebResourceWatcher(Reloadable reloadable, long pollInterval){
-        this.reloadable = reloadable;
-        this.pollInterval = pollInterval;
-        scheduledThreadPool.scheduleAtFixedRate(new Poller(),this.pollInterval,this.pollInterval,TimeUnit.SECONDS);
-    }
-    
-    public void startWatching(URL url){
-        if(!URLS_TO_WATCH.containsKey(url)){
+    public void startWatching(URL url,Reloadable reloadable, long pollInterval){
+        if(!urlsToWatch.containsKey(url)){
             long lastModified = getLastModified(url);
             if(lastModified>0){
-                URLS_TO_WATCH.put(url,lastModified);
+                scheduledThreadPool.scheduleAtFixedRate(() -> {
+                    long latestLastModified = getLastModified(url);
+                    if(latestLastModified!=urlsToWatch.get(url)){
+                        urlsToWatch.put(url, latestLastModified);
+                        reloadable.reload(url);
+                    }
+                },pollInterval,pollInterval,TimeUnit.SECONDS);
+                
+                urlsToWatch.put(url,lastModified);
             }else{
                 log.log(Level.WARNING, "Can not poll {0} for changes, lastModified not implemented", url);
             }
@@ -74,20 +73,5 @@ public class WebResourceWatcher {
           
     private static final String HEAD = "HEAD";    
     
-    class Poller implements Runnable{
-    
-        @Override
-        public void run() {
-            Set<URL> urls = URLS_TO_WATCH.keySet();
-            for(URL url : urls){
-                long lastModified = getLastModified(url);
-                if(lastModified!=URLS_TO_WATCH.get(url)){
-                    URLS_TO_WATCH.put(url, lastModified);
-                    reloadable.reload(url);
-                }
-            }   
-        }
-    }
-    
-    private static final Map<URL,Long> URLS_TO_WATCH = new ConcurrentHashMap<>();
+    private final Map<URL,Long> urlsToWatch = new ConcurrentHashMap<>();
 }
