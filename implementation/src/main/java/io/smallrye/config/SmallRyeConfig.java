@@ -89,6 +89,26 @@ public class SmallRyeConfig implements Config, Serializable {
         return collectionFactory.apply(0);
     }
 
+    public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                if (value.isEmpty()) {
+                    // empty collection
+                    break;
+                }
+                String[] itemStrings = StringUtil.split(value);
+                final C collection = collectionFactory.apply(itemStrings.length);
+                for (String itemString : itemStrings) {
+                    collection.add(converter.convert(itemString));
+                }
+                return collection;
+            }
+        }
+        // value not found
+        return collectionFactory.apply(0);
+    }
+
     @Override
     public <T> T getValue(String name, Class<T> aClass) {
         for (ConfigSource configSource : getConfigSources()) {
@@ -114,6 +134,20 @@ public class SmallRyeConfig implements Config, Serializable {
         throw new NoSuchElementException("Property " + name + " not found");
     }
 
+    public <T> T getValue(String name, Converter<T> converter) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                if (value.isEmpty()) {
+                    // treat empty value as non-present
+                    break;
+                }
+                return converter.convert(value);
+            }
+        }
+        throw new NoSuchElementException("Property " + name + " not found");
+    }
+
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
         for (ConfigSource configSource : getConfigSources()) {
@@ -121,6 +155,18 @@ public class SmallRyeConfig implements Config, Serializable {
             if (value != null) {
                 // treat empty value as non-present
                 return value.isEmpty() ? Optional.empty() : Optional.of(convert(value, aClass));
+            }
+        }
+        // value not found
+        return Optional.empty();
+    }
+
+    public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                // treat empty value as non-present
+                return value.isEmpty() ? Optional.empty() : Optional.of(converter.convert(value));
             }
         }
         // value not found
