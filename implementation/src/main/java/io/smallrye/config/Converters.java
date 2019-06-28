@@ -191,10 +191,10 @@ public final class Converters {
                 case 4: return LONG_CONVERTER;
                 case 5: return INTEGER_CONVERTER;
                 case 6: return CLASS_CONVERTER;
-                case 7: return INET_ADDRESS_CONVERTER;
-                case 8: return OPTIONAL_INT_CONVERTER;
-                case 9: return OPTIONAL_LONG_CONVERTER;
-                case 10: return OPTIONAL_DOUBLE_CONVERTER;
+                case 7: return OPTIONAL_INT_CONVERTER;
+                case 8: return OPTIONAL_LONG_CONVERTER;
+                case 9: return OPTIONAL_DOUBLE_CONVERTER;
+                case 10: return INET_ADDRESS_CONVERTER;
                 default: throw new InvalidObjectException("Unknown converter ID");
             }
         }
