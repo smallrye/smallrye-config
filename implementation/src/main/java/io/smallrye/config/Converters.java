@@ -94,6 +94,17 @@ public final class Converters {
         }
     });
 
+    @SuppressWarnings("unchecked")
+    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, (Converter & Serializable) value -> {
+        if (value != null) {
+            if (value.length() == 1) {
+                return Character.valueOf(value.charAt(0));
+            }
+            throw new IllegalArgumentException(value + " can not be converted to a Character");
+        }
+        return null;
+    });
+
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
@@ -120,6 +131,10 @@ public final class Converters {
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
+
+        ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
+        ALL_CONVERTERS.put(Character.TYPE, CHARACTER_CONVERTER);
+
     }
 
     /**
@@ -191,10 +206,11 @@ public final class Converters {
                 case 4: return LONG_CONVERTER;
                 case 5: return INTEGER_CONVERTER;
                 case 6: return CLASS_CONVERTER;
-                case 7: return INET_ADDRESS_CONVERTER;
-                case 8: return OPTIONAL_INT_CONVERTER;
-                case 9: return OPTIONAL_LONG_CONVERTER;
-                case 10: return OPTIONAL_DOUBLE_CONVERTER;
+                case 7: return OPTIONAL_INT_CONVERTER;
+                case 8: return OPTIONAL_LONG_CONVERTER;
+                case 9: return OPTIONAL_DOUBLE_CONVERTER;
+                case 10: return INET_ADDRESS_CONVERTER;
+                case 11: return CHARACTER_CONVERTER;
                 default: throw new InvalidObjectException("Unknown converter ID");
             }
         }

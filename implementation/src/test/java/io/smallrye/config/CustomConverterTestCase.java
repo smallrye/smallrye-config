@@ -10,8 +10,6 @@ import static org.junit.Assert.fail;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.NoSuchElementException;
 
 import org.eclipse.microprofile.config.Config;
@@ -27,6 +25,14 @@ public class CustomConverterTestCase {
         InetAddress inetaddress = config.getValue("my.address", InetAddress.class);
         assertNotNull(inetaddress);
         assertArrayEquals(new byte[]{10, 0, 0, 1}, inetaddress.getAddress());
+    }
+
+    @Test
+    public void testCharacterConverter() {
+        Config config = buildConfig(
+                "my.char", "a");
+        char c = config.getValue("my.char", Character.class);
+        assertEquals('a', c);
     }
 
     private static Config buildConfig(String... keyValues) {
