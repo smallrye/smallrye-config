@@ -50,6 +50,7 @@
     <module>testsuite</module>
     <module>docs</module>
     <module>config-sources</module>
+    <module>extensions</module>
   </modules>
 
   <dependencyManagement>

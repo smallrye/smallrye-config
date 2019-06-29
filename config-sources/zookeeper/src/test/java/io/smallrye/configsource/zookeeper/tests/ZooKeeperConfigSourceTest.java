@@ -5,7 +5,17 @@
  */
 package io.smallrye.configsource.zookeeper.tests;
 
-import io.smallrye.configsource.ZooKeeperConfigSource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
+
+import java.io.File;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import javax.inject.Inject;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -23,15 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Fail.fail;
+import io.smallrye.configsource.ZooKeeperConfigSource;
 
 /**
  * Test the ConfigSource
@@ -63,10 +65,13 @@ public class ZooKeeperConfigSourceTest {
     public static WebArchive createDeployment() {
 
         //Add the Curator and Microprofile Config libraries
-        final File[] curatorFiles = Maven.resolver().resolve("org.apache.curator:curator-recipes:2.12.0").withTransitivity().asFile();
-        final File[] curatorTestFiles = Maven.resolver().resolve("org.apache.curator:curator-test:2.12.0").withTransitivity().asFile();
+        final File[] curatorFiles = Maven.resolver().resolve("org.apache.curator:curator-recipes:2.12.0").withTransitivity()
+                .asFile();
+        final File[] curatorTestFiles = Maven.resolver().resolve("org.apache.curator:curator-test:2.12.0").withTransitivity()
+                .asFile();
         final File[] guavaFiles = Maven.resolver().resolve("com.google.guava:guava:25.1-jre").withTransitivity().asFile();
-        final File[] swarmMPCFiles = Maven.resolver().resolve("org.wildfly.swarm:microprofile-config:1.0.1").withoutTransitivity().asFile();
+        final File[] swarmMPCFiles = Maven.resolver().resolve("org.wildfly.swarm:microprofile-config:1.0.1")
+                .withoutTransitivity().asFile();
         final File[] assertJFiles = Maven.resolver().resolve("org.assertj:assertj-core:3.10.0").withoutTransitivity().asFile();
 
         return ShrinkWrap.create(WebArchive.class, "ZkMicroProfileConfigTest.war")
@@ -76,8 +81,11 @@ public class ZooKeeperConfigSourceTest {
                 .addAsLibraries(curatorTestFiles)
                 .addAsLibraries(guavaFiles)
                 .addAsLibraries(assertJFiles)
-                .addAsResource(new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"), "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
-                .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"), "META-INF/microprofile-config.properties")
+                .addAsResource(
+                        new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"),
+                        "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
+                .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"),
+                        "META-INF/microprofile-config.properties")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 

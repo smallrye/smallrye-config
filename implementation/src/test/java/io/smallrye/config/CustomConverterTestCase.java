@@ -24,7 +24,7 @@ public class CustomConverterTestCase {
                 "my.address", "10.0.0.1");
         InetAddress inetaddress = config.getValue("my.address", InetAddress.class);
         assertNotNull(inetaddress);
-        assertArrayEquals(new byte[]{10, 0, 0, 1}, inetaddress.getAddress());
+        assertArrayEquals(new byte[] { 10, 0, 0, 1 }, inetaddress.getAddress());
     }
 
     @Test
@@ -56,8 +56,10 @@ public class CustomConverterTestCase {
         assertEquals(1234, config.getValue("my.prop", Integer.class).intValue());
         assertEquals(2468, config.getValue("my.prop", customConverter).intValue());
         // optional read
-        assertEquals(1234, config.getOptionalValue("my.prop", Integer.class).orElseThrow(IllegalStateException::new).intValue());
-        assertEquals(2468, config.getOptionalValue("my.prop", customConverter).orElseThrow(IllegalStateException::new).intValue());
+        assertEquals(1234,
+                config.getOptionalValue("my.prop", Integer.class).orElseThrow(IllegalStateException::new).intValue());
+        assertEquals(2468,
+                config.getOptionalValue("my.prop", customConverter).orElseThrow(IllegalStateException::new).intValue());
         // collection
         assertEquals(singletonList(Integer.valueOf(1234)), config.getValues("my.prop", Integer.class, ArrayList::new));
         assertEquals(singletonList(Integer.valueOf(2468)), config.getValues("my.prop", customConverter, ArrayList::new));
@@ -66,11 +68,13 @@ public class CustomConverterTestCase {
         try {
             config.getValue("missing.prop", Integer.class);
             fail("Expected exception");
-        } catch (NoSuchElementException expected) {}
+        } catch (NoSuchElementException expected) {
+        }
         try {
             config.getValue("missing.prop", customConverter);
             fail("Expected exception");
-        } catch (NoSuchElementException expected) {}
+        } catch (NoSuchElementException expected) {
+        }
         // optional read
         assertFalse(config.getOptionalValue("missing.prop", Integer.class).isPresent());
         assertFalse(config.getOptionalValue("missing.prop", customConverter).isPresent());

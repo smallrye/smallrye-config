@@ -16,8 +16,6 @@
 
 package io.smallrye.config.inject;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
 import java.lang.reflect.ParameterizedType;
@@ -41,7 +39,7 @@ import javax.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
 import io.smallrye.config.SmallRyeConfig;
 
 /**
@@ -95,7 +93,8 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             Type rawType = paramType.getRawType();
 
             // handle Provider<T>
-            if (rawType instanceof Class && ((Class) rawType).isAssignableFrom(Provider.class) && paramType.getActualTypeArguments().length == 1) {
+            if (rawType instanceof Class && ((Class) rawType).isAssignableFrom(Provider.class)
+                    && paramType.getActualTypeArguments().length == 1) {
                 Class clazz = (Class) paramType.getActualTypeArguments()[0];
                 return (T) getConfig().getValue(key, clazz);
             }
@@ -109,7 +108,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
                 if (optionalValue.isPresent()) {
                     return optionalValue.get();
                 } else {
-                    return (T)((SmallRyeConfig) config).convert(defaultValue, clazz);
+                    return (T) ((SmallRyeConfig) config).convert(defaultValue, clazz);
                 }
             }
         }

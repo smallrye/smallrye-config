@@ -188,8 +188,8 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * Add a configuration source to the configuration object.  The list of configuration sources is re-sorted
-     * to insert the new source into the correct position.  Configuration source wrappers configured with
+     * Add a configuration source to the configuration object. The list of configuration sources is re-sorted
+     * to insert the new source into the correct position. Configuration source wrappers configured with
      * {@link SmallRyeConfigBuilder#withWrapper(UnaryOperator)} will not be applied.
      *
      * @param configSource the new config source (must not be {@code null})
@@ -203,7 +203,7 @@ public class SmallRyeConfig implements Config, Serializable {
             newVal = Arrays.asList(oldVal.toArray(new ConfigSource[oldSize + 1]));
             newVal.set(oldSize, configSource);
             newVal.sort(CONFIG_SOURCE_COMPARATOR);
-        } while (! configSourcesRef.compareAndSet(oldVal, Collections.unmodifiableList(newVal)));
+        } while (!configSourcesRef.compareAndSet(oldVal, Collections.unmodifiableList(newVal)));
     }
 
     public <T> T convert(String value, Class<T> asType) {
@@ -213,7 +213,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 String[] split = StringUtil.split(value);
                 Class<?> componentType = asType.getComponentType();
                 T array = asType.cast(newInstance(componentType, split.length));
-                for (int i = 0 ; i < split.length ; i++) {
+                for (int i = 0; i < split.length; i++) {
                     Array.set(array, i, convert(split[i], componentType));
                 }
                 return array;

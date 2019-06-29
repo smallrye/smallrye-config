@@ -38,12 +38,14 @@ import org.junit.Test;
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class ConfigSourceMapTest {
     @SuppressWarnings("serial")
-    private static final Map<String, String> MANY_MAP = new HashMap<String, String>() {{
-        put("key-one", "12345");
-        put("null-valued-key", null);
-        put("test", "bar");
-        put("fruit", "banana");
-    }};
+    private static final Map<String, String> MANY_MAP = new HashMap<String, String>() {
+        {
+            put("key-one", "12345");
+            put("null-valued-key", null);
+            put("test", "bar");
+            put("fruit", "banana");
+        }
+    };
     private static final ConfigSource MANY_CONF_SRC = new PropertiesConfigSource(MANY_MAP, "test", 100);
     private static final Map<String, String> ONE_MAP = Collections.singletonMap("test", "foo");
     private static final ConfigSource ONE_CONF_SRC = new PropertiesConfigSource(ONE_MAP, "test", 100);
@@ -53,7 +55,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).clear();
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -61,7 +64,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).compute("piano", (k, v) -> "player");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -70,7 +74,8 @@ public class ConfigSourceMapTest {
             //noinspection ExcessiveLambdaUsage
             new ConfigSourceMap(ONE_CONF_SRC).computeIfAbsent("piano", k -> "player");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -78,7 +83,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).computeIfPresent("test", (k, v) -> "bar");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -152,7 +158,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).merge("test", "bar", (k, v) -> "oops");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -160,7 +167,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).put("bees", "bzzzz");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -168,7 +176,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).putAll(Collections.singletonMap("bees", "bzzzz"));
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -176,7 +185,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).putIfAbsent("bees", "bzzzz");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
         new ConfigSourceMap(ONE_CONF_SRC).putIfAbsent("test", "not absent");
     }
 
@@ -185,7 +195,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).remove("test");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -193,7 +204,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).remove("test");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -201,7 +213,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replace("test", "oops");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -209,11 +222,13 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replace("test", "bar", "oops");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
         try {
             // false or exception are OK
             assertFalse(new ConfigSourceMap(MANY_CONF_SRC).replace("test", "nope", "oops"));
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test
@@ -221,7 +236,8 @@ public class ConfigSourceMapTest {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replaceAll((k, v) -> "oops");
             fail("Expected exception");
-        } catch (UnsupportedOperationException expected) {}
+        } catch (UnsupportedOperationException expected) {
+        }
     }
 
     @Test

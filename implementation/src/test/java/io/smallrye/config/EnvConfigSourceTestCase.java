@@ -29,29 +29,29 @@ import org.junit.Test;
  */
 public class EnvConfigSourceTestCase {
 
-        @Test
-        public void testConversionOfEnvVariableNames() {
-                String envProp = System.getenv("SMALLRYE_MP_CONFIG_PROP");
-                assertNotNull(envProp);
+    @Test
+    public void testConversionOfEnvVariableNames() {
+        String envProp = System.getenv("SMALLRYE_MP_CONFIG_PROP");
+        assertNotNull(envProp);
 
-                ConfigSource cs = new EnvConfigSource();
-                assertEquals(envProp, cs.getValue("SMALLRYE_MP_CONFIG_PROP"));
-                // the config source returns only the name of the actual env variable
-                assertTrue(cs.getPropertyNames().contains("SMALLRYE_MP_CONFIG_PROP"));
+        ConfigSource cs = new EnvConfigSource();
+        assertEquals(envProp, cs.getValue("SMALLRYE_MP_CONFIG_PROP"));
+        // the config source returns only the name of the actual env variable
+        assertTrue(cs.getPropertyNames().contains("SMALLRYE_MP_CONFIG_PROP"));
 
-                assertEquals(envProp, cs.getValue("smallrye_mp_config_prop"));
-                assertFalse(cs.getPropertyNames().contains("smallrye_mp_config_prop"));
+        assertEquals(envProp, cs.getValue("smallrye_mp_config_prop"));
+        assertFalse(cs.getPropertyNames().contains("smallrye_mp_config_prop"));
 
-                assertEquals(envProp, cs.getValue("smallrye.mp.config.prop"));
-                assertFalse(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
+        assertEquals(envProp, cs.getValue("smallrye.mp.config.prop"));
+        assertFalse(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
 
-                assertEquals(envProp, cs.getValue("SMALLRYE.MP.CONFIG.PROP"));
-                assertFalse(cs.getPropertyNames().contains("SMALLRYE.MP.CONFIG.PROP"));
+        assertEquals(envProp, cs.getValue("SMALLRYE.MP.CONFIG.PROP"));
+        assertFalse(cs.getPropertyNames().contains("SMALLRYE.MP.CONFIG.PROP"));
 
-                assertEquals(envProp, cs.getValue("smallrye-mp-config-prop"));
-                assertFalse(cs.getPropertyNames().contains("smallrye-mp-config-prop"));
+        assertEquals(envProp, cs.getValue("smallrye-mp-config-prop"));
+        assertFalse(cs.getPropertyNames().contains("smallrye-mp-config-prop"));
 
-                assertEquals(envProp, cs.getValue("SMALLRYE-MP-CONFIG-PROP"));
-                assertFalse(cs.getPropertyNames().contains("SMALLRYE-MP-CONFIG-PROP"));
-        }
+        assertEquals(envProp, cs.getValue("SMALLRYE-MP-CONFIG-PROP"));
+        assertFalse(cs.getPropertyNames().contains("SMALLRYE-MP-CONFIG-PROP"));
+    }
 }

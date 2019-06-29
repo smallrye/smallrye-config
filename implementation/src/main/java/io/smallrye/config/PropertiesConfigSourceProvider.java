@@ -44,8 +44,7 @@ public class PropertiesConfigSourceProvider implements ConfigSourceProvider {
                 URL propertyFileUrl = propertyFileUrls.nextElement();
                 configSources.add(new PropertiesConfigSource(propertyFileUrl));
             }
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw new IllegalStateException("problem while loading microprofile-config.properties files", ioe);
         }
 

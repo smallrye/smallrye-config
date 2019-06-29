@@ -33,7 +33,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
@@ -65,7 +64,7 @@ public class CollectionWithDefaultValueTest extends Arquillian {
         String[] arrayPets = bean.getArrayPets();
         assertNotNull(arrayPets);
         assertEquals(arrayPets.length, 2);
-        assertEquals(arrayPets, new String[]{"horse", "monkey"});
+        assertEquals(arrayPets, new String[] { "horse", "monkey" });
 
         List<String> listPets = bean.getListPets();
         assertNotNull(listPets);

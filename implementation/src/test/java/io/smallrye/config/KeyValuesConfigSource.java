@@ -23,7 +23,6 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public class KeyValuesConfigSource implements ConfigSource {
 
-
     private final Map<String, String> properties = new HashMap<>();
 
     private KeyValuesConfigSource(Map<String, String> properties) {
@@ -46,13 +45,13 @@ public class KeyValuesConfigSource implements ConfigSource {
     }
 
     public static ConfigSource config(String... keyValues) {
-        if (keyValues.length %2 != 0) {
+        if (keyValues.length % 2 != 0) {
             throw new IllegalArgumentException("keyValues array must be a multiple of 2");
         }
 
         Map<String, String> props = new HashMap<>();
         for (int i = 0; i < keyValues.length; i += 2) {
-            props.put(keyValues[i], keyValues[i+1]);
+            props.put(keyValues[i], keyValues[i + 1]);
         }
         return new KeyValuesConfigSource(props);
     }

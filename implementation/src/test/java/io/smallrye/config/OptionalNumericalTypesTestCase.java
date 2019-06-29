@@ -19,7 +19,7 @@ import org.junit.Test;
 public class OptionalNumericalTypesTestCase {
 
     Config config;
-    
+
     @Before
     public void setUp() {
         Properties properties = new Properties();
@@ -32,7 +32,7 @@ public class OptionalNumericalTypesTestCase {
                 .withSources(new PropertiesConfigSource(properties, "my properties"))
                 .build();
     }
-    
+
     @Test
     public void testOptionalIntWithExistingProperty() {
         assertEquals(123, config.getValue("my.int", Integer.class).intValue());
@@ -120,7 +120,6 @@ public class OptionalNumericalTypesTestCase {
 
         assertFalse(config.getOptionalValue("my.double.not.found", OptionalDouble.class).isPresent());
     }
-
 
     @Test
     public void testEmptyPropertyIsConsideredOptionalEmpty() {

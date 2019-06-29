@@ -1,5 +1,10 @@
 package io.smallrye.configsource;
 
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -7,11 +12,6 @@ import org.apache.zookeeper.data.Stat;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * MicroProfile Config Source that is backed by Zookeeper.
@@ -108,7 +108,6 @@ public class ZooKeeperConfigSource implements ConfigSource {
         return null;
     }
 
-
     @Override
     public String getName() {
         return ZOOKEEPER_CONFIG_SOURCE_NAME;
@@ -127,7 +126,8 @@ public class ZooKeeperConfigSource implements ConfigSource {
             //Only create the ZK Client if the properties exist.
             if (zookeeperUrl.isPresent() && optApplicationId.isPresent()) {
 
-                logger.info("Configuring ZooKeeperConfigSource using url: " + zookeeperUrl + ", applicationId: " + optApplicationId.get());
+                logger.info("Configuring ZooKeeperConfigSource using url: " + zookeeperUrl + ", applicationId: "
+                        + optApplicationId.get());
 
                 applicationId = optApplicationId.get();
 
@@ -139,10 +139,10 @@ public class ZooKeeperConfigSource implements ConfigSource {
                 cachedClient.start();
 
             } else {
-                throw new ZooKeeperConfigException("Please set properties for \"" + ZOOKEEPER_URL_KEY + "\" and \"" + APPLICATION_ID_KEY + "\"");
+                throw new ZooKeeperConfigException(
+                        "Please set properties for \"" + ZOOKEEPER_URL_KEY + "\" and \"" + APPLICATION_ID_KEY + "\"");
             }
         }
         return cachedClient;
     }
 }
-

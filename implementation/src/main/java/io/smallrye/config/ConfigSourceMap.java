@@ -34,12 +34,12 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * instances which do not override {@code getPropertyNames()}, as this will result in infinite recursion.
  *
  * @implNote The key set of the map is the result of calling {@link ConfigSource#getPropertyNames()}; the rest
- * of the map operations are derived from this method and {@link ConfigSource#getValue(String)}.
- * The values collection and entry set are instantiated lazily and cached.
- * The implementation attempts to make no assumptions about the efficiency of the backing implementation and
- * prefers the most direct access possible.
- * <p>
- * The backing collections are assumed to be immutable.
+ *           of the map operations are derived from this method and {@link ConfigSource#getValue(String)}.
+ *           The values collection and entry set are instantiated lazily and cached.
+ *           The implementation attempts to make no assumptions about the efficiency of the backing implementation and
+ *           prefers the most direct access possible.
+ *           <p>
+ *           The backing collections are assumed to be immutable.
  */
 public class ConfigSourceMap extends AbstractMap<String, String> implements Map<String, String> {
     private final ConfigSource delegate;
@@ -79,13 +79,15 @@ public class ConfigSourceMap extends AbstractMap<String, String> implements Map<
 
     public Collection<String> values() {
         Values values = this.values;
-        if (values == null) return this.values = new Values();
+        if (values == null)
+            return this.values = new Values();
         return values;
     }
 
     public Set<Entry<String, String>> entrySet() {
         EntrySet entrySet = this.entrySet;
-        if (entrySet == null) return this.entrySet = new EntrySet();
+        if (entrySet == null)
+            return this.entrySet = new EntrySet();
         return entrySet;
     }
 

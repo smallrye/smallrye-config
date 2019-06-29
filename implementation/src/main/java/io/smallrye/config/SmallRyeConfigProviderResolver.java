@@ -33,7 +33,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     public static final SmallRyeConfigProviderResolver INSTANCE = new SmallRyeConfigProviderResolver();
 
-    private Map<ClassLoader,Config> configsForClassLoader = new HashMap<>();
+    private Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
 
     @Override
     public Config getConfig() {

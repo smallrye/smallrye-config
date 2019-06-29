@@ -65,16 +65,21 @@ public class ConfigSourceWrapperTestCase {
 
     @Test
     public void testDecoratedTwice() {
-        final Config config = new SmallRyeConfigBuilder().withWrapper(WrappedSource::new).withWrapper(WrappedSource::new).addDefaultSources().build();
+        final Config config = new SmallRyeConfigBuilder().withWrapper(WrappedSource::new).withWrapper(WrappedSource::new)
+                .addDefaultSources().build();
         final Iterator<ConfigSource> iterator = config.getConfigSources().iterator();
         ConfigSource source;
 
         assertTrue(iterator.hasNext());
         source = iterator.next();
-        assertIsInstance(SysPropConfigSource.class, assertIsInstance(WrappedSource.class, assertIsInstance(WrappedSource.class, source).getDelegate()).getDelegate());
+        assertIsInstance(SysPropConfigSource.class,
+                assertIsInstance(WrappedSource.class, assertIsInstance(WrappedSource.class, source).getDelegate())
+                        .getDelegate());
         assertTrue(iterator.hasNext());
         source = iterator.next();
-        assertIsInstance(EnvConfigSource.class, assertIsInstance(WrappedSource.class, assertIsInstance(WrappedSource.class, source).getDelegate()).getDelegate());
+        assertIsInstance(EnvConfigSource.class,
+                assertIsInstance(WrappedSource.class, assertIsInstance(WrappedSource.class, source).getDelegate())
+                        .getDelegate());
         assertFalse(iterator.hasNext());
     }
 
