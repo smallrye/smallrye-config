@@ -69,7 +69,8 @@ class ImplicitConverters {
         return null;
     }
 
-    private static <T> Converter<T> getConverterFromStaticMethod(Class<T> clazz, String methodName, Class<? super String> paramType) {
+    private static <T> Converter<T> getConverterFromStaticMethod(Class<T> clazz, String methodName,
+            Class<? super String> paramType) {
         try {
             final Method method = clazz.getMethod(methodName, paramType);
             if (clazz != method.getReturnType()) {
@@ -114,7 +115,7 @@ class ImplicitConverters {
         }
 
         static final class Serialized implements Serializable {
-            private static final long serialVersionUID = - 6334004040897615452L;
+            private static final long serialVersionUID = -6334004040897615452L;
 
             private final Class<?> c;
             private final String m;
@@ -127,7 +128,7 @@ class ImplicitConverters {
             }
 
             Object readResolve() throws ObjectStreamException {
-                if (! p.isAssignableFrom(String.class)) {
+                if (!p.isAssignableFrom(String.class)) {
                     throw new InvalidObjectException("Invalid parameter type");
                 }
                 final Method method;
@@ -140,10 +141,10 @@ class ImplicitConverters {
                     // doesn't meet requirements of the spec
                     throw new InvalidObjectException("Deserialized method has invalid return type");
                 }
-                if (! method.isAccessible()) {
+                if (!method.isAccessible()) {
                     throw new InvalidObjectException("Deserialized method is not accessible");
                 }
-                if (! Modifier.isStatic(method.getModifiers())) {
+                if (!Modifier.isStatic(method.getModifiers())) {
                     throw new InvalidObjectException("Non static method " + method);
                 }
                 return new StaticMethodConverter<>(method.getReturnType(), method);
@@ -175,7 +176,7 @@ class ImplicitConverters {
         }
 
         static final class Serialized implements Serializable {
-            private static final long serialVersionUID = - 2903564775826815453L;
+            private static final long serialVersionUID = -2903564775826815453L;
 
             private final Class<?> c;
             private final Class<?> p;
@@ -186,7 +187,7 @@ class ImplicitConverters {
             }
 
             Object readResolve() throws ObjectStreamException {
-                if (! p.isAssignableFrom(String.class)) {
+                if (!p.isAssignableFrom(String.class)) {
                     throw new InvalidObjectException("Invalid parameter type");
                 }
                 final Constructor<?> ctor;
@@ -195,7 +196,7 @@ class ImplicitConverters {
                 } catch (NoSuchMethodException e) {
                     throw new InvalidObjectException("No matching constructor found");
                 }
-                if (! ctor.isAccessible()) {
+                if (!ctor.isAccessible()) {
                     throw new InvalidObjectException("Deserialized constructor is not accessible");
                 }
                 return new ConstructorConverter<>(ctor);

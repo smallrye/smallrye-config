@@ -50,8 +50,7 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
                 .addClasses(CollectionWithConfiguredValueTest.class, CollectionBean.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsManifestResource(new StringAsset(
-                        "myPets=snake,ox"
-                ), "microprofile-config.properties")
+                        "myPets=snake,ox"), "microprofile-config.properties")
                 .as(JavaArchive.class);
         WebArchive war = ShrinkWrap
                 .create(WebArchive.class, "CollectionWithConfiguredValueTest.war")
@@ -67,7 +66,7 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
         String[] arrayPets = bean.getArrayPets();
         assertNotNull(arrayPets);
         assertEquals(arrayPets.length, 2);
-        assertEquals(arrayPets, new String[]{"snake", "ox"});
+        assertEquals(arrayPets, new String[] { "snake", "ox" });
 
         List<String> listPets = bean.getListPets();
         assertNotNull(listPets);

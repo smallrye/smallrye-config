@@ -10,10 +10,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class ProviderBeanWithList {
 
     @Inject
-    @ConfigProperty(name="objectIds", defaultValue="")
+    @ConfigProperty(name = "objectIds", defaultValue = "")
     Provider<List<String>> objectdIds;
 
     @Inject
-    @ConfigProperty(name="numbers", defaultValue="")
+    @ConfigProperty(name = "numbers", defaultValue = "")
     Provider<List<Integer>> numbers;
 }

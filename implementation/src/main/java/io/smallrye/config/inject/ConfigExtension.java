@@ -91,14 +91,15 @@ public class ConfigExtension implements Extension {
             if (type instanceof Class) {
                 String key = getConfigKey(injectionPoint, configProperty);
                 try {
-                    if (!config.getOptionalValue(key, (Class<?>)type).isPresent()) {
+                    if (!config.getOptionalValue(key, (Class<?>) type).isPresent()) {
                         String defaultValue = configProperty.defaultValue();
                         if (defaultValue == null ||
                                 defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                            adv.addDeploymentProblem(new ConfigException(key,"No Config Value exists for required property " + key));
+                            adv.addDeploymentProblem(
+                                    new ConfigException(key, "No Config Value exists for required property " + key));
                         }
                     }
-                } catch(IllegalArgumentException cause) {
+                } catch (IllegalArgumentException cause) {
                     String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
                     adv.addDeploymentProblem(new ConfigException(key, message, cause));
                 }
@@ -112,10 +113,11 @@ public class ConfigExtension implements Extension {
                             String defaultValue = configProperty.defaultValue();
                             if (defaultValue == null ||
                                     defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                                adv.addDeploymentProblem(new ConfigException(key,"No Config Value exists for required property " + key));
+                                adv.addDeploymentProblem(
+                                        new ConfigException(key, "No Config Value exists for required property " + key));
                             }
                         }
-                    } catch(IllegalArgumentException cause) {
+                    } catch (IllegalArgumentException cause) {
                         String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
                         adv.addDeploymentProblem(new ConfigException(key, message, cause));
                     }
@@ -130,6 +132,7 @@ public class ConfigExtension implements Extension {
         }
         return (Class<T>) type;
     }
+
     static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
         String key = configProperty.name();
         if (!key.trim().isEmpty()) {

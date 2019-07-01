@@ -46,8 +46,7 @@ public class ProviderTest extends Arquillian {
                 .addClasses(ProviderTest.class, Email.class, ProviderBean.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsManifestResource(new StringAsset(
-                        "myEmail=example@smallrye.io"
-                ), "microprofile-config.properties")
+                        "myEmail=example@smallrye.io"), "microprofile-config.properties")
                 .as(JavaArchive.class);
         WebArchive war = ShrinkWrap
                 .create(WebArchive.class, "ProviderTest.war")
