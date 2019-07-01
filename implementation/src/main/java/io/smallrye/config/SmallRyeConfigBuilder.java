@@ -19,7 +19,6 @@ package io.smallrye.config;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -75,7 +74,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         configSourceLoader.forEach(discoveredSources::add);
 
         // load all ConfigSources from ConfigSourceProviders
-        ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class, classLoader);
+        ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class,
+                classLoader);
         configSourceProviderLoader.forEach(configSourceProvider -> {
             configSourceProvider.getConfigSources(classLoader)
                     .forEach(discoveredSources::add);
@@ -101,8 +101,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         defaultSources.add(new EnvConfigSource());
         defaultSources.add(new SysPropConfigSource());
-        defaultSources.addAll(new PropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader).getConfigSources(classLoader));
-        defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader).getConfigSources(classLoader));
+        defaultSources.addAll(new PropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                .getConfigSources(classLoader));
+        defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                .getConfigSources(classLoader));
 
         return defaultSources;
     }
@@ -121,10 +123,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public ConfigBuilder withConverters(Converter<?>[] converters) {
-        for (Converter<?> converter: converters) {
+        for (Converter<?> converter : converters) {
             Type type = Converters.getConverterType(converter.getClass());
             if (type == null) {
-                throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
+                throw new IllegalStateException(
+                        "Can not add converter " + converter + " that is not parameterized with a type");
             }
             addConverter(type, getPriority(converter), converter, this.converters);
         }
@@ -143,7 +146,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    private static void addConverter(Type type, int priority, Converter converter, Map<Type, ConverterWithPriority> converters) {
+    private static void addConverter(Type type, int priority, Converter converter,
+            Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
         ConverterWithPriority oldConverter = converters.get(type);
         int newPriority = getPriority(converter);
@@ -174,10 +178,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         final Map<Type, ConverterWithPriority> converters = new HashMap<>(this.converters);
 
         if (addDiscoveredConverters) {
-            for(Converter converter : discoverConverters()) {
+            for (Converter converter : discoverConverters()) {
                 Type type = Converters.getConverterType(converter.getClass());
                 if (type == null) {
-                    throw new IllegalStateException("Can not add converter " + converter + " that is not parameterized with a type");
+                    throw new IllegalStateException(
+                            "Can not add converter " + converter + " that is not parameterized with a type");
                 }
                 addConverter(type, getPriority(converter), converter, converters);
             }
@@ -199,7 +204,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters) {
         ServiceLoader<ConfigFactory> factoryLoader = ServiceLoader.load(ConfigFactory.class, this.classLoader);
         Iterator<ConfigFactory> iter = factoryLoader.iterator();
-        if ( !iter.hasNext() ) {
+        if (!iter.hasNext()) {
             return new SmallRyeConfig(sources, configConverters);
         }
 

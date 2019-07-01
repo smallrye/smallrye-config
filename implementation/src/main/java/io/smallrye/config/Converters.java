@@ -37,7 +37,8 @@ import org.eclipse.microprofile.config.spi.Converter;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public final class Converters {
-    private Converters() {}
+    private Converters() {
+    }
 
     @SuppressWarnings("unchecked")
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, (Converter & Serializable) value -> value);
@@ -60,16 +61,20 @@ public final class Converters {
     });
 
     @SuppressWarnings("unchecked")
-    static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2, (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null);
+    static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
+            (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3, (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null);
+    static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
+            (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4, (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null);
+    static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
+            (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5, (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null);
+    static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
+            (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, (Converter & Serializable) value -> {
@@ -80,19 +85,29 @@ public final class Converters {
         }
     });
 
-    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7, (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty() ? OptionalInt.of(Integer.parseInt(value)) : OptionalInt.empty());
+    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
+            (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty()
+                    ? OptionalInt.of(Integer.parseInt(value))
+                    : OptionalInt.empty());
 
-    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8, (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()? OptionalLong.of(Long.parseLong(value)) : OptionalLong.empty());
+    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8,
+            (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()
+                    ? OptionalLong.of(Long.parseLong(value))
+                    : OptionalLong.empty());
 
-    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9, (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty() ? OptionalDouble.of(Double.parseDouble(value)) : OptionalDouble.empty());
+    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9,
+            (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty()
+                    ? OptionalDouble.of(Double.parseDouble(value))
+                    : OptionalDouble.empty());
 
-    static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10, (Converter<InetAddress> & Serializable) value -> {
-        try {
-            return value != null && !value.isEmpty() ? InetAddress.getByName(value) : null;
-        } catch (UnknownHostException e) {
-            throw new IllegalArgumentException(e);
-        }
-    });
+    static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
+            (Converter<InetAddress> & Serializable) value -> {
+                try {
+                    return value != null && !value.isEmpty() ? InetAddress.getByName(value) : null;
+                } catch (UnknownHostException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            });
 
     @SuppressWarnings("unchecked")
     static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, (Converter & Serializable) value -> {
@@ -138,7 +153,7 @@ public final class Converters {
     }
 
     /**
-     * Get the type of the converter specified by {@code clazz}.  If the given class is not a valid
+     * Get the type of the converter specified by {@code clazz}. If the given class is not a valid
      * converter, then {@code null} is returned.
      *
      * @param clazz the converter class (must not be {@code null})
@@ -199,19 +214,32 @@ public final class Converters {
 
         Object readResolve() throws ObjectStreamException {
             switch (id) {
-                case 0: return STRING_CONVERTER;
-                case 1: return BOOLEAN_CONVERTER;
-                case 2: return DOUBLE_CONVERTER;
-                case 3: return FLOAT_CONVERTER;
-                case 4: return LONG_CONVERTER;
-                case 5: return INTEGER_CONVERTER;
-                case 6: return CLASS_CONVERTER;
-                case 7: return OPTIONAL_INT_CONVERTER;
-                case 8: return OPTIONAL_LONG_CONVERTER;
-                case 9: return OPTIONAL_DOUBLE_CONVERTER;
-                case 10: return INET_ADDRESS_CONVERTER;
-                case 11: return CHARACTER_CONVERTER;
-                default: throw new InvalidObjectException("Unknown converter ID");
+                case 0:
+                    return STRING_CONVERTER;
+                case 1:
+                    return BOOLEAN_CONVERTER;
+                case 2:
+                    return DOUBLE_CONVERTER;
+                case 3:
+                    return FLOAT_CONVERTER;
+                case 4:
+                    return LONG_CONVERTER;
+                case 5:
+                    return INTEGER_CONVERTER;
+                case 6:
+                    return CLASS_CONVERTER;
+                case 7:
+                    return OPTIONAL_INT_CONVERTER;
+                case 8:
+                    return OPTIONAL_LONG_CONVERTER;
+                case 9:
+                    return OPTIONAL_DOUBLE_CONVERTER;
+                case 10:
+                    return INET_ADDRESS_CONVERTER;
+                case 11:
+                    return CHARACTER_CONVERTER;
+                default:
+                    throw new InvalidObjectException("Unknown converter ID");
             }
         }
     }

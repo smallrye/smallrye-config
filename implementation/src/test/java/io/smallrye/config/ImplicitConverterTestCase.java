@@ -22,7 +22,6 @@ public class ImplicitConverterTestCase {
         assertEquals("/smallrye/smallrye-config/", url.getPath());
     }
 
-
     @Test
     public void testImplicitLocalDateConverter() {
         Config config = buildConfig(

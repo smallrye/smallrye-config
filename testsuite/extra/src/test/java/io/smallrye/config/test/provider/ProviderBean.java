@@ -33,10 +33,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class ProviderBean {
 
     @Inject
-    @ConfigProperty(name="myEmail")
+    @ConfigProperty(name = "myEmail")
     Email email;
 
     @Inject
-    @ConfigProperty(name="myEmail")
+    @ConfigProperty(name = "myEmail")
     Provider<Email> emailProvider;
 }

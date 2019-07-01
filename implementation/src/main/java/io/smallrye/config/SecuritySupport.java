@@ -33,8 +33,7 @@ public class SecuritySupport {
             ClassLoader tccl = null;
             try {
                 tccl = Thread.currentThread().getContextClassLoader();
-            }
-            catch (SecurityException ex) {
+            } catch (SecurityException ex) {
                 LOG.warn("Unable to get context classloader instance.", ex);
             }
             return tccl;

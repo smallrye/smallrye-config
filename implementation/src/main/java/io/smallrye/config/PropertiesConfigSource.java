@@ -48,6 +48,7 @@ public class PropertiesConfigSource implements ConfigSource, Serializable {
         }
         this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
     }
+
     public PropertiesConfigSource(Properties properties, String source) {
         this.properties = new HashMap(properties);
         this.source = source;

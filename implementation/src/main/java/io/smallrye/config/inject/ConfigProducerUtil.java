@@ -1,15 +1,17 @@
 package io.smallrye.config.inject;
 
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.StringUtil;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import javax.enterprise.inject.spi.InjectionPoint;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+
+import javax.enterprise.inject.spi.InjectionPoint;
+
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.StringUtil;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
@@ -42,7 +44,8 @@ public class ConfigProducerUtil {
         return valueType;
     }
 
-    public static <C extends Collection<T>, T> C collectionConfigProperty(InjectionPoint injectionPoint, Config config, C collection) {
+    public static <C extends Collection<T>, T> C collectionConfigProperty(InjectionPoint injectionPoint, Config config,
+            C collection) {
         Type type = injectionPoint.getAnnotated().getBaseType();
         final Class<T> valueType = resolveValueType(type);
         String stringValue = getValue(injectionPoint, String.class, config);
@@ -62,8 +65,7 @@ public class ConfigProducerUtil {
         return (Class<T>) type;
     }
 
-    public static <T> T getValue
-            (InjectionPoint injectionPoint, Class<T> target, Config config) {
+    public static <T> T getValue(InjectionPoint injectionPoint, Class<T> target, Config config) {
         String name = getName(injectionPoint);
         try {
             if (name == null) {
@@ -88,7 +90,7 @@ public class ConfigProducerUtil {
     public static String getName(InjectionPoint injectionPoint) {
         for (Annotation qualifier : injectionPoint.getQualifiers()) {
             if (qualifier.annotationType().equals(ConfigProperty.class)) {
-                ConfigProperty configProperty = ((ConfigProperty)qualifier);
+                ConfigProperty configProperty = ((ConfigProperty) qualifier);
                 return ConfigExtension.getConfigKey(injectionPoint, configProperty);
             }
         }

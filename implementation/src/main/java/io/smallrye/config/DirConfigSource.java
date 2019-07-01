@@ -34,16 +34,18 @@ import org.jboss.logging.Logger;
  *
  * For example, if a directory structure looks like:
  *
- * <pre><code>
+ * <pre>
+ * <code>
  * foo/
  * ├── num.max
  * └── num.size
- * </code></pre>
+ * </code>
+ * </pre>
  *
  * <code>new DirConfigSource("foo")</code> will provide 2 properties:
  * <ul>
- *     <li><code>num.max</code></li>
- *     <li><code>num.size</code></li>
+ * <li><code>num.max</code></li>
+ * <li><code>num.size</code></li>
  * </ul>
  *
  * Nested directories are not supported.

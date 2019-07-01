@@ -47,8 +47,7 @@ public class ProviderWithListTest extends Arquillian {
                 .addClasses(ProviderWithListTest.class, Email.class, ProviderBeanWithList.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsManifestResource(new StringAsset(
-                        "objectIds=a,b,c\nnumbers=4,5,6"
-                ), "microprofile-config.properties")
+                        "objectIds=a,b,c\nnumbers=4,5,6"), "microprofile-config.properties")
                 .as(JavaArchive.class);
         WebArchive war = ShrinkWrap
                 .create(WebArchive.class, "ProviderTest.war")
@@ -58,7 +57,6 @@ public class ProviderWithListTest extends Arquillian {
 
     @Inject
     private ProviderBeanWithList bean;
-
 
     @Test
     public void testProvider() {
@@ -76,7 +74,7 @@ public class ProviderWithListTest extends Arquillian {
         List<Integer> numbers = numberProvider.get();
         assertNotNull(numbers);
         assertEquals(numbers.size(), 3);
-        assertEquals((int)numbers.get(0), 4);
+        assertEquals((int) numbers.get(0), 4);
 
     }
 }

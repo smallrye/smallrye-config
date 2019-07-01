@@ -5,6 +5,8 @@
  */
 package io.smallrye.configsource.zookeeper.tests;
 
+import java.util.logging.Logger;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -13,8 +15,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-
-import java.util.logging.Logger;
 
 /**
  * Start a Zookeeper TestServer and run the tests
@@ -34,7 +34,8 @@ public class TestSuite {
         testServer = new TestingServer(2181, true);
 
         //Add a property that's going to be injected
-        CuratorFramework curatorClient = CuratorFrameworkFactory.newClient("localhost:2181", new ExponentialBackoffRetry(1000, 3));
+        CuratorFramework curatorClient = CuratorFrameworkFactory.newClient("localhost:2181",
+                new ExponentialBackoffRetry(1000, 3));
         curatorClient.start();
         curatorClient.createContainers("/test1/injected.property");
         curatorClient.setData().forPath("/test1/injected.property", "injected.property.value".getBytes());
