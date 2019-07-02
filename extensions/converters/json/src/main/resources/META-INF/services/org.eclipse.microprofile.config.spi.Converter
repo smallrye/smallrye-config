@@ -1,0 +1,2 @@
+io.smallrye.config.converter.json.JsonObjectConverter
+io.smallrye.config.converter.json.JsonArrayConverter
