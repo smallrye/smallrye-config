@@ -33,6 +33,6 @@ When using the property:
 
 [source,properties]
 ----
-    someJsonArray=["value1","value2","value3"]
-    someJsonObject={"foo": "bar", "count":100}
+someJsonArray=["value1","value2","value3"]
+someJsonObject={"foo": "bar", "count":100}
 ----
