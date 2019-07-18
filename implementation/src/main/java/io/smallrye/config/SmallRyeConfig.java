@@ -131,7 +131,7 @@ public class SmallRyeConfig implements Config, Serializable {
         } else if (aClass.isAssignableFrom(OptionalDouble.class)) {
             return aClass.cast(OptionalDouble.empty());
         }
-        throw new NoSuchElementException("Property " + name + " not found");
+        throw propertyNotFound(name);
     }
 
     public <T> T getValue(String name, Converter<T> converter) {
@@ -145,7 +145,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 return converter.convert(value);
             }
         }
-        throw new NoSuchElementException("Property " + name + " not found");
+        throw propertyNotFound(name);
     }
 
     @Override
@@ -239,5 +239,9 @@ public class SmallRyeConfig implements Config, Serializable {
             throw new IllegalArgumentException("No Converter registered for class " + asType);
         }
         return converter;
+    }
+
+    private static NoSuchElementException propertyNotFound(final String name) {
+        return new NoSuchElementException("Property " + name + " not found");
     }
 }
