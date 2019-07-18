@@ -19,10 +19,12 @@ package io.smallrye.config;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -197,6 +199,22 @@ public final class Converters {
         return new CollectionConverter<>(itemConverter, collectionFactory);
     }
 
+    /**
+     * Get a converter that converts a comma-separated string into an array of converted items.
+     *
+     * @param itemConverter the item converter (must not be {@code null})
+     * @param arrayType the array type class (must not be {@code null})
+     * @param <T> the item type
+     * @param <A> the array type
+     * @return the new converter (not {@code null})
+     */
+    public static <A, T> Converter<A> newArrayConverter(Converter<T> itemConverter, Class<A> arrayType) {
+        if (!arrayType.isArray()) {
+            throw new IllegalArgumentException(arrayType.toString() + " is not an array type");
+        }
+        return new ArrayConverter<>(itemConverter, arrayType);
+    }
+
     static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
         private static final long serialVersionUID = -8452214026800305628L;
 
@@ -224,6 +242,61 @@ public final class Converters {
                 }
             }
             return collection.isEmpty() ? null : collection;
+        }
+    }
+
+    static final class ArrayConverter<A, T> implements Converter<A>, Serializable {
+        private static final long serialVersionUID = 2630282286159527380L;
+
+        private final Converter<T> itemConverter;
+        private final Class<A> arrayType;
+
+        ArrayConverter(final Converter<T> itemConverter, final Class<A> arrayType) {
+            this.itemConverter = itemConverter;
+            this.arrayType = arrayType;
+        }
+
+        public A convert(final String str) {
+            if (str.isEmpty()) {
+                // empty array
+                return null;
+            }
+            final String[] itemStrings = StringUtil.split(str);
+            final A array = arrayType.cast(Array.newInstance(arrayType.getComponentType(), itemStrings.length));
+            int size = 0;
+            for (String itemString : itemStrings) {
+                if (!itemString.isEmpty()) {
+                    final T item = itemConverter.convert(itemString);
+                    if (item != null) {
+                        Array.set(array, size++, item);
+                    }
+                }
+            }
+            return size == 0 ? null : size < itemStrings.length ? copyArray(array, arrayType, size) : array;
+        }
+
+        private static <A> A copyArray(A array, Class<A> arrayType, int newSize) {
+            if (array instanceof Object[]) {
+                return arrayType.cast(Arrays.copyOf((Object[]) array, newSize));
+            } else if (array instanceof boolean[]) {
+                return arrayType.cast(Arrays.copyOf((boolean[]) array, newSize));
+            } else if (array instanceof char[]) {
+                return arrayType.cast(Arrays.copyOf((char[]) array, newSize));
+            } else if (array instanceof byte[]) {
+                return arrayType.cast(Arrays.copyOf((byte[]) array, newSize));
+            } else if (array instanceof short[]) {
+                return arrayType.cast(Arrays.copyOf((short[]) array, newSize));
+            } else if (array instanceof int[]) {
+                return arrayType.cast(Arrays.copyOf((int[]) array, newSize));
+            } else if (array instanceof long[]) {
+                return arrayType.cast(Arrays.copyOf((long[]) array, newSize));
+            } else if (array instanceof float[]) {
+                return arrayType.cast(Arrays.copyOf((float[]) array, newSize));
+            } else if (array instanceof double[]) {
+                return arrayType.cast(Arrays.copyOf((double[]) array, newSize));
+            } else {
+                throw new IllegalStateException();
+            }
         }
     }
 
