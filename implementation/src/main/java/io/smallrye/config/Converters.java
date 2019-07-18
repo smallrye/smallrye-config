@@ -32,6 +32,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.IntFunction;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -257,6 +259,53 @@ public final class Converters {
     public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<T> delegate, T minimumValue,
             boolean minInclusive, T maximumValue, boolean maxInclusive) {
         return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value matches the given pattern.
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param pattern the pattern to match (must not be {@code null})
+     * @param <T> the converter target type
+     * @return a pattern-validating converter
+     */
+    public static <T> Converter<T> patternValidatingConverter(Converter<T> delegate, Pattern pattern) {
+        return new PatternCheckConverter<>(delegate, pattern);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value matches the given pattern.
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param pattern the pattern string to match (must not be {@code null})
+     * @param <T> the converter target type
+     * @return a pattern-validating converter
+     * @throws PatternSyntaxException if the given pattern has invalid syntax
+     */
+    public static <T> Converter<T> patternValidatingConverter(Converter<T> delegate, String pattern) {
+        return patternValidatingConverter(delegate, Pattern.compile(pattern));
+    }
+
+    static final class PatternCheckConverter<T> implements Converter<T>, Serializable {
+        private static final long serialVersionUID = 358813973126582008L;
+
+        private final Converter<T> delegate;
+        private final Pattern pattern;
+
+        PatternCheckConverter(final Converter<T> delegate, final Pattern pattern) {
+            this.delegate = delegate;
+            this.pattern = pattern;
+        }
+
+        public T convert(final String value) {
+            if (value == null) {
+                return null;
+            }
+            if (pattern.matcher(value).matches()) {
+                return delegate.convert(value);
+            }
+            throw new IllegalArgumentException("Value does not match pattern " + pattern + " (value was \"" + value + "\")");
+        }
     }
 
     static final class RangeCheckConverter<T extends Comparable<T>> implements Converter<T>, Serializable {
