@@ -215,6 +215,106 @@ public final class Converters {
         return new ArrayConverter<>(itemConverter, arrayType);
     }
 
+    /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value.
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T extends Comparable<T>> Converter<T> minimumValueConverter(Converter<T> delegate, T minimumValue,
+            boolean inclusive) {
+        return new RangeCheckConverter<>(delegate, minimumValue, inclusive, null, false);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value.
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T extends Comparable<T>> Converter<T> maximumValueConverter(Converter<T> delegate, T maximumValue,
+            boolean inclusive) {
+        return new RangeCheckConverter<>(delegate, null, false, maximumValue, inclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range.
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<T> delegate, T minimumValue,
+            boolean minInclusive, T maximumValue, boolean maxInclusive) {
+        return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
+    }
+
+    static final class RangeCheckConverter<T extends Comparable<T>> implements Converter<T>, Serializable {
+
+        private static final long serialVersionUID = 2764654140347010865L;
+
+        private final Converter<T> delegate;
+        private final T min;
+        private final boolean minInclusive;
+        private final T max;
+        private final boolean maxInclusive;
+
+        RangeCheckConverter(final Converter<T> delegate, final T min, final boolean minInclusive, final T max,
+                final boolean maxInclusive) {
+            this.delegate = delegate;
+            this.min = min;
+            this.minInclusive = minInclusive;
+            this.max = max;
+            this.maxInclusive = maxInclusive;
+        }
+
+        public T convert(final String value) {
+            final T result = delegate.convert(value);
+            if (result == null) {
+                return null;
+            }
+            if (min != null) {
+                final int cmp = result.compareTo(min);
+                if (minInclusive) {
+                    if (cmp < 0) {
+                        throw new IllegalArgumentException(
+                                "Value must not be less than " + min + " (value was \"" + value + "\")");
+                    }
+                } else {
+                    if (cmp <= 0) {
+                        throw new IllegalArgumentException(
+                                "Value must not be less than or equal to" + min + " (value was \"" + value + "\")");
+                    }
+                }
+            }
+            if (max != null) {
+                final int cmp = result.compareTo(max);
+                if (maxInclusive) {
+                    if (cmp > 0) {
+                        throw new IllegalArgumentException(
+                                "Value must not be greater than " + max + " (value was \"" + value + "\")");
+                    }
+                } else {
+                    if (cmp >= 0) {
+                        throw new IllegalArgumentException(
+                                "Value must not be greater than or equal to" + max + " (value was \"" + value + "\")");
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
     static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
         private static final long serialVersionUID = -8452214026800305628L;
 
