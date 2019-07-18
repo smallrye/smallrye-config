@@ -16,10 +16,7 @@
 
 package io.smallrye.config;
 
-import static java.lang.reflect.Array.newInstance;
-
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
@@ -220,25 +217,13 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> T convert(String value, Class<T> asType) {
-        if (value != null) {
-            boolean isArray = asType.isArray();
-            if (isArray) {
-                String[] split = StringUtil.split(value);
-                Class<?> componentType = asType.getComponentType();
-                T array = asType.cast(newInstance(componentType, split.length));
-                for (int i = 0; i < split.length; i++) {
-                    Array.set(array, i, convert(split[i], componentType));
-                }
-                return array;
-            } else {
-                Converter<T> converter = getConverter(asType);
-                return converter.convert(value);
-            }
-        }
-        return null;
+        return value != null ? getConverter(asType).convert(value) : null;
     }
 
     public <T> Converter<T> getConverter(Class<T> asType) {
+        if (asType.isArray()) {
+            return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
+        }
         @SuppressWarnings("unchecked")
         Converter<T> converter = (Converter<T>) converters.get(asType);
         if (converter == null) {
