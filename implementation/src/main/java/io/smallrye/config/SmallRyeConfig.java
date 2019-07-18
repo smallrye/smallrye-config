@@ -93,14 +93,9 @@ public class SmallRyeConfig implements Config, Serializable {
         for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
-                if (value.isEmpty()) {
-                    // empty collection
+                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
+                if (collection == null) {
                     break;
-                }
-                String[] itemStrings = StringUtil.split(value);
-                final C collection = collectionFactory.apply(itemStrings.length);
-                for (String itemString : itemStrings) {
-                    collection.add(converter.convert(itemString));
                 }
                 return collection;
             }
