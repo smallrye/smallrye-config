@@ -5,7 +5,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.InetAddress;
@@ -79,7 +78,15 @@ public class CustomConverterTestCase {
         assertFalse(config.getOptionalValue("missing.prop", Integer.class).isPresent());
         assertFalse(config.getOptionalValue("missing.prop", customConverter).isPresent());
         // collection
-        assertTrue(config.getValues("missing.prop", Integer.class, ArrayList::new).isEmpty());
-        assertTrue(config.getValues("missing.prop", customConverter, ArrayList::new).isEmpty());
+        try {
+            config.getValues("missing.prop", Integer.class, ArrayList::new);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValues("missing.prop", customConverter, ArrayList::new);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
     }
 }

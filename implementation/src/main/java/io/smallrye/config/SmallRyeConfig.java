@@ -86,7 +86,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
         // value not found
-        return collectionFactory.apply(0);
+        throw propertyNotFound(name);
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
@@ -106,7 +106,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
         // value not found
-        return collectionFactory.apply(0);
+        throw propertyNotFound(name);
     }
 
     @Override
