@@ -48,6 +48,8 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 public class SmallRyeConfig implements Config, Serializable {
 
+    private static final long serialVersionUID = 8138651532357898263L;
+
     static final Comparator<ConfigSource> CONFIG_SOURCE_COMPARATOR = new Comparator<ConfigSource>() {
         @Override
         public int compare(ConfigSource o1, ConfigSource o2) {
