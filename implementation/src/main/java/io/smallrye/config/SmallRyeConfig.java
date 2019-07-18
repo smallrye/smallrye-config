@@ -168,6 +168,24 @@ public class SmallRyeConfig implements Config, Serializable {
         return Optional.empty();
     }
 
+    public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
+            IntFunction<C> collectionFactory) {
+        return getOptionalValues(name, getConverter(itemClass), collectionFactory);
+    }
+
+    public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
+            IntFunction<C> collectionFactory) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
+                return Optional.ofNullable(collection);
+            }
+        }
+        // value not found
+        return Optional.empty();
+    }
+
     @Override
     public Iterable<String> getPropertyNames() {
         Set<String> names = new HashSet<>();
