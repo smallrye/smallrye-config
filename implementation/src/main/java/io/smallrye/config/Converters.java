@@ -23,11 +23,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -179,6 +181,50 @@ public final class Converters {
         }
 
         return getConverterType(clazz.getSuperclass());
+    }
+
+    /**
+     * Get a converter that converts a comma-separated string into a list of converted items.
+     *
+     * @param itemConverter the item converter (must not be {@code null})
+     * @param collectionFactory the collection factory (must not be {@code null})
+     * @param <T> the item type
+     * @param <C> the collection type
+     * @return the new converter (not {@code null})
+     */
+    public static <T, C extends Collection<T>> Converter<C> newCollectionConverter(Converter<T> itemConverter,
+            IntFunction<C> collectionFactory) {
+        return new CollectionConverter<>(itemConverter, collectionFactory);
+    }
+
+    static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
+        private static final long serialVersionUID = -8452214026800305628L;
+
+        private final Converter<T> itemConverter;
+        private final IntFunction<C> collectionFactory;
+
+        CollectionConverter(final Converter<T> itemConverter, final IntFunction<C> collectionFactory) {
+            this.itemConverter = itemConverter;
+            this.collectionFactory = collectionFactory;
+        }
+
+        public C convert(final String str) {
+            if (str.isEmpty()) {
+                // empty collection
+                return null;
+            }
+            final String[] itemStrings = StringUtil.split(str);
+            final C collection = collectionFactory.apply(itemStrings.length);
+            for (String itemString : itemStrings) {
+                if (!itemString.isEmpty()) {
+                    final T item = itemConverter.convert(itemString);
+                    if (item != null) {
+                        collection.add(item);
+                    }
+                }
+            }
+            return collection.isEmpty() ? null : collection;
+        }
     }
 
     static final class BuiltInConverter<T> implements Converter<T>, Serializable {
