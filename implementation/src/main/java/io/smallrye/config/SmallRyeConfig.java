@@ -16,10 +16,7 @@
 
 package io.smallrye.config;
 
-import static java.lang.reflect.Array.newInstance;
-
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
@@ -72,43 +69,22 @@ public class SmallRyeConfig implements Config, Serializable {
 
     // no @Override
     public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                if (value.isEmpty()) {
-                    // empty collection
-                    break;
-                }
-                String[] itemStrings = StringUtil.split(value);
-                final C collection = collectionFactory.apply(itemStrings.length);
-                for (String itemString : itemStrings) {
-                    collection.add(convert(itemString, itemClass));
-                }
-                return collection;
-            }
-        }
-        // value not found
-        return collectionFactory.apply(0);
+        return getValues(name, getConverter(itemClass), collectionFactory);
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
         for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
-                if (value.isEmpty()) {
-                    // empty collection
+                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
+                if (collection == null) {
                     break;
-                }
-                String[] itemStrings = StringUtil.split(value);
-                final C collection = collectionFactory.apply(itemStrings.length);
-                for (String itemString : itemStrings) {
-                    collection.add(converter.convert(itemString));
                 }
                 return collection;
             }
         }
         // value not found
-        return collectionFactory.apply(0);
+        throw propertyNotFound(name);
     }
 
     @Override
@@ -133,7 +109,7 @@ public class SmallRyeConfig implements Config, Serializable {
         } else if (aClass.isAssignableFrom(OptionalDouble.class)) {
             return aClass.cast(OptionalDouble.empty());
         }
-        throw new NoSuchElementException("Property " + name + " not found");
+        throw propertyNotFound(name);
     }
 
     public <T> T getValue(String name, Converter<T> converter) {
@@ -147,20 +123,12 @@ public class SmallRyeConfig implements Config, Serializable {
                 return converter.convert(value);
             }
         }
-        throw new NoSuchElementException("Property " + name + " not found");
+        throw propertyNotFound(name);
     }
 
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                // treat empty value as non-present
-                return value.isEmpty() ? Optional.empty() : Optional.of(convert(value, aClass));
-            }
-        }
-        // value not found
-        return Optional.empty();
+        return getOptionalValue(name, getConverter(aClass));
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
@@ -169,6 +137,24 @@ public class SmallRyeConfig implements Config, Serializable {
             if (value != null) {
                 // treat empty value as non-present
                 return value.isEmpty() ? Optional.empty() : Optional.of(converter.convert(value));
+            }
+        }
+        // value not found
+        return Optional.empty();
+    }
+
+    public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
+            IntFunction<C> collectionFactory) {
+        return getOptionalValues(name, getConverter(itemClass), collectionFactory);
+    }
+
+    public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
+            IntFunction<C> collectionFactory) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
+                return Optional.ofNullable(collection);
             }
         }
         // value not found
@@ -209,25 +195,13 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> T convert(String value, Class<T> asType) {
-        if (value != null) {
-            boolean isArray = asType.isArray();
-            if (isArray) {
-                String[] split = StringUtil.split(value);
-                Class<?> componentType = asType.getComponentType();
-                T array = asType.cast(newInstance(componentType, split.length));
-                for (int i = 0; i < split.length; i++) {
-                    Array.set(array, i, convert(split[i], componentType));
-                }
-                return array;
-            } else {
-                Converter<T> converter = getConverter(asType);
-                return converter.convert(value);
-            }
-        }
-        return null;
+        return value != null ? getConverter(asType).convert(value) : null;
     }
 
     public <T> Converter<T> getConverter(Class<T> asType) {
+        if (asType.isArray()) {
+            return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
+        }
         @SuppressWarnings("unchecked")
         Converter<T> converter = (Converter<T>) converters.get(asType);
         if (converter == null) {
@@ -241,5 +215,9 @@ public class SmallRyeConfig implements Config, Serializable {
             throw new IllegalArgumentException("No Converter registered for class " + asType);
         }
         return converter;
+    }
+
+    private static NoSuchElementException propertyNotFound(final String name) {
+        return new NoSuchElementException("Property " + name + " not found");
     }
 }
