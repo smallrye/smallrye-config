@@ -49,8 +49,8 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
-    <module>config-sources</module><!-- TODO: Move to extensions -->
-    <module>extensions</module>
+    <module>config-sources</module>
+    <module>converters/json</module>
   </modules>
 
   <dependencyManagement>

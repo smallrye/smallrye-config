@@ -1,7 +1,0 @@
-== Config Extensions
-
-Here you will find some extra Config sources, Config converters and some utils for MicroProfile Config API.
-
-=== Config Converters
-
-* link:converters/json[] - Json Config converter
