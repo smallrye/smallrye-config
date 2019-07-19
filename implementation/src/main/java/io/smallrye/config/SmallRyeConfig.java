@@ -50,7 +50,7 @@ public class SmallRyeConfig implements Config, Serializable {
     static final Comparator<ConfigSource> CONFIG_SOURCE_COMPARATOR = new Comparator<ConfigSource>() {
         @Override
         public int compare(ConfigSource o1, ConfigSource o2) {
-            int res = Integer.signum(o2.getOrdinal() - o1.getOrdinal());
+            int res = Long.signum((long) o2.getOrdinal() - (long) o1.getOrdinal());
             // if 2 config sources have the same ordinal,
             // provide consistent order by sorting them
             // according to their name.
