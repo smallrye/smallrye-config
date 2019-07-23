@@ -188,6 +188,17 @@ public final class Converters {
     }
 
     /**
+     * Get the implicit converter for the given type class, if any.
+     *
+     * @param type the type class
+     * @param <T> the type
+     * @return the implicit converter for the given type class, or {@code null} if none exists
+     */
+    public static <T> Converter<T> getImplicitConverter(Class<T> type) {
+        return ImplicitConverters.getConverter(type);
+    }
+
+    /**
      * Get a converter that converts a comma-separated string into a list of converted items.
      *
      * @param itemConverter the item converter (must not be {@code null})
