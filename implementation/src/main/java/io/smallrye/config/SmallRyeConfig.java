@@ -73,18 +73,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
-                if (collection == null) {
-                    break;
-                }
-                return collection;
-            }
-        }
-        // value not found
-        throw propertyNotFound(name);
+        return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -150,15 +139,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
-                return Optional.ofNullable(collection);
-            }
-        }
-        // value not found
-        return Optional.empty();
+        return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
