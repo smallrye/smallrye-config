@@ -30,7 +30,7 @@
 
     <properties>
         <version.curator>4.2.0</version.curator>
-        <version.assertj>3.12.2</version.assertj>
+        <version.assertj>3.13.0</version.assertj>
         <version.slf4j>1.7.26</version.slf4j>
     </properties>
 
