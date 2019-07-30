@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
@@ -98,9 +99,9 @@ public class DirConfigSource implements ConfigSource {
     }
 
     private String readContent(File file) throws IOException {
-        String content = Files.lines(file.toPath())
-                .collect(Collectors.joining());
-        return content;
+        try (Stream<String> stream = Files.lines(file.toPath())) {
+            return stream.collect(Collectors.joining());
+        }
     }
 
     @Override
