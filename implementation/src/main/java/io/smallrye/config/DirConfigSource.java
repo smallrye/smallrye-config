@@ -18,21 +18,25 @@ package io.smallrye.config;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.util.HashMap;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 
 /**
  * Read configuration from a file directory.
- *
+ * <p>
  * Each file in the directory corresponds to a property where the file name is the property key
  * and the file textual content is the property value.
- *
+ * <p>
  * For example, if a directory structure looks like:
  *
  * <pre>
@@ -48,7 +52,7 @@ import org.jboss.logging.Logger;
  * <li><code>num.max</code></li>
  * <li><code>num.size</code></li>
  * </ul>
- *
+ * <p>
  * Nested directories are not supported.
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -56,9 +60,6 @@ import org.jboss.logging.Logger;
 public class DirConfigSource implements ConfigSource {
 
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
-
-    private static final String CONFIG_ORDINAL_KEY = "config_ordinal";
-    private static final String CONFIG_ORDINAL_DEFAULT_VALUE = "100";
 
     private final File dir;
     private final int ordinal;
@@ -68,45 +69,25 @@ public class DirConfigSource implements ConfigSource {
         this(dir, DEFAULT_ORDINAL);
     }
 
+    /**
+     * Construct a new instance
+     *
+     * @param dir the directory, containing configuration files
+     * @param ordinal the ordinal value
+     */
     public DirConfigSource(File dir, int ordinal) {
         this.dir = dir;
-        this.props = scan();
+        this.props = scan(dir);
         if (props.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.valueOf(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
+            this.ordinal = Integer.valueOf(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
         } else {
             this.ordinal = ordinal;
         }
     }
 
-    private Map<String, String> scan() {
-        Map<String, String> props = new HashMap<>();
-        if (dir == null || !dir.isDirectory()) {
-            return props;
-        }
-        for (File file : dir.listFiles()) {
-            if (file.isDirectory()) {
-                continue;
-            }
-            try {
-                String key = file.getName();
-                String value = readContent(file);
-                props.put(key, value);
-            } catch (Throwable t) {
-                LOG.warnf("Unable to read content from file %s", file.getAbsolutePath());
-            }
-        }
-        return props;
-    }
-
-    private String readContent(File file) throws IOException {
-        try (Stream<String> stream = Files.lines(file.toPath())) {
-            return stream.collect(Collectors.joining());
-        }
-    }
-
     @Override
     public Map<String, String> getProperties() {
-        return props;
+        return Collections.unmodifiableMap(props);
     }
 
     @Override
@@ -122,5 +103,26 @@ public class DirConfigSource implements ConfigSource {
     @Override
     public int getOrdinal() {
         return ordinal;
+    }
+
+    private Map<String, String> scan(File directory) {
+        if (directory != null && directory.isDirectory()) {
+            try (Stream<Path> stream = Files.walk(directory.toPath())) {
+
+                return stream.filter(p -> p.toFile().isFile())
+                        .collect(Collectors.toMap(it -> it.getFileName().toString(), this::readContent));
+            } catch (Throwable t) {
+                LOG.warnf("Unable to read content from file %s", directory.getAbsolutePath());
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private String readContent(Path file) {
+        try (Stream<String> stream = Files.lines(file)) {
+            return stream.collect(Collectors.joining());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

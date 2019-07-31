@@ -16,14 +16,16 @@
 
 package io.smallrye.config;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import static io.smallrye.config.utils.ConfigSourceUtil.propertiesToMap;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -35,8 +37,9 @@ class SysPropConfigSource implements ConfigSource, Serializable {
 
     @Override
     public Map<String, String> getProperties() {
-        Properties properties = AccessController.doPrivileged((PrivilegedAction<Properties>) System::getProperties);
-        return (Map<String, String>) new HashMap(properties);
+
+        return Collections.unmodifiableMap(
+                propertiesToMap(AccessController.doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
     }
 
     @Override

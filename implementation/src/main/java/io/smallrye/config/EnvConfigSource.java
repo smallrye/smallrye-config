@@ -16,26 +16,29 @@
 
 package io.smallrye.config;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
-
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class EnvConfigSource implements ConfigSource, Serializable {
+    private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
+
 
     EnvConfigSource() {
     }
 
     @Override
     public Map<String, String> getProperties() {
-        Map<String, String> env = AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv);
-        return Collections.unmodifiableMap(env);
+        return Collections
+                .unmodifiableMap(AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
     }
 
     @Override
@@ -49,22 +52,24 @@ public class EnvConfigSource implements ConfigSource, Serializable {
             return null;
         }
 
+        final Map<String, String> properties = getProperties();
+
         // exact match
-        String value = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(name));
+        String value = properties.get(name);
         if (value != null) {
             return value;
         }
 
         // replace non-alphanumeric characters by underscores
-        String sanitizedName = name.replaceAll("[^a-zA-Z0-9_]", "_");
+        String sanitizedName = PATTERN.matcher(name).replaceAll("_");
 
-        value = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(sanitizedName));
+        value = properties.get(sanitizedName);
         if (value != null) {
             return value;
         }
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
-        return AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(sanitizedName.toUpperCase()));
+        return properties.get(sanitizedName.toUpperCase());
     }
 
     @Override

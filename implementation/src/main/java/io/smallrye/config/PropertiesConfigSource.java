@@ -25,41 +25,47 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import io.smallrye.config.utils.ConfigSourceUtil;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class PropertiesConfigSource implements ConfigSource, Serializable {
 
-    private static final String CONFIG_ORDINAL_KEY = "config_ordinal";
-    private static final String CONFIG_ORDINAL_DEFAULT_VALUE = "100";
-
     private final Map<String, String> properties;
     private final String source;
     private final int ordinal;
 
+    /**
+     * Construct a new instance
+     *
+     * @param url a property file location
+     * @throws IOException if an error occurred when reading from the input stream
+     */
     public PropertiesConfigSource(URL url) throws IOException {
         this.source = url.toString();
         try (InputStream in = url.openStream()) {
             Properties p = new Properties();
             p.load(in);
-            properties = new HashMap(p);
+            properties = ConfigSourceUtil.propertiesToMap(p);
         }
-        this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
+        this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
     }
 
     public PropertiesConfigSource(Properties properties, String source) {
-        this.properties = new HashMap(properties);
+        this.properties = ConfigSourceUtil.propertiesToMap(properties);
         this.source = source;
-        this.ordinal = Integer.valueOf(properties.getProperty(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
+        this.ordinal = Integer.valueOf(properties.getProperty(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
-        this.properties = new HashMap(properties);
+        this.properties = new HashMap<>(properties);
         this.source = source;
         if (properties.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_DEFAULT_VALUE));
+            this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
         } else {
             this.ordinal = ordinal;
         }
