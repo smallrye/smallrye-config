@@ -22,7 +22,7 @@ mvn clean install
 * link:implementation[] - Implementation of the Eclipse MicroProfile Config API.
 * link:testsuite[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
 * link:docs[] - Project documentation.
-* link:extensions[] - Extra config sources, config converters and some utils for Eclipse MicroProfile ConfigSources
+* link:config-sources[] - Implementation of different Eclipse MicroProfile ConfigSources
 
 === Links
 
