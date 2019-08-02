@@ -1,6 +1,6 @@
 = Json converter
 
-This converter allows you to inject a JsonObject or JsonArray as a ConfigProperty
+This converter allows you to inject a JsonObject or JsonArray as a ConfigProperty.
 
 == Usage
 
