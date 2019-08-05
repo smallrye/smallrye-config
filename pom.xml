@@ -51,6 +51,7 @@
     <module>docs</module>
     <module>config-sources</module>
     <module>converters/json</module>
+    <module>utils/events</module>
   </modules>
 
   <dependencyManagement>
