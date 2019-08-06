@@ -8,7 +8,7 @@ Util library for config sources that fire events on changes.
 
     <dependency>
         <groupId>io.smallrye.config</groupId>
-    <artifactId>smallrye-config-events-1.3</artifactId>
+        <artifactId>smallrye-config-events-1.3</artifactId>
         <version>XXXX</version>
     </dependency>
 
@@ -105,7 +105,7 @@ Example, listen to all keys that starts with `some.`:
 ```java
 
     @RegexFilter("^some\\..+") 
-    public void allForPatternMatchOnKey(@Observes ChangeEvent changeEvent, EventMetadata meta){
+    public void allForPatternMatchOnKey(@Observes ChangeEvent changeEvent){
         log.log(Level.SEVERE, "Pattern match on key: Received a config change event: {0}", changeEvent);
     }
 
@@ -117,7 +117,7 @@ for example, listen to all `oldValue` that starts with `some.`:
 ```java
 
     @RegexFilter(onField = Field.oldValue, value = "^some\\..+")
-    public void allForPatternMatchOnOldValue(@Observes ChangeEvent changeEvent, EventMetadata meta){
+    public void allForPatternMatchOnOldValue(@Observes ChangeEvent changeEvent){
         log.log(Level.SEVERE, "Pattern match on old value: Received a config change event: {0}", changeEvent);
     }
 
