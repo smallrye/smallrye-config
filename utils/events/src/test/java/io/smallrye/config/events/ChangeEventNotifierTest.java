@@ -1,5 +1,6 @@
 package io.smallrye.config.events;
 
+import java.io.File;
 import java.util.Optional;
 
 import javax.enterprise.event.Observes;
@@ -9,6 +10,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,9 +28,14 @@ public class ChangeEventNotifierTest {
 
     @Deployment
     public static WebArchive createDeployment() {
+
+        final File[] thorntail = Maven.resolver().resolve("io.thorntail:microprofile-config:2.5.0.Final")
+                .withoutTransitivity().asFile();
+
         return ShrinkWrap.create(WebArchive.class, "ChangeEventNotifierTest.war")
                 .addPackage(ChangeEventNotifier.class.getPackage())
                 .addPackage(RegexFilterInterceptor.class.getPackage())
+                .addAsLibraries(thorntail)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
