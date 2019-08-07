@@ -141,12 +141,5 @@
         <module>release</module>
       </modules>
     </profile>
-
-    <profile>
-      <id>coverage</id>
-      <modules>
-        <module>coverage-report</module>
-      </modules>
-    </profile>
   </profiles>
 </project>
