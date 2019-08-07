@@ -33,14 +33,12 @@ public class JsonObjectConverterTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        final File[] smallryeConfig = Maven.resolver()
-                .loadPomFromFile("pom.xml")
-                .resolve("io.smallrye:smallrye-config")
+        final File[] thorntailMPConfigFiles = Maven.resolver().resolve("io.thorntail:microprofile-config:2.4.0.Final")
                 .withoutTransitivity().asFile();
 
         return ShrinkWrap.create(WebArchive.class, "JsonObjectConverterTest.war")
                 .addPackage(JsonObjectConverter.class.getPackage())
-                .addAsLibraries(smallryeConfig)
+                .addAsLibraries(thorntailMPConfigFiles)
                 .addAsResource(
                         new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.Converter"),
                         "META-INF/services/org.eclipse.microprofile.config.spi.Converter")
