@@ -87,6 +87,20 @@
         <artifactId>smallrye-config</artifactId>
         <version>${project.version}</version>
       </dependency>
+
+      <!-- Converters -->
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-converter-json</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- Config Sources -->
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-zookeeper</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -125,6 +139,13 @@
       </activation>
       <modules>
         <module>release</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>coverage</id>
+      <modules>
+        <module>coverage-report</module>
       </modules>
     </profile>
   </profiles>

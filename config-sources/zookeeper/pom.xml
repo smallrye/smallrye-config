@@ -23,8 +23,8 @@
         <version>1.3.9-SNAPSHOT</version>
     </parent>
 
-    <artifactId>zookeeper-config-source</artifactId>
-    <packaging>jar</packaging>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-source-zookeeper</artifactId>
 
     <name>SmallRye: ZooKeeper ConfigSource</name>
 
@@ -115,5 +115,23 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <argLine>@{jacocoArgLine}</argLine>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
