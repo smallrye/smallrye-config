@@ -30,7 +30,7 @@
 
     <properties>
         <version.curator>4.2.0</version.curator>
-        <version.slf4j>1.7.26</version.slf4j>
+        <version.slf4j>1.7.27</version.slf4j>
     </properties>
 
     <build>
