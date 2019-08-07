@@ -8,7 +8,7 @@ Util library for config sources that fire events on changes.
 
     <dependency>
         <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-events-1.3</artifactId>
+        <artifactId>smallrye-config-events</artifactId>
         <version>XXXX</version>
     </dependency>
 
