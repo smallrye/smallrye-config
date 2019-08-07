@@ -46,7 +46,7 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
-    <module>config-sources</module>
+    <module>sources/zookeeper</module>
     <module>converters/json</module>
   </modules>
 
