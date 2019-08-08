@@ -34,6 +34,8 @@
 
   <properties>
     <version.eclipse.microprofile.config>1.3</version.eclipse.microprofile.config>
+
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <licenses>
