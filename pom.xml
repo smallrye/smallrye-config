@@ -63,6 +63,7 @@
     <module>docs</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
+    <module>utils/events</module>
   </modules>
 
   <dependencyManagement>
