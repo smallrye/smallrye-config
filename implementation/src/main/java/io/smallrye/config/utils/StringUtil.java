@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config;
+package io.smallrye.config.utils;
 
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -28,6 +28,9 @@ public class StringUtil {
     private static final String[] NO_STRINGS = new String[0];
 
     private static final Pattern ITEM_PATTERN = Pattern.compile("(,+)|([^\\\\,]+)|\\\\(.)");
+
+    private StringUtil() {
+    }
 
     public static String[] split(String text) {
         if (text == null || text.isEmpty()) {

@@ -11,7 +11,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.StringUtil;
+import io.smallrye.config.utils.StringUtil;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
