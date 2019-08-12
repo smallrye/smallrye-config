@@ -64,6 +64,7 @@
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
+    <module>utils/cdi-provider</module>
   </modules>
 
   <dependencyManagement>
