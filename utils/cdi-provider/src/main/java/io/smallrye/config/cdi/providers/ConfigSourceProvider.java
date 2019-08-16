@@ -1,14 +1,18 @@
 package io.smallrye.config.cdi.providers;
 
 import java.lang.annotation.Annotation;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
+import javax.inject.Provider;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
@@ -20,8 +24,24 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public class ConfigSourceProvider {
 
     @Inject
+    private Provider<Config> configProvider;
+
+    private final Map<String, ConfigSource> configSourceMap = new HashMap<>();
+
+    @PostConstruct
+    public void init() {
+        if (this.configSourceMap.isEmpty()) {
+            for (ConfigSource configSource : configProvider.get().getConfigSources()) {
+                this.configSourceMap.put(configSource.getName(), configSource);
+            }
+        }
+    }
+
+    @Produces
     @ConfigSourceMap
-    private Map<String, ConfigSource> configSourceMap;
+    public Map<String, ConfigSource> produceConfigSourceMap() {
+        return this.configSourceMap;
+    }
 
     @Produces
     @Name("")
