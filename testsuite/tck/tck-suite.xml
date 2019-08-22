@@ -19,6 +19,7 @@
                 <methods>
                     <exclude name="testEmptyStringPropertyFromConfigFile"/>
                     <exclude name="testEmptyStringProgrammaticLookup"/>
+                    <exclude name="testEmptyStringValues"/>
                 </methods>
             </class>
         </classes>

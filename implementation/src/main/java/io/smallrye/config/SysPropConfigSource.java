@@ -16,7 +16,7 @@
 
 package io.smallrye.config;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import static io.smallrye.config.utils.ConfigSourceUtil.propertiesToMap;
 
 import java.io.Serializable;
 import java.security.AccessController;
@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
-import static io.smallrye.config.utils.ConfigSourceUtil.propertiesToMap;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.

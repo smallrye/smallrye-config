@@ -16,6 +16,9 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -28,8 +31,6 @@ import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 
 /**
  * Read configuration from a file directory.

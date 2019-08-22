@@ -16,12 +16,12 @@
 
 package io.smallrye.config.utils;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  */

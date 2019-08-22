@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -35,8 +36,9 @@ import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import io.smallrye.config.utils.StringUtil;
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.config.utils.StringUtil;
 
 /**
  * General converter utilities and constants.
@@ -48,7 +50,8 @@ public final class Converters {
     }
 
     @SuppressWarnings("unchecked")
-    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, (Converter & Serializable) value -> value);
+    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0,
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? value : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, (Converter & Serializable) value -> {
@@ -227,6 +230,33 @@ public final class Converters {
             throw new IllegalArgumentException(arrayType.toString() + " is not an array type");
         }
         return new ArrayConverter<>(itemConverter, arrayType);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code Optional}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @param <T> the item type
+     * @return the new converter (not {@code null})
+     */
+    public static <T> Converter<Optional<T>> newOptionalConverter(Converter<T> delegateConverter) {
+        return new OptionalConverter<>(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter and returns a special value to represent empty.
+     *
+     * @param delegateConverter the converter to delegate to (must not be {@code null})
+     * @param emptyValue the empty value to return
+     * @param <T> the value type
+     * @return the converter
+     */
+    public static <T> Converter<T> newEmptyValueConverter(Converter<T> delegateConverter, T emptyValue) {
+        if (emptyValue == null) {
+            return delegateConverter;
+        }
+        return new EmptyValueConverter<>(delegateConverter, emptyValue);
     }
 
     /**
@@ -461,6 +491,27 @@ public final class Converters {
         }
     }
 
+    static final class OptionalConverter<T> implements Converter<Optional<T>>, Serializable {
+        private static final long serialVersionUID = -4051551570591834428L;
+        private final Converter<T> delegate;
+
+        OptionalConverter(final Converter<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        public Optional<T> convert(final String value) {
+            if (value.isEmpty()) {
+                try {
+                    return Optional.ofNullable(delegate.convert(value));
+                } catch (IllegalArgumentException ignored) {
+                    return Optional.empty();
+                }
+            } else {
+                return Optional.ofNullable(delegate.convert(value));
+            }
+        }
+    }
+
     static final class BuiltInConverter<T> implements Converter<T>, Serializable {
         private final int id;
         private final Converter<T> function;
@@ -520,6 +571,28 @@ public final class Converters {
                     return CHARACTER_CONVERTER;
                 default:
                     throw new InvalidObjectException("Unknown converter ID");
+            }
+        }
+    }
+
+    static class EmptyValueConverter<T> implements Converter<T> {
+        private final Converter<T> delegateConverter;
+        private final T emptyValue;
+
+        EmptyValueConverter(final Converter<T> delegateConverter, final T emptyValue) {
+            this.delegateConverter = delegateConverter;
+            this.emptyValue = emptyValue;
+        }
+
+        public T convert(final String value) {
+            if (value != null && !value.isEmpty()) {
+                return emptyValue;
+            }
+            final T result = delegateConverter.convert(value);
+            if (result == null) {
+                return emptyValue;
+            } else {
+                return result;
             }
         }
     }

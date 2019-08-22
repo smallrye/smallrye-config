@@ -67,6 +67,7 @@
           <enableAssertions>true</enableAssertions>
           <argLine>-Xmx512m</argLine>
           <forkMode>once</forkMode>
+          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
     </plugins>

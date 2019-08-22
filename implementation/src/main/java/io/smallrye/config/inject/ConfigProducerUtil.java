@@ -4,14 +4,16 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.IntFunction;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.Converters;
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.utils.StringUtil;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
@@ -45,16 +47,30 @@ public class ConfigProducerUtil {
     }
 
     public static <C extends Collection<T>, T> C collectionConfigProperty(InjectionPoint injectionPoint, Config config,
-            C collection) {
+            IntFunction<C> factory) {
         Type type = injectionPoint.getAnnotated().getBaseType();
         final Class<T> valueType = resolveValueType(type);
-        String stringValue = getValue(injectionPoint, String.class, config);
-        String[] split = StringUtil.split(stringValue);
-        for (String aSplit : split) {
-            T item = ((SmallRyeConfig) config).convert(aSplit, valueType);
-            collection.add(item);
+        String name = getName(injectionPoint);
+        final SmallRyeConfig src = (SmallRyeConfig) config;
+        try {
+            if (name == null) {
+                return null;
+            }
+            final Converter<C> converter = Converters.newCollectionConverter(src.getConverter(valueType), factory);
+            Optional<C> optionalValue = src.getOptionalValue(name, converter);
+            if (optionalValue.isPresent()) {
+                return optionalValue.get();
+            } else {
+                String defaultValue = getDefaultValue(injectionPoint);
+                if (defaultValue != null && !defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                    return converter.convert(defaultValue);
+                } else {
+                    return factory.apply(0);
+                }
+            }
+        } catch (RuntimeException e) {
+            return null;
         }
-        return collection;
     }
 
     @SuppressWarnings("unchecked")
