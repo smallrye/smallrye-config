@@ -57,13 +57,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public ConfigBuilder addDiscoveredSources() {
+    public SmallRyeConfigBuilder addDiscoveredSources() {
         addDiscoveredSources = true;
         return this;
     }
 
     @Override
-    public ConfigBuilder addDiscoveredConverters() {
+    public SmallRyeConfigBuilder addDiscoveredConverters() {
         addDiscoveredConverters = true;
         return this;
     }
@@ -91,7 +91,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public ConfigBuilder addDefaultSources() {
+    public SmallRyeConfigBuilder addDefaultSources() {
         addDefaultSources = true;
         return this;
     }
@@ -110,19 +110,19 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public ConfigBuilder forClassLoader(ClassLoader classLoader) {
+    public SmallRyeConfigBuilder forClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
     }
 
     @Override
-    public ConfigBuilder withSources(ConfigSource... configSources) {
+    public SmallRyeConfigBuilder withSources(ConfigSource... configSources) {
         Collections.addAll(sources, configSources);
         return this;
     }
 
     @Override
-    public ConfigBuilder withConverters(Converter<?>[] converters) {
+    public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
             Type type = Converters.getConverterType(converter.getClass());
             if (type == null) {
@@ -135,7 +135,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public <T> ConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
+    public <T> SmallRyeConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
         addConverter(type, priority, converter, converters);
         return this;
     }
