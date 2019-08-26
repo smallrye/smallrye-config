@@ -198,7 +198,7 @@ public final class Converters {
      * @param <T> the type
      * @return the implicit converter for the given type class, or {@code null} if none exists
      */
-    public static <T> Converter<T> getImplicitConverter(Class<T> type) {
+    public static <T> Converter<T> getImplicitConverter(Class<? extends T> type) {
         return ImplicitConverters.getConverter(type);
     }
 
@@ -211,7 +211,7 @@ public final class Converters {
      * @param <C> the collection type
      * @return the new converter (not {@code null})
      */
-    public static <T, C extends Collection<T>> Converter<C> newCollectionConverter(Converter<T> itemConverter,
+    public static <T, C extends Collection<T>> Converter<C> newCollectionConverter(Converter<? extends T> itemConverter,
             IntFunction<C> collectionFactory) {
         return new CollectionConverter<>(itemConverter, collectionFactory);
     }
@@ -225,7 +225,7 @@ public final class Converters {
      * @param <A> the array type
      * @return the new converter (not {@code null})
      */
-    public static <A, T> Converter<A> newArrayConverter(Converter<T> itemConverter, Class<A> arrayType) {
+    public static <A, T> Converter<A> newArrayConverter(Converter<? extends T> itemConverter, Class<A> arrayType) {
         if (!arrayType.isArray()) {
             throw new IllegalArgumentException(arrayType.toString() + " is not an array type");
         }
@@ -240,7 +240,7 @@ public final class Converters {
      * @param <T> the item type
      * @return the new converter (not {@code null})
      */
-    public static <T> Converter<Optional<T>> newOptionalConverter(Converter<T> delegateConverter) {
+    public static <T> Converter<Optional<T>> newOptionalConverter(Converter<? extends T> delegateConverter) {
         return new OptionalConverter<>(delegateConverter);
     }
 
@@ -269,7 +269,7 @@ public final class Converters {
      * @param <T> the converter target type
      * @return a range-validating converter
      */
-    public static <T extends Comparable<T>> Converter<T> minimumValueConverter(Converter<T> delegate, T minimumValue,
+    public static <T extends Comparable<T>> Converter<T> minimumValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean inclusive) {
         return new RangeCheckConverter<>(delegate, minimumValue, inclusive, null, false);
     }
@@ -284,7 +284,7 @@ public final class Converters {
      * @param <T> the converter target type
      * @return a range-validating converter
      */
-    public static <T extends Comparable<T>> Converter<T> maximumValueConverter(Converter<T> delegate, T maximumValue,
+    public static <T extends Comparable<T>> Converter<T> maximumValueConverter(Converter<? extends T> delegate, T maximumValue,
             boolean inclusive) {
         return new RangeCheckConverter<>(delegate, null, false, maximumValue, inclusive);
     }
@@ -298,7 +298,7 @@ public final class Converters {
      * @param <T> the converter target type
      * @return a range-validating converter
      */
-    public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<T> delegate, T minimumValue,
+    public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean minInclusive, T maximumValue, boolean maxInclusive) {
         return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
     }
@@ -311,7 +311,7 @@ public final class Converters {
      * @param <T> the converter target type
      * @return a pattern-validating converter
      */
-    public static <T> Converter<T> patternValidatingConverter(Converter<T> delegate, Pattern pattern) {
+    public static <T> Converter<T> patternValidatingConverter(Converter<? extends T> delegate, Pattern pattern) {
         return new PatternCheckConverter<>(delegate, pattern);
     }
 
@@ -324,17 +324,17 @@ public final class Converters {
      * @return a pattern-validating converter
      * @throws PatternSyntaxException if the given pattern has invalid syntax
      */
-    public static <T> Converter<T> patternValidatingConverter(Converter<T> delegate, String pattern) {
+    public static <T> Converter<T> patternValidatingConverter(Converter<? extends T> delegate, String pattern) {
         return patternValidatingConverter(delegate, Pattern.compile(pattern));
     }
 
     static final class PatternCheckConverter<T> implements Converter<T>, Serializable {
         private static final long serialVersionUID = 358813973126582008L;
 
-        private final Converter<T> delegate;
+        private final Converter<? extends T> delegate;
         private final Pattern pattern;
 
-        PatternCheckConverter(final Converter<T> delegate, final Pattern pattern) {
+        PatternCheckConverter(final Converter<? extends T> delegate, final Pattern pattern) {
             this.delegate = delegate;
             this.pattern = pattern;
         }
@@ -354,13 +354,13 @@ public final class Converters {
 
         private static final long serialVersionUID = 2764654140347010865L;
 
-        private final Converter<T> delegate;
+        private final Converter<? extends T> delegate;
         private final T min;
         private final boolean minInclusive;
         private final T max;
         private final boolean maxInclusive;
 
-        RangeCheckConverter(final Converter<T> delegate, final T min, final boolean minInclusive, final T max,
+        RangeCheckConverter(final Converter<? extends T> delegate, final T min, final boolean minInclusive, final T max,
                 final boolean maxInclusive) {
             this.delegate = delegate;
             this.min = min;
@@ -384,7 +384,7 @@ public final class Converters {
                 } else {
                     if (cmp <= 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be less than or equal to" + min + " (value was \"" + value + "\")");
+                                "Value must not be less than or equal to " + min + " (value was \"" + value + "\")");
                     }
                 }
             }
@@ -398,7 +398,7 @@ public final class Converters {
                 } else {
                     if (cmp >= 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be greater than or equal to" + max + " (value was \"" + value + "\")");
+                                "Value must not be greater than or equal to " + max + " (value was \"" + value + "\")");
                     }
                 }
             }
@@ -409,10 +409,10 @@ public final class Converters {
     static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
         private static final long serialVersionUID = -8452214026800305628L;
 
-        private final Converter<T> itemConverter;
+        private final Converter<? extends T> itemConverter;
         private final IntFunction<C> collectionFactory;
 
-        CollectionConverter(final Converter<T> itemConverter, final IntFunction<C> collectionFactory) {
+        CollectionConverter(final Converter<? extends T> itemConverter, final IntFunction<C> collectionFactory) {
             this.itemConverter = itemConverter;
             this.collectionFactory = collectionFactory;
         }
@@ -493,9 +493,9 @@ public final class Converters {
 
     static final class OptionalConverter<T> implements Converter<Optional<T>>, Serializable {
         private static final long serialVersionUID = -4051551570591834428L;
-        private final Converter<T> delegate;
+        private final Converter<? extends T> delegate;
 
-        OptionalConverter(final Converter<T> delegate) {
+        OptionalConverter(final Converter<? extends T> delegate) {
             this.delegate = delegate;
         }
 
@@ -585,7 +585,7 @@ public final class Converters {
         }
 
         public T convert(final String value) {
-            if (value != null && !value.isEmpty()) {
+            if (value.isEmpty()) {
                 return emptyValue;
             }
             final T result = delegateConverter.convert(value);

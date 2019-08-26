@@ -32,7 +32,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 class ImplicitConverters {
 
-    static <T> Converter<T> getConverter(Class<T> clazz) {
+    static <T> Converter<T> getConverter(Class<? extends T> clazz) {
         // implicit converters required by the specification
         Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
         if (converter == null) {
@@ -57,9 +57,9 @@ class ImplicitConverters {
         return converter;
     }
 
-    private static <T> Converter<T> getConverterFromConstructor(Class<T> clazz, Class<? super String> paramType) {
+    private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
         try {
-            final Constructor<T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
+            final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
             if (!declaredConstructor.isAccessible()) {
                 declaredConstructor.setAccessible(true);
             }
@@ -69,7 +69,7 @@ class ImplicitConverters {
         return null;
     }
 
-    private static <T> Converter<T> getConverterFromStaticMethod(Class<T> clazz, String methodName,
+    private static <T> Converter<T> getConverterFromStaticMethod(Class<? extends T> clazz, String methodName,
             Class<? super String> paramType) {
         try {
             final Method method = clazz.getMethod(methodName, paramType);
@@ -92,10 +92,10 @@ class ImplicitConverters {
 
         private static final long serialVersionUID = 3350265927359848883L;
 
-        private final Class<T> clazz;
+        private final Class<? extends T> clazz;
         private final Method method;
 
-        StaticMethodConverter(Class<T> clazz, Method method) {
+        StaticMethodConverter(Class<? extends T> clazz, Method method) {
             assert clazz == method.getReturnType();
             this.clazz = clazz;
             this.method = method;
@@ -159,9 +159,9 @@ class ImplicitConverters {
 
         private static final long serialVersionUID = 3350265927359848883L;
 
-        private final Constructor<T> ctor;
+        private final Constructor<? extends T> ctor;
 
-        public ConstructorConverter(final Constructor<T> ctor) {
+        public ConstructorConverter(final Constructor<? extends T> ctor) {
             this.ctor = ctor;
         }
 

@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
@@ -60,7 +59,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     }
 
     @Override
-    public ConfigBuilder getBuilder() {
+    public SmallRyeConfigBuilder getBuilder() {
         return new SmallRyeConfigBuilder();
     }
 
