@@ -16,6 +16,9 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
+import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -25,10 +28,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import io.smallrye.config.utils.ConfigSourceUtil;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
+
+import io.smallrye.config.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.

@@ -16,9 +16,9 @@
 
 package io.smallrye.config.utils;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.

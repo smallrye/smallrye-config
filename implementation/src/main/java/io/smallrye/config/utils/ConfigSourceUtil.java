@@ -16,11 +16,11 @@
 
 package io.smallrye.config.utils;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * utilities and constants for {@link ConfigSource} implementations

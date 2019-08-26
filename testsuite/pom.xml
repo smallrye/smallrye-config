@@ -45,6 +45,12 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
         <configuration>

@@ -103,6 +103,9 @@ class ImplicitConverters {
 
         @Override
         public T convert(String value) {
+            if (value.isEmpty()) {
+                return null;
+            }
             try {
                 return clazz.cast(method.invoke(null, value));
             } catch (IllegalAccessException | InvocationTargetException e) {
@@ -164,6 +167,9 @@ class ImplicitConverters {
 
         @Override
         public T convert(String value) {
+            if (value.isEmpty()) {
+                return null;
+            }
             try {
                 return ctor.newInstance(value);
             } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {

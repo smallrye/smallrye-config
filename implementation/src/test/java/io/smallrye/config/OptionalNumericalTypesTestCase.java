@@ -55,11 +55,11 @@ public class OptionalNumericalTypesTestCase {
         } catch (NoSuchElementException e) {
         }
 
-        assertFalse(config.getOptionalValue("my.int.not.found", OptionalInt.class).isPresent());
+        assertFalse(config.getOptionalValue("my.int.not.found", Integer.class).isPresent());
 
         assertFalse(config.getValue("my.int.not.found", OptionalInt.class).isPresent());
 
-        assertFalse(config.getOptionalValue("my.int.not.found", OptionalInt.class).isPresent());
+        assertTrue(config.getOptionalValue("my.int.not.found", OptionalInt.class).isPresent());
     }
 
     @Test
@@ -77,7 +77,7 @@ public class OptionalNumericalTypesTestCase {
     }
 
     @Test
-    public void testOptionalLongWithAbsentroperty() {
+    public void testOptionalLongWithAbsentProperty() {
         try {
             config.getValue("my.long.not.found", Long.class);
             fail("must throw a NoSuchMethodException");
@@ -88,7 +88,7 @@ public class OptionalNumericalTypesTestCase {
 
         assertFalse(config.getValue("my.long.not.found", OptionalLong.class).isPresent());
 
-        assertFalse(config.getOptionalValue("my.long.not.found", OptionalLong.class).isPresent());
+        assertTrue(config.getOptionalValue("my.long.not.found", OptionalLong.class).isPresent());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class OptionalNumericalTypesTestCase {
 
         assertFalse(config.getValue("my.double.not.found", OptionalDouble.class).isPresent());
 
-        assertFalse(config.getOptionalValue("my.double.not.found", OptionalDouble.class).isPresent());
+        assertTrue(config.getOptionalValue("my.double.not.found", OptionalDouble.class).isPresent());
     }
 
     @Test
@@ -127,19 +127,22 @@ public class OptionalNumericalTypesTestCase {
         assertFalse(optionalInt.isPresent());
 
         Optional<OptionalInt> optionalOptionalInt = config.getOptionalValue("my.empty.prop", OptionalInt.class);
-        assertFalse(optionalOptionalInt.isPresent());
+        assertTrue(optionalOptionalInt.isPresent());
+        assertFalse(optionalOptionalInt.get().isPresent());
 
         OptionalLong optionalLong = config.getValue("my.empty.prop", OptionalLong.class);
         assertFalse(optionalLong.isPresent());
 
         Optional<OptionalLong> optionalOptionalLong = config.getOptionalValue("my.empty.prop", OptionalLong.class);
-        assertFalse(optionalOptionalLong.isPresent());
+        assertTrue(optionalOptionalLong.isPresent());
+        assertFalse(optionalOptionalLong.get().isPresent());
 
         OptionalDouble optionalDouble = config.getValue("my.empty.prop", OptionalDouble.class);
         assertFalse(optionalDouble.isPresent());
 
         Optional<OptionalDouble> optionalOptionalDouble = config.getOptionalValue("my.empty.prop", OptionalDouble.class);
-        assertFalse(optionalOptionalDouble.isPresent());
+        assertTrue(optionalOptionalDouble.isPresent());
+        assertFalse(optionalOptionalDouble.get().isPresent());
 
     }
 }

@@ -22,16 +22,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
@@ -60,10 +57,11 @@ public class SmallRyeConfig implements Config, Serializable {
 
     private final AtomicReference<List<ConfigSource>> configSourcesRef;
     private final Map<Type, Converter<?>> converters;
+    private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
         configSourcesRef = new AtomicReference<>(Collections.unmodifiableList(configSources));
-        this.converters = new HashMap<>(Converters.ALL_CONVERTERS);
+        this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
     }
 
@@ -73,74 +71,43 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
-                if (collection == null) {
-                    break;
-                }
-                return collection;
-            }
-        }
-        // value not found
-        throw propertyNotFound(name);
+        return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
     public <T> T getValue(String name, Class<T> aClass) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                if (value.isEmpty()) {
-                    // treat empty value as non-present
-                    break;
-                }
-                return convert(value, aClass);
-            }
-        }
-
-        // check for  Optional numerical types to return their empty()
-        // if the property is not found
-        if (aClass.isAssignableFrom(OptionalInt.class)) {
-            return aClass.cast(OptionalInt.empty());
-        } else if (aClass.isAssignableFrom(OptionalLong.class)) {
-            return aClass.cast(OptionalLong.empty());
-        } else if (aClass.isAssignableFrom(OptionalDouble.class)) {
-            return aClass.cast(OptionalDouble.empty());
-        }
-        throw propertyNotFound(name);
+        return getValue(name, getConverter(aClass));
     }
 
     public <T> T getValue(String name, Converter<T> converter) {
         for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
-                if (value.isEmpty()) {
-                    // treat empty value as non-present
-                    break;
+                final T converted = converter.convert(value);
+                if (converted == null) {
+                    throw propertyNotFound(name);
                 }
-                return converter.convert(value);
+                return converted;
             }
         }
-        throw propertyNotFound(name);
+        try {
+            final T converted = converter.convert("");
+            if (converted == null) {
+                throw propertyNotFound(name);
+            }
+            return converted;
+        } catch (IllegalArgumentException ignored) {
+            throw propertyNotFound(name);
+        }
     }
 
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
-        return getOptionalValue(name, getConverter(aClass));
+        return getValue(name, getOptionalConverter(aClass));
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                // treat empty value as non-present
-                return value.isEmpty() ? Optional.empty() : Optional.of(converter.convert(value));
-            }
-        }
-        // value not found
-        return Optional.empty();
+        return getValue(name, Converters.newOptionalConverter(converter));
     }
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
@@ -150,15 +117,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                final C collection = Converters.newCollectionConverter(converter, collectionFactory).convert(value);
-                return Optional.ofNullable(collection);
-            }
-        }
-        // value not found
-        return Optional.empty();
+        return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -198,23 +157,24 @@ public class SmallRyeConfig implements Config, Serializable {
         return value != null ? getConverter(asType).convert(value) : null;
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
+        return optionalConverters.computeIfAbsent(asType,
+                clazz -> Converters.newOptionalConverter(getConverter((Class) clazz)));
+    }
+
+    @SuppressWarnings("unchecked")
     public <T> Converter<T> getConverter(Class<T> asType) {
         if (asType.isArray()) {
             return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
         }
-        @SuppressWarnings("unchecked")
-        Converter<T> converter = (Converter<T>) converters.get(asType);
-        if (converter == null) {
-            // look for implicit converters
-            synchronized (converters) {
-                converter = ImplicitConverters.getConverter(asType);
-                converters.putIfAbsent(asType, converter);
+        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
+            final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
+            if (conv == null) {
+                throw new IllegalArgumentException("No Converter registered for class " + asType);
             }
-        }
-        if (converter == null) {
-            throw new IllegalArgumentException("No Converter registered for class " + asType);
-        }
-        return converter;
+            return conv;
+        });
     }
 
     private static NoSuchElementException propertyNotFound(final String name) {
