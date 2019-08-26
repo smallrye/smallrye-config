@@ -10,7 +10,10 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Created by bob on 6/26/18.
+ *
+ * @deprecated This interface should no longer be used.
  */
+@Deprecated
 public interface ConfigFactory {
     Config newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters);
 }
