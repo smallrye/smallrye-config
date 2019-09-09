@@ -201,6 +201,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return newConfig(sources, configConverters);
     }
 
+    @SuppressWarnings("deprecation")
     protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters) {
         ServiceLoader<ConfigFactory> factoryLoader = ServiceLoader.load(ConfigFactory.class, this.classLoader);
         Iterator<ConfigFactory> iter = factoryLoader.iterator();
