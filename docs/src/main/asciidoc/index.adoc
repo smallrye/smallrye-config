@@ -19,6 +19,7 @@ In addition to the features provided by MicroProfile Config, smallrye-config pro
  creates a ConfigSource that will look into a directory where each file corresponds to a property (the file name is the property key and its textual content is the property value).
  This ConfigSource can be used to read configuration from https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap[Kubernetes ConfigMap].
 * https://github.com/smallrye/smallrye-config/tree/master/config-sources/zookeeper[ZkMicroProfileConfig] creates a ConfigSource that is backed by Apache Zookeeper
+* https://github.com/smallrye/smallrye-config/blob/master/sources/hocon[HoconConfigSource] Creates a ConfigSource from configuration files in https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] format.
 
 [[more-resources]]
 == More Resources
