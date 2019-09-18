@@ -61,10 +61,16 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
-    <module>sources/zookeeper</module>
+    <!-- Config Converters -->
     <module>converters/json</module>
+    <!-- Utils -->
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
+    <!-- Config Sources -->
+    <module>sources/abstract</module>
+    <module>sources/abstract-file</module>
+    <module>sources/zookeeper</module>
+    
   </modules>
 
   <dependencyManagement>
