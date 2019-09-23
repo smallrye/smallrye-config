@@ -61,6 +61,7 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
+    <module>sources/hocon</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
