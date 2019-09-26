@@ -34,7 +34,7 @@ public class ImplicitConverterTestCase {
     }
 
     private static Config buildConfig(String... keyValues) {
-        return SmallRyeConfigProviderResolver.INSTANCE.getBuilder()
+        return new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();

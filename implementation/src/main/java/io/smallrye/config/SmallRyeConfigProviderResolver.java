@@ -32,6 +32,12 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
  */
 public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
+    /**
+     * @deprecated The instance stored in this field will generally not match the one instantiated by
+     *             {@link ConfigProviderResolver}; thus this instance should not normally be used and may be removed
+     *             from a future release. Instead use {@link ConfigProviderResolver#instance()} to get the instance.
+     */
+    @Deprecated
     public static final SmallRyeConfigProviderResolver INSTANCE = new SmallRyeConfigProviderResolver();
 
     private final Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
