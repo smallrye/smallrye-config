@@ -21,7 +21,6 @@ import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.Config;
@@ -101,14 +100,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Override
     public void releaseConfig(Config config) {
         synchronized (this) {
-            Iterator<Map.Entry<ClassLoader, Config>> iterator = configsForClassLoader.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<ClassLoader, Config> entry = iterator.next();
-                if (entry.getValue() == config) {
-                    iterator.remove();
-                    return;
-                }
-            }
+            configsForClassLoader.values().remove(config);
         }
     }
 
