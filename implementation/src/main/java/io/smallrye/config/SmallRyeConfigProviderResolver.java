@@ -18,6 +18,8 @@ package io.smallrye.config;
 
 import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,6 +37,27 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     private final Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
 
+    private static final ClassLoader SYSTEM_CL;
+
+    static {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            SYSTEM_CL = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) SmallRyeConfigProviderResolver::calculateSystemClassLoader);
+        } else {
+            SYSTEM_CL = calculateSystemClassLoader();
+        }
+    }
+
+    private static ClassLoader calculateSystemClassLoader() {
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        if (cl == null) {
+            // non-null ref that delegates to the system
+            cl = new ClassLoader(null) {
+            };
+        }
+        return cl;
+    }
+
     @Override
     public Config getConfig() {
         return getConfig(getContextClassLoader());
@@ -42,6 +65,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig(ClassLoader classLoader) {
+        classLoader = getRealClassLoader(classLoader);
         Config config = configsForClassLoader.get(classLoader);
         if (config == null) {
             synchronized (this) {
@@ -66,8 +90,9 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
+        classLoader = getRealClassLoader(classLoader);
         synchronized (this) {
-            configsForClassLoader.put(classLoader != null ? classLoader : getContextClassLoader(), config);
+            configsForClassLoader.put(classLoader, config);
         }
     }
 
@@ -83,5 +108,15 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
                 }
             }
         }
+    }
+
+    static ClassLoader getRealClassLoader(ClassLoader classLoader) {
+        if (classLoader == null) {
+            classLoader = getContextClassLoader();
+        }
+        if (classLoader == null) {
+            classLoader = SYSTEM_CL;
+        }
+        return classLoader;
     }
 }
