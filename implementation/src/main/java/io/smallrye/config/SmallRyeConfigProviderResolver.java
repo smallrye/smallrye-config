@@ -27,12 +27,13 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     public static final SmallRyeConfigProviderResolver INSTANCE = new SmallRyeConfigProviderResolver();
 
-    private Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
+    private final Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
 
     @Override
     public Config getConfig() {
