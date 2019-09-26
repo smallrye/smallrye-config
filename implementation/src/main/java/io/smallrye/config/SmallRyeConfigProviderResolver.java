@@ -92,7 +92,9 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     public void registerConfig(Config config, ClassLoader classLoader) {
         classLoader = getRealClassLoader(classLoader);
         synchronized (this) {
-            configsForClassLoader.put(classLoader, config);
+            if (configsForClassLoader.putIfAbsent(classLoader, config) != null) {
+                throw new IllegalStateException("Configuration already registered for the given class loader");
+            }
         }
     }
 
