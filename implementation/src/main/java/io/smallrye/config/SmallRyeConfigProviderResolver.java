@@ -47,6 +47,9 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         }
     }
 
+    public SmallRyeConfigProviderResolver() {
+    }
+
     private static ClassLoader calculateSystemClassLoader() {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         if (cl == null) {
