@@ -30,7 +30,6 @@ import java.util.function.UnaryOperator;
 
 import javax.annotation.Priority;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -166,7 +165,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public Config build() {
+    public SmallRyeConfig build() {
         final List<ConfigSource> sources = new ArrayList<>(this.sources);
         if (addDiscoveredSources) {
             sources.addAll(discoverSources());
@@ -202,7 +201,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     @SuppressWarnings("deprecation")
-    protected Config newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters) {
+    protected SmallRyeConfig newConfig(List<ConfigSource> sources, Map<Type, Converter<?>> configConverters) {
         ServiceLoader<ConfigFactory> factoryLoader = ServiceLoader.load(ConfigFactory.class, this.classLoader);
         Iterator<ConfigFactory> iter = factoryLoader.iterator();
         if (!iter.hasNext()) {
@@ -210,7 +209,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         ConfigFactory factory = iter.next();
-        return factory.newConfig(sources, configConverters);
+        return (SmallRyeConfig) factory.newConfig(sources, configConverters);
     }
 
     private static class ConverterWithPriority {
