@@ -20,8 +20,8 @@ import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -40,7 +40,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Deprecated
     public static final SmallRyeConfigProviderResolver INSTANCE = new SmallRyeConfigProviderResolver();
 
-    private final Map<ClassLoader, Config> configsForClassLoader = new HashMap<>();
+    private final Map<ClassLoader, Config> configsForClassLoader = new ConcurrentHashMap<>();
 
     private static final ClassLoader SYSTEM_CL;
 
