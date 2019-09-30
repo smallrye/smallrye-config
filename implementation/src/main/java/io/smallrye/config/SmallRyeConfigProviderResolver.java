@@ -20,7 +20,9 @@ import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.Config;
@@ -42,12 +44,13 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     private final Map<ClassLoader, Config> configsForClassLoader = new ConcurrentHashMap<>();
 
-    private static final ClassLoader SYSTEM_CL;
+    static final ClassLoader SYSTEM_CL;
 
     static {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            SYSTEM_CL = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) SmallRyeConfigProviderResolver::calculateSystemClassLoader);
+            SYSTEM_CL = AccessController
+                    .doPrivileged((PrivilegedAction<ClassLoader>) SmallRyeConfigProviderResolver::calculateSystemClassLoader);
         } else {
             SYSTEM_CL = calculateSystemClassLoader();
         }
@@ -73,22 +76,38 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig(ClassLoader classLoader) {
-        classLoader = getRealClassLoader(classLoader);
-        Config config = configsForClassLoader.get(classLoader);
+        final ClassLoader realClassLoader = getRealClassLoader(classLoader);
+        final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
+        Config config = configsForClassLoader.get(realClassLoader);
         if (config == null) {
-            synchronized (this) {
-                config = configsForClassLoader.get(classLoader);
+            synchronized (configsForClassLoader) {
+                config = configsForClassLoader.get(realClassLoader);
                 if (config == null) {
-                    config = getBuilder().forClassLoader(classLoader)
-                            .addDefaultSources()
-                            .addDiscoveredSources()
-                            .addDiscoveredConverters()
-                            .build();
-                    registerConfig(config, classLoader);
+                    config = getFactoryFor(realClassLoader, false).getConfigFor(this, classLoader);
+                    // don't cache null, as that would leak class loaders
+                    if (config == null) {
+                        throw new IllegalStateException("No configuration is available for this class loader");
+                    }
+                    configsForClassLoader.put(realClassLoader, config);
                 }
             }
         }
         return config;
+    }
+
+    SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader, final boolean privileged) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null && !privileged) {
+            // run privileged so that the only things on the access control stack are us and the provider
+            return AccessController.doPrivileged(new PrivilegedAction<SmallRyeConfigFactory>() {
+                public SmallRyeConfigFactory run() {
+                    return getFactoryFor(classLoader, true);
+                }
+            });
+        }
+        final ServiceLoader<SmallRyeConfigFactory> serviceLoader = ServiceLoader.load(SmallRyeConfigFactory.class, classLoader);
+        final Iterator<SmallRyeConfigFactory> iterator = serviceLoader.iterator();
+        return iterator.hasNext() ? iterator.next() : SmallRyeConfigFactory.Default.INSTANCE;
     }
 
     @Override
@@ -98,9 +117,14 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
-        classLoader = getRealClassLoader(classLoader);
-        synchronized (this) {
-            if (configsForClassLoader.putIfAbsent(classLoader, config) != null) {
+        if (config == null) {
+            throw new IllegalArgumentException("config cannot be null");
+        }
+        final ClassLoader realClassLoader = getRealClassLoader(classLoader);
+        final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
+        synchronized (configsForClassLoader) {
+            final Config existing = configsForClassLoader.putIfAbsent(realClassLoader, config);
+            if (existing != null) {
                 throw new IllegalStateException("Configuration already registered for the given class loader");
             }
         }
@@ -108,7 +132,9 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public void releaseConfig(Config config) {
-        synchronized (this) {
+        // todo: see https://github.com/eclipse/microprofile-config/issues/136#issuecomment-535962313
+        final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
+        synchronized (configsForClassLoader) {
             configsForClassLoader.values().remove(config);
         }
     }
