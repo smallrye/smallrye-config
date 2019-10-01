@@ -209,7 +209,7 @@ public class ConvertersTestCase {
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
-        return (SmallRyeConfig) SmallRyeConfigProviderResolver.INSTANCE.getBuilder()
+        return (SmallRyeConfig) new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();
