@@ -54,20 +54,20 @@ public class PropertiesConfigSource implements ConfigSource, Serializable {
             p.load(in);
             properties = ConfigSourceUtil.propertiesToMap(p);
         }
-        this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+        this.ordinal = Integer.parseInt(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
     }
 
     public PropertiesConfigSource(Properties properties, String source) {
         this.properties = ConfigSourceUtil.propertiesToMap(properties);
         this.source = source;
-        this.ordinal = Integer.valueOf(properties.getProperty(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+        this.ordinal = Integer.parseInt(properties.getProperty(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
         this.properties = new HashMap<>(properties);
         this.source = source;
         if (properties.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.valueOf(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+            this.ordinal = Integer.parseInt(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
         } else {
             this.ordinal = ordinal;
         }
