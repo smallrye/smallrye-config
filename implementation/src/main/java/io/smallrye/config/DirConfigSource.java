@@ -80,7 +80,7 @@ public class DirConfigSource implements ConfigSource {
         this.dir = dir;
         this.props = scan(dir);
         if (props.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.valueOf(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+            this.ordinal = Integer.parseInt(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
         } else {
             this.ordinal = ordinal;
         }
