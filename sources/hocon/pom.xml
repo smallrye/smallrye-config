@@ -15,7 +15,7 @@
     <name>SmallRye: HOCON ConfigSource</name>
 
     <properties>
-        <lightbend-config.version>1.3.4</lightbend-config.version>
+        <lightbend-config.version>1.4.0</lightbend-config.version>
     </properties>
 
     <dependencies>
