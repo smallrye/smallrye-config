@@ -275,6 +275,22 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value (in string form).
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum value fails conversion
+     */
+    public static <T extends Comparable<T>> Converter<T> minimumValueStringConverter(Converter<? extends T> delegate,
+            String minimumValue, boolean inclusive) {
+        return minimumValueConverter(delegate, delegate.convert(minimumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
      * the given maximum value.
      *
@@ -290,6 +306,22 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value (in string form).
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given maximum value fails conversion
+     */
+    public static <T extends Comparable<T>> Converter<T> maximumValueStringConverter(Converter<? extends T> delegate,
+            String maximumValue, boolean inclusive) {
+        return maximumValueConverter(delegate, delegate.convert(maximumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is within the given range.
      *
      * @param delegate the delegate converter (must not be {@code null})
@@ -301,6 +333,22 @@ public final class Converters {
     public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean minInclusive, T maximumValue, boolean maxInclusive) {
         return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range (in string form).
+     *
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum or maximum value fails conversion
+     */
+    public static <T extends Comparable<T>> Converter<T> rangeValueStringConverter(Converter<? extends T> delegate,
+            String minimumValue, boolean minInclusive, String maximumValue, boolean maxInclusive) {
+        return rangeValueConverter(delegate, delegate.convert(minimumValue), minInclusive, delegate.convert(maximumValue),
+                maxInclusive);
     }
 
     /**
