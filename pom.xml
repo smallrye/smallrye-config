@@ -61,11 +61,23 @@
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
-    <module>sources/hocon</module>
-    <module>sources/zookeeper</module>
+    
+    <!-- Config Converters -->
     <module>converters/json</module>
+    
+    <!-- Base Config Sources -->
+    <module>sources/abstract</module>
+    <module>sources/abstract-file</module>
+    
+    <!-- Utils -->
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
+    <module>utils/dynamic</module>
+    
+    <!-- Config sources -->
+    <module>sources/yaml</module>
+    <module>sources/hocon</module>
+    <module>sources/zookeeper</module>
   </modules>
 
   <dependencyManagement>

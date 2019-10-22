@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>io.smallrye</groupId>
+        <artifactId>smallrye-config-parent</artifactId>
+        <version>1.3.10-SNAPSHOT</version>
+        <relativePath>../../</relativePath>
+    </parent>
+    
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-dynamic</artifactId>
+        
+    <packaging>jar</packaging>
+    <name>SmallRye: MicroProfile Config Dynamic</name>
+    <description>A library to make it easy to dynamically update a file based config source</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>smallrye-config-source-abstract-file</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>smallrye-config-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>smallrye-config-source-injection</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>
