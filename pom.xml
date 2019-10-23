@@ -62,6 +62,7 @@
     <module>testsuite</module>
     <module>docs</module>
     <module>sources/hocon</module>
+    <module>sources/typesafe-config</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
@@ -114,6 +115,16 @@
       </dependency>
 
       <!-- Config Sources -->
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-hocon</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-typesafe-config</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-source-zookeeper</artifactId>
