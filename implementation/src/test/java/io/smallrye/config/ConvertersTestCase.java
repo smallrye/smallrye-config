@@ -26,6 +26,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.Test;
@@ -201,6 +204,103 @@ public class ConvertersTestCase {
         } catch (IllegalArgumentException expected) {
         }
         assertEquals(LocalDate.of(1950, 1, 1), config.getValue("when", dateConv4));
+    }
+
+    @Test
+    public void testEmpty() {
+        SmallRyeConfig config = buildConfig("int.key", "1234", "boolean.key", "true", "empty.key", "");
+        assertTrue(config.getOptionalValue("int.key", Integer.class).isPresent());
+        assertEquals(1234, config.getOptionalValue("int.key", Integer.class).get().intValue());
+        assertTrue(config.getValue("int.key", OptionalInt.class).isPresent());
+        assertFalse(config.getValue("int.missing.key", OptionalInt.class).isPresent());
+        assertFalse(config.getValue("empty.key", OptionalInt.class).isPresent());
+        assertEquals(1234, config.getValue("int.key", OptionalInt.class).getAsInt());
+        assertFalse(config.getOptionalValue("int.missing.key", Integer.class).isPresent());
+        assertFalse(config.getOptionalValue("empty.key", Integer.class).isPresent());
+
+        try {
+            config.getValue("empty.key", Integer.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValue("int.missing.key", Integer.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+
+        assertTrue(config.getOptionalValue("int.key", Long.class).isPresent());
+        assertEquals(1234, config.getOptionalValue("int.key", Long.class).get().intValue());
+        assertTrue(config.getValue("int.key", OptionalLong.class).isPresent());
+        assertEquals(1234, config.getValue("int.key", OptionalLong.class).getAsLong());
+        assertFalse(config.getValue("int.missing.key", OptionalLong.class).isPresent());
+        assertFalse(config.getValue("empty.key", OptionalLong.class).isPresent());
+        assertFalse(config.getOptionalValue("int.missing.key", Long.class).isPresent());
+        assertFalse(config.getOptionalValue("empty.key", Long.class).isPresent());
+
+        try {
+            config.getValue("empty.key", Long.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValue("int.missing.key", Long.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+
+        assertTrue(config.getOptionalValue("int.key", Double.class).isPresent());
+        assertEquals(1234, config.getOptionalValue("int.key", Double.class).get().intValue());
+        assertTrue(config.getValue("int.key", OptionalDouble.class).isPresent());
+        assertEquals(1234, config.getValue("int.key", OptionalDouble.class).getAsDouble(), 0.0);
+        assertFalse(config.getValue("int.missing.key", OptionalDouble.class).isPresent());
+        assertFalse(config.getValue("empty.key", OptionalDouble.class).isPresent());
+        assertFalse(config.getOptionalValue("int.missing.key", Double.class).isPresent());
+        assertFalse(config.getOptionalValue("empty.key", Double.class).isPresent());
+
+        try {
+            config.getValue("empty.key", Double.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValue("int.missing.key", Double.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+
+        assertTrue(config.getOptionalValue("int.key", Float.class).isPresent());
+        assertEquals(1234, config.getOptionalValue("int.key", Float.class).get().intValue());
+
+        try {
+            config.getValue("empty.key", Float.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValue("int.missing.key", Float.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+
+        assertTrue(config.getOptionalValue("boolean.key", Boolean.class).isPresent());
+        assertTrue(config.getValue("boolean.key", Boolean.class).booleanValue());
+        assertFalse(config.getOptionalValue("boolean.missing.key", Boolean.class).isPresent());
+        assertFalse(config.getOptionalValue("empty.key", Boolean.class).isPresent());
+        try {
+            config.getValue("empty.key", Boolean.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+        try {
+            config.getValue("boolean.missing.key", Boolean.class);
+            fail("Expected exception");
+        } catch (NoSuchElementException expected) {
+        }
+
+        assertFalse(config.getOptionalValue("empty.key", String.class).isPresent());
+
+        assertFalse(config.getOptionalValue("empty.key", Character.class).isPresent());
     }
 
     @SafeVarargs

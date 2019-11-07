@@ -55,7 +55,7 @@ public final class Converters {
 
     @SuppressWarnings("unchecked")
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, (Converter & Serializable) value -> {
-        if (value != null) {
+        if (value != null && !value.isEmpty()) {
             return "TRUE".equalsIgnoreCase(value)
                     || "1".equalsIgnoreCase(value)
                     || "YES".equalsIgnoreCase(value)
@@ -72,19 +72,19 @@ public final class Converters {
 
     @SuppressWarnings("unchecked")
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
-            (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null);
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Double.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
-            (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null);
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Float.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
-            (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null);
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Long.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
-            (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null);
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Integer.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, (Converter & Serializable) value -> {
@@ -121,7 +121,7 @@ public final class Converters {
 
     @SuppressWarnings("unchecked")
     static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, (Converter & Serializable) value -> {
-        if (value != null) {
+        if (value != null && !value.isEmpty()) {
             if (value.length() == 1) {
                 return Character.valueOf(value.charAt(0));
             }
