@@ -91,7 +91,9 @@ public final class Converters {
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, StringCleanup.TRIM,
             (Converter & Serializable) value -> {
                 try {
-                    return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
+                    return value != null && !value.isEmpty()
+                            ? Class.forName(value, true, SecuritySupport.getContextClassLoader())
+                            : null;
                 } catch (ClassNotFoundException e) {
                     throw new IllegalArgumentException(e);
                 }
