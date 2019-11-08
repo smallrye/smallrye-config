@@ -130,6 +130,10 @@ public final class Converters {
         return null;
     });
 
+    @SuppressWarnings("unchecked")
+    static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
+            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Short.valueOf(value) : null);
+
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
@@ -149,6 +153,9 @@ public final class Converters {
 
         ALL_CONVERTERS.put(Integer.class, INTEGER_CONVERTER);
         ALL_CONVERTERS.put(Integer.TYPE, INTEGER_CONVERTER);
+
+        ALL_CONVERTERS.put(Short.class, SHORT_CONVERTER);
+        ALL_CONVERTERS.put(Short.TYPE, SHORT_CONVERTER);
 
         ALL_CONVERTERS.put(Class.class, CLASS_CONVERTER);
         ALL_CONVERTERS.put(InetAddress.class, INET_ADDRESS_CONVERTER);
@@ -617,6 +624,8 @@ public final class Converters {
                     return INET_ADDRESS_CONVERTER;
                 case 11:
                     return CHARACTER_CONVERTER;
+                case 12:
+                    return SHORT_CONVERTER;
                 default:
                     throw new InvalidObjectException("Unknown converter ID");
             }

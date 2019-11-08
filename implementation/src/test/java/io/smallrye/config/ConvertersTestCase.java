@@ -303,6 +303,14 @@ public class ConvertersTestCase {
         assertFalse(config.getOptionalValue("empty.key", Character.class).isPresent());
     }
 
+    @Test
+    public void testShortValue() {
+        final SmallRyeConfig config = buildConfig("simple.short", "2");
+        final short expected = 2;
+        assertEquals("Unexpected value for short config", expected, (short) config.getValue("simple.short", Short.class));
+        assertEquals("Unexpected value for short config", expected, (short) config.getValue("simple.short", Short.TYPE));
+    }
+
     @SafeVarargs
     private static <T> T[] array(T... items) {
         return items;
