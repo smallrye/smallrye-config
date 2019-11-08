@@ -16,9 +16,6 @@
 
 package io.smallrye.config;
 
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -29,7 +26,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 
 /**
@@ -58,15 +54,12 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class DirConfigSource implements ConfigSource {
+public class FileSystemConfigSource extends MapBackedConfigSource {
+    private static final long serialVersionUID = 654034634846856045L;
 
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
-    private final File dir;
-    private final int ordinal;
-    private final Map<String, String> props;
-
-    DirConfigSource(File dir) {
+    FileSystemConfigSource(File dir) {
         this(dir, DEFAULT_ORDINAL);
     }
 
@@ -76,42 +69,16 @@ public class DirConfigSource implements ConfigSource {
      * @param dir the directory, containing configuration files
      * @param ordinal the ordinal value
      */
-    public DirConfigSource(File dir, int ordinal) {
-        this.dir = dir;
-        this.props = scan(dir);
-        if (props.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.parseInt(props.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
-        } else {
-            this.ordinal = ordinal;
-        }
+    public FileSystemConfigSource(File dir, int ordinal) {
+        super("DirConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir), ordinal);
     }
 
-    @Override
-    public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(props);
-    }
-
-    @Override
-    public String getValue(String key) {
-        return props.get(key);
-    }
-
-    @Override
-    public String getName() {
-        return "DirConfigSource[dir=" + dir.getAbsolutePath() + "]";
-    }
-
-    @Override
-    public int getOrdinal() {
-        return ordinal;
-    }
-
-    private Map<String, String> scan(File directory) {
+    private static Map<String, String> scan(File directory) {
         if (directory != null && directory.isDirectory()) {
             try (Stream<Path> stream = Files.walk(directory.toPath())) {
 
                 return stream.filter(p -> p.toFile().isFile())
-                        .collect(Collectors.toMap(it -> it.getFileName().toString(), this::readContent));
+                        .collect(Collectors.toMap(it -> it.getFileName().toString(), FileSystemConfigSource::readContent));
             } catch (Throwable t) {
                 LOG.warnf("Unable to read content from file %s", directory.getAbsolutePath());
             }
@@ -119,7 +86,7 @@ public class DirConfigSource implements ConfigSource {
         return Collections.emptyMap();
     }
 
-    private String readContent(Path file) {
+    private static String readContent(Path file) {
         try (Stream<String> stream = Files.lines(file)) {
             return stream.collect(Collectors.joining());
         } catch (IOException e) {

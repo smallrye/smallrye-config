@@ -9,22 +9,13 @@
     </parent>
 
     <groupId>io.smallrye.config</groupId>
-    <artifactId>smallrye-config-source-hocon</artifactId>
-    <name>SmallRye: HOCON ConfigSource</name>
-
-    <properties>
-        <lightbend-config.version>1.4.0</lightbend-config.version>
-    </properties>
+    <artifactId>smallrye-config-source-file-system</artifactId>
+    <name>SmallRye: FileSystem ConfigSource</name>
 
     <dependencies>
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-config-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>${lightbend-config.version}</version>
         </dependency>
 
         <dependency>

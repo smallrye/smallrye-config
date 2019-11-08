@@ -58,10 +58,12 @@
   </scm>
 
   <modules>
+    <module>common</module>
     <module>implementation</module>
     <module>testsuite</module>
     <module>docs</module>
     <module>sources/hocon</module>
+    <module>sources/file-system</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
@@ -80,6 +82,7 @@
         <artifactId>microprofile-config-tck</artifactId>
         <version>${version.eclipse.microprofile.config}</version>
       </dependency>
+
       <dependency>
         <groupId>org.jboss.arquillian.testng</groupId>
         <artifactId>arquillian-testng-container</artifactId>
@@ -102,6 +105,11 @@
       <!-- Dependencies provided by the project -->
       <dependency>
         <groupId>io.smallrye</groupId>
+        <artifactId>smallrye-config-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye</groupId>
         <artifactId>smallrye-config</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -114,6 +122,11 @@
       </dependency>
 
       <!-- Config Sources -->
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-file-system</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-source-zookeeper</artifactId>

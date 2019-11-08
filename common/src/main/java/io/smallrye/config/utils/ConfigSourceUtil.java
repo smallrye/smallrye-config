@@ -16,6 +16,9 @@
 
 package io.smallrye.config.utils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -43,5 +46,13 @@ public class ConfigSourceUtil {
     public static Map<String, String> propertiesToMap(Properties properties) {
         return properties.entrySet().stream().collect(Collectors.toMap(e -> String.valueOf(e.getKey()),
                 e -> String.valueOf(e.getValue())));
+    }
+
+    public static Map<String, String> urlToMap(URL locationOfProperties) throws IOException {
+        try (InputStream in = locationOfProperties.openStream()) {
+            Properties p = new Properties();
+            p.load(in);
+            return ConfigSourceUtil.propertiesToMap(p);
+        }
     }
 }

@@ -11,7 +11,8 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.data.Stat;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import io.smallrye.config.AbstractConfigSource;
 
 /**
  * MicroProfile Config Source that is backed by Zookeeper.
@@ -21,7 +22,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * <p>
  * author: Simon Woodman swoodman@redhat.com
  */
-public class ZooKeeperConfigSource implements ConfigSource {
+public class ZooKeeperConfigSource extends AbstractConfigSource {
+    private static final long serialVersionUID = 3127679154588598693L;
 
     private static final Logger logger = Logger.getLogger(ZooKeeperConfigSource.class.getName());
 
@@ -44,11 +46,7 @@ public class ZooKeeperConfigSource implements ConfigSource {
     private static final String ZOOKEEPER_CONFIG_SOURCE_NAME = "io.smallrye.configsource.zookeeper";
 
     public ZooKeeperConfigSource() {
-    }
-
-    @Override
-    public int getOrdinal() {
-        return 150;
+        super(ZOOKEEPER_CONFIG_SOURCE_NAME, 150);
     }
 
     @Override
@@ -106,11 +104,6 @@ public class ZooKeeperConfigSource implements ConfigSource {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
         return null;
-    }
-
-    @Override
-    public String getName() {
-        return ZOOKEEPER_CONFIG_SOURCE_NAME;
     }
 
     private CuratorFramework getCuratorClient() throws ZooKeeperConfigException {
