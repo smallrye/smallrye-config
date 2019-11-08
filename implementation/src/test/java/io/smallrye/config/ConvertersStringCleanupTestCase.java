@@ -41,7 +41,17 @@ public class ConvertersStringCleanupTestCase<T> {
                 { OptionalInt.class, OptionalInt.of(42), "42" },
                 { OptionalLong.class, OptionalLong.of(42L), "42" },
                 { OptionalDouble.class, OptionalDouble.of(1.0d), "1.0" },
-                { OptionalDouble.class, OptionalDouble.of(1.0d), "1.0" }
+                { OptionalDouble.class, OptionalDouble.of(1.0d), "1.0" },
+                { Boolean.class, null, "" },
+                { Double.class, null, "" },
+                { Float.class, null, "" },
+                { Long.class, null, "" },
+                { Integer.class, null, "" },
+                { Class.class, null, "" },
+                { OptionalInt.class, OptionalInt.empty(), "" },
+                { OptionalLong.class, OptionalLong.empty(), "" },
+                { OptionalDouble.class, OptionalDouble.empty(), "" },
+                { OptionalDouble.class, OptionalDouble.empty(), "" }
         };
     }
 
