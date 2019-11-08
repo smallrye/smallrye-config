@@ -54,58 +54,60 @@ public final class Converters {
             (Converter & Serializable) value -> value != null && !value.isEmpty() ? value : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, (Converter & Serializable) value -> {
-        if (value != null && !value.isEmpty()) {
-            return "TRUE".equalsIgnoreCase(value)
-                    || "1".equalsIgnoreCase(value)
-                    || "YES".equalsIgnoreCase(value)
-                    || "Y".equalsIgnoreCase(value)
-                    || "ON".equalsIgnoreCase(value)
-                    || "JA".equalsIgnoreCase(value)
-                    || "J".equalsIgnoreCase(value)
-                    || "SI".equalsIgnoreCase(value)
-                    || "SIM".equalsIgnoreCase(value)
-                    || "OUI".equalsIgnoreCase(value);
-        }
-        return null;
-    });
+    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, StringCleanup.TRIM,
+            (Converter & Serializable) value -> {
+                if (value != null && !value.isEmpty()) {
+                    return "TRUE".equalsIgnoreCase(value)
+                            || "1".equalsIgnoreCase(value)
+                            || "YES".equalsIgnoreCase(value)
+                            || "Y".equalsIgnoreCase(value)
+                            || "ON".equalsIgnoreCase(value)
+                            || "JA".equalsIgnoreCase(value)
+                            || "J".equalsIgnoreCase(value)
+                            || "SI".equalsIgnoreCase(value)
+                            || "SIM".equalsIgnoreCase(value)
+                            || "OUI".equalsIgnoreCase(value);
+                }
+                return null;
+            });
 
     @SuppressWarnings("unchecked")
-    static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
+    static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2, StringCleanup.TRIM,
             (Converter & Serializable) value -> value != null && !value.isEmpty() ? Double.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
+    static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3, StringCleanup.TRIM,
             (Converter & Serializable) value -> value != null && !value.isEmpty() ? Float.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
+    static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4, StringCleanup.TRIM,
             (Converter & Serializable) value -> value != null && !value.isEmpty() ? Long.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
+    static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5, StringCleanup.TRIM,
             (Converter & Serializable) value -> value != null && !value.isEmpty() ? Integer.valueOf(value) : null);
 
     @SuppressWarnings("unchecked")
-    static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, (Converter & Serializable) value -> {
-        try {
-            return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(e);
-        }
-    });
+    static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, StringCleanup.TRIM,
+            (Converter & Serializable) value -> {
+                try {
+                    return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            });
 
-    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
+    static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7, StringCleanup.TRIM,
             (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty()
                     ? OptionalInt.of(Integer.parseInt(value))
                     : OptionalInt.empty());
 
-    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8,
+    static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8, StringCleanup.TRIM,
             (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()
                     ? OptionalLong.of(Long.parseLong(value))
                     : OptionalLong.empty());
 
-    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9,
+    static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9, StringCleanup.TRIM,
             (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty()
                     ? OptionalDouble.of(Double.parseDouble(value))
                     : OptionalDouble.empty());
@@ -562,24 +564,42 @@ public final class Converters {
 
     static final class BuiltInConverter<T> implements Converter<T>, Serializable {
         private final int id;
+        private final StringCleanup stringCleanup;
         private final Converter<T> function;
 
         static <T> BuiltInConverter<T> of(int id, Converter<T> function) {
-            return new BuiltInConverter<>(id, function);
+            return new BuiltInConverter<>(id, StringCleanup.NONE, function);
         }
 
-        private BuiltInConverter(final int id, final Converter<T> function) {
+        static <T> BuiltInConverter<T> of(int id, StringCleanup stringCleanup, Converter<T> function) {
+            return new BuiltInConverter<>(id, stringCleanup, function);
+        }
+
+        private BuiltInConverter(final int id, final StringCleanup stringCleanup, final Converter<T> function) {
             this.id = id;
+            this.stringCleanup = stringCleanup;
             this.function = function;
         }
 
         public T convert(final String value) {
-            return function.convert(value);
+            final String cleanValue;
+            if (value != null && StringCleanup.TRIM == stringCleanup) {
+                cleanValue = value.trim();
+            } else {
+                cleanValue = value;
+            }
+
+            return function.convert(cleanValue);
         }
 
         Object writeReplace() {
             return new Ser(id);
         }
+    }
+
+    enum StringCleanup {
+        NONE,
+        TRIM;
     }
 
     static final class Ser implements Serializable {
