@@ -133,9 +133,10 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Override
     public void releaseConfig(Config config) {
         // todo: see https://github.com/eclipse/microprofile-config/issues/136#issuecomment-535962313
+        // todo: see https://github.com/eclipse/microprofile-config/issues/471
         final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
         synchronized (configsForClassLoader) {
-            configsForClassLoader.values().remove(config);
+            configsForClassLoader.values().removeIf(v -> v == config);
         }
     }
 
