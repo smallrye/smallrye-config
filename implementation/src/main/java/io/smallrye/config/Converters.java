@@ -49,90 +49,72 @@ public final class Converters {
     private Converters() {
     }
 
-    @SuppressWarnings("unchecked")
-    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? value : null);
+    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
 
-    @SuppressWarnings("unchecked")
-    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, (Converter & Serializable) value -> {
-        if (value != null && !value.isEmpty()) {
-            return "TRUE".equalsIgnoreCase(value)
-                    || "1".equalsIgnoreCase(value)
-                    || "YES".equalsIgnoreCase(value)
-                    || "Y".equalsIgnoreCase(value)
-                    || "ON".equalsIgnoreCase(value)
-                    || "JA".equalsIgnoreCase(value)
-                    || "J".equalsIgnoreCase(value)
-                    || "SI".equalsIgnoreCase(value)
-                    || "SIM".equalsIgnoreCase(value)
-                    || "OUI".equalsIgnoreCase(value);
-        }
-        return null;
-    });
+    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
+            value -> Boolean.valueOf(
+                    "TRUE".equalsIgnoreCase(value)
+                            || "1".equalsIgnoreCase(value)
+                            || "YES".equalsIgnoreCase(value)
+                            || "Y".equalsIgnoreCase(value)
+                            || "ON".equalsIgnoreCase(value)
+                            || "JA".equalsIgnoreCase(value)
+                            || "J".equalsIgnoreCase(value)
+                            || "SI".equalsIgnoreCase(value)
+                            || "SIM".equalsIgnoreCase(value)
+                            || "OUI".equalsIgnoreCase(value)))));
 
-    @SuppressWarnings("unchecked")
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Double.valueOf(value) : null);
+            newTrimmingConverter(newEmptyValueConverter(Double::valueOf)));
 
-    @SuppressWarnings("unchecked")
     static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Float.valueOf(value) : null);
+            newTrimmingConverter(newEmptyValueConverter(Float::valueOf)));
 
-    @SuppressWarnings("unchecked")
     static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Long.valueOf(value) : null);
+            newTrimmingConverter(newEmptyValueConverter(Long::valueOf)));
 
-    @SuppressWarnings("unchecked")
     static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Integer.valueOf(value) : null);
+            newTrimmingConverter(newEmptyValueConverter(Integer::valueOf)));
 
-    @SuppressWarnings("unchecked")
-    static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6, (Converter & Serializable) value -> {
-        try {
-            return value != null ? Class.forName(value, true, SecuritySupport.getContextClassLoader()) : null;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(e);
-        }
-    });
+    static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6,
+            newTrimmingConverter(newEmptyValueConverter(value -> {
+                try {
+                    return Class.forName(value, true, SecuritySupport.getContextClassLoader());
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            })));
 
     static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
-            (Converter<OptionalInt> & Serializable) value -> value != null && !value.isEmpty()
-                    ? OptionalInt.of(Integer.parseInt(value))
-                    : OptionalInt.empty());
+            newTrimmingConverter(
+                    newEmptyValueConverter(value -> OptionalInt.of(Integer.parseInt(value)), OptionalInt.empty())));
 
     static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8,
-            (Converter<OptionalLong> & Serializable) value -> value != null && !value.isEmpty()
-                    ? OptionalLong.of(Long.parseLong(value))
-                    : OptionalLong.empty());
+            newTrimmingConverter(
+                    newEmptyValueConverter(value -> OptionalLong.of(Long.parseLong(value)), OptionalLong.empty())));
 
     static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9,
-            (Converter<OptionalDouble> & Serializable) value -> value != null && !value.isEmpty()
-                    ? OptionalDouble.of(Double.parseDouble(value))
-                    : OptionalDouble.empty());
+            newTrimmingConverter(
+                    newEmptyValueConverter(value -> OptionalDouble.of(Double.parseDouble(value)), OptionalDouble.empty())));
 
     static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
-            (Converter<InetAddress> & Serializable) value -> {
+            newTrimmingConverter(newEmptyValueConverter(value -> {
                 try {
-                    return value != null && !value.isEmpty() ? InetAddress.getByName(value) : null;
+                    return InetAddress.getByName(value);
                 } catch (UnknownHostException e) {
                     throw new IllegalArgumentException(e);
                 }
-            });
+            })));
 
-    @SuppressWarnings("unchecked")
-    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, (Converter & Serializable) value -> {
-        if (value != null && !value.isEmpty()) {
-            if (value.length() == 1) {
-                return Character.valueOf(value.charAt(0));
-            }
-            throw new IllegalArgumentException(value + " can not be converted to a Character");
+    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, newEmptyValueConverter(value -> {
+        if (value.length() == 1) {
+            return Character.valueOf(value.charAt(0));
         }
-        return null;
-    });
+        throw new IllegalArgumentException(value + " can not be converted to a Character");
+    }));
 
-    @SuppressWarnings("unchecked")
     static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
-            (Converter & Serializable) value -> value != null && !value.isEmpty() ? Short.valueOf(value) : null);
+            newTrimmingConverter(newEmptyValueConverter(Short::valueOf)));
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
@@ -264,6 +246,29 @@ public final class Converters {
             return delegateConverter;
         }
         return new EmptyValueConverter<>(delegateConverter, emptyValue);
+    }
+
+    /**
+     * Get a converter which wraps another converter and handles empty values correctly. This allows the
+     * delegate converter to assume that the value being converted will not be {@code null} or empty.
+     *
+     * @param delegateConverter the converter to delegate to (must not be {@code null})
+     * @param <T> the value type
+     * @return the converter
+     */
+    public static <T> Converter<T> newEmptyValueConverter(Converter<T> delegateConverter) {
+        return new EmptyValueConverter<>(delegateConverter, null);
+    }
+
+    /**
+     * Get a converter which trims the string input before passing it on to the delegate converter.
+     *
+     * @param delegateConverter the converter to delegate to (must not be {@code null})
+     * @param <T> the value type
+     * @return the converter
+     */
+    public static <T> Converter<T> newTrimmingConverter(Converter<T> delegateConverter) {
+        return new TrimmingConverter<>(delegateConverter);
     }
 
     /**
@@ -651,6 +656,18 @@ public final class Converters {
             } else {
                 return result;
             }
+        }
+    }
+
+    static class TrimmingConverter<T> implements Converter<T> {
+        private final Converter<T> delegate;
+
+        TrimmingConverter(final Converter<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        public T convert(final String value) {
+            return value == null ? null : delegate.convert(value.trim());
         }
     }
 }
