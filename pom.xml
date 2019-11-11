@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>smallrye-config-parent</artifactId>
-  <version>1.3.12-SNAPSHOT</version>
+  <version>1.4.0-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Config Parent</name>
