@@ -16,6 +16,10 @@
 
 package io.smallrye.config.utils;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -43,5 +47,13 @@ public class ConfigSourceUtil {
     public static Map<String, String> propertiesToMap(Properties properties) {
         return properties.entrySet().stream().collect(Collectors.toMap(e -> String.valueOf(e.getKey()),
                 e -> String.valueOf(e.getValue())));
+    }
+
+    public static Map<String, String> urlToMap(URL locationOfProperties) throws IOException {
+        try (InputStreamReader reader = new InputStreamReader(locationOfProperties.openStream(), StandardCharsets.UTF_8)) {
+            Properties p = new Properties();
+            p.load(reader);
+            return ConfigSourceUtil.propertiesToMap(p);
+        }
     }
 }

@@ -28,14 +28,14 @@ import org.junit.Test;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class DirConfigSourceTestCase {
+public class FileSystemConfigSourceTestCase {
 
     @Test
     public void testConfigSourceFromDir() throws URISyntaxException {
         URL configDirURL = this.getClass().getResource("configDir");
         File dir = new File(configDirURL.toURI());
 
-        ConfigSource configSource = new DirConfigSource(dir);
+        ConfigSource configSource = new FileSystemConfigSource(dir);
 
         assertEquals(4567, configSource.getOrdinal());
 

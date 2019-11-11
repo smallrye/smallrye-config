@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.smallrye.config.AbstractConfigSource;
 import io.smallrye.configsource.ZooKeeperConfigSource;
 
 /**
@@ -76,6 +77,7 @@ public class ZooKeeperConfigSourceTest {
 
         return ShrinkWrap.create(WebArchive.class, "ZkMicroProfileConfigTest.war")
                 .addPackage(ZooKeeperConfigSource.class.getPackage())
+                .addPackage(AbstractConfigSource.class.getPackage())
                 .addAsLibraries(curatorFiles)
                 .addAsLibraries(swarmMPCFiles)
                 .addAsLibraries(curatorTestFiles)

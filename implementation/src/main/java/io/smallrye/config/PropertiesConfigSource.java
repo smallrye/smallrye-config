@@ -16,30 +16,18 @@
 
 package io.smallrye.config;
 
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_100;
-import static io.smallrye.config.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class PropertiesConfigSource implements ConfigSource, Serializable {
-
-    private final Map<String, String> properties;
-    private final String source;
-    private final int ordinal;
+public class PropertiesConfigSource extends MapBackedConfigSource {
+    private static final long serialVersionUID = 1866835565147832432L;
 
     /**
      * Construct a new instance
@@ -48,53 +36,14 @@ public class PropertiesConfigSource implements ConfigSource, Serializable {
      * @throws IOException if an error occurred when reading from the input stream
      */
     public PropertiesConfigSource(URL url) throws IOException {
-        this.source = url.toString();
-        try (InputStream in = url.openStream()) {
-            Properties p = new Properties();
-            p.load(in);
-            properties = ConfigSourceUtil.propertiesToMap(p);
-        }
-        this.ordinal = Integer.parseInt(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+        super("PropertiesConfigSource[source=" + url.toString() + "]", ConfigSourceUtil.urlToMap(url));
     }
 
     public PropertiesConfigSource(Properties properties, String source) {
-        this.properties = ConfigSourceUtil.propertiesToMap(properties);
-        this.source = source;
-        this.ordinal = Integer.parseInt(properties.getProperty(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
+        super("PropertiesConfigSource[source=" + source + "]", ConfigSourceUtil.propertiesToMap(properties));
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
-        this.properties = new HashMap<>(properties);
-        this.source = source;
-        if (properties.containsKey(CONFIG_ORDINAL_KEY)) {
-            this.ordinal = Integer.parseInt(properties.getOrDefault(CONFIG_ORDINAL_KEY, CONFIG_ORDINAL_100));
-        } else {
-            this.ordinal = ordinal;
-        }
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(properties);
-    }
-
-    @Override
-    public int getOrdinal() {
-        return ordinal;
-    }
-
-    @Override
-    public String getValue(String s) {
-        return properties.get(s);
-    }
-
-    @Override
-    public String getName() {
-        return "PropertiesConfigSource[source=" + source + "]";
-    }
-
-    @Override
-    public String toString() {
-        return getName();
+        super("PropertiesConfigSource[source=" + source + "]", properties, ordinal);
     }
 }

@@ -16,33 +16,28 @@
 
 package io.smallrye.config;
 
-import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class EnvConfigSource implements ConfigSource, Serializable {
+public class EnvConfigSource extends AbstractConfigSource {
+    private static final long serialVersionUID = -4525015934376795496L;
+
     private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
 
     EnvConfigSource() {
+        super("EnvConfigSource", 300);
     }
 
     @Override
     public Map<String, String> getProperties() {
         return Collections
                 .unmodifiableMap(AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
-    }
-
-    @Override
-    public int getOrdinal() {
-        return 300;
     }
 
     @Override
@@ -69,10 +64,5 @@ public class EnvConfigSource implements ConfigSource, Serializable {
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
         return properties.get(sanitizedName.toUpperCase());
-    }
-
-    @Override
-    public String getName() {
-        return "EnvConfigSource";
     }
 }
