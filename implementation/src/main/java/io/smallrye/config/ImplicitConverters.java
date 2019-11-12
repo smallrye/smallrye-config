@@ -202,7 +202,8 @@ class ImplicitConverters {
                 } catch (NoSuchMethodException e) {
                     throw new InvalidObjectException("No matching constructor found");
                 }
-                if (!ctor.isAccessible()) {
+                if (!(Modifier.isPublic(ctor.getDeclaringClass().getModifiers()) && Modifier.isPublic(ctor.getModifiers())
+                        || ctor.isAccessible())) {
                     throw new InvalidObjectException("Deserialized constructor is not accessible");
                 }
                 return new ConstructorConverter<>(ctor);

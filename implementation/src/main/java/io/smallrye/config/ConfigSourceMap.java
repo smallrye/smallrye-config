@@ -16,6 +16,7 @@
 
 package io.smallrye.config;
 
+import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -41,10 +42,12 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  *           <p>
  *           The backing collections are assumed to be immutable.
  */
-public class ConfigSourceMap extends AbstractMap<String, String> implements Map<String, String> {
+public class ConfigSourceMap extends AbstractMap<String, String> implements Map<String, String>, Serializable {
+    private static final long serialVersionUID = -6694358608066599032L;
+
     private final ConfigSource delegate;
-    private Values values;
-    private EntrySet entrySet;
+    private transient Values values;
+    private transient EntrySet entrySet;
 
     /**
      * Construct a new instance.
