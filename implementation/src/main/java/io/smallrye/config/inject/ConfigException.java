@@ -26,7 +26,7 @@ public class ConfigException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    String configPropertyName;
+    private final String configPropertyName;
 
     public ConfigException(String configPropertyName, String message) {
         super(message);

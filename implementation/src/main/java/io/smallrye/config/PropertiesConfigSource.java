@@ -29,6 +29,8 @@ import io.smallrye.config.utils.ConfigSourceUtil;
 public class PropertiesConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = 1866835565147832432L;
 
+    private static final String NAME_PREFIX = "PropertiesConfigSource[source=";
+
     /**
      * Construct a new instance
      *
@@ -36,14 +38,14 @@ public class PropertiesConfigSource extends MapBackedConfigSource {
      * @throws IOException if an error occurred when reading from the input stream
      */
     public PropertiesConfigSource(URL url) throws IOException {
-        super("PropertiesConfigSource[source=" + url.toString() + "]", ConfigSourceUtil.urlToMap(url));
+        super(NAME_PREFIX + url.toString() + "]", ConfigSourceUtil.urlToMap(url));
     }
 
     public PropertiesConfigSource(Properties properties, String source) {
-        super("PropertiesConfigSource[source=" + source + "]", ConfigSourceUtil.propertiesToMap(properties));
+        super(NAME_PREFIX + source + "]", ConfigSourceUtil.propertiesToMap(properties));
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
-        super("PropertiesConfigSource[source=" + source + "]", properties, ordinal);
+        super(NAME_PREFIX + source + "]", properties, ordinal);
     }
 }

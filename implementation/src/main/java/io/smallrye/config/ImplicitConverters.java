@@ -32,6 +32,9 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 class ImplicitConverters {
 
+    private ImplicitConverters() {
+    }
+
     static <T> Converter<T> getConverter(Class<? extends T> clazz) {
         // implicit converters required by the specification
         Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
@@ -81,7 +84,7 @@ class ImplicitConverters {
                 method.setAccessible(true);
             }
             if (Modifier.isStatic(method.getModifiers())) {
-                return new StaticMethodConverter<T>(clazz, method);
+                return new StaticMethodConverter<>(clazz, method);
             }
         } catch (NoSuchMethodException e) {
         }

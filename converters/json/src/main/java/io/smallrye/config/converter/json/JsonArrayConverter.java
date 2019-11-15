@@ -16,7 +16,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class JsonArrayConverter implements Converter<JsonArray> {
 
     @Override
-    public JsonArray convert(String input) throws IllegalArgumentException {
+    public JsonArray convert(String input) {
         if (isNullOrEmpty(input))
             return null;
 

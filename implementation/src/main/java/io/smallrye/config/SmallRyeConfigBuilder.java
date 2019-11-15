@@ -75,18 +75,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         // load all ConfigSources from ConfigSourceProviders
         ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class,
                 classLoader);
-        configSourceProviderLoader.forEach(configSourceProvider -> {
-            configSourceProvider.getConfigSources(classLoader)
-                    .forEach(discoveredSources::add);
-        });
+        configSourceProviderLoader.forEach(configSourceProvider -> configSourceProvider.getConfigSources(classLoader)
+                .forEach(discoveredSources::add));
         return discoveredSources;
     }
 
     private List<Converter> discoverConverters() {
-        List<Converter> converters = new ArrayList<>();
+        List<Converter> discoveredConverters = new ArrayList<>();
         ServiceLoader<Converter> converterLoader = ServiceLoader.load(Converter.class, classLoader);
-        converterLoader.forEach(converters::add);
-        return converters;
+        converterLoader.forEach(discoveredConverters::add);
+        return discoveredConverters;
     }
 
     @Override
@@ -166,15 +164,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        final List<ConfigSource> sources = new ArrayList<>(this.sources);
+        final List<ConfigSource> sourcesToBuild = new ArrayList<>(this.sources);
         if (addDiscoveredSources) {
-            sources.addAll(discoverSources());
+            sourcesToBuild.addAll(discoverSources());
         }
         if (addDefaultSources) {
-            sources.addAll(getDefaultSources());
+            sourcesToBuild.addAll(getDefaultSources());
         }
 
-        final Map<Type, ConverterWithPriority> converters = new HashMap<>(this.converters);
+        final Map<Type, ConverterWithPriority> convertersToBuild = new HashMap<>(this.converters);
 
         if (addDiscoveredConverters) {
             for (Converter converter : discoverConverters()) {
@@ -183,21 +181,21 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                     throw new IllegalStateException(
                             "Can not add converter " + converter + " that is not parameterized with a type");
                 }
-                addConverter(type, getPriority(converter), converter, converters);
+                addConverter(type, getPriority(converter), converter, convertersToBuild);
             }
         }
 
-        sources.sort(SmallRyeConfig.CONFIG_SOURCE_COMPARATOR);
+        sourcesToBuild.sort(SmallRyeConfig.CONFIG_SOURCE_COMPARATOR);
         // wrap all
-        final Function<ConfigSource, ConfigSource> sourceWrappers = this.sourceWrappers;
-        final ListIterator<ConfigSource> it = sources.listIterator();
+        final Function<ConfigSource, ConfigSource> sourceWrappersToBuild = this.sourceWrappers;
+        final ListIterator<ConfigSource> it = sourcesToBuild.listIterator();
         while (it.hasNext()) {
-            it.set(sourceWrappers.apply(it.next()));
+            it.set(sourceWrappersToBuild.apply(it.next()));
         }
 
         Map<Type, Converter<?>> configConverters = new HashMap<>();
-        converters.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));
-        return newConfig(sources, configConverters);
+        convertersToBuild.forEach((type, converterWithPriority) -> configConverters.put(type, converterWithPriority.converter));
+        return newConfig(sourcesToBuild, configConverters);
     }
 
     @SuppressWarnings("deprecation")

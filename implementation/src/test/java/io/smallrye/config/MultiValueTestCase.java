@@ -34,7 +34,7 @@ public class MultiValueTestCase {
         List<String> pets = config.getValues("my.pets", String.class, ArrayList::new);
         assertNotNull(pets);
         assertEquals(4, pets.size());
-        assertEquals(pets, Arrays.asList("snake", "dog", "cat", "cat"));
+        assertEquals(Arrays.asList("snake", "dog", "cat", "cat"), pets);
     }
 
     @Test
@@ -52,6 +52,6 @@ public class MultiValueTestCase {
         Set<String> pets = config.getValues("my.pets", String.class, s -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER));
         assertNotNull(pets);
         assertEquals(3, pets.size());
-        assertEquals(new ArrayList(pets), Arrays.asList("cat", "dog", "snake"));
+        assertEquals(Arrays.asList("cat", "dog", "snake"), new ArrayList(pets));
     }
 }
