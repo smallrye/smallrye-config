@@ -82,7 +82,7 @@ public class ConfigExtension implements Extension {
         types.forEach(type -> abd.addBean(new ConfigInjectionBean(bm, type)));
     }
 
-    public void validate(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+    public void validate(@Observes AfterDeploymentValidation adv) {
 
         Config config = ConfigProvider.getConfig();
         for (InjectionPoint injectionPoint : injectionPoints) {
@@ -124,13 +124,6 @@ public class ConfigExtension implements Extension {
                 }
             }
         }
-    }
-
-    private <T> Class<T> unwrapType(Type type) {
-        if (type instanceof ParameterizedType) {
-            type = ((ParameterizedType) type).getRawType();
-        }
-        return (Class<T>) type;
     }
 
     static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {

@@ -25,8 +25,10 @@ import org.jboss.logging.Logger;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
 public class SecuritySupport {
-
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
+
+    private SecuritySupport() {
+    }
 
     public static ClassLoader getContextClassLoader() {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {

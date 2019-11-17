@@ -79,7 +79,7 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
 
                 return stream.filter(p -> p.toFile().isFile())
                         .collect(Collectors.toMap(it -> it.getFileName().toString(), FileSystemConfigSource::readContent));
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 LOG.warnf("Unable to read content from file %s", directory.getAbsolutePath());
             }
         }

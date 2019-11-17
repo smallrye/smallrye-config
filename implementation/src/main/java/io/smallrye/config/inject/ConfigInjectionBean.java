@@ -47,7 +47,7 @@ import io.smallrye.config.SmallRyeConfig;
  */
 public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
-    private final static Set<Annotation> QUALIFIERS = new HashSet<>();
+    private static final Set<Annotation> QUALIFIERS = new HashSet<>();
     static {
         QUALIFIERS.add(new ConfigPropertyLiteral());
     }
@@ -67,7 +67,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
     @Override
     public Set<InjectionPoint> getInjectionPoints() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
@@ -95,20 +95,20 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             // handle Provider<T>
             if (rawType instanceof Class && ((Class) rawType).isAssignableFrom(Provider.class)
                     && paramType.getActualTypeArguments().length == 1) {
-                Class clazz = (Class) paramType.getActualTypeArguments()[0];
-                return (T) getConfig().getValue(key, clazz);
+                Class paramTypeClass = (Class) paramType.getActualTypeArguments()[0];
+                return (T) getConfig().getValue(key, paramTypeClass);
             }
         } else {
-            Class clazz = (Class) annotated.getBaseType();
+            Class annotatedTypeClass = (Class) annotated.getBaseType();
             if (defaultValue == null || defaultValue.length() == 0) {
-                return (T) getConfig().getValue(key, clazz);
+                return (T) getConfig().getValue(key, annotatedTypeClass);
             } else {
                 Config config = getConfig();
-                Optional<T> optionalValue = config.getOptionalValue(key, clazz);
+                Optional<T> optionalValue = config.getOptionalValue(key, annotatedTypeClass);
                 if (optionalValue.isPresent()) {
                     return optionalValue.get();
                 } else {
-                    return (T) ((SmallRyeConfig) config).convert(defaultValue, clazz);
+                    return (T) ((SmallRyeConfig) config).convert(defaultValue, annotatedTypeClass);
                 }
             }
         }
@@ -150,7 +150,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
     @Override
     public Set<Class<? extends Annotation>> getStereotypes() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override

@@ -49,6 +49,8 @@ public final class Converters {
     private Converters() {
     }
 
+    private static final String ILLEGAL_ARGUMENT_EXCEPTION_FORMAT = "%s %s (value was \"%s\")";
+
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
 
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
@@ -406,7 +408,7 @@ public final class Converters {
             if (pattern.matcher(value).matches()) {
                 return delegate.convert(value);
             }
-            throw new IllegalArgumentException("Value does not match pattern " + pattern + " (value was \"" + value + "\")");
+            throw new IllegalArgumentException(String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value does not match pattern", pattern, value));
         }
     }
 
@@ -439,12 +441,12 @@ public final class Converters {
                 if (minInclusive) {
                     if (cmp < 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be less than " + min + " (value was \"" + value + "\")");
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than", min, value));
                     }
                 } else {
                     if (cmp <= 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be less than or equal to " + min + " (value was \"" + value + "\")");
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than or equal to", max, value));
                     }
                 }
             }
@@ -453,12 +455,12 @@ public final class Converters {
                 if (maxInclusive) {
                     if (cmp > 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be greater than " + max + " (value was \"" + value + "\")");
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than", max, value));
                     }
                 } else {
                     if (cmp >= 0) {
                         throw new IllegalArgumentException(
-                                "Value must not be greater than or equal to " + max + " (value was \"" + value + "\")");
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than or equal to", max, value));
                     }
                 }
             }
