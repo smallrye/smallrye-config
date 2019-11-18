@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,6 +98,18 @@ public class SmallRyeConfig implements Config, Serializable {
         } catch (IllegalArgumentException ignored) {
             throw propertyNotFound(name);
         }
+    }
+
+    /**
+     * Determine whether the <em>raw value</em> of a configuration property is exactly equal to the expected given
+     * value.
+     *
+     * @param name the property name (must not be {@code null})
+     * @param expected the expected value (may be {@code null})
+     * @return {@code true} if the values are equal, {@code false} otherwise
+     */
+    public boolean rawValueEquals(String name, String expected) {
+        return Objects.equals(expected, getRawValue(name));
     }
 
     /**
