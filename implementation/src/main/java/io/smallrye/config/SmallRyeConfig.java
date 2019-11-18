@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,25 +81,49 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> T getValue(String name, Converter<T> converter) {
+        String value = getRawValue(name);
+        final T converted;
+        if (value != null) {
+            converted = converter.convert(value);
+        } else {
+            try {
+                converted = converter.convert("");
+            } catch (IllegalArgumentException ignored) {
+                throw propertyNotFound(name);
+            }
+        }
+        if (converted == null) {
+            throw propertyNotFound(name);
+        }
+        return converted;
+    }
+
+    /**
+     * Determine whether the <em>raw value</em> of a configuration property is exactly equal to the expected given
+     * value.
+     *
+     * @param name the property name (must not be {@code null})
+     * @param expected the expected value (may be {@code null})
+     * @return {@code true} if the values are equal, {@code false} otherwise
+     */
+    public boolean rawValueEquals(String name, String expected) {
+        return Objects.equals(expected, getRawValue(name));
+    }
+
+    /**
+     * Get the <em>raw value</em> of a configuration property.
+     *
+     * @param name the property name (must not be {@code null})
+     * @return the raw value, or {@code null} if no property value was discovered for the given property name
+     */
+    public String getRawValue(String name) {
         for (ConfigSource configSource : getConfigSources()) {
             String value = configSource.getValue(name);
             if (value != null) {
-                final T converted = converter.convert(value);
-                if (converted == null) {
-                    throw propertyNotFound(name);
-                }
-                return converted;
+                return value;
             }
         }
-        try {
-            final T converted = converter.convert("");
-            if (converted == null) {
-                throw propertyNotFound(name);
-            }
-            return converted;
-        } catch (IllegalArgumentException ignored) {
-            throw propertyNotFound(name);
-        }
+        return null;
     }
 
     @Override
@@ -124,7 +149,7 @@ public class SmallRyeConfig implements Config, Serializable {
     public Iterable<String> getPropertyNames() {
         Set<String> names = new HashSet<>();
         for (ConfigSource configSource : getConfigSources()) {
-            names.addAll(configSource.getProperties().keySet());
+            names.addAll(configSource.getPropertyNames());
         }
         return names;
     }
