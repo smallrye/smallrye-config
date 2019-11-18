@@ -82,22 +82,20 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T> T getValue(String name, Converter<T> converter) {
         String value = getRawValue(name);
+        final T converted;
         if (value != null) {
-            final T converted = converter.convert(value);
-            if (converted == null) {
+            converted = converter.convert(value);
+        } else {
+            try {
+                converted = converter.convert("");
+            } catch (IllegalArgumentException ignored) {
                 throw propertyNotFound(name);
             }
-            return converted;
         }
-        try {
-            final T converted = converter.convert("");
-            if (converted == null) {
-                throw propertyNotFound(name);
-            }
-            return converted;
-        } catch (IllegalArgumentException ignored) {
+        if (converted == null) {
             throw propertyNotFound(name);
         }
+        return converted;
     }
 
     /**
