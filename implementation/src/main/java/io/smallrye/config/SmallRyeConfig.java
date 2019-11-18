@@ -80,15 +80,13 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> T getValue(String name, Converter<T> converter) {
-        for (ConfigSource configSource : getConfigSources()) {
-            String value = configSource.getValue(name);
-            if (value != null) {
-                final T converted = converter.convert(value);
-                if (converted == null) {
-                    throw propertyNotFound(name);
-                }
-                return converted;
+        String value = getRawValue(name);
+        if (value != null) {
+            final T converted = converter.convert(value);
+            if (converted == null) {
+                throw propertyNotFound(name);
             }
+            return converted;
         }
         try {
             final T converted = converter.convert("");
@@ -99,6 +97,22 @@ public class SmallRyeConfig implements Config, Serializable {
         } catch (IllegalArgumentException ignored) {
             throw propertyNotFound(name);
         }
+    }
+
+    /**
+     * Get the <em>raw value</em> of a configuration property.
+     *
+     * @param name the property name (must not be {@code null})
+     * @return the raw value, or {@code null} if no property value was discovered for the given property name
+     */
+    public String getRawValue(String name) {
+        for (ConfigSource configSource : getConfigSources()) {
+            String value = configSource.getValue(name);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     @Override
