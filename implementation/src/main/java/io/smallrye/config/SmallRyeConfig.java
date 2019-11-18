@@ -124,7 +124,7 @@ public class SmallRyeConfig implements Config, Serializable {
     public Iterable<String> getPropertyNames() {
         Set<String> names = new HashSet<>();
         for (ConfigSource configSource : getConfigSources()) {
-            names.addAll(configSource.getProperties().keySet());
+            names.addAll(configSource.getPropertyNames());
         }
         return names;
     }
