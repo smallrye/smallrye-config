@@ -408,7 +408,8 @@ public final class Converters {
             if (pattern.matcher(value).matches()) {
                 return delegate.convert(value);
             }
-            throw new IllegalArgumentException(String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value does not match pattern", pattern, value));
+            throw new IllegalArgumentException(
+                    String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value does not match pattern", pattern, value));
         }
     }
 
@@ -446,7 +447,8 @@ public final class Converters {
                 } else {
                     if (cmp <= 0) {
                         throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than or equal to", max, value));
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than or equal to", max,
+                                        value));
                     }
                 }
             }
@@ -460,7 +462,8 @@ public final class Converters {
                 } else {
                     if (cmp >= 0) {
                         throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than or equal to", max, value));
+                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than or equal to",
+                                        max, value));
                     }
                 }
             }
