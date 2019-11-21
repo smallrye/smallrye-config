@@ -87,13 +87,6 @@
             </goals>
           </execution>
           <execution>
-            <id>report</id>
-            <phase>none</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>aggregate-report</id>
             <phase>verify</phase>
             <goals>
