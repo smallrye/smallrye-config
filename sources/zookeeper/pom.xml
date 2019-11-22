@@ -30,6 +30,7 @@
     <name>SmallRye: ZooKeeper ConfigSource</name>
 
     <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <version.curator>4.2.0</version.curator>
     </properties>
 

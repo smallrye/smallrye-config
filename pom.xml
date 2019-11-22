@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>12</version>
+    <version>14</version>
   </parent>
 
   <artifactId>smallrye-config-parent</artifactId>
@@ -35,7 +35,9 @@
   <properties>
     <version.eclipse.microprofile.config>1.3</version.eclipse.microprofile.config>
 
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <!-- Sonar settings -->
+    <sonar.projectName>SmallRye Config</sonar.projectName>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <licenses>
@@ -60,14 +62,14 @@
   <modules>
     <module>common</module>
     <module>implementation</module>
-    <module>testsuite</module>
-    <module>docs</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
+    <module>testsuite</module>
+    <module>docs</module>
   </modules>
 
   <dependencyManagement>
@@ -129,6 +131,11 @@
       </dependency>
       <dependency>
         <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-hocon</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-source-zookeeper</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -170,6 +177,15 @@
       </activation>
       <modules>
         <module>release</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>coverage</id>
+      <properties>
+        <argLine>@{jacocoArgLine}</argLine>
+      </properties>
+      <modules>
+        <module>coverage</module>
       </modules>
     </profile>
   </profiles>

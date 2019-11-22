@@ -15,7 +15,11 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Converter - Json</name>
     <description>A library to convert Json</description>
-    
+
+    <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>

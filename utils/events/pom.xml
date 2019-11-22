@@ -15,7 +15,11 @@
     <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Events</name>
     <description>A library to make it easy to add config events to config sources</description>
-    
+
+    <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>javax.enterprise</groupId>
@@ -60,4 +64,22 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <argLine>@{jacocoArgLine}</argLine>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

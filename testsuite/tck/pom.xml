@@ -53,7 +53,6 @@
     <dependency>
       <groupId>io.smallrye</groupId>
       <artifactId>smallrye-config</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.microprofile.config</groupId>

@@ -13,6 +13,7 @@
     <name>SmallRye: HOCON ConfigSource</name>
 
     <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <lightbend-config.version>1.4.0</lightbend-config.version>
     </properties>
 
