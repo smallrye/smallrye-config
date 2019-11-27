@@ -56,4 +56,16 @@ public class ConfigSourceUtil {
             return ConfigSourceUtil.propertiesToMap(p);
         }
     }
+
+    /**
+     * Get the ordinal value configured within the given map.
+     *
+     * @param map the map to query
+     * @param defaultOrdinal the ordinal to return if the ordinal key is not specified
+     * @return the ordinal value to use
+     */
+    public static int getOrdinalFromMap(Map<String, String> map, int defaultOrdinal) {
+        String ordStr = map.get(CONFIG_ORDINAL_KEY);
+        return ordStr == null ? defaultOrdinal : Integer.parseInt(ordStr);
+    }
 }
