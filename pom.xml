@@ -64,6 +64,7 @@
     <module>implementation</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
+    <module>sources/yaml</module>
     <module>sources/zookeeper</module>
     <module>converters/json</module>
     <module>utils/events</module>
