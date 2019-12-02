@@ -1,4 +1,4 @@
-package io.smallrye.config.injection;
+package io.smallrye.config.util.injection;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
