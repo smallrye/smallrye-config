@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -88,16 +89,13 @@ public final class Converters {
             })));
 
     static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalInt.of(Integer.parseInt(value)), OptionalInt.empty())));
+            newOptionalIntConverter(INTEGER_CONVERTER));
 
     static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalLong.of(Long.parseLong(value)), OptionalLong.empty())));
+            newOptionalLongConverter(LONG_CONVERTER));
 
     static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalDouble.of(Double.parseDouble(value)), OptionalDouble.empty())));
+            newOptionalDoubleConverter(DOUBLE_CONVERTER));
 
     static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
             newTrimmingConverter(newEmptyValueConverter(value -> {
@@ -236,6 +234,39 @@ public final class Converters {
     }
 
     /**
+     * Get a converter which wraps another converter's result into an {@code OptionalInt}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalInt> newOptionalIntConverter(Converter<Integer> delegateConverter) {
+        return new OptionalIntConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code OptionalLong}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalLong> newOptionalLongConverter(Converter<Long> delegateConverter) {
+        return new OptionalLongConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code OptionalDouble}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalDouble> newOptionalDoubleConverter(Converter<Double> delegateConverter) {
+        return new OptionalDoubleConverter(delegateConverter);
+    }
+
+    /**
      * Get a converter which wraps another converter and returns a special value to represent empty.
      *
      * @param delegateConverter the converter to delegate to (must not be {@code null})
@@ -285,7 +316,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> minimumValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean inclusive) {
-        return new RangeCheckConverter<>(delegate, minimumValue, inclusive, null, false);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, minimumValue, inclusive, null, false);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> minimumValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T minimumValue, boolean inclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, minimumValue, inclusive, null, false);
     }
 
     /**
@@ -305,6 +352,23 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum value fails conversion
+     */
+    public static <T> Converter<T> minimumValueStringConverter(Comparator<? super T> comparator,
+            Converter<? extends T> delegate, String minimumValue, boolean inclusive) {
+        return minimumValueConverter(comparator, delegate, delegate.convert(minimumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
      * the given maximum value.
      *
@@ -316,7 +380,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> maximumValueConverter(Converter<? extends T> delegate, T maximumValue,
             boolean inclusive) {
-        return new RangeCheckConverter<>(delegate, null, false, maximumValue, inclusive);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, null, false, maximumValue, inclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> maximumValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T maximumValue, boolean inclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, null, false, maximumValue, inclusive);
     }
 
     /**
@@ -336,6 +416,23 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given maximum value fails conversion
+     */
+    public static <T> Converter<T> maximumValueStringConverter(Comparator<? super T> comparator,
+            Converter<? extends T> delegate, String maximumValue, boolean inclusive) {
+        return maximumValueConverter(comparator, delegate, delegate.convert(maximumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is within the given range.
      *
      * @param delegate the delegate converter (must not be {@code null})
@@ -346,7 +443,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean minInclusive, T maximumValue, boolean maxInclusive) {
-        return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, minimumValue, minInclusive, maximumValue,
+                maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> rangeValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T minimumValue, boolean minInclusive, T maximumValue, boolean maxInclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
     }
 
     /**
@@ -363,6 +476,23 @@ public final class Converters {
             String minimumValue, boolean minInclusive, String maximumValue, boolean maxInclusive) {
         return rangeValueConverter(delegate, delegate.convert(minimumValue), minInclusive, delegate.convert(maximumValue),
                 maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum or maximum value fails conversion
+     */
+    public static <T> Converter<T> rangeValueStringConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            String minimumValue, boolean minInclusive, String maximumValue, boolean maxInclusive) {
+        return rangeValueConverter(comparator, delegate, delegate.convert(minimumValue), minInclusive,
+                delegate.convert(maximumValue), maxInclusive);
     }
 
     /**
@@ -413,18 +543,20 @@ public final class Converters {
         }
     }
 
-    static final class RangeCheckConverter<T extends Comparable<T>> implements Converter<T>, Serializable {
+    static final class RangeCheckConverter<T> implements Converter<T>, Serializable {
 
         private static final long serialVersionUID = 2764654140347010865L;
 
+        private final Comparator<? super T> comparator;
         private final Converter<? extends T> delegate;
         private final T min;
         private final boolean minInclusive;
         private final T max;
         private final boolean maxInclusive;
 
-        RangeCheckConverter(final Converter<? extends T> delegate, final T min, final boolean minInclusive, final T max,
-                final boolean maxInclusive) {
+        RangeCheckConverter(final Comparator<? super T> cmp, final Converter<? extends T> delegate, final T min,
+                final boolean minInclusive, final T max, final boolean maxInclusive) {
+            this.comparator = cmp;
             this.delegate = delegate;
             this.min = min;
             this.minInclusive = minInclusive;
@@ -438,7 +570,7 @@ public final class Converters {
                 return null;
             }
             if (min != null) {
-                final int cmp = result.compareTo(min);
+                final int cmp = comparator.compare(result, min);
                 if (minInclusive) {
                     if (cmp < 0) {
                         throw new IllegalArgumentException(
@@ -453,7 +585,7 @@ public final class Converters {
                 }
             }
             if (max != null) {
-                final int cmp = result.compareTo(max);
+                final int cmp = comparator.compare(result, max);
                 if (maxInclusive) {
                     if (cmp > 0) {
                         throw new IllegalArgumentException(
@@ -469,17 +601,26 @@ public final class Converters {
             }
             return result;
         }
+
+        @SuppressWarnings("unchecked")
+        Object readResolve() {
+            return comparator != null ? this
+                    : new RangeCheckConverter(Comparator.naturalOrder(), delegate, min, minInclusive, max, maxInclusive);
+        }
     }
 
-    static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
+    static final class CollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
         private static final long serialVersionUID = -8452214026800305628L;
 
-        private final Converter<? extends T> itemConverter;
         private final IntFunction<C> collectionFactory;
 
-        CollectionConverter(final Converter<? extends T> itemConverter, final IntFunction<C> collectionFactory) {
-            this.itemConverter = itemConverter;
+        CollectionConverter(final Converter<? extends T> delegate, final IntFunction<C> collectionFactory) {
+            super(delegate);
             this.collectionFactory = collectionFactory;
+        }
+
+        protected Converter<C> create(final Converter<? extends T> newDelegate) {
+            return new CollectionConverter<>(newDelegate, collectionFactory);
         }
 
         public C convert(final String str) {
@@ -491,7 +632,7 @@ public final class Converters {
             final C collection = collectionFactory.apply(itemStrings.length);
             for (String itemString : itemStrings) {
                 if (!itemString.isEmpty()) {
-                    final T item = itemConverter.convert(itemString);
+                    final T item = getDelegate().convert(itemString);
                     if (item != null) {
                         collection.add(item);
                     }
@@ -501,15 +642,18 @@ public final class Converters {
         }
     }
 
-    static final class ArrayConverter<A, T> implements Converter<A>, Serializable {
+    static final class ArrayConverter<T, A> extends AbstractDelegatingConverter<T, A> {
         private static final long serialVersionUID = 2630282286159527380L;
 
-        private final Converter<T> itemConverter;
         private final Class<A> arrayType;
 
-        ArrayConverter(final Converter<T> itemConverter, final Class<A> arrayType) {
-            this.itemConverter = itemConverter;
+        ArrayConverter(final Converter<? extends T> delegate, final Class<A> arrayType) {
+            super(delegate);
             this.arrayType = arrayType;
+        }
+
+        protected ArrayConverter<T, A> create(final Converter<? extends T> newDelegate) {
+            return new ArrayConverter<>(newDelegate, arrayType);
         }
 
         public A convert(final String str) {
@@ -522,7 +666,7 @@ public final class Converters {
             int size = 0;
             for (String itemString : itemStrings) {
                 if (!itemString.isEmpty()) {
-                    final T item = itemConverter.convert(itemString);
+                    final T item = getDelegate().convert(itemString);
                     if (item != null) {
                         Array.set(array, size++, item);
                     }
@@ -556,23 +700,89 @@ public final class Converters {
         }
     }
 
-    static final class OptionalConverter<T> implements Converter<Optional<T>>, Serializable {
+    static final class OptionalConverter<T> extends AbstractDelegatingConverter<T, Optional<T>> {
         private static final long serialVersionUID = -4051551570591834428L;
-        private final Converter<? extends T> delegate;
 
         OptionalConverter(final Converter<? extends T> delegate) {
-            this.delegate = delegate;
+            super(delegate);
+        }
+
+        protected OptionalConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new OptionalConverter<T>(newDelegate);
         }
 
         public Optional<T> convert(final String value) {
             if (value.isEmpty()) {
                 try {
-                    return Optional.ofNullable(delegate.convert(value));
+                    return Optional.ofNullable(getDelegate().convert(value));
                 } catch (IllegalArgumentException ignored) {
                     return Optional.empty();
                 }
             } else {
-                return Optional.ofNullable(delegate.convert(value));
+                return Optional.ofNullable(getDelegate().convert(value));
+            }
+        }
+    }
+
+    static final class OptionalIntConverter extends AbstractDelegatingConverter<Integer, OptionalInt> {
+        private static final long serialVersionUID = 4331039532024222756L;
+
+        protected OptionalIntConverter(final Converter<? extends Integer> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalIntConverter create(final Converter<? extends Integer> newDelegate) {
+            return new OptionalIntConverter(newDelegate);
+        }
+
+        public OptionalInt convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalInt.empty();
+            } else {
+                final Integer converted = getDelegate().convert(value);
+                return converted == null ? OptionalInt.empty() : OptionalInt.of(converted.intValue());
+            }
+        }
+    }
+
+    static final class OptionalLongConverter extends AbstractDelegatingConverter<Long, OptionalLong> {
+        private static final long serialVersionUID = 140937551800590852L;
+
+        protected OptionalLongConverter(final Converter<? extends Long> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalLongConverter create(final Converter<? extends Long> newDelegate) {
+            return new OptionalLongConverter(newDelegate);
+        }
+
+        public OptionalLong convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalLong.empty();
+            } else {
+                final Long converted = getDelegate().convert(value);
+                return converted == null ? OptionalLong.empty() : OptionalLong.of(converted.longValue());
+            }
+        }
+    }
+
+    static final class OptionalDoubleConverter extends AbstractDelegatingConverter<Double, OptionalDouble> {
+        private static final long serialVersionUID = -2882741842811044902L;
+
+        OptionalDoubleConverter(final Converter<? extends Double> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalDoubleConverter create(final Converter<? extends Double> newDelegate) {
+            return new OptionalDoubleConverter(newDelegate);
+        }
+
+        public OptionalDouble convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalDouble.empty();
+            } else {
+                final Double converted = getDelegate().convert(value);
+                return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted.doubleValue());
             }
         }
     }
@@ -642,20 +852,25 @@ public final class Converters {
         }
     }
 
-    static class EmptyValueConverter<T> implements Converter<T> {
-        private final Converter<T> delegateConverter;
+    static class EmptyValueConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        private static final long serialVersionUID = 5607979836385662739L;
+
         private final T emptyValue;
 
-        EmptyValueConverter(final Converter<T> delegateConverter, final T emptyValue) {
-            this.delegateConverter = delegateConverter;
+        EmptyValueConverter(final Converter<? extends T> delegate, final T emptyValue) {
+            super(delegate);
             this.emptyValue = emptyValue;
+        }
+
+        protected EmptyValueConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new EmptyValueConverter<>(newDelegate, emptyValue);
         }
 
         public T convert(final String value) {
             if (value.isEmpty()) {
                 return emptyValue;
             }
-            final T result = delegateConverter.convert(value);
+            final T result = getDelegate().convert(value);
             if (result == null) {
                 return emptyValue;
             } else {
@@ -664,15 +879,19 @@ public final class Converters {
         }
     }
 
-    static class TrimmingConverter<T> implements Converter<T> {
-        private final Converter<T> delegate;
+    static class TrimmingConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        private static final long serialVersionUID = 3241445721544473135L;
 
-        TrimmingConverter(final Converter<T> delegate) {
-            this.delegate = delegate;
+        TrimmingConverter(final Converter<? extends T> delegate) {
+            super(delegate);
+        }
+
+        protected TrimmingConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new TrimmingConverter<>(newDelegate);
         }
 
         public T convert(final String value) {
-            return value == null ? null : delegate.convert(value.trim());
+            return value == null ? null : getDelegate().convert(value.trim());
         }
     }
 }
