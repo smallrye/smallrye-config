@@ -1,4 +1,4 @@
-package io.smallrye.configsource;
+package io.smallrye.config.source.hocon;
 
 import java.util.Collections;
 import java.util.Map;

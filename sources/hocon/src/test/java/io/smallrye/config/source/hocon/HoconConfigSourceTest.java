@@ -1,6 +1,7 @@
-package io.smallrye.configsource;
+package io.smallrye.config.source.hocon;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.Test;
