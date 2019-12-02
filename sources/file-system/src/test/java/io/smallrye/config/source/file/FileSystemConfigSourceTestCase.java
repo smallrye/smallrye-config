@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config;
+package io.smallrye.config.source.file;
 
 import static org.junit.Assert.assertEquals;
 

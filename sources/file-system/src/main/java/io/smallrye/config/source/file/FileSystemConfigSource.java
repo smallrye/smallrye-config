@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config;
+package io.smallrye.config.source.file;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +26,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.smallrye.config.common.MapBackedConfigSource;
 import org.jboss.logging.Logger;
+
+import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
  * Read configuration from a file directory.
