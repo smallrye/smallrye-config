@@ -1,4 +1,4 @@
-package io.smallrye.configsource;
+package io.smallrye.config.source.zookeeper;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;

@@ -1,4 +1,4 @@
-package io.smallrye.configsource;
+package io.smallrye.config.source.zookeeper;
 
 public class ZooKeeperConfigException extends Exception {
 

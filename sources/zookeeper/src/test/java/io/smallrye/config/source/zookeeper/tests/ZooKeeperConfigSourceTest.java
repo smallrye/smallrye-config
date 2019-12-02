@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.smallrye.configsource.zookeeper.tests;
+package io.smallrye.config.source.zookeeper.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
@@ -34,7 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.smallrye.config.common.AbstractConfigSource;
-import io.smallrye.configsource.ZooKeeperConfigSource;
+import io.smallrye.config.source.zookeeper.ZooKeeperConfigSource;
 
 /**
  * Test the ConfigSource

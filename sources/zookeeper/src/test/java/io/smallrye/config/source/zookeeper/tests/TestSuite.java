@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.smallrye.configsource.zookeeper.tests;
+package io.smallrye.config.source.zookeeper.tests;
 
 import java.util.logging.Logger;
 
