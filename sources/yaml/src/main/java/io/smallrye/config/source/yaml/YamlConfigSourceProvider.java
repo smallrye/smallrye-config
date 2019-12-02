@@ -25,8 +25,10 @@ public class YamlConfigSourceProvider implements ConfigSourceProvider {
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
         final List<ConfigSource> configSources = new ArrayList<>(2);
-        getConfigSource(classLoader, META_INF_MICROPROFILE_CONFIG_RESOURCE, YamlConfigSource.ORDINAL + 10).ifPresent(configSources::add);
-        getConfigSource(classLoader, WEB_INF_MICROPROFILE_CONFIG_RESOURCE, YamlConfigSource.ORDINAL).ifPresent(configSources::add);
+        getConfigSource(classLoader, META_INF_MICROPROFILE_CONFIG_RESOURCE, YamlConfigSource.ORDINAL + 10)
+                .ifPresent(configSources::add);
+        getConfigSource(classLoader, WEB_INF_MICROPROFILE_CONFIG_RESOURCE, YamlConfigSource.ORDINAL)
+                .ifPresent(configSources::add);
         return Collections.unmodifiableList(configSources);
     }
 }

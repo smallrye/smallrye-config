@@ -88,16 +88,13 @@ public final class Converters {
             })));
 
     static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalInt.of(Integer.parseInt(value)), OptionalInt.empty())));
+            newOptionalIntConverter(INTEGER_CONVERTER));
 
     static final Converter<OptionalLong> OPTIONAL_LONG_CONVERTER = BuiltInConverter.of(8,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalLong.of(Long.parseLong(value)), OptionalLong.empty())));
+            newOptionalLongConverter(LONG_CONVERTER));
 
     static final Converter<OptionalDouble> OPTIONAL_DOUBLE_CONVERTER = BuiltInConverter.of(9,
-            newTrimmingConverter(
-                    newEmptyValueConverter(value -> OptionalDouble.of(Double.parseDouble(value)), OptionalDouble.empty())));
+            newOptionalDoubleConverter(DOUBLE_CONVERTER));
 
     static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
             newTrimmingConverter(newEmptyValueConverter(value -> {
@@ -233,6 +230,39 @@ public final class Converters {
      */
     public static <T> Converter<Optional<T>> newOptionalConverter(Converter<? extends T> delegateConverter) {
         return new OptionalConverter<>(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code OptionalInt}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalInt> newOptionalIntConverter(Converter<Integer> delegateConverter) {
+        return new OptionalIntConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code OptionalLong}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalLong> newOptionalLongConverter(Converter<Long> delegateConverter) {
+        return new OptionalLongConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code OptionalDouble}. If the delegate converter
+     * returns {@code null}, this converter returns {@link Optional#empty()}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<OptionalDouble> newOptionalDoubleConverter(Converter<Double> delegateConverter) {
+        return new OptionalDoubleConverter(delegateConverter);
     }
 
     /**
@@ -471,15 +501,18 @@ public final class Converters {
         }
     }
 
-    static final class CollectionConverter<T, C extends Collection<T>> implements Converter<C>, Serializable {
+    static final class CollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
         private static final long serialVersionUID = -8452214026800305628L;
 
-        private final Converter<? extends T> itemConverter;
         private final IntFunction<C> collectionFactory;
 
-        CollectionConverter(final Converter<? extends T> itemConverter, final IntFunction<C> collectionFactory) {
-            this.itemConverter = itemConverter;
+        CollectionConverter(final Converter<? extends T> delegate, final IntFunction<C> collectionFactory) {
+            super(delegate);
             this.collectionFactory = collectionFactory;
+        }
+
+        protected Converter<C> create(final Converter<? extends T> newDelegate) {
+            return new CollectionConverter<>(newDelegate, collectionFactory);
         }
 
         public C convert(final String str) {
@@ -491,7 +524,7 @@ public final class Converters {
             final C collection = collectionFactory.apply(itemStrings.length);
             for (String itemString : itemStrings) {
                 if (!itemString.isEmpty()) {
-                    final T item = itemConverter.convert(itemString);
+                    final T item = getDelegate().convert(itemString);
                     if (item != null) {
                         collection.add(item);
                     }
@@ -501,15 +534,18 @@ public final class Converters {
         }
     }
 
-    static final class ArrayConverter<A, T> implements Converter<A>, Serializable {
+    static final class ArrayConverter<T, A> extends AbstractDelegatingConverter<T, A> {
         private static final long serialVersionUID = 2630282286159527380L;
 
-        private final Converter<T> itemConverter;
         private final Class<A> arrayType;
 
-        ArrayConverter(final Converter<T> itemConverter, final Class<A> arrayType) {
-            this.itemConverter = itemConverter;
+        ArrayConverter(final Converter<? extends T> delegate, final Class<A> arrayType) {
+            super(delegate);
             this.arrayType = arrayType;
+        }
+
+        protected ArrayConverter<T, A> create(final Converter<? extends T> newDelegate) {
+            return new ArrayConverter<>(newDelegate, arrayType);
         }
 
         public A convert(final String str) {
@@ -522,7 +558,7 @@ public final class Converters {
             int size = 0;
             for (String itemString : itemStrings) {
                 if (!itemString.isEmpty()) {
-                    final T item = itemConverter.convert(itemString);
+                    final T item = getDelegate().convert(itemString);
                     if (item != null) {
                         Array.set(array, size++, item);
                     }
@@ -556,23 +592,89 @@ public final class Converters {
         }
     }
 
-    static final class OptionalConverter<T> implements Converter<Optional<T>>, Serializable {
+    static final class OptionalConverter<T> extends AbstractDelegatingConverter<T, Optional<T>> {
         private static final long serialVersionUID = -4051551570591834428L;
-        private final Converter<? extends T> delegate;
 
         OptionalConverter(final Converter<? extends T> delegate) {
-            this.delegate = delegate;
+            super(delegate);
+        }
+
+        protected OptionalConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new OptionalConverter<T>(newDelegate);
         }
 
         public Optional<T> convert(final String value) {
             if (value.isEmpty()) {
                 try {
-                    return Optional.ofNullable(delegate.convert(value));
+                    return Optional.ofNullable(getDelegate().convert(value));
                 } catch (IllegalArgumentException ignored) {
                     return Optional.empty();
                 }
             } else {
-                return Optional.ofNullable(delegate.convert(value));
+                return Optional.ofNullable(getDelegate().convert(value));
+            }
+        }
+    }
+
+    static final class OptionalIntConverter extends AbstractDelegatingConverter<Integer, OptionalInt> {
+        private static final long serialVersionUID = 4331039532024222756L;
+
+        protected OptionalIntConverter(final Converter<? extends Integer> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalIntConverter create(final Converter<? extends Integer> newDelegate) {
+            return new OptionalIntConverter(newDelegate);
+        }
+
+        public OptionalInt convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalInt.empty();
+            } else {
+                final Integer converted = getDelegate().convert(value);
+                return converted == null ? OptionalInt.empty() : OptionalInt.of(converted.intValue());
+            }
+        }
+    }
+
+    static final class OptionalLongConverter extends AbstractDelegatingConverter<Long, OptionalLong> {
+        private static final long serialVersionUID = 140937551800590852L;
+
+        protected OptionalLongConverter(final Converter<? extends Long> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalLongConverter create(final Converter<? extends Long> newDelegate) {
+            return new OptionalLongConverter(newDelegate);
+        }
+
+        public OptionalLong convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalLong.empty();
+            } else {
+                final Long converted = getDelegate().convert(value);
+                return converted == null ? OptionalLong.empty() : OptionalLong.of(converted.longValue());
+            }
+        }
+    }
+
+    static final class OptionalDoubleConverter extends AbstractDelegatingConverter<Double, OptionalDouble> {
+        private static final long serialVersionUID = -2882741842811044902L;
+
+        OptionalDoubleConverter(final Converter<? extends Double> delegate) {
+            super(delegate);
+        }
+
+        protected OptionalDoubleConverter create(final Converter<? extends Double> newDelegate) {
+            return new OptionalDoubleConverter(newDelegate);
+        }
+
+        public OptionalDouble convert(final String value) {
+            if (value.isEmpty()) {
+                return OptionalDouble.empty();
+            } else {
+                final Double converted = getDelegate().convert(value);
+                return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted.doubleValue());
             }
         }
     }
@@ -642,20 +744,25 @@ public final class Converters {
         }
     }
 
-    static class EmptyValueConverter<T> implements Converter<T> {
-        private final Converter<T> delegateConverter;
+    static class EmptyValueConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        private static final long serialVersionUID = 5607979836385662739L;
+
         private final T emptyValue;
 
-        EmptyValueConverter(final Converter<T> delegateConverter, final T emptyValue) {
-            this.delegateConverter = delegateConverter;
+        EmptyValueConverter(final Converter<? extends T> delegate, final T emptyValue) {
+            super(delegate);
             this.emptyValue = emptyValue;
+        }
+
+        protected EmptyValueConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new EmptyValueConverter<>(newDelegate, emptyValue);
         }
 
         public T convert(final String value) {
             if (value.isEmpty()) {
                 return emptyValue;
             }
-            final T result = delegateConverter.convert(value);
+            final T result = getDelegate().convert(value);
             if (result == null) {
                 return emptyValue;
             } else {
@@ -664,15 +771,19 @@ public final class Converters {
         }
     }
 
-    static class TrimmingConverter<T> implements Converter<T> {
-        private final Converter<T> delegate;
+    static class TrimmingConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        private static final long serialVersionUID = 3241445721544473135L;
 
-        TrimmingConverter(final Converter<T> delegate) {
-            this.delegate = delegate;
+        TrimmingConverter(final Converter<? extends T> delegate) {
+            super(delegate);
+        }
+
+        protected TrimmingConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new TrimmingConverter<>(newDelegate);
         }
 
         public T convert(final String value) {
-            return value == null ? null : delegate.convert(value.trim());
+            return value == null ? null : getDelegate().convert(value.trim());
         }
     }
 }
