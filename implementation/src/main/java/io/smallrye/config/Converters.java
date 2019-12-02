@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -315,7 +316,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> minimumValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean inclusive) {
-        return new RangeCheckConverter<>(delegate, minimumValue, inclusive, null, false);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, minimumValue, inclusive, null, false);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> minimumValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T minimumValue, boolean inclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, minimumValue, inclusive, null, false);
     }
 
     /**
@@ -335,6 +352,23 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is greater than, or optionally equal to,
+     * the given minimum value (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param minimumValue the minimum value (must not be {@code null})
+     * @param inclusive {@code true} if the minimum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum value fails conversion
+     */
+    public static <T> Converter<T> minimumValueStringConverter(Comparator<? super T> comparator,
+            Converter<? extends T> delegate, String minimumValue, boolean inclusive) {
+        return minimumValueConverter(comparator, delegate, delegate.convert(minimumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
      * the given maximum value.
      *
@@ -346,7 +380,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> maximumValueConverter(Converter<? extends T> delegate, T maximumValue,
             boolean inclusive) {
-        return new RangeCheckConverter<>(delegate, null, false, maximumValue, inclusive);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, null, false, maximumValue, inclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> maximumValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T maximumValue, boolean inclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, null, false, maximumValue, inclusive);
     }
 
     /**
@@ -366,6 +416,23 @@ public final class Converters {
     }
 
     /**
+     * Get a wrapping converter which verifies that the configuration value is less than, or optionally equal to,
+     * the given maximum value (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param inclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given maximum value fails conversion
+     */
+    public static <T> Converter<T> maximumValueStringConverter(Comparator<? super T> comparator,
+            Converter<? extends T> delegate, String maximumValue, boolean inclusive) {
+        return maximumValueConverter(comparator, delegate, delegate.convert(maximumValue), inclusive);
+    }
+
+    /**
      * Get a wrapping converter which verifies that the configuration value is within the given range.
      *
      * @param delegate the delegate converter (must not be {@code null})
@@ -376,7 +443,23 @@ public final class Converters {
      */
     public static <T extends Comparable<T>> Converter<T> rangeValueConverter(Converter<? extends T> delegate, T minimumValue,
             boolean minInclusive, T maximumValue, boolean maxInclusive) {
-        return new RangeCheckConverter<>(delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
+        return new RangeCheckConverter<>(Comparator.naturalOrder(), delegate, minimumValue, minInclusive, maximumValue,
+                maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range.
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     */
+    public static <T> Converter<T> rangeValueConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            T minimumValue, boolean minInclusive, T maximumValue, boolean maxInclusive) {
+        return new RangeCheckConverter<>(comparator, delegate, minimumValue, minInclusive, maximumValue, maxInclusive);
     }
 
     /**
@@ -393,6 +476,23 @@ public final class Converters {
             String minimumValue, boolean minInclusive, String maximumValue, boolean maxInclusive) {
         return rangeValueConverter(delegate, delegate.convert(minimumValue), minInclusive, delegate.convert(maximumValue),
                 maxInclusive);
+    }
+
+    /**
+     * Get a wrapping converter which verifies that the configuration value is within the given range (in string form).
+     *
+     * @param comparator the comparator to use (must not be {@code null})
+     * @param delegate the delegate converter (must not be {@code null})
+     * @param maximumValue the maximum value (must not be {@code null})
+     * @param maxInclusive {@code true} if the maximum value is inclusive, {@code false} otherwise
+     * @param <T> the converter target type
+     * @return a range-validating converter
+     * @throws IllegalArgumentException if the given minimum or maximum value fails conversion
+     */
+    public static <T> Converter<T> rangeValueStringConverter(Comparator<? super T> comparator, Converter<? extends T> delegate,
+            String minimumValue, boolean minInclusive, String maximumValue, boolean maxInclusive) {
+        return rangeValueConverter(comparator, delegate, delegate.convert(minimumValue), minInclusive,
+                delegate.convert(maximumValue), maxInclusive);
     }
 
     /**
@@ -443,18 +543,20 @@ public final class Converters {
         }
     }
 
-    static final class RangeCheckConverter<T extends Comparable<T>> implements Converter<T>, Serializable {
+    static final class RangeCheckConverter<T> implements Converter<T>, Serializable {
 
         private static final long serialVersionUID = 2764654140347010865L;
 
+        private final Comparator<? super T> comparator;
         private final Converter<? extends T> delegate;
         private final T min;
         private final boolean minInclusive;
         private final T max;
         private final boolean maxInclusive;
 
-        RangeCheckConverter(final Converter<? extends T> delegate, final T min, final boolean minInclusive, final T max,
-                final boolean maxInclusive) {
+        RangeCheckConverter(final Comparator<? super T> cmp, final Converter<? extends T> delegate, final T min,
+                final boolean minInclusive, final T max, final boolean maxInclusive) {
+            this.comparator = cmp;
             this.delegate = delegate;
             this.min = min;
             this.minInclusive = minInclusive;
@@ -468,7 +570,7 @@ public final class Converters {
                 return null;
             }
             if (min != null) {
-                final int cmp = result.compareTo(min);
+                final int cmp = comparator.compare(result, min);
                 if (minInclusive) {
                     if (cmp < 0) {
                         throw new IllegalArgumentException(
@@ -483,7 +585,7 @@ public final class Converters {
                 }
             }
             if (max != null) {
-                final int cmp = result.compareTo(max);
+                final int cmp = comparator.compare(result, max);
                 if (maxInclusive) {
                     if (cmp > 0) {
                         throw new IllegalArgumentException(
@@ -498,6 +600,12 @@ public final class Converters {
                 }
             }
             return result;
+        }
+
+        @SuppressWarnings("unchecked")
+        Object readResolve() {
+            return comparator != null ? this
+                    : new RangeCheckConverter(Comparator.naturalOrder(), delegate, min, minInclusive, max, maxInclusive);
         }
     }
 
