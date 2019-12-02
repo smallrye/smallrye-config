@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config.utils;
+package io.smallrye.config.common.utils;
 
 import static org.junit.Assert.*;
 

@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import com.typesafe.config.Config;
 
-import io.smallrye.config.MapBackedConfigSource;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 public class HoconConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -458821383311704657L;

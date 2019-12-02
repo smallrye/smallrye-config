@@ -21,7 +21,8 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
-import io.smallrye.config.utils.ConfigSourceUtil;
+import io.smallrye.config.common.MapBackedConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.

@@ -12,7 +12,7 @@ import org.apache.zookeeper.data.Stat;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import io.smallrye.config.AbstractConfigSource;
+import io.smallrye.config.common.AbstractConfigSource;
 
 /**
  * MicroProfile Config Source that is backed by Zookeeper.

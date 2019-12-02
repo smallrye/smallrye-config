@@ -1,4 +1,4 @@
-package io.smallrye.config;
+package io.smallrye.config.common;
 
 import org.eclipse.microprofile.config.spi.Converter;
 

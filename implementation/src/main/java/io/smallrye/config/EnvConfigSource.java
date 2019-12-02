@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import io.smallrye.config.common.AbstractConfigSource;
+
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */

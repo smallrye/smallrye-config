@@ -39,7 +39,9 @@ import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.utils.StringUtil;
+import io.smallrye.config.common.AbstractDelegatingConverter;
+import io.smallrye.config.common.AbstractSimpleDelegatingConverter;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * General converter utilities and constants.

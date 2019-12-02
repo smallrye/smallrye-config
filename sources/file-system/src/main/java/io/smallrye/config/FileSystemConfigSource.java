@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.smallrye.config.common.MapBackedConfigSource;
 import org.jboss.logging.Logger;
 
 /**

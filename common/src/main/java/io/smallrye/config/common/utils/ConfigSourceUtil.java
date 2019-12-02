@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config.utils;
+package io.smallrye.config.common.utils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

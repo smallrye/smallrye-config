@@ -33,7 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.smallrye.config.AbstractConfigSource;
+import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.configsource.ZooKeeperConfigSource;
 
 /**

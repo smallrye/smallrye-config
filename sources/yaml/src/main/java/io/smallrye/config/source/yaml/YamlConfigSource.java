@@ -11,7 +11,7 @@ import java.util.TreeMap;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.Yaml;
 
-import io.smallrye.config.MapBackedConfigSource;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
  * Yaml config source
