@@ -16,13 +16,15 @@
 
 package io.smallrye.config;
 
-import static io.smallrye.config.utils.ConfigSourceUtil.propertiesToMap;
+import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+
+import io.smallrye.config.common.AbstractConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
