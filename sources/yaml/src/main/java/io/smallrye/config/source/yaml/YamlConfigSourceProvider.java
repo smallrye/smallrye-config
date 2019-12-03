@@ -1,6 +1,8 @@
 package io.smallrye.config.source.yaml;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,10 +18,15 @@ public class YamlConfigSourceProvider implements ConfigSourceProvider {
 
     static Optional<ConfigSource> getConfigSource(ClassLoader classLoader, String resource, int ordinal) {
         try {
-            return Optional.of(new YamlConfigSource(resource, classLoader.getResourceAsStream(resource), ordinal));
+            InputStream stream = classLoader.getResourceAsStream(resource);
+            if (stream != null)
+                try (Closeable c = stream) {
+                    return Optional.of(new YamlConfigSource(resource, stream, ordinal));
+                }
         } catch (IOException e) {
-            return Optional.empty();
+            // ignored
         }
+        return Optional.empty();
     }
 
     @Override
