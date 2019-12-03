@@ -40,7 +40,7 @@ public class ConfigSourceProviderTest {
     public static WebArchive createDeployment() {
         final File[] smallryeConfig = Maven.resolver()
                 .loadPomFromFile("pom.xml")
-                .resolve("io.smallrye:smallrye-config")
+                .resolve("io.smallrye.config:smallrye-config")
                 .withoutTransitivity().asFile();
 
         return ShrinkWrap.create(WebArchive.class, "ConfigSourceProviderTest.war")
