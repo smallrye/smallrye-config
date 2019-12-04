@@ -48,63 +48,62 @@ public class ConfigProducer implements Serializable {
     @Produces
     @ConfigProperty
     String produceStringConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, String.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     Long getLongValue(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, Long.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     Integer getIntegerValue(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, Integer.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     Float produceFloatConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, Float.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     Double produceDoubleConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, Double.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     Boolean produceBooleanConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.getValue(ip, Boolean.class, getConfig(ip));
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
-    <T> Optional<T> produceOptionalConfigValue(InjectionPoint injectionPoint) {
-        return ConfigProducerUtil.optionalConfigValue(injectionPoint, getConfig(injectionPoint));
+    <T> Optional<T> produceOptionalConfigValue(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     <T> Set<T> producesSetConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.collectionConfigProperty(ip, getConfig(ip), HashSet::new);
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
     @Produces
     @ConfigProperty
     <T> List<T> producesListConfigProperty(InjectionPoint ip) {
-        return ConfigProducerUtil.collectionConfigProperty(ip, getConfig(ip), ArrayList::new);
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
-
 }
