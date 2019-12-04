@@ -106,4 +106,25 @@ public class ConfigProducer implements Serializable {
     <T> List<T> producesListConfigProperty(InjectionPoint ip) {
         return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    OptionalInt produceOptionalIntConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    OptionalLong produceOptionalLongConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    OptionalDouble produceOptionalDoubleConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
 }
