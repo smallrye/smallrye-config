@@ -196,7 +196,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
             final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
             if (conv == null) {
-                throw new IllegalArgumentException("No Converter registered for class " + asType);
+                throw new IllegalArgumentException("No Converter registered for " + asType);
             }
             return conv;
         });
