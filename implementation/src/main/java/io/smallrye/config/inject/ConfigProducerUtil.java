@@ -42,15 +42,21 @@ public class ConfigProducerUtil {
         if (rawValue == null) {
             rawValue = getDefaultValue(injectionPoint);
         }
+        T converted;
         if (rawValue == null) {
             // convert an empty value
             try {
-                return converter.convert("");
+                converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
                 throw propertyNotFound(name);
             }
+        } else {
+            converted = converter.convert(rawValue);
         }
-        return converter.convert(rawValue);
+        if (converted == null) {
+            throw propertyNotFound(name);
+        }
+        return converted;
     }
 
     private static NoSuchElementException propertyNotFound(final String name) {

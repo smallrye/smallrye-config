@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -40,6 +41,14 @@ public class CollectionBean {
     @ConfigProperty(name = "myPets", defaultValue = "dog,mouse")
     private Set<String> setPets;
 
+    @Inject
+    @ConfigProperty(name = "test.converter.stringList", defaultValue = "")
+    private Provider<List<String>> listWithEmptyDefault;
+
+    @Inject
+    @ConfigProperty(name = "test.converter.stringList2")
+    private Provider<List<String>> listWithNoDefault;
+
     public String[] getArrayPets() {
         return arrayPets;
     }
@@ -50,5 +59,13 @@ public class CollectionBean {
 
     public Set<String> getSetPets() {
         return setPets;
+    }
+
+    public Provider<List<String>> getListWithEmptyDefault() {
+        return listWithEmptyDefault;
+    }
+
+    public Provider<List<String>> getListWithNoDefault() {
+        return listWithNoDefault;
     }
 }
