@@ -18,11 +18,13 @@ package io.smallrye.config.test.collections;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -77,5 +79,20 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
         assertNotNull(setPets);
         assertEquals(setPets.size(), 2);
         assertEquals(setPets, new HashSet<>(Arrays.asList("snake", "ox")));
+    }
+
+    @Test
+    public void testCollectionWithMissingValues() {
+        try {
+            bean.getListWithEmptyDefault().get();
+            fail("Expected NoSuchElementException");
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            bean.getListWithNoDefault().get();
+            fail("Expected NoSuchElementException");
+        } catch (NoSuchElementException expected) {
+        }
     }
 }
