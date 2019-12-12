@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.Default;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -92,10 +93,12 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             ParameterizedType paramType = (ParameterizedType) annotated.getBaseType();
             Type rawType = paramType.getRawType();
 
-            // handle Provider<T>
-            if (rawType instanceof Class && ((Class) rawType).isAssignableFrom(Provider.class)
+            // handle Provider<T> and Instance<T>
+            if (rawType instanceof Class
+                    && (((Class<?>) rawType).isAssignableFrom(Provider.class)
+                            || ((Class<?>) rawType).isAssignableFrom(Instance.class))
                     && paramType.getActualTypeArguments().length == 1) {
-                Class paramTypeClass = (Class) paramType.getActualTypeArguments()[0];
+                Class<?> paramTypeClass = (Class<?>) paramType.getActualTypeArguments()[0];
                 return (T) getConfig().getValue(key, paramTypeClass);
             }
         } else {
