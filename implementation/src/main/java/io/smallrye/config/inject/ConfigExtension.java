@@ -21,9 +21,9 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
@@ -33,6 +33,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -50,39 +51,44 @@ public class ConfigExtension implements Extension {
     public ConfigExtension() {
     }
 
-    private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
+    void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
         AnnotatedType<ConfigProducer> configBean = bm.createAnnotatedType(ConfigProducer.class);
         bbd.addAnnotatedType(configBean, ConfigProducer.class.getName());
     }
 
-    public void collectConfigProducer(@Observes ProcessInjectionPoint<?, ?> pip) {
-        ConfigProperty configProperty = pip.getInjectionPoint().getAnnotated().getAnnotation(ConfigProperty.class);
-        if (configProperty != null) {
+    void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
+        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
             injectionPoints.add(pip.getInjectionPoint());
         }
     }
 
-    public void registerConfigProducer(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-        // excludes type that are already produced by ConfigProducer
-        Set<Class<?>> types = injectionPoints.stream()
-                .filter(ip -> ip.getType() instanceof Class
-                        && ip.getType() != String.class
-                        && ip.getType() != Boolean.class
-                        && ip.getType() != Boolean.TYPE
-                        && ip.getType() != Integer.class
-                        && ip.getType() != Integer.TYPE
-                        && ip.getType() != Long.class
-                        && ip.getType() != Long.TYPE
-                        && ip.getType() != Float.class
-                        && ip.getType() != Float.TYPE
-                        && ip.getType() != Double.class
-                        && ip.getType() != Double.TYPE)
-                .map(ip -> (Class<?>) ip.getType())
-                .collect(Collectors.toSet());
-        types.forEach(type -> abd.addBean(new ConfigInjectionBean(bm, type)));
+    void registerCustomBeans(@Observes AfterBeanDiscovery abd, BeanManager bm) {
+        Set<Class<?>> customTypes = new HashSet<>();
+        for (InjectionPoint ip : injectionPoints) {
+            Type requiredType = ip.getType();
+            if (requiredType instanceof ParameterizedType) {
+                ParameterizedType type = (ParameterizedType) requiredType;
+                // TODO We should probably handle all parameterized types correctly
+                if (type.getRawType().equals(Provider.class) || type.getRawType().equals(Instance.class)) {
+                    // These injection points are satisfied by the built-in Instance bean 
+                    Type typeArgument = type.getActualTypeArguments()[0];
+                    if (typeArgument instanceof Class && !isClassHandledByConfigProducer(typeArgument)) {
+                        customTypes.add((Class<?>) typeArgument);
+                    }
+                }
+            } else if (requiredType instanceof Class
+                    && !isClassHandledByConfigProducer(requiredType)) {
+                // type is not produced by ConfigProducer
+                customTypes.add((Class<?>) requiredType);
+            }
+        }
+
+        for (Class<?> customType : customTypes) {
+            abd.addBean(new ConfigInjectionBean(bm, customType));
+        }
     }
 
-    public void validate(@Observes AfterDeploymentValidation adv) {
+    void validate(@Observes AfterDeploymentValidation adv) {
 
         Config config = ConfigProvider.getConfig();
         for (InjectionPoint injectionPoint : injectionPoints) {
@@ -145,5 +151,19 @@ public class ConfigExtension implements Extension {
             }
         }
         throw new IllegalStateException("Could not find default name for @ConfigProperty InjectionPoint " + ip);
+    }
+
+    private static boolean isClassHandledByConfigProducer(Type requiredType) {
+        return requiredType == String.class
+                || requiredType == Boolean.class
+                || requiredType == Boolean.TYPE
+                || requiredType == Integer.class
+                || requiredType == Integer.TYPE
+                || requiredType == Long.class
+                || requiredType == Long.TYPE
+                || requiredType == Float.class
+                || requiredType == Float.TYPE
+                || requiredType == Double.class
+                || requiredType == Double.TYPE;
     }
 }
