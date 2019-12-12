@@ -59,3 +59,6 @@ client/shade/dependency-reduced-pom.xml
 
 # Zanata files
 **/.zanata-cache/
+
+# Jenv
+.java-version
