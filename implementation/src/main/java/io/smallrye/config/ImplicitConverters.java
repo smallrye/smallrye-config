@@ -39,18 +39,20 @@ class ImplicitConverters {
         // implicit converters required by the specification
         Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
         if (converter == null) {
-            converter = getConverterFromStaticMethod(clazz, "valueOf", String.class);
+            converter = getConverterFromStaticMethod(clazz, "of", CharSequence.class);
             if (converter == null) {
-                converter = getConverterFromConstructor(clazz, String.class);
+                converter = getConverterFromStaticMethod(clazz, "valueOf", String.class);
                 if (converter == null) {
-                    converter = getConverterFromStaticMethod(clazz, "parse", CharSequence.class);
+                    converter = getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class);
                     if (converter == null) {
-                        // additional implicit converters
-                        converter = getConverterFromConstructor(clazz, CharSequence.class);
+                        converter = getConverterFromStaticMethod(clazz, "parse", String.class);
                         if (converter == null) {
-                            converter = getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class);
+                            converter = getConverterFromStaticMethod(clazz, "parse", CharSequence.class);
                             if (converter == null) {
-                                converter = getConverterFromStaticMethod(clazz, "parse", String.class);
+                                converter = getConverterFromConstructor(clazz, String.class);
+                                if (converter == null) {
+                                    converter = getConverterFromConstructor(clazz, CharSequence.class);
+                                }
                             }
                         }
                     }
