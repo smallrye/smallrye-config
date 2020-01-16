@@ -56,4 +56,11 @@ public class BasicTest {
 
         Assert.assertEquals("cat\\,dog,mouse\\,rat,chicken\\,turkey", src.getValue("foo.bar"));
     }
+
+    @Test
+    public void testEmptyFile() {
+        String yaml = "";
+        ConfigSource src = new YamlConfigSource("Yaml", yaml);
+        Assert.assertNotNull("Should create config source for empty file correctly", src);
+    }
 }

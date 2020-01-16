@@ -72,6 +72,9 @@ public class YamlConfigSource extends MapBackedConfigSource {
     }
 
     private static void populateFromMapNode(Map<String, String> properties, StringBuilder keyBuilder, Map<String, Object> o) {
+        if (o == null)
+            return;
+
         int len = keyBuilder.length();
         for (String nestedKey : o.keySet()) {
             if (nestedKey != null) {
