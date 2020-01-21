@@ -18,6 +18,7 @@ package io.smallrye.config;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -115,6 +116,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     @Override
     public SmallRyeConfigBuilder withSources(ConfigSource... configSources) {
         Collections.addAll(sources, configSources);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withSources(Collection<ConfigSource> configSources) {
+        sources.addAll(configSources);
         return this;
     }
 
