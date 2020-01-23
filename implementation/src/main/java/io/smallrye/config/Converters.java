@@ -118,6 +118,9 @@ public final class Converters {
     static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
             newTrimmingConverter(newEmptyValueConverter(Short::valueOf)));
 
+    static final Converter<Byte> BYTE_CONVERTER = BuiltInConverter.of(13,
+            newTrimmingConverter(newEmptyValueConverter(Byte::valueOf)));
+
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
@@ -151,6 +154,8 @@ public final class Converters {
         ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
         ALL_CONVERTERS.put(Character.TYPE, CHARACTER_CONVERTER);
 
+        ALL_CONVERTERS.put(Byte.class, BYTE_CONVERTER);
+        ALL_CONVERTERS.put(Byte.TYPE, BYTE_CONVERTER);
     }
 
     /**
@@ -848,6 +853,8 @@ public final class Converters {
                     return CHARACTER_CONVERTER;
                 case 12:
                     return SHORT_CONVERTER;
+                case 13:
+                    return BYTE_CONVERTER;
                 default:
                     throw new InvalidObjectException("Unknown converter ID");
             }
