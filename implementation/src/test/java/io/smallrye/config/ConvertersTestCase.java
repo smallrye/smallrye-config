@@ -311,6 +311,14 @@ public class ConvertersTestCase {
         assertEquals("Unexpected value for short config", expected, (short) config.getValue("simple.short", Short.TYPE));
     }
 
+    @Test
+    public void testByte() {
+        final SmallRyeConfig config = buildConfig("simple.byte", "2");
+        final byte expected = 2;
+        assertEquals("Unexpected value for byte config", expected, (byte) config.getValue("simple.byte", Byte.class));
+        assertEquals("Unexpected value for byte config", expected, (byte) config.getValue("simple.byte", Byte.TYPE));
+    }
+
     @SafeVarargs
     private static <T> T[] array(T... items) {
         return items;
