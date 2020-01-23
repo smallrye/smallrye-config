@@ -164,6 +164,12 @@ public class ConfigExtension implements Extension {
                 || requiredType == Float.class
                 || requiredType == Float.TYPE
                 || requiredType == Double.class
-                || requiredType == Double.TYPE;
+                || requiredType == Double.TYPE
+                || requiredType == Short.class
+                || requiredType == Short.TYPE
+                || requiredType == Byte.class
+                || requiredType == Byte.TYPE
+                || requiredType == Character.class
+                || requiredType == Character.TYPE;
     }
 }
