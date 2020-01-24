@@ -36,6 +36,9 @@ public class ConfigProducerUtil {
         if (name == null) {
             return null;
         }
+        if (isNullValue(injectionPoint)) {
+            return null;
+        }
         final SmallRyeConfig src = (SmallRyeConfig) config;
         Converter<T> converter = resolveConverter(injectionPoint, src);
         String rawValue = src.getRawValue(name);
@@ -129,5 +132,17 @@ public class ConfigProducerUtil {
             }
         }
         return null;
+    }
+
+    private static boolean isNullValue(InjectionPoint injectionPoint) {
+        for (Annotation qualifier : injectionPoint.getQualifiers()) {
+            if (qualifier.annotationType().equals(ConfigProperty.class)) {
+                String str = ((ConfigProperty) qualifier).defaultValue();
+                if (ConfigProperty.NULL_VALUE.equals(str)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
