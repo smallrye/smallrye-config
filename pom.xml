@@ -34,7 +34,7 @@
   <url>http://smallrye.io</url>
 
   <properties>
-    <version.eclipse.microprofile.config>1.3</version.eclipse.microprofile.config>
+    <version.eclipse.microprofile.config>1.4-RC3</version.eclipse.microprofile.config>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
