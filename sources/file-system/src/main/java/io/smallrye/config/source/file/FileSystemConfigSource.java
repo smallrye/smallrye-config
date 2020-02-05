@@ -77,12 +77,13 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
 
     private static Map<String, String> scan(File directory) {
         if (directory != null && directory.isDirectory()) {
-            try (Stream<Path> stream = Files.walk(directory.toPath())) {
+            try (Stream<Path> stream = Files.walk(directory.toPath(), 1)) {
 
                 return stream.filter(p -> p.toFile().isFile())
                         .collect(Collectors.toMap(it -> it.getFileName().toString(), FileSystemConfigSource::readContent));
             } catch (Exception e) {
-                LOG.warnf("Unable to read content from file %s", directory.getAbsolutePath());
+                LOG.warnf("Unable to read content from file %s. Exception: %s", directory.getAbsolutePath(),
+                        e.getLocalizedMessage());
             }
         }
         return Collections.emptyMap();
