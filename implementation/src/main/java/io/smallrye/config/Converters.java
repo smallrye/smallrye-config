@@ -121,28 +121,24 @@ public final class Converters {
     static final Converter<Byte> BYTE_CONVERTER = BuiltInConverter.of(13,
             newTrimmingConverter(newEmptyValueConverter(Byte::valueOf)));
 
+    static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
+
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
         ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
 
         ALL_CONVERTERS.put(Boolean.class, BOOLEAN_CONVERTER);
-        ALL_CONVERTERS.put(Boolean.TYPE, BOOLEAN_CONVERTER);
 
         ALL_CONVERTERS.put(Double.class, DOUBLE_CONVERTER);
-        ALL_CONVERTERS.put(Double.TYPE, DOUBLE_CONVERTER);
 
         ALL_CONVERTERS.put(Float.class, FLOAT_CONVERTER);
-        ALL_CONVERTERS.put(Float.TYPE, FLOAT_CONVERTER);
 
         ALL_CONVERTERS.put(Long.class, LONG_CONVERTER);
-        ALL_CONVERTERS.put(Long.TYPE, LONG_CONVERTER);
 
         ALL_CONVERTERS.put(Integer.class, INTEGER_CONVERTER);
-        ALL_CONVERTERS.put(Integer.TYPE, INTEGER_CONVERTER);
 
         ALL_CONVERTERS.put(Short.class, SHORT_CONVERTER);
-        ALL_CONVERTERS.put(Short.TYPE, SHORT_CONVERTER);
 
         ALL_CONVERTERS.put(Class.class, CLASS_CONVERTER);
         ALL_CONVERTERS.put(InetAddress.class, INET_ADDRESS_CONVERTER);
@@ -152,10 +148,29 @@ public final class Converters {
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
 
         ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
-        ALL_CONVERTERS.put(Character.TYPE, CHARACTER_CONVERTER);
 
         ALL_CONVERTERS.put(Byte.class, BYTE_CONVERTER);
-        ALL_CONVERTERS.put(Byte.TYPE, BYTE_CONVERTER);
+
+        Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
+        primitiveTypes.put(byte.class, Byte.class);
+        primitiveTypes.put(short.class, Short.class);
+        primitiveTypes.put(int.class, Integer.class);
+        primitiveTypes.put(long.class, Long.class);
+
+        primitiveTypes.put(float.class, Float.class);
+        primitiveTypes.put(double.class, Double.class);
+
+        primitiveTypes.put(char.class, Character.class);
+
+        primitiveTypes.put(boolean.class, Boolean.class);
+
+        primitiveTypes.put(void.class, Void.class);
+        PRIMITIVE_TYPES = primitiveTypes;
+    }
+
+    static Class<?> wrapPrimitiveType(Class<?> primitiveType) {
+        assert primitiveType.isPrimitive();
+        return PRIMITIVE_TYPES.get(primitiveType);
     }
 
     /**
