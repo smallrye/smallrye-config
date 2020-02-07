@@ -190,6 +190,9 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @SuppressWarnings("unchecked")
     public <T> Converter<T> getConverter(Class<T> asType) {
+        if (asType.isPrimitive()) {
+            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(asType));
+        }
         if (asType.isArray()) {
             return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
         }
