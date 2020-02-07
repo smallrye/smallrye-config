@@ -15,7 +15,7 @@ To use the Zookeeper MicroProfile Config source, add the following to your Maven
 <dependency>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-source-zookeeper</artifactId>
-    <version>1.3.10-SNAPSHOT</version>
+    <version>1.6.1-SNAPSHOT</version>
 </dependency>
 ```
 
