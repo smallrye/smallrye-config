@@ -1,5 +1,6 @@
 :microprofile-config: https://github.com/eclipse/microprofile-config/
 
+image:https://github.com/smallrye/smallrye-config/workflows/SmallRye%20CI/badge.svg?branch=master[link="https://github.com/smallrye/smallrye-config/actions?query=workflow%3A%22SmallRye+CI%22"]
 image:https://semaphoreci.com/api/v1/smallrye/smallrye-config/branches/master/badge.svg["Semaphore CI", link="https://semaphoreci.com/smallrye/smallrye-config"]
 image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-config&metric=alert_status["Quality Gate Status", link="https://sonarcloud.io/dashboard?id=smallrye_smallrye-config"]
 image:https://img.shields.io/github/license/smallrye/smallrye-config.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
