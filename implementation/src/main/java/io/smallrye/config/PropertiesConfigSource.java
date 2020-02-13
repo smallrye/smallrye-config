@@ -46,6 +46,10 @@ public class PropertiesConfigSource extends MapBackedConfigSource {
         super(NAME_PREFIX + source + "]", ConfigSourceUtil.propertiesToMap(properties));
     }
 
+    public PropertiesConfigSource(Properties properties, String source, int ordinal) {
+        this(ConfigSourceUtil.propertiesToMap(properties),NAME_PREFIX + source + "]", ordinal);
+    }
+
     public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
         super(NAME_PREFIX + source + "]", properties, ordinal);
     }

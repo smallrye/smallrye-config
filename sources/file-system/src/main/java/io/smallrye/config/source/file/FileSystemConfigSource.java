@@ -75,11 +75,24 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
         super("DirConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir), ordinal);
     }
 
-    private static Map<String, String> scan(File directory) {
+    /**
+     * Construct a new instance
+     *
+     * @param dir the directory, containing configuration files
+     * @param ordinal the ordinal value
+     * @param excludedExtensions array of extensions to be excluded.
+     */
+    public FileSystemConfigSource(File dir, int ordinal, String... excludedExtensions) {
+        super("DirConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir, excludedExtensions), ordinal);
+    }
+
+    private static Map<String, String> scan(File directory, String... excludedExtensions) {
         if (directory != null && directory.isDirectory()) {
             try (Stream<Path> stream = Files.walk(directory.toPath(), 1)) {
 
-                return stream.filter(p -> p.toFile().isFile())
+                return stream
+                        .filter(p -> p.toFile().isFile())
+                        .filter(p -> isValidExtension(p, excludedExtensions))
                         .collect(Collectors.toMap(it -> it.getFileName().toString(), FileSystemConfigSource::readContent));
             } catch (Exception e) {
                 LOG.warnf("Unable to read content from file %s. Exception: %s", directory.getAbsolutePath(),
@@ -87,6 +100,15 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
             }
         }
         return Collections.emptyMap();
+    }
+
+    private static boolean isValidExtension(final Path path, String... excludedExtensions) {
+        for (String excludedExtension : excludedExtensions) {
+            if (path.toString().toLowerCase().endsWith(excludedExtension.toLowerCase())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String readContent(Path file) {

@@ -17,6 +17,7 @@
 package io.smallrye.config.source.file;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -41,5 +42,20 @@ public class FileSystemConfigSourceTestCase {
 
         assertEquals("myValue1", configSource.getValue("myKey1"));
         assertEquals("true", configSource.getValue("myKey2"));
+        assertEquals("a=b", configSource.getValue("conf.properties"));
+    }
+
+    @Test
+    public void testConfigSourceExcludeFileExtensions() throws URISyntaxException {
+        URL configDirURL = this.getClass().getResource("configDir");
+        File dir = new File(configDirURL.toURI());
+
+        ConfigSource configSource = new FileSystemConfigSource(dir, ConfigSource.DEFAULT_ORDINAL, ".properties");
+
+        assertEquals(4567, configSource.getOrdinal());
+
+        assertEquals("myValue1", configSource.getValue("myKey1"));
+        assertEquals("true", configSource.getValue("myKey2"));
+        assertNull(configSource.getValue("conf.properties"));
     }
 }

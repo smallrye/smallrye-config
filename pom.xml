@@ -67,6 +67,7 @@
     <module>sources/file-system</module>
     <module>sources/yaml</module>
     <module>sources/zookeeper</module>
+    <module>sources/kubernetes</module>
     <module>converters/json</module>
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
@@ -139,6 +140,16 @@
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-source-zookeeper</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-yaml</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-source-kubernetes</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
