@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config;
+package io.smallrye.config.inject;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
