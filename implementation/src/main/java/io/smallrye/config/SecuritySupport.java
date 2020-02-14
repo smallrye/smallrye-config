@@ -30,21 +30,24 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
-public class SecuritySupport {
+class SecuritySupport {
 
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
-    public static ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
-            ClassLoader tccl = null;
-            try {
-                tccl = Thread.currentThread().getContextClassLoader();
-            }
-            catch (SecurityException ex) {
-                LOG.warn("Unable to get context classloader instance.", ex);
-            }
-            return tccl;
-        });
+    static ClassLoader getContextClassLoader() {
+        if (System.getSecurityManager() == null) {
+            return Thread.currentThread().getContextClassLoader();
+        } else {
+            return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
+                ClassLoader tccl = null;
+                try {
+                    tccl = Thread.currentThread().getContextClassLoader();
+                } catch (SecurityException ex) {
+                    LOG.warn("Unable to get context classloader instance.", ex);
+                }
+                return tccl;
+            });
+        }
     }
 
 }

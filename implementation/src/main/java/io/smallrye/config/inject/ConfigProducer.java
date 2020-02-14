@@ -25,9 +25,13 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import static io.smallrye.config.SecuritySupport.getContextClassLoader;
+import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 
 /**
  * CDI producer for {@link Config} bean.
