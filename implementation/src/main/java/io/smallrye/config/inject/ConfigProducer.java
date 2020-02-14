@@ -16,7 +16,7 @@
 
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.SecuritySupport.getContextClassLoader;
+import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 
 import java.io.Serializable;
 import java.util.*;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.smallrye.config;
+package io.smallrye.config.inject;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -25,8 +25,10 @@ import org.jboss.logging.Logger;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
 class SecuritySupport {
-
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
+
+    private SecuritySupport() {
+    }
 
     static ClassLoader getContextClassLoader() {
         if (System.getSecurityManager() == null) {
