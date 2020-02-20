@@ -15,10 +15,10 @@
  */
 package io.smallrye.config;
 
-import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,13 +65,13 @@ class ImplicitConverters {
     private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
         try {
             final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
-            if (!declaredConstructor.isAccessible()) {
+            if (!isAccessible(declaredConstructor)) {
                 declaredConstructor.setAccessible(true);
             }
             return new ConstructorConverter<>(declaredConstructor);
         } catch (NoSuchMethodException e) {
+            return null;
         }
-        return null;
     }
 
     private static <T> Converter<T> getConverterFromStaticMethod(Class<? extends T> clazz, String methodName,
@@ -82,15 +82,21 @@ class ImplicitConverters {
                 // doesn't meet requirements of the spec
                 return null;
             }
-            if (!method.isAccessible()) {
+            if (!Modifier.isStatic(method.getModifiers())) {
+                return null;
+            }
+            if (!isAccessible(method)) {
                 method.setAccessible(true);
             }
-            if (Modifier.isStatic(method.getModifiers())) {
-                return new StaticMethodConverter<>(clazz, method);
-            }
+            return new StaticMethodConverter<>(clazz, method);
         } catch (NoSuchMethodException e) {
+            return null;
         }
-        return null;
+    }
+
+    private static boolean isAccessible(Executable e) {
+        return Modifier.isPublic(e.getModifiers()) && Modifier.isPublic(e.getDeclaringClass().getModifiers()) ||
+                e.isAccessible();
     }
 
     static class StaticMethodConverter<T> implements Converter<T>, Serializable {
@@ -126,7 +132,9 @@ class ImplicitConverters {
             private static final long serialVersionUID = -6334004040897615452L;
 
             private final Class<?> c;
+            @SuppressWarnings("unused")
             private final String m;
+            @SuppressWarnings("unused")
             private final Class<?> p;
 
             Serialized(final Class<?> c, final String m, final Class<?> p) {
@@ -136,26 +144,7 @@ class ImplicitConverters {
             }
 
             Object readResolve() throws ObjectStreamException {
-                if (!p.isAssignableFrom(String.class)) {
-                    throw new InvalidObjectException("Invalid parameter type");
-                }
-                final Method method;
-                try {
-                    method = c.getMethod(m, p);
-                } catch (NoSuchMethodException e) {
-                    throw new InvalidObjectException("No matching method found");
-                }
-                if (c != method.getReturnType()) {
-                    // doesn't meet requirements of the spec
-                    throw new InvalidObjectException("Deserialized method has invalid return type");
-                }
-                if (!method.isAccessible()) {
-                    throw new InvalidObjectException("Deserialized method is not accessible");
-                }
-                if (!Modifier.isStatic(method.getModifiers())) {
-                    throw new InvalidObjectException("Non static method " + method);
-                }
-                return new StaticMethodConverter<>(method.getReturnType(), method);
+                return getConverter(c);
             }
         }
     }
@@ -190,6 +179,7 @@ class ImplicitConverters {
             private static final long serialVersionUID = -2903564775826815453L;
 
             private final Class<?> c;
+            @SuppressWarnings("unused")
             private final Class<?> p;
 
             Serialized(final Class<?> c, final Class<?> p) {
@@ -198,20 +188,7 @@ class ImplicitConverters {
             }
 
             Object readResolve() throws ObjectStreamException {
-                if (!p.isAssignableFrom(String.class)) {
-                    throw new InvalidObjectException("Invalid parameter type");
-                }
-                final Constructor<?> ctor;
-                try {
-                    ctor = c.getConstructor(p);
-                } catch (NoSuchMethodException e) {
-                    throw new InvalidObjectException("No matching constructor found");
-                }
-                if (!(Modifier.isPublic(ctor.getDeclaringClass().getModifiers()) && Modifier.isPublic(ctor.getModifiers())
-                        || ctor.isAccessible())) {
-                    throw new InvalidObjectException("Deserialized constructor is not accessible");
-                }
-                return new ConstructorConverter<>(ctor);
+                return getConverter(c);
             }
         }
     }
