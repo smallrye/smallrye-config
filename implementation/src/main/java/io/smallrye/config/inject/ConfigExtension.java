@@ -20,6 +20,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import javax.enterprise.event.Observes;
@@ -170,6 +173,9 @@ public class ConfigExtension implements Extension {
                 || requiredType == Byte.class
                 || requiredType == Byte.TYPE
                 || requiredType == Character.class
-                || requiredType == Character.TYPE;
+                || requiredType == Character.TYPE
+                || requiredType == OptionalInt.class
+                || requiredType == OptionalLong.class
+                || requiredType == OptionalDouble.class;
     }
 }
