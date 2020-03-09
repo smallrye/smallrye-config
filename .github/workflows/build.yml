@@ -1,6 +1,20 @@
-name: SmallRye CI
+name: SmallRye Build
 
-on: [push,pull_request]
+on:
+  push:
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - 'NOTICE'
+      - 'README*'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - 'NOTICE'
+      - 'README*'
 
 jobs:
   build:

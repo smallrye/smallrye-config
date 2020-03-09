@@ -167,6 +167,22 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>${version.release.plugin}</version>
+        <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <tagNameFormat>@{project.version}</tagNameFormat>
+          <preparationGoals>verify</preparationGoals>
+          <pushChanges>false</pushChanges>
+          <localCheckout>true</localCheckout>
+          <remoteTagging>false</remoteTagging>
+          <arguments>-DskipTests ${release.arguments}</arguments>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
   <profiles>

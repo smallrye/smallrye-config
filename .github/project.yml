@@ -1,0 +1,4 @@
+name: SmallRye Config
+release:
+  current-version: 1.6.2
+  next-version: 1.7.0-SNAPSHOT

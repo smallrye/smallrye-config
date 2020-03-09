@@ -1,0 +1,48 @@
+name: SmallRye Release
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - '.github/project.yml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: release
+    if: ${{github.event.pull_request.merged == true}}
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_RELEASE_TOKEN}}
+
+    steps:
+      - uses: radcortez/project-metadata-action@master
+        name: retrieve project metadata
+        id: metadata
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          metadata-file-path: '.github/project.yml'
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{secrets.GITHUB_RELEASE_TOKEN}}
+
+      - name: maven release ${{steps.metadata.outputs.current-version}}
+        run: |
+          gpg2 --quiet --batch --yes --decrypt --passphrase="${secrets.SECRET_PASSPHRASE}" --output smallrye-sign.asc .github/release/smallrye-sign.asc.gpg
+          gpg2 --quiet --batch --yes --decrypt --passphrase="${secrets.SECRET_PASSPHRASE}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
+          gpg2 --fast-import --no-tty --batch --yes smallrye-sign.asc
+          git config --global user.name "SmallRye CI"
+          git config --global user.email "smallrye@googlegroups.com"
+          git checkout -b release
+          mvn -B release:prepare -Prelease -DreleaseVersion=${{steps.metadata.outputs.current-version}} -s maven-settings.xml
+          git checkout master
+          git rebase release
+          mvn -B release:perform -Prelease -s maven-settings.xml
+          git push
+          git push --tags
+
+      - uses: radcortez/milestone-release-action@master
+        name: milestone release
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          milestone-title: ${{steps.metadata.outputs.current-version}}
