@@ -119,7 +119,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 escapeMapKey(valueBuilder, entry.getKey(), escapeLevel + 1);
                 appendEscaped(valueBuilder, '=', escapeLevel);
-                populateFromEntryNode(valueBuilder, o, escapeLevel + 1);
+                populateFromEntryNode(valueBuilder, entry.getValue(), escapeLevel + 1);
             }
         } else if (o instanceof List) {
             final Iterator<?> iterator = ((List<?>) o).iterator();
