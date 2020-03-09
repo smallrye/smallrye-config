@@ -19,7 +19,7 @@ jobs:
         name: retrieve project metadata
         id: metadata
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.GITHUB_RELEASE_TOKEN}}
           metadata-file-path: '.github/project.yml'
 
       - uses: actions/checkout@v2
@@ -44,5 +44,5 @@ jobs:
       - uses: radcortez/milestone-release-action@master
         name: milestone release
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.GITHUB_RELEASE_TOKEN}}
           milestone-title: ${{steps.metadata.outputs.current-version}}
