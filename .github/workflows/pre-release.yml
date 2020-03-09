@@ -15,11 +15,11 @@ jobs:
         name: retrieve project metadata
         id: metadata
         with:
-          github-token: ${{secrets.GITHUB_RELEASE_TOKEN}}
+          github-token: ${{secrets.GITHUB_TOKEN}}
           metadata-file-path: '.github/project.yml'
 
       - uses: radcortez/milestone-review-action@master
         name: milestone review
         with:
-          github-token: ${{secrets.GITHUB_RELEASE_TOKEN}}
+          github-token: ${{secrets.GITHUB_TOKEN}}
           milestone-title: ${{steps.metadata.outputs.current-version}}
