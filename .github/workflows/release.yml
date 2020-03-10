@@ -28,8 +28,8 @@ jobs:
 
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
-          gpg2 --quiet --batch --yes --decrypt --passphrase="${secrets.SECRET_PASSPHRASE}" --output smallrye-sign.asc .github/release/smallrye-sign.asc.gpg
-          gpg2 --quiet --batch --yes --decrypt --passphrase="${secrets.SECRET_PASSPHRASE}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
+          gpg2 --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output smallrye-sign.asc .github/release/smallrye-sign.asc.gpg
+          gpg2 --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           gpg2 --fast-import --no-tty --batch --yes smallrye-sign.asc
           git config --global user.name "SmallRye CI"
           git config --global user.email "smallrye@googlegroups.com"
