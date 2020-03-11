@@ -26,8 +26,13 @@ jobs:
         with:
           token: ${{secrets.GITHUB_RELEASE_TOKEN}}
 
+      - uses: actions/setup-java@v1.3.0
+        with:
+          java-version: 8
+
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
+          java -version
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output smallrye-sign.asc .github/release/smallrye-sign.asc.gpg
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           gpg --fast-import --no-tty --batch --yes smallrye-sign.asc
