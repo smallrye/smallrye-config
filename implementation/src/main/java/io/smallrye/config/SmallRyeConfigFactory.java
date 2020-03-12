@@ -9,7 +9,8 @@ package io.smallrye.config;
  * {@link RuntimePermission} on instantiation if a security manager is present.
  * <p>
  * The default implementation will create and configure a configuration with the set of discovered
- * configuration sources and the set of discovered configuration converters from the given class loader.
+ * configuration sources, the set of discovered configuration converters and the set of discoverd interceptors
+ * from the given class loader.
  */
 public abstract class SmallRyeConfigFactory {
     /**
@@ -53,6 +54,7 @@ public abstract class SmallRyeConfigFactory {
                     .addDefaultSources()
                     .addDiscoveredSources()
                     .addDiscoveredConverters()
+                    .addDiscoveredInterceptors()
                     .build();
         }
     }
