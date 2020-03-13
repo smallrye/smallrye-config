@@ -68,28 +68,28 @@ public class ConvertersStringCleanupTestCase<T> {
     @Test
     public void testSimple() {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(string));
     }
 
     @Test
     public void testTrailingSpace() {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(string + " "));
     }
 
     @Test
     public void testLeadingSpace() {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(" " + string));
     }
 
     @Test
     public void testLeadingAndTrailingWhitespaces() {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(" \t " + string + "\t\t "));
     }
 
