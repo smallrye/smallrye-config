@@ -129,7 +129,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     // no @Override
     public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
-        return getValues(name, getConverter(itemClass), collectionFactory);
+        return getValues(name, requireConverter(itemClass), collectionFactory);
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
@@ -138,7 +138,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T getValue(String name, Class<T> aClass) {
-        return getValue(name, getConverter(aClass));
+        return getValue(name, requireConverter(aClass));
     }
 
     @SuppressWarnings("unchecked")
@@ -212,7 +212,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
             IntFunction<C> collectionFactory) {
-        return getOptionalValues(name, getConverter(itemClass), collectionFactory);
+        return getOptionalValues(name, requireConverter(itemClass), collectionFactory);
     }
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
@@ -259,34 +259,47 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> T convert(String value, Class<T> asType) {
-        return value != null ? getConverter(asType).convert(value) : null;
+        return value != null ? requireConverter(asType).convert(value) : null;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
         return optionalConverters.computeIfAbsent(asType,
-                clazz -> Converters.newOptionalConverter(getConverter((Class) clazz)));
+                clazz -> Converters.newOptionalConverter(requireConverter((Class) clazz)));
+    }
+
+    @Deprecated // binary-compatibility bridge method for Quarkus
+    public <T> Converter<T> getConverter$$bridge(Class<T> asType) {
+        return requireConverter(asType);
+    }
+
+    // @Override // in MP Config 2.0+
+    public <T> Optional<Converter<T>> getConverter(Class<T> asType) {
+        return Optional.ofNullable(getConverterOrNull(asType));
+    }
+
+    <T> Converter<T> requireConverter(final Class<T> asType) {
+        final Converter<T> conv = getConverterOrNull(asType);
+        if (conv == null) {
+            throw ConfigMessages.msg.noRegisteredConverter(asType);
+        }
+        return conv;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Converter<T> getConverter(Class<T> asType) {
+    <T> Converter<T> getConverterOrNull(Class<T> asType) {
         final Converter<?> exactConverter = converters.get(asType);
         if (exactConverter != null) {
             return (Converter<T>) exactConverter;
         }
         if (asType.isPrimitive()) {
-            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(asType));
+            return (Converter<T>) getConverterOrNull(Converters.wrapPrimitiveType(asType));
         }
         if (asType.isArray()) {
-            return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
+            final Converter<?> conv = getConverterOrNull(asType.getComponentType());
+            return conv == null ? null : Converters.newArrayConverter(conv, asType);
         }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
-            final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
-            if (conv == null) {
-                throw ConfigMessages.msg.noRegisteredConverter(asType);
-            }
-            return conv;
-        });
+        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> ImplicitConverters.getConverter((Class<?>) clazz));
     }
 
     private static class ConfigSources implements Serializable {
