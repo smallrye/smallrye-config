@@ -35,6 +35,7 @@
 
   <properties>
     <version.eclipse.microprofile.config>1.4</version.eclipse.microprofile.config>
+    <version.smallrye.common>1.0.0</version.smallrye.common>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
@@ -104,6 +105,13 @@
             <artifactId>junit</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <!-- External SmallRye Dependencies -->
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-expression</artifactId>
+        <version>${version.smallrye.common}</version>
       </dependency>
 
       <!-- Dependencies provided by the project -->
