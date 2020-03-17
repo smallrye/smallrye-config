@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -34,7 +33,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -45,6 +43,9 @@ import javax.annotation.Priority;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.converters.config.SmallRyeConfigConverters;
+import io.smallrye.converters.config.SmallRyeConfigConvertersBuilder;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -65,21 +66,19 @@ public class SmallRyeConfig implements Config, Serializable {
     };
 
     private final AtomicReference<List<ConfigSource>> configSourcesRef;
-    private final Map<Type, Converter<?>> converters;
-    private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
+    private final SmallRyeConfigConverters converters;
     private final ConfigSourceInterceptorContext interceptorChain;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSourcesRef = buildConfigSources(builder);
-        this.interceptorChain = buildInterceptorChain(builder);
         this.converters = buildConverters(builder);
+        this.interceptorChain = buildInterceptorChain(builder);
     }
 
     @Deprecated
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
         this.configSourcesRef = new AtomicReference<>(Collections.unmodifiableList(configSources));
-        this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        this.converters.putAll(converters);
+        this.converters = new SmallRyeConfigConvertersBuilder().withConverters(converters).build();
         this.interceptorChain = buildInterceptorChain(new SmallRyeConfigBuilder());
     }
 
@@ -103,25 +102,14 @@ public class SmallRyeConfig implements Config, Serializable {
         return new AtomicReference<>(unmodifiableList(sourcesToBuild));
     }
 
-    private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
-        final Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>(builder.getConverters());
+    private SmallRyeConfigConverters buildConverters(final SmallRyeConfigBuilder builder) {
+        final SmallRyeConfigConvertersBuilder convertersBuilder = builder.getConvertersBuilder();
 
         if (builder.isAddDiscoveredConverters()) {
-            for (Converter converter : builder.discoverConverters()) {
-                Type type = Converters.getConverterType(converter.getClass());
-                if (type == null) {
-                    throw new IllegalStateException(
-                            "Can not add converter " + converter + " that is not parameterized with a type");
-                }
-                SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
-            }
+            convertersBuilder.withConverters(builder.discoverConverters());
         }
 
-        final ConcurrentHashMap<Type, Converter<?>> converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        convertersToBuild.forEach(
-                (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
-
-        return converters;
+        return convertersBuilder.build();
     }
 
     private ConfigSourceInterceptorContext buildInterceptorChain(final SmallRyeConfigBuilder builder) {
@@ -168,7 +156,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        return getValue(name, converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -223,7 +211,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
-        return getValue(name, Converters.newOptionalConverter(converter));
+        return getValue(name, converters.newOptionalConverter(converter));
     }
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
@@ -233,7 +221,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        return getOptionalValue(name, converters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -275,25 +263,16 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @SuppressWarnings("unchecked")
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
-        return optionalConverters.computeIfAbsent(asType,
-                clazz -> Converters.newOptionalConverter(getConverter((Class) clazz)));
+        return converters.getOptionalConverter(asType);
     }
 
     @SuppressWarnings("unchecked")
     public <T> Converter<T> getConverter(Class<T> asType) {
-        if (asType.isPrimitive()) {
-            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(asType));
-        }
-        if (asType.isArray()) {
-            return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
-        }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
-            final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
-            if (conv == null) {
-                throw new IllegalArgumentException("No Converter registered for " + asType);
-            }
-            return conv;
-        });
+        return converters.getConverter(asType);
+    }
+
+    public SmallRyeConfigConverters getConverters() {
+        return converters;
     }
 
     private static NoSuchElementException propertyNotFound(final String name) {

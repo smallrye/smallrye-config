@@ -16,23 +16,20 @@
 
 package io.smallrye.config;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-
-import javax.annotation.Priority;
 
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.converters.config.SmallRyeConfigConvertersBuilder;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -45,7 +42,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     // sources are not sorted by their ordinals
     private List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
-    private Map<Type, ConverterWithPriority> converters = new HashMap<>();
+    private SmallRyeConfigConvertersBuilder convertersBuilder = new SmallRyeConfigConvertersBuilder();
     private List<ConfigSourceInterceptor> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
@@ -144,20 +141,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
-        for (Converter<?> converter : converters) {
-            Type type = Converters.getConverterType(converter.getClass());
-            if (type == null) {
-                throw new IllegalStateException(
-                        "Can not add converter " + converter + " that is not parameterized with a type");
-            }
-            addConverter(type, getPriority(converter), converter, this.converters);
-        }
+        convertersBuilder.withConverters(converters);
         return this;
     }
 
     @Override
     public <T> SmallRyeConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
-        addConverter(type, priority, converter, converters);
+        convertersBuilder.withConverter(type, priority, converter);
         return this;
     }
 
@@ -165,29 +155,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     public SmallRyeConfigBuilder withWrapper(UnaryOperator<ConfigSource> wrapper) {
         sourceWrappers = sourceWrappers.andThen(wrapper);
         return this;
-    }
-
-    static void addConverter(Type type, Converter converter, Map<Type, ConverterWithPriority> converters) {
-        addConverter(type, getPriority(converter), converter, converters);
-    }
-
-    static void addConverter(Type type, int priority, Converter converter,
-            Map<Type, ConverterWithPriority> converters) {
-        // add the converter only if it has a higher priority than another converter for the same type
-        ConverterWithPriority oldConverter = converters.get(type);
-        int newPriority = getPriority(converter);
-        if (oldConverter == null || priority > oldConverter.priority) {
-            converters.put(type, new ConverterWithPriority(converter, newPriority));
-        }
-    }
-
-    private static int getPriority(Converter<?> converter) {
-        int priority = 100;
-        Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
-        if (priorityAnnotation != null) {
-            priority = priorityAnnotation.value();
-        }
-        return priority;
     }
 
     List<ConfigSource> getSources() {
@@ -199,8 +166,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return sourceWrappers;
     }
 
-    Map<Type, ConverterWithPriority> getConverters() {
-        return converters;
+    public SmallRyeConfigConvertersBuilder getConvertersBuilder() {
+        return convertersBuilder;
     }
 
     List<ConfigSourceInterceptor> getInterceptors() {
@@ -226,23 +193,5 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     @Override
     public SmallRyeConfig build() {
         return new SmallRyeConfig(this);
-    }
-
-    static class ConverterWithPriority {
-        private final Converter converter;
-        private final int priority;
-
-        private ConverterWithPriority(Converter converter, int priority) {
-            this.converter = converter;
-            this.priority = priority;
-        }
-
-        Converter getConverter() {
-            return converter;
-        }
-
-        int getPriority() {
-            return priority;
-        }
     }
 }

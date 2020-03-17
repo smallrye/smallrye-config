@@ -18,7 +18,6 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.Converters;
 import io.smallrye.config.SmallRyeConfig;
 
 /**
@@ -74,11 +73,13 @@ public class ConfigProducerUtil {
             ParameterizedType paramType = (ParameterizedType) type;
             Type[] typeArgs = paramType.getActualTypeArguments();
             if (rawType == List.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), ArrayList::new);
+                return (Converter<T>) src.getConverters().newCollectionConverter(resolveConverter(typeArgs[0], src),
+                        ArrayList::new);
             } else if (rawType == Set.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), HashSet::new);
+                return (Converter<T>) src.getConverters().newCollectionConverter(resolveConverter(typeArgs[0], src),
+                        HashSet::new);
             } else if (rawType == Optional.class) {
-                return (Converter<T>) Converters.newOptionalConverter(resolveConverter(typeArgs[0], src));
+                return (Converter<T>) src.getConverters().newOptionalConverter(resolveConverter(typeArgs[0], src));
             }
         }
         // just try the raw type

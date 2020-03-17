@@ -46,6 +46,10 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.smallrye.converters</groupId>
+      <artifactId>smallrye-config</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config-common</artifactId>
     </dependency>
