@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.util.NoSuchElementException;
 
@@ -12,16 +13,14 @@ public class ExpressionConfigSourceInterceptorTest {
     public void simpleExpression() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
-        final String value = config.getValue("expression", String.class);
-        assertEquals("1234", value);
+        assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
     public void multipleExpressions() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}${my.prop}");
 
-        final String value = config.getValue("expression", String.class);
-        assertEquals("12341234", value);
+        assertEquals("12341234", config.getValue("expression", String.class));
     }
 
     @Test
@@ -29,31 +28,53 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${${compose}}", "compose",
                 "my.prop");
 
-        final String value = config.getValue("expression", String.class);
-        assertEquals("1234", value);
+        assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
     public void defaultExpression() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:1234}");
 
-        final String value = config.getValue("expression", String.class);
-        assertEquals("1234", value);
+        assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void defaultComposedExpression() {
-        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:${compose}}", "compose", "1234");
+    public void defaultExpressionEmpty() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "12${my.prop:}34");
 
-        final String value = config.getValue("expression", String.class);
-        assertEquals("1234", value);
+        assertEquals("1234", config.getValue("expression", String.class));
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
+    public void defaultExpressionComposed() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:${compose}}", "compose", "1234");
+
+        assertEquals("1234", config.getValue("expression", String.class));
+    }
+
+    @Test
+    public void defaultExpressionComposedEmpty() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:${compose:}}", "my.prop", "1234");
+
+        assertEquals("1234", config.getValue("expression", String.class));
+    }
+
+    @Test
     public void noExpression() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop}");
 
-        config.getValue("expression", String.class);
+        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> config.getValue("expression", String.class));
+        assertEquals("Could not expand value my.prop in property expression", exception.getMessage());
+    }
+
+    @Test
+    public void noExpressionComposed() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop${compose}}");
+
+        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> config.getValue("expression", String.class));
+        assertEquals("Could not expand value compose in property expression", exception.getMessage());
     }
 
     @Test
