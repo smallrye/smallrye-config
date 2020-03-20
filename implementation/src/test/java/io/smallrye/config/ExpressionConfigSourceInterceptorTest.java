@@ -1,9 +1,10 @@
 package io.smallrye.config;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.NoSuchElementException;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class ExpressionConfigSourceInterceptorTest {
@@ -12,7 +13,7 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
         final String value = config.getValue("expression", String.class);
-        Assert.assertEquals("1234", value);
+        assertEquals("1234", value);
     }
 
     @Test
@@ -20,7 +21,7 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}${my.prop}");
 
         final String value = config.getValue("expression", String.class);
-        Assert.assertEquals("12341234", value);
+        assertEquals("12341234", value);
     }
 
     @Test
@@ -29,7 +30,7 @@ public class ExpressionConfigSourceInterceptorTest {
                 "my.prop");
 
         final String value = config.getValue("expression", String.class);
-        Assert.assertEquals("1234", value);
+        assertEquals("1234", value);
     }
 
     @Test
@@ -37,7 +38,15 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:1234}");
 
         final String value = config.getValue("expression", String.class);
-        Assert.assertEquals("1234", value);
+        assertEquals("1234", value);
+    }
+
+    @Test
+    public void defaultComposedExpression() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop:${compose}}", "compose", "1234");
+
+        final String value = config.getValue("expression", String.class);
+        assertEquals("1234", value);
     }
 
     @Test(expected = NoSuchElementException.class)
@@ -45,6 +54,19 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("expression", "${my.prop}");
 
         config.getValue("expression", String.class);
+    }
+
+    @Test
+    public void withoutExpansion() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}");
+
+        assertEquals("1234", config.getValue("expression", String.class));
+
+        Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
+        Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
+        Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
+
+        assertEquals("1234", config.getValue("expression", String.class));
     }
 
     private static Config buildConfig(String... keyValues) {
