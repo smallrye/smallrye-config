@@ -1,0 +1,26 @@
+[[hocon-config-source]]
+== HOCON Config Source
+
+ConfigSource implementation to support https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] file format.
+
+This Configuration Source will be looking for the following files in this order of priority:
+
+. `META-INF/microprofile-config.conf`
+. `WEB-INF/classes/META-INF/microprofile-config.conf`
+
+These configuration files have a lower priority than the default sources.
+
+=== Usage
+
+To use the HOCON Config Source, add the following to your Maven `pom.xml`:
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-source-hocon</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+This Config Source will automatically register with your application.
