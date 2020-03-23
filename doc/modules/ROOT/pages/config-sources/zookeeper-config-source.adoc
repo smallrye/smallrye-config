@@ -4,7 +4,7 @@
 Config Source implementation to support Apache Zookeeper.
 
 The benefits are that configurations can be shared across applications and a future version will allow applications to
-subscribe to updates to the conifiguration parameters.
+subscribe to updates to the configuration parameters.
 
 === Usage
 
@@ -21,7 +21,7 @@ To use the HOCON Config Source, add the following to your Maven `pom.xml`:
 
 This Config Source will automatically register with your application.
 
-You also need to boostrap your application with the location of your Zookeeper server and a unique identifier for your
+You also need to bootstrap your application with the location of your Zookeeper server and a unique identifier for your
 application. Add the following to `src/main/resources/META-INF/microprofile-config.properties` or create equivalent
 Environment Variables.
 
