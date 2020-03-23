@@ -1,0 +1,70 @@
+:doctype: book
+include::../attributes.adoc[]
+
+[[interceptors]]
+
+= Interceptors
+
+SmallRye Config provides an interceptor chain that allows you to hook into the Configuration Value resolution. This is
+useful to implement features like Property Substitution, Configuration Profiles, or just Logging to find out where
+the Config was loaded from.
+
+== Usage
+
+You can create your own interceptor by implementing the
+https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceInterceptor.java[ConfigSourceInterceptor]
+interface.
+
+The `ConfigSourceInterceptor` has a single method `ConfigValue getValue(ConfigSourceInterceptorContext context, String name)`
+to intercept the resolution of a configuration key. You can use the `ConfigSourceInterceptorContext` to proceed the
+interceptor chain. The chain can be short-circuited by returning your own instance of `ConfigValue`.
+
+The `ConfigValue` objects holds information about the key name, value, config source origin and ordinal.
+
+The Interceptor Chain is applied before any Conversion is performed on the Configuation.
+
+=== Registration
+
+You can register an interceptor in the interceptor chain by using the `ServiceLoader` mechanism and provide the
+implementation classes in a `META-INF/services/io.smallrye.config.ConfigSourceInterceptor` file.
+
+Alternatively, you can register interceptors via the Programmatic API in `SmallRyeConfigBuilder#withInterceptors`.
+
+=== Priority
+
+A ConfigSourceInterceptor implementation class can specify a priority by way of the standard `javax.annotation.Priority`
+annotation. If no priority is explicitly assigned, the default priority value of `100` is assumed. If multiple
+interceptors are registered with the same priority, then their execution order may be non deterministic.
+
+== Built-In Interceptors
+
+SmallRye Config provides the following built-in Interceptors:
+
+* <<expression-interceptor>>
+
+[[expression-interceptor]]
+=== ExpressionConfigSourceInterceptor
+
+The `ExpressionConfigSourceInterceptor` provides expression expansion on Configuration Values. An expression string is
+a mix of plain strings and expression segments, which are wrapped by the sequence `${ ... }`.
+
+For instance if you have the following configuration:
+
+[source,properties]
+----
+my.prop=1234
+expression=${my.prop}
+----
+
+Then the `expression` configuration will be resolved and expanded to the value `1234`.
+
+Additionally, the Expression Expansion engine supports the following segments:
+
+* `${expression:value}` - Provides a default value after the `:` if the expansion doesn't find a value.
+* `${my.prop${compose}}` - Composed expressions. Inner expressions are resolved first.
+* `${my.prop}${my.prop}` - Multiple expressions.
+
+If an expression cannot be expanded and no default is supplied a `NoSuchElementException` it thrown.
+
+The `ExpressionConfigSourceInterceptor` is not registered by default. You need to register it via the ServiceLoader
+mechanisn with your application.
