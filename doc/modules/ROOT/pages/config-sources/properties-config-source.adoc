@@ -1,0 +1,6 @@
+[[properties-config-source]]
+== Properties Config Source
+
+Creates a ConfigSource from Java `Properties` or `Map<String, String>` objects or a properties file (referenced by
+its URL). Check
+https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/PropertiesConfigSource.java[PropertiesConfigSource.java].

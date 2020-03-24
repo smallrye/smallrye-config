@@ -1,0 +1,41 @@
+[[zookeeper-config-source]]
+== ZooKeeper Config Source
+
+Config Source implementation to support Apache Zookeeper.
+
+The benefits are that configurations can be shared across applications and a future version will allow applications to
+subscribe to updates to the configuration parameters.
+
+=== Usage
+
+To use the HOCON Config Source, add the following to your Maven `pom.xml`:
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-source-zookeeper</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+This Config Source will automatically register with your application.
+
+You also need to bootstrap your application with the location of your Zookeeper server and a unique identifier for your
+application. Add the following to `src/main/resources/META-INF/microprofile-config.properties` or create equivalent
+Environment Variables.
+
+[source,properties]
+----
+io.smallrye.configsource.zookeeper.url=localhost:2181
+io.smallrye.configsource.zookeeper.applicationId=com.example.my-application
+----
+
+Any properties that are looked up via the Config API or Injected will be looked up in Zookeeper in addition to the
+default MicroProfile Config locations.
+
+The ConfigSource will store the following znodes in the specified Zookeeper server
+`/applicationId/propertyName = value`.
+
+This Config Source has a lower priority than the default Sources and thus *will not* override property files or
+Environment Variables.

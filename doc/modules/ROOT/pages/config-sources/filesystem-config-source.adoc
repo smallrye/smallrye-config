@@ -1,0 +1,43 @@
+[[filesystem-config-source]]
+== FileSystem Config Source
+
+Creates a ConfigSource that will look into a directory where each file corresponds to a property (the file name is
+the property key and its textual content is the property value).
+
+For example, if a directory structure looks like:
+
+[source]
+----
+foo/
+|__num.max
+|__num.size
+----
+
+A `new FileSystemConfigSource("foo")` will provide 2 properties:
+
+* num.max
+* num.size
+
+And their values is the file content.
+
+Nested directories are not supported.
+
+This Config Source can be used to read configuration from
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap[Kubernetes ConfigMap].
+
+=== Usage
+
+To use the FileSystem Config Source, add the following to your Maven `pom.xml`:
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-source-file-system</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+This Config Source is not automatically registered. This means that you also need to provide your own
+`ConfigSourceProvider` implementation and registration via `ServiceLoader` to use this Config Source like documented in
+MicroProfile Config `ConfigSource` specification.

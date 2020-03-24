@@ -1,0 +1,25 @@
+:doctype: book
+include::../attributes.adoc[]
+
+[[config-sources]]
+
+= Config Sources
+
+In addition to the default Config Sources specified by MicroProfile Config (Environment Variables, System Properties
+and `microprofile-config.properties` file), SmallRye Config provides the following additional Sources:
+
+* <<properties-config-source>>
+* <<filesystem-config-source>>
+* <<hocon-config-source>>
+* <<yaml-config-source>>
+* <<zookeeper-config-source>>
+
+include::properties-config-source.adoc[]
+
+include::filesystem-config-source.adoc[]
+
+include::hocon-config-source.adoc[]
+
+include::yaml-config-source.adoc[]
+
+include::zookeeper-config-source.adoc[]
