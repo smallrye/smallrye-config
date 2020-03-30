@@ -9,12 +9,15 @@ In addition to the default Config Sources specified by MicroProfile Config (Envi
 and `microprofile-config.properties` file), SmallRye Config provides the following additional Sources:
 
 * <<properties-config-source>>
+* <<configvalueproperties-config-source>>
 * <<filesystem-config-source>>
 * <<hocon-config-source>>
 * <<yaml-config-source>>
 * <<zookeeper-config-source>>
 
 include::properties-config-source.adoc[]
+
+include::configvalueproperties-config-source.adoc[]
 
 include::filesystem-config-source.adoc[]
 
