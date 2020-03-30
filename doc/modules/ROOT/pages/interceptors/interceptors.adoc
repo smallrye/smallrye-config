@@ -5,19 +5,19 @@ include::../attributes.adoc[]
 
 = Interceptors
 
-SmallRye Config provides an interceptor chain that allows you to hook into the Configuration Value resolution. This is
+SmallRye Config provides an interceptor chain that hooks into the Configuration Value resolution. This is
 useful to implement features like Property Substitution, Configuration Profiles, or just Logging to find out where
 the Config was loaded from.
 
 == Usage
 
-You can create your interceptor by implementing the
+An interceptor can be created by implementing the
 https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceInterceptor.java[ConfigSourceInterceptor]
 interface.
 
 The `ConfigSourceInterceptor` has a single method `ConfigValue getValue(ConfigSourceInterceptorContext context, String name)`
-to intercept the resolution of a configuration key. You can use the `ConfigSourceInterceptorContext` to proceed with
-the interceptor chain. The chain can be short-circuited by returning your instance of `ConfigValue`.
+to intercept the resolution of a configuration key. The `ConfigSourceInterceptorContext` is used to proceed with
+the interceptor chain. The chain can be short-circuited by returning an instance of `ConfigValue`.
 
 The `ConfigValue` objects hold information about the key name, value, config source origin and ordinal.
 
@@ -25,10 +25,16 @@ The Interceptor Chain is applied before any Conversion is performed on the Confi
 
 === Registration
 
-You can register an interceptor in the interceptor chain by using the `ServiceLoader` mechanism and provide the
+Registration of an interceptor in the interceptor chain is done via the `ServiceLoader` mechanism and provide the
 implementation classes in a `META-INF/services/io.smallrye.config.ConfigSourceInterceptor` file.
 
-Alternatively, you can register interceptors via the Programmatic API in `SmallRyeConfigBuilder#withInterceptors`.
+Registration can also be done with a `ConfigSourceInterceptorFactory`, via the`ServiceLoader` mechanism
+and provide the implementation class in a `META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory` file.
+The `ConfigSourceInterceptorFactory` may initialize the interceptor with access to the current chain
+(so it can be used to configure the interceptor and retrieve configuration values) and set the priority.
+
+Alternatively, interceptors may be registered via the Programmatic API in `SmallRyeConfigBuilder#withInterceptors` or
+`SmallRyeConfigBuilder.withInterceptorFactories`.
 
 === Priority
 
@@ -42,6 +48,12 @@ SmallRye Config provides the following built-in Interceptors:
 
 * <<expression-interceptor>>
 * <<profile-interceptor>>
+* <<relocate-interceptor>>
+* <<fallback-interceptor>>
+
+None of the interceptors is registered by default. Registration needs to happen via the ServiceLoader
+mechanism, via the Programmatic API or by calling `SmallRyeConfigBuilder.addDefaultInterceptors`, which adds the
+`ExpressionConfigSourceInterceptor` and the `ProfileConfigSourceInterceptor`.
 
 [[expression-interceptor]]
 === ExpressionConfigSourceInterceptor
@@ -49,7 +61,7 @@ SmallRye Config provides the following built-in Interceptors:
 The `ExpressionConfigSourceInterceptor` provides expression expansion on Configuration Values. An expression string is
 a mix of plain strings and expression segments, which are wrapped by the sequence `${ ... }`.
 
-For instance, if you have the following configuration:
+For instance, the following configuration properties file:
 
 [source,properties]
 ----
@@ -67,17 +79,14 @@ Additionally, the Expression Expansion engine supports the following segments:
 
 If an expression cannot be expanded and no default is supplied a `NoSuchElementException` is thrown.
 
-The `ExpressionConfigSourceInterceptor` is not registered by default. You need to register it via the ServiceLoader
-mechanism with your application.
-
 [[profile-interceptor]]
 === ProfileConfigSourceInterceptor
 
-The `ProfileConfigSourceInterceptor` allows you to have multiple configurations with the same name and select them via
+The `ProfileConfigSourceInterceptor` allows multiple configurations with the same name and selects them via
 a profile property.
 
-To be able to set properties with the same name, you need to prefix each property with `%` followed by the profile name
-and a dot:
+To be able to set properties with the same name, each property needs to be prefixed with `%` followed by the profile
+name and a dot:
 
 [source,properties]
 ----
@@ -85,15 +94,59 @@ my.prop=1234
 %dev.my.prop=5678
 ----
 
-Lookup is always done using the `my.prop` property name. If you want to use the profile `dev`, you need to set the
-configuration `smallrye.config.profile=dev` into any valid ConfigSource.
+Lookup is always done using the `my.prop` property name. To use the profile `dev`, the configuration
+`smallrye.config.profile=dev` has to be set into any valid ConfigSource.
 
 When looking up the property `my.prop` with the `dev` profile active the value is `5678`.
 
-Only one profile can be active in any given time.
+Only one profile can be active at any given time.
 
 ==== Config Priority over Profiles
 
-A ConfigSource with a highest priority, that defines `my.prop` will take priority over another low priority
-ConfigSource that defines `%dev.my.prop`. This allows you to override profiles properties regardless of the active
+A ConfigSource with the highest priority, that defines `my.prop` will take priority over another low priority
+ConfigSource that defines `%dev.my.prop`. This allows overriding profiles properties regardless of the active
 profile.
+
+[[relocate-interceptor]]
+=== RelocateConfigSourceInterceptor
+
+The `RelocateConfigSourceInterceptor` allows relocating a configuration name to another name, by providing a
+transformation function or just a simple key value map.
+
+Consider when a configuration key is renamed, lookup needs to happen on the new name, but also on the old name if the
+ConfigSources are not updated yet. The relocation function gives priority to the new resolved configuration name or
+resolves to the old name if no value is found under the new relocation name.
+
+The following `RelocateConfigSourceInterceptor` can relocate configuration names in the `smallrye.config`
+namespace to the `microprofile.config` namespace:
+
+[source,java]
+----
+new RelocateConfigSourceInterceptor(
+    name -> name.startsWith("smallrye.config") ?
+    name.replaceAll("smallrye\\.config", "microprofile.config") :
+    name));
+----
+
+Relocation can also be done with Expression expansion.
+
+[[fallback-interceptor]]
+=== FallbackConfigSourceInterceptor
+
+The `FallbackConfigSourceInterceptor` allows to fallback to another configuration name, by providing a transformation
+function or just a simple key value map.
+
+Consider when a configuration name does not exist, but there might be another configuration name that the config can
+fallback to provide the same expected behavior. The fallback function is only applied if the original resolved
+configuration name is not found and resolved to the fallback name.
+
+The following `FallbackConfigSourceInterceptor` can fallback configuration names in the `microprofile.config`
+namespace to the `smallrye.config` namespace:
+
+[source,java]
+----
+new FallbackConfigSourceInterceptor(
+    name -> name.startsWith("microprofile.config") ?
+    name.replaceAll("microprofile\\.config", "smallrye.config") :
+    name));
+----

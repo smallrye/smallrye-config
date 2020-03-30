@@ -4,15 +4,18 @@ import java.io.Serializable;
 
 /**
  * The ConfigSourceInterceptor allows you to intercept the resolution of a configuration key name before the
- * configuration value is resolved by the Config.
+ * configuration value is resolved by the Config and before any conversion taking place.
+ * <p>
  *
  * This is useful to provide logging, transform the key or substitute the value.
+ * <p>
  *
- * Implementations of ConfigSourceInterceptor are loaded via the {@link java.util.ServiceLoader} mechanism and and can
- * be registered by providing a resource named {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptor},
+ * Implementations of {@link ConfigSourceInterceptor} are loaded via the {@link java.util.ServiceLoader} mechanism and
+ * can be registered by providing a resource named {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptor},
  * which contains the fully qualified {@code ConfigSourceInterceptor} implementation class name as its content.
+ * <p>
  *
- * A ConfigSourceInterceptor implementation class can specify a priority by way of the standard
+ * A {@link ConfigSourceInterceptor} implementation class can specify a priority by way of the standard
  * {@code javax.annotation.Priority} annotation. If no priority is explicitly assigned, the default priority value
  * of {@code 100} is assumed. If multiple interceptors are registered with the same priority, then their execution
  * order may be non deterministic.

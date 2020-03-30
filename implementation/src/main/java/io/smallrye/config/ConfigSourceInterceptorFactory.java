@@ -5,10 +5,18 @@ import java.util.OptionalInt;
 /**
  * This ConfigSourceInterceptorFactory allows to initialize a {@link ConfigSourceInterceptor}, with access to the
  * current {@link ConfigSourceInterceptorContext}.
+ * <p>
  *
  * Interceptors in the chain are initialized in priority order and the current
  * {@link ConfigSourceInterceptorContext} contains the current interceptor, plus all other interceptors already
  * initialized.
+ * <p>
+ *
+ * Instances of this interface will be {@link SmallRyeConfigBuilder#addDiscoveredInterceptors()} via the
+ * {@link java.util.ServiceLoader} mechanism and can be registered by providing a
+ * {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory}
+ * {@linkplain ClassLoader#getResource(String) resource} which contains the fully qualified class name of the
+ * custom {@code ConfigSourceProvider} implementation.
  */
 public interface ConfigSourceInterceptorFactory {
     /**
