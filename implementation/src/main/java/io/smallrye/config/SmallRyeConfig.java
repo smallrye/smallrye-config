@@ -142,14 +142,22 @@ public class SmallRyeConfig implements Config, Serializable {
         SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(
                 (ConfigSourceInterceptor) (context, name) -> {
                     for (ConfigSource configSource : getConfigSources()) {
-                        String value = configSource.getValue(name);
-                        if (value != null) {
-                            return ConfigValue.builder()
-                                    .withName(name)
-                                    .withValue(value)
-                                    .withConfigSourceName(configSource.getName())
-                                    .withConfigSourceOrdinal(configSource.getOrdinal())
-                                    .build();
+                        if (configSource instanceof ConfigValueConfigSource) {
+                            ConfigValueConfigSource configValueConfigSource = (ConfigValueConfigSource) configSource;
+                            ConfigValue value = configValueConfigSource.getConfigValue(name);
+                            if (value != null) {
+                                return value;
+                            }
+                        } else {
+                            String value = configSource.getValue(name);
+                            if (value != null) {
+                                return ConfigValue.builder()
+                                        .withName(name)
+                                        .withValue(value)
+                                        .withConfigSourceName(configSource.getName())
+                                        .withConfigSourceOrdinal(configSource.getOrdinal())
+                                        .build();
+                            }
                         }
                     }
                     return null;

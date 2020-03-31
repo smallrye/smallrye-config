@@ -1,16 +1,33 @@
 package io.smallrye.config;
 
+import java.util.Objects;
+
+/**
+ * The ConfigValue is a metadata object that holds additional information after the lookup of a configuration.
+ * <p>
+ *
+ * Right now, it is able to hold information like the configuration name, value, the Config Source from where
+ * the configuration was loaded, the ordinal of the Config Source and a line number from where the configuration was
+ * read if exists.
+ * <p>
+ *
+ * This is used together with {@link ConfigValueConfigSource} and {@link ConfigSourceInterceptor} to expose the
+ * Configuration lookup metadata.
+ */
 public class ConfigValue {
     private final String name;
     private final String value;
     private final String configSourceName;
     private final int configSourceOrdinal;
 
+    private final int lineNumber;
+
     private ConfigValue(final ConfigValueBuilder builder) {
         this.name = builder.name;
         this.value = builder.value;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
+        this.lineNumber = builder.lineNumber;
     }
 
     public String getName() {
@@ -29,6 +46,10 @@ public class ConfigValue {
         return configSourceOrdinal;
     }
 
+    public int getLineNumber() {
+        return lineNumber;
+    }
+
     public ConfigValue withName(final String name) {
         return from().withName(name).build();
     }
@@ -45,12 +66,36 @@ public class ConfigValue {
         return from().withConfigSourceOrdinal(configSourceOrdinal).build();
     }
 
+    public ConfigValue withLineNumber(final int lineNumber) {
+        return from().withLineNumber(lineNumber).build();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final ConfigValue that = (ConfigValue) o;
+        return name.equals(that.name) &&
+                value.equals(that.value) &&
+                configSourceName.equals(that.configSourceName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, value, configSourceName);
+    }
+
     ConfigValueBuilder from() {
         return new ConfigValueBuilder()
                 .withName(name)
                 .withValue(value)
                 .withConfigSourceName(configSourceName)
-                .withConfigSourceOrdinal(configSourceOrdinal);
+                .withConfigSourceOrdinal(configSourceOrdinal)
+                .withLineNumber(lineNumber);
     }
 
     public static ConfigValueBuilder builder() {
@@ -62,6 +107,7 @@ public class ConfigValue {
         private String value;
         private String configSourceName;
         private int configSourceOrdinal;
+        private int lineNumber = -1;
 
         public ConfigValueBuilder withName(final String name) {
             this.name = name;
@@ -80,6 +126,11 @@ public class ConfigValue {
 
         public ConfigValueBuilder withConfigSourceOrdinal(final int configSourceOrdinal) {
             this.configSourceOrdinal = configSourceOrdinal;
+            return this;
+        }
+
+        public ConfigValueBuilder withLineNumber(final int lineNumber) {
+            this.lineNumber = lineNumber;
             return this;
         }
 
