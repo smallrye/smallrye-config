@@ -16,9 +16,7 @@ public abstract class InjectionTest {
     public static void beforeClass() throws Exception {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         final URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("memory", null, 0, "/",
-                        new InMemoryStreamHandler(
-                                "io.smallrye.config.inject.InjectionTestConfigFactory"))
+                new URL("memory", null, 0, "/", new InMemoryStreamHandler(InjectionTestConfigFactory.class.getName()))
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
     }

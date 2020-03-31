@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigFactory;
 import io.smallrye.config.SmallRyeConfigProviderResolver;

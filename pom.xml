@@ -67,6 +67,7 @@
   <modules>
     <module>common</module>
     <module>implementation</module>
+    <module>cdi</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
     <module>sources/yaml</module>
@@ -137,6 +138,11 @@
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-core</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
