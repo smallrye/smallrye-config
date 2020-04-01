@@ -1,7 +1,9 @@
 :microprofile-config: https://github.com/eclipse/microprofile-config/
+:ci: https://github.com/smallrye/smallrye-config/actions?query=workflow%3A%22SmallRye+Build%22
+:sonar: https://sonarcloud.io/dashboard?id=smallrye_smallrye-config
 
-image:https://github.com/smallrye/smallrye-config/workflows/SmallRye%20Build/badge.svg?branch=master[link="https://github.com/smallrye/smallrye-config/actions?query=workflow%3A%22SmallRye+Build%22"]
-image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-config&metric=alert_status["Quality Gate Status", link="https://sonarcloud.io/dashboard?id=smallrye_smallrye-config"]
+image:https://github.com/smallrye/smallrye-config/workflows/SmallRye%20Build/badge.svg?branch=master[link={ci}]
+image:https://sonarcloud.io/api/project_badges/measure?project=smallrye_smallrye-config&metric=alert_status["Quality Gate Status", link={sonar}]
 image:https://img.shields.io/github/license/smallrye/smallrye-config.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
 
 = SmallRye Config
@@ -10,21 +12,31 @@ SmallRye Config is an implementation of {microprofile-config}[Eclipse MicroProfi
 
 == Instructions
 
-Compile and install this project:
+Compile and test the project:
 
 [source,bash]
 ----
-mvn clean install
+mvn verify
+----
+
+Generate the documentation (from the doc folder):
+
+[source,bash]
+----
+antora generate antora-playbook.yml
 ----
 
 === Project structure
 
+* link:common[] - A set of reusable components to extend SmallRye Config
+* link:doc[] - Project documentation.
 * link:implementation[] - Implementation of the Eclipse MicroProfile Config API.
-* link:testsuite[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
-* link:docs[] - Project documentation.
 * link:sources[] - Implementation of different Eclipse MicroProfile ConfigSources
+* link:testsuite[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
+* link:utils[] - A set of additional extensions to enhance MicroProfile Config
 
 === Links
 
 * http://github.com/smallrye/smallrye-config/[Project Homepage]
 * {microprofile-config}[Eclipse MicroProfile Config]
+* https://smallrye.io/docs/smallrye-config/master/index.html[Documentation]
