@@ -1,4 +1,6 @@
 * xref:index.adoc[Index]
 * Extensions
 ** xref:config-sources/config-sources.adoc[Config Sources]
+** xref:converters/converters.adoc[Converters]
 ** xref:interceptors/interceptors.adoc[Interceptors]
+** xref:cdi/cdi.adoc[CDI]

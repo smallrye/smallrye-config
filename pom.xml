@@ -72,7 +72,6 @@
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
     <module>testsuite</module>
-    <module>docs</module>
   </modules>
 
   <dependencyManagement>

@@ -1,0 +1,12 @@
+:doctype: book
+include::../attributes.adoc[]
+
+[[converters]]
+
+= Converters
+
+SmallRye Config provides a set of additional Converters.
+
+* <<json-converter>>
+
+include::json-converter.adoc[]
