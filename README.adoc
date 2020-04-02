@@ -39,4 +39,4 @@ antora generate antora-playbook.yml
 
 * http://github.com/smallrye/smallrye-config/[Project Homepage]
 * {microprofile-config}[Eclipse MicroProfile Config]
-* https://smallrye.io/docs/smallrye-config/master/index.html[Documentation]
+* https://smallrye.io/docs/smallrye-config/index.html[Documentation]
