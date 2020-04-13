@@ -17,6 +17,7 @@
 package io.smallrye.config.source.file;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -41,5 +42,21 @@ public class FileSystemConfigSourceTestCase {
 
         assertEquals("myValue1", configSource.getValue("myKey1"));
         assertEquals("true", configSource.getValue("myKey2"));
+    }
+
+    @Test
+    public void testCharacterReplacement() throws URISyntaxException {
+        URL configDirURL = this.getClass().getResource("configDir");
+        File dir = new File(configDirURL.toURI());
+
+        ConfigSource configSource = new FileSystemConfigSource(dir);
+        // the non-alphanumeric chars may be replaced by _ 
+        assertEquals("http://localhost:8080/my-service", configSource.getValue("MyService/mp-rest/url"));
+        // or the file name is uppercased
+        assertEquals("http://localhost:8080/other-service", configSource.getValue("OtherService/mp-rest/url"));
+        // but the key is still case sensitive 
+        assertNull(configSource.getValue("myservice/mp-rest/url"));
+        // you can't rewrite the key, only the file name 
+        assertNull(configSource.getValue("MYSERVICE_MP_REST_URL"));
     }
 }
