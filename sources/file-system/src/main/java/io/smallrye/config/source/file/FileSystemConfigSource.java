@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,6 +60,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class FileSystemConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = 654034634846856045L;
 
+    private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
     private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
     FileSystemConfigSource(File dir) {
@@ -95,5 +97,31 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public String getValue(String name) {
+        if (name == null) {
+            return null;
+        }
+
+        final Map<String, String> properties = getProperties();
+
+        // exact match
+        String value = properties.get(name);
+        if (value != null) {
+            return value;
+        }
+
+        // replace non-alphanumeric characters by underscores
+        String sanitizedName = PATTERN.matcher(name).replaceAll("_");
+
+        value = properties.get(sanitizedName);
+        if (value != null) {
+            return value;
+        }
+
+        // replace non-alphanumeric characters by underscores and convert to uppercase
+        return properties.get(sanitizedName.toUpperCase());
     }
 }
