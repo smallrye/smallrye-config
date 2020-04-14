@@ -25,6 +25,12 @@ Nested directories are not supported.
 This Config Source can be used to read configuration from
 https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap[Kubernetes ConfigMap].
 
+The same mapping rules as defined for environment variables are applied, so the FileSystemConfigSource will search for a given property name (e.g. com.ACME.size):
+
+* Exact match (i.e. com.ACME.size)
+* Replace each character that is neither alphanumeric nor _ with _ (i.e. com_ACME_size)
+* Replace each character that is neither alphanumeric nor _ with _; then convert the name to upper case (i.e. COM_ACME_SIZE)
+
 === Usage
 
 To use the FileSystem Config Source, add the following to your Maven `pom.xml`:
