@@ -40,11 +40,11 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
-import javax.annotation.Priority;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -125,19 +125,15 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private ConfigSourceInterceptorContext buildInterceptorChain(final SmallRyeConfigBuilder builder) {
-        final List<ConfigSourceInterceptor> interceptors = new ArrayList<>(builder.getInterceptors());
+        final List<InterceptorWithPriority> interceptors = new ArrayList<>(builder.getInterceptors());
         if (builder.isAddDiscoveredInterceptors()) {
             interceptors.addAll(builder.discoverInterceptors());
         }
+        if (builder.isAddDefaultInterceptors()) {
+            interceptors.addAll(builder.getDefaultInterceptors());
+        }
 
-        interceptors.sort((o1, o2) -> {
-            final Integer p1 = Optional.ofNullable(o1.getClass().getAnnotation(Priority.class)).map(Priority::value)
-                    .orElse(100);
-            final Integer p2 = Optional.ofNullable(o2.getClass().getAnnotation(Priority.class)).map(Priority::value)
-                    .orElse(100);
-
-            return Integer.compare(p2, p1);
-        });
+        interceptors.sort(Comparator.comparingInt(InterceptorWithPriority::getPriority).reversed());
 
         SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(
                 (ConfigSourceInterceptor) (context, name) -> {
@@ -164,7 +160,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 }, null);
 
         for (int i = interceptors.size() - 1; i >= 0; i--) {
-            current = new SmallRyeConfigSourceInterceptorContext(interceptors.get(i), current);
+            current = new SmallRyeConfigSourceInterceptorContext(interceptors.get(i).getInterceptor(current), current);
         }
 
         return current;

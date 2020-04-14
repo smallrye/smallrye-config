@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static org.junit.Assert.assertEquals;
+
 import javax.annotation.Priority;
 
 import org.jboss.logging.Logger;
@@ -37,11 +40,11 @@ public class ConfigSourceInterceptorTest {
     public void serviceLoader() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
+                .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
                 .addDiscoveredInterceptors()
                 .build();
 
-        final String value = config.getValue("my.prop", String.class);
+        final String value = config.getValue("my.prop.loader", String.class);
         Assert.assertEquals("loader", value);
     }
 
@@ -49,14 +52,28 @@ public class ConfigSourceInterceptorTest {
     public void serviceLoaderAndPriorities() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
+                .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
                 .addDiscoveredInterceptors()
                 .withInterceptors(new LowerPriorityConfigSourceInterceptor(),
                         new HighPriorityConfigSourceInterceptor())
                 .build();
 
-        final String value = config.getValue("my.prop", String.class);
+        final String value = config.getValue("my.prop.loader", String.class);
         Assert.assertEquals("higher", value);
+    }
+
+    @Test
+    public void defaultInterceptors() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config("my.prop", "1",
+                        "%prof.my.prop", "${%prof.my.prop.profile}",
+                        "%prof.my.prop.profile", "2",
+                        SMALLRYE_PROFILE, "prof"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
     }
 
     private static class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {

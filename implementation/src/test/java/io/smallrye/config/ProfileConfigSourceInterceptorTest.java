@@ -1,0 +1,166 @@
+package io.smallrye.config;
+
+import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static org.junit.Assert.assertEquals;
+
+import java.util.HashMap;
+
+import org.eclipse.microprofile.config.Config;
+import org.junit.Test;
+
+import io.smallrye.config.common.MapBackedConfigSource;
+
+public class ProfileConfigSourceInterceptorTest {
+    @Test
+    public void profile() {
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void profileOnly() {
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void fallback() {
+        final Config config = buildConfig("my.prop", "1", SMALLRYE_PROFILE, "prof");
+
+        assertEquals("1", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void expressions() {
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_PROFILE, "prof");
+
+        assertEquals("1", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void profileExpressions() {
+        final Config config = buildConfig("my.prop", "1",
+                "%prof.my.prop", "${%prof.my.prop.profile}",
+                "%prof.my.prop.profile", "2",
+                SMALLRYE_PROFILE, "prof");
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void customConfigProfile() {
+        final String[] configs = { "my.prop", "1", "%prof.my.prop", "2", "config.profile", "prof" };
+        final Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDiscoveredInterceptors()
+                .withSources(KeyValuesConfigSource.config(configs))
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void noConfigProfile() {
+        final String[] configs = { "my.prop", "1", "%prof.my.prop", "2" };
+        final Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config(configs))
+                .withInterceptors(
+                        new ProfileConfigSourceInterceptor("prof"),
+                        new ExpressionConfigSourceInterceptor())
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void priorityProfile() {
+        final Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(
+                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
+                            {
+                                put("%prof.my.prop", "higher-profile");
+                            }
+                        }, 200) {
+                        },
+                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
+                            {
+                                put("my.prop", "lower");
+                                put("%prof.my.prop", "lower-profile");
+                            }
+                        }, 100) {
+                        })
+                .withInterceptors(
+                        new ProfileConfigSourceInterceptor("prof"),
+                        new ExpressionConfigSourceInterceptor())
+                .build();
+
+        assertEquals("higher-profile", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void priorityOverrideProfile() {
+        final Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(
+                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
+                            {
+                                put("my.prop", "higher");
+                            }
+                        }, 200) {
+                        },
+                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
+                            {
+                                put("my.prop", "lower");
+                                put("%prof.my.prop", "lower-profile");
+                            }
+                        }, 100) {
+                        })
+                .withInterceptors(
+                        new ProfileConfigSourceInterceptor("prof"),
+                        new ExpressionConfigSourceInterceptor())
+                .build();
+
+        assertEquals("higher", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void priorityProfileOverOriginal() {
+        final Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(
+                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
+                            {
+                                put("my.prop", "higher");
+                                put("%prof.my.prop", "higher-profile");
+                            }
+                        }, 200) {
+                        },
+                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
+                            {
+                                put("my.prop", "lower");
+                                put("%prof.my.prop", "lower-profile");
+                            }
+                        }, 100) {
+                        })
+                .withInterceptors(
+                        new ProfileConfigSourceInterceptor("prof"),
+                        new ExpressionConfigSourceInterceptor())
+                .build();
+
+        assertEquals("higher-profile", config.getValue("my.prop", String.class));
+    }
+
+    private static Config buildConfig(String... keyValues) {
+        return new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config(keyValues))
+                .withInterceptors(
+                        new ProfileConfigSourceInterceptor("prof"),
+                        new ExpressionConfigSourceInterceptor())
+                .build();
+    }
+}

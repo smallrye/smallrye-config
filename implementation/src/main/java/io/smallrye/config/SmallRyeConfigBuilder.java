@@ -23,9 +23,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 
@@ -46,9 +50,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private Map<Type, ConverterWithPriority> converters = new HashMap<>();
-    private List<ConfigSourceInterceptor> interceptors = new ArrayList<>();
+    private List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
+    private boolean addDefaultInterceptors = false;
     private boolean addDiscoveredSources = false;
     private boolean addDiscoveredConverters = false;
     private boolean addDiscoveredInterceptors = false;
@@ -93,11 +98,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return discoveredConverters;
     }
 
-    List<ConfigSourceInterceptor> discoverInterceptors() {
-        List<ConfigSourceInterceptor> interceptors = new ArrayList<>();
+    List<InterceptorWithPriority> discoverInterceptors() {
+        List<InterceptorWithPriority> interceptors = new ArrayList<>();
         ServiceLoader<ConfigSourceInterceptor> interceptorLoader = ServiceLoader.load(ConfigSourceInterceptor.class,
                 classLoader);
-        interceptorLoader.forEach(interceptors::add);
+        interceptorLoader.forEach(interceptor -> interceptors.add(new InterceptorWithPriority(interceptor)));
+
+        ServiceLoader<ConfigSourceInterceptorFactory> interceptorFactoryLoader = ServiceLoader
+                .load(ConfigSourceInterceptorFactory.class, classLoader);
+        interceptorFactoryLoader.forEach(interceptor -> interceptors.add(new InterceptorWithPriority(interceptor)));
+
         return interceptors;
     }
 
@@ -120,6 +130,30 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultSources;
     }
 
+    public SmallRyeConfigBuilder addDefaultInterceptors() {
+        this.addDefaultInterceptors = true;
+        return this;
+    }
+
+    List<InterceptorWithPriority> getDefaultInterceptors() {
+        final List<InterceptorWithPriority> interceptors = new ArrayList<>();
+
+        interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                return new ProfileConfigSourceInterceptor(context);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(600);
+            }
+        }));
+
+        return interceptors;
+    }
+
     @Override
     public SmallRyeConfigBuilder forClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -138,7 +172,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withInterceptors(ConfigSourceInterceptor... interceptors) {
-        Collections.addAll(this.interceptors, interceptors);
+        this.interceptors.addAll(Stream.of(interceptors)
+                .map(InterceptorWithPriority::new)
+                .collect(Collectors.toList()));
         return this;
     }
 
@@ -203,12 +239,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return converters;
     }
 
-    List<ConfigSourceInterceptor> getInterceptors() {
+    List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
     }
 
     boolean isAddDefaultSources() {
         return addDefaultSources;
+    }
+
+    boolean isAddDefaultInterceptors() {
+        return addDefaultInterceptors;
     }
 
     boolean isAddDiscoveredSources() {
@@ -242,6 +282,48 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         int getPriority() {
+            return priority;
+        }
+    }
+
+    static class InterceptorWithPriority {
+        private final ConfigSourceInterceptorFactory factory;
+        private final int priority;
+
+        private InterceptorWithPriority(ConfigSourceInterceptor interceptor) {
+            this(new ConfigSourceInterceptorFactory() {
+                @Override
+                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                    return interceptor;
+                }
+
+                @Override
+                public OptionalInt getPriority() {
+                    final OptionalInt priority = ConfigSourceInterceptorFactory.super.getPriority();
+                    if (priority.isPresent()) {
+                        return priority;
+                    }
+
+                    final Integer annotationPriorityOrDefault = Optional
+                            .ofNullable(interceptor.getClass().getAnnotation(Priority.class))
+                            .map(Priority::value)
+                            .orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+
+                    return OptionalInt.of(annotationPriorityOrDefault);
+                }
+            });
+        }
+
+        private InterceptorWithPriority(ConfigSourceInterceptorFactory factory) {
+            this.factory = factory;
+            this.priority = factory.getPriority().orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+        }
+
+        public ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
+            return factory.getInterceptor(context);
+        }
+
+        public int getPriority() {
             return priority;
         }
     }
