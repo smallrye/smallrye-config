@@ -14,4 +14,12 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1000, value = "Unable to get context classloader instance")
     void failedToRetrieveClassloader(@Cause Throwable cause);
+
+    @LogMessage(level = Logger.Level.DEBUG)
+    @Message(id = 1001, value = "The config %s was loaded from %s with the value %s")
+    void lookup(String name, String source, String value);
+
+    @LogMessage(level = Logger.Level.DEBUG)
+    @Message(id = 1002, value = "The config %s was not found")
+    void notFound(String name);
 }
