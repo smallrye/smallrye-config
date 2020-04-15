@@ -18,6 +18,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.Converters;
+import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
 
 /**
@@ -37,7 +38,7 @@ public class ConfigProducerUtil {
         }
         final SmallRyeConfig src = (SmallRyeConfig) config;
         Converter<T> converter = resolveConverter(injectionPoint, src);
-        String rawValue = src.getRawValue(name);
+        String rawValue = getRawValue(src, name);
         if (rawValue == null) {
             rawValue = getDefaultValue(injectionPoint);
         }
@@ -56,6 +57,10 @@ public class ConfigProducerUtil {
             throw InjectionMessages.msg.propertyNotFound(name);
         }
         return converted;
+    }
+
+    private static String getRawValue(SmallRyeConfig config, String name) {
+        return SecretKeys.doUnlocked(() -> config.getRawValue(name));
     }
 
     private static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final SmallRyeConfig src) {

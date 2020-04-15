@@ -21,11 +21,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -50,6 +52,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private Map<Type, ConverterWithPriority> converters = new HashMap<>();
+    private Set<String> secretKeys = new HashSet<>();
     private List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
@@ -150,6 +153,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(600);
             }
         }));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                return new SecretKeysConfigSourceInterceptor(secretKeys);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(-Integer.MAX_VALUE);
+            }
+        }));
 
         return interceptors;
     }
@@ -182,6 +196,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         this.interceptors.addAll(Stream.of(interceptorFactories)
                 .map(InterceptorWithPriority::new)
                 .collect(Collectors.toList()));
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withSecretKeys(String... keys) {
+        secretKeys.addAll(Stream.of(keys).collect(Collectors.toSet()));
         return this;
     }
 
@@ -243,6 +262,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     Map<Type, ConverterWithPriority> getConverters() {
         return converters;
+    }
+
+    Set<String> getSecretKeys() {
+        return secretKeys;
     }
 
     List<InterceptorWithPriority> getInterceptors() {

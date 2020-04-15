@@ -54,6 +54,7 @@ SmallRye Config provides the following built-in Interceptors:
 * <<profile-interceptor>>
 * <<relocate-interceptor>>
 * <<fallback-interceptor>>
+* <<logging-interceptor>>
 
 None of the interceptors is registered by default. Registration needs to happen via the ServiceLoader
 mechanism, via the Programmatic API or by calling `SmallRyeConfigBuilder.addDefaultInterceptors`, which adds the
@@ -154,3 +155,12 @@ new FallbackConfigSourceInterceptor(
     name.replaceAll("microprofile\\.config", "smallrye.config") :
     name));
 ----
+
+[[logging-interceptor]]
+=== LoggingConfigSourceInterceptor
+
+The `LoggingConfigSourceInterceptor` logs lookups of configuration names in the provided logging platform. The log
+information includes config name and value, the config source origing and location if exists.
+
+The log is done as `debug`, so the debug threshold must be set to `debug` for the `io.smallrye.config` appender to
+display the logs.

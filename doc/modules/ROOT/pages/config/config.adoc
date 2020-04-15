@@ -1,0 +1,10 @@
+:doctype: book
+include::../attributes.adoc[]
+
+[[cdi-extensions]]
+
+= Config
+
+* <<secret-keys>>
+
+include::secret-keys.adoc[]

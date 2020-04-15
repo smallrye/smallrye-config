@@ -85,4 +85,7 @@ interface ConfigMessages {
 
     @Message(id = 23, value = "Array type being converted is unknown")
     IllegalArgumentException unknownArrayType();
+
+    @Message(id = 24, value = "Not allowed to access secret key %s")
+    SecurityException notAllowed(String name);
 }
