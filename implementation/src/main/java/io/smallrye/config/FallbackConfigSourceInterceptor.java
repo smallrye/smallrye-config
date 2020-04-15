@@ -1,0 +1,31 @@
+package io.smallrye.config;
+
+import java.util.Map;
+import java.util.function.Function;
+
+import javax.annotation.Priority;
+
+@Priority(300)
+public class FallbackConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private final Function<String, String> mapping;
+
+    public FallbackConfigSourceInterceptor(final Function<String, String> mapping) {
+        this.mapping = mapping != null ? mapping : Function.identity();
+    }
+
+    public FallbackConfigSourceInterceptor(final Map<String, String> mappings) {
+        this(name -> mappings.getOrDefault(name, name));
+    }
+
+    @Override
+    public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+        ConfigValue configValue = context.proceed(name);
+        if (configValue == null) {
+            final String map = mapping.apply(name);
+            if (!name.equals(map)) {
+                configValue = context.proceed(map);
+            }
+        }
+        return configValue;
+    }
+}

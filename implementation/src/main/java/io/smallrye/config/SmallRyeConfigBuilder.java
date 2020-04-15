@@ -178,6 +178,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withInterceptorFactories(ConfigSourceInterceptorFactory... interceptorFactories) {
+        this.interceptors.addAll(Stream.of(interceptorFactories)
+                .map(InterceptorWithPriority::new)
+                .collect(Collectors.toList()));
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
