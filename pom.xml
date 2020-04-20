@@ -37,6 +37,8 @@
     <version.eclipse.microprofile.config>1.4</version.eclipse.microprofile.config>
     <version.smallrye.common>1.0.0</version.smallrye.common>
 
+    <version.weld.junit>2.0.1.Final</version.weld.junit>
+
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -87,6 +89,12 @@
         <version>${version.eclipse.microprofile.config}</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.jboss.weld</groupId>
+        <artifactId>weld-junit4</artifactId>
+        <version>${version.weld.junit}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.jboss.arquillian.testng</groupId>
         <artifactId>arquillian-testng-container</artifactId>
