@@ -89,7 +89,8 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
          * Explicitly ignore all keys that are prefixed with the prefix used to configure the Zookeeper connection.
          * Other wise a stack overflow obviously happens.
          */
-        if (key.startsWith(IGNORED_PREFIX)) {
+        // TODO - radcortez - We need to add a feature that allows ConfigSource to config itself with other ConfigSource
+        if (key.startsWith(IGNORED_PREFIX) || key.startsWith("smallrye.config")) {
             return null;
         }
         try {
