@@ -16,7 +16,6 @@
 
 package io.smallrye.config;
 
-import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -51,8 +50,6 @@ import io.smallrye.config.common.utils.StringUtil;
 public final class Converters {
     private Converters() {
     }
-
-    private static final String ILLEGAL_ARGUMENT_EXCEPTION_FORMAT = "%s %s (value was \"%s\")";
 
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
 
@@ -112,7 +109,7 @@ public final class Converters {
         if (value.length() == 1) {
             return Character.valueOf(value.charAt(0));
         }
-        throw new IllegalArgumentException(value + " can not be converted to a Character");
+        throw ConfigMessages.msg.failedCharacterConversion(value);
     }));
 
     static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
@@ -192,7 +189,7 @@ public final class Converters {
                 if (pt.getRawType().equals(Converter.class)) {
                     Type[] typeArguments = pt.getActualTypeArguments();
                     if (typeArguments.length != 1) {
-                        throw new IllegalStateException("Converter " + clazz + " must be parameterized with a single type");
+                        throw ConfigMessages.msg.singleTypeConverter(clazz.getName());
                     }
                     return typeArguments[0];
                 }
@@ -238,7 +235,7 @@ public final class Converters {
      */
     public static <A, T> Converter<A> newArrayConverter(Converter<? extends T> itemConverter, Class<A> arrayType) {
         if (!arrayType.isArray()) {
-            throw new IllegalArgumentException(arrayType.toString() + " is not an array type");
+            throw ConfigMessages.msg.notArrayType(arrayType.toString());
         }
         return new ArrayConverter<>(itemConverter, arrayType);
     }
@@ -560,8 +557,7 @@ public final class Converters {
             if (pattern.matcher(value).matches()) {
                 return delegate.convert(value);
             }
-            throw new IllegalArgumentException(
-                    String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value does not match pattern", pattern, value));
+            throw ConfigMessages.msg.valueNotMatchPattern(pattern, value);
         }
     }
 
@@ -595,14 +591,11 @@ public final class Converters {
                 final int cmp = comparator.compare(result, min);
                 if (minInclusive) {
                     if (cmp < 0) {
-                        throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than", min, value));
+                        throw ConfigMessages.msg.lessThanMinimumValue(min, value);
                     }
                 } else {
                     if (cmp <= 0) {
-                        throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be less than or equal to", max,
-                                        value));
+                        throw ConfigMessages.msg.lessThanEqualToMinimumValue(min, value);
                     }
                 }
             }
@@ -610,14 +603,11 @@ public final class Converters {
                 final int cmp = comparator.compare(result, max);
                 if (maxInclusive) {
                     if (cmp > 0) {
-                        throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than", max, value));
+                        throw ConfigMessages.msg.greaterThanMaximumValue(max, value);
                     }
                 } else {
                     if (cmp >= 0) {
-                        throw new IllegalArgumentException(
-                                String.format(ILLEGAL_ARGUMENT_EXCEPTION_FORMAT, "Value must not be greater than or equal to",
-                                        max, value));
+                        throw ConfigMessages.msg.greaterThanEqualToMaximumValue(max, value);
                     }
                 }
             }
@@ -871,7 +861,7 @@ public final class Converters {
                 case 13:
                     return BYTE_CONVERTER;
                 default:
-                    throw new InvalidObjectException("Unknown converter ID");
+                    throw ConfigMessages.msg.unknownConverterId(id);
             }
         }
     }

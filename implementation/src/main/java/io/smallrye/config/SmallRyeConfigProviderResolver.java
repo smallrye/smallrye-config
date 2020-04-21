@@ -86,7 +86,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
                     config = getFactoryFor(realClassLoader, false).getConfigFor(this, classLoader);
                     // don't cache null, as that would leak class loaders
                     if (config == null) {
-                        throw new IllegalStateException("No configuration is available for this class loader");
+                        throw ConfigMessages.msg.noConfigForClassloader();
                     }
                     configsForClassLoader.put(realClassLoader, config);
                 }
@@ -118,14 +118,14 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
         if (config == null) {
-            throw new IllegalArgumentException("config cannot be null");
+            throw ConfigMessages.msg.configIsNull();
         }
         final ClassLoader realClassLoader = getRealClassLoader(classLoader);
         final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
         synchronized (configsForClassLoader) {
             final Config existing = configsForClassLoader.putIfAbsent(realClassLoader, config);
             if (existing != null) {
-                throw new IllegalStateException("Configuration already registered for the given class loader");
+                throw ConfigMessages.msg.configAlreadyRegistered();
             }
         }
     }

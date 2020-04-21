@@ -3,8 +3,6 @@ package io.smallrye.config;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 
-import java.util.NoSuchElementException;
-
 import javax.annotation.Priority;
 
 import io.smallrye.common.expression.Expression;
@@ -33,8 +31,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             } else if (resolveContext.hasDefault()) {
                 resolveContext.expandDefault();
             } else {
-                throw new NoSuchElementException(
-                        "Could not expand value " + resolveContext.getKey() + " in property " + configValue.getName());
+                throw ConfigMessages.msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName());
             }
         });
 

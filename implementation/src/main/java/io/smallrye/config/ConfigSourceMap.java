@@ -23,11 +23,12 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import io.smallrye.common.constraint.Assert;
 
 /**
  * A {@link Map Map&lt;String, String>} which is backed by a {@link ConfigSource}.
@@ -55,7 +56,7 @@ public class ConfigSourceMap extends AbstractMap<String, String> implements Map<
      * @param delegate the delegate configuration source (must not be {@code null})
      */
     public ConfigSourceMap(final ConfigSource delegate) {
-        this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
+        this.delegate = Assert.checkNotNullParam("delegate", delegate);
     }
 
     public int size() {
