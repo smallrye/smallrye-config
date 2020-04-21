@@ -1,0 +1,114 @@
+package io.smallrye.config;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.junit.Test;
+
+public class ConfigValueMapStringViewTest {
+    @Test
+    public void size() {
+        assertEquals(2, sampleMap().size());
+    }
+
+    @Test
+    public void isEmpty() {
+        assertTrue(new ConfigValueMapView(new HashMap<>()).isEmpty());
+    }
+
+    @Test
+    public void containsKey() {
+        final Map<String, ConfigValue> map = sampleMap();
+        assertTrue(map.containsKey("my.prop"));
+        assertTrue(map.containsKey("my.null"));
+    }
+
+    @Test
+    public void containsValue() {
+        final Map<String, ConfigValue> map = sampleMap();
+        assertTrue(map.containsValue(ConfigValue.builder().withValue("1234").build()));
+        assertTrue(map.containsValue(null));
+    }
+
+    @Test
+    public void get() {
+        final Map<String, ConfigValue> map = sampleMap();
+        assertEquals(toConfigValue("my.prop", "1234"), map.get("my.prop"));
+        assertNull(map.get("my.null"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void put() {
+        sampleMap().put("x", toConfigValue("x", "y"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void remove() {
+        sampleMap().remove("my.prop");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void putAll() {
+        final HashMap<String, ConfigValue> newMap = new HashMap<>();
+        newMap.put("key", toConfigValue("key", "value"));
+        sampleMap().putAll(newMap);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void clear() {
+        sampleMap().clear();
+    }
+
+    @Test
+    public void keySet() {
+        final Set<String> keys = sampleMap().keySet();
+        assertEquals(2, keys.size());
+        assertTrue(keys.contains("my.prop"));
+        assertTrue(keys.contains("my.null"));
+        assertThrows(UnsupportedOperationException.class, () -> keys.remove("my.prop"));
+    }
+
+    @Test
+    public void entrySet() {
+        final Set<Map.Entry<String, ConfigValue>> entries = sampleMap().entrySet();
+        assertEquals(2, entries.size());
+        assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("my.prop", toConfigValue("my.prop", "1234"))));
+        assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("my.null", (ConfigValue) null)));
+        assertThrows(UnsupportedOperationException.class, () -> entries.remove(
+                new AbstractMap.SimpleImmutableEntry<>("my.prop", toConfigValue("my.prop", "1234"))));
+    }
+
+    @Test
+    public void values() {
+        final Collection<ConfigValue> values = sampleMap().values();
+        assertEquals(2, values.size());
+        assertTrue(values.contains(null));
+        assertTrue(values.contains(toConfigValue("my.prop", "1234")));
+        assertThrows(UnsupportedOperationException.class, () -> values.remove(toConfigValue("my.prop", "1234")));
+    }
+
+    private static ConfigValueMapStringView sampleMap() {
+        final Map<String, String> configValueMap = new HashMap<>();
+        configValueMap.put("my.prop", "1234");
+        configValueMap.put("my.prop", "1234");
+        configValueMap.put("my.null", null);
+        return new ConfigValueMapStringView(configValueMap, "test", 1);
+    }
+
+    private static ConfigValue toConfigValue(String name, String value) {
+        return ConfigValue.builder()
+                .withName(name)
+                .withValue(value)
+                .withConfigSourceName("test")
+                .withConfigSourceOrdinal(1)
+                .build();
+    }
+}

@@ -108,7 +108,6 @@ public class ConfigValueMapViewTest {
         assertEquals("abc", properties.get("my.prop"));
         assertEquals("abc", properties.get("my.prop"));
         assertThrows(UnsupportedOperationException.class, () -> properties.remove("x"));
-        ;
         assertThrows(UnsupportedOperationException.class, () -> properties.put("x", "x"));
         assertThrows(UnsupportedOperationException.class, () -> properties.putAll(new HashMap<>()));
         assertThrows(UnsupportedOperationException.class, properties::clear);

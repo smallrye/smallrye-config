@@ -1,9 +1,14 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.Test;
@@ -13,9 +18,13 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class ProfileConfigSourceInterceptorTest {
     @Test
     public void profile() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+        final SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE,
+                "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
+
+        assertEquals("my.prop", config.getConfigValue("my.prop").getName());
+        assertEquals("my.prop", config.getConfigValue("%prof.my.prop").getName());
     }
 
     @Test
@@ -154,9 +163,22 @@ public class ProfileConfigSourceInterceptorTest {
         assertEquals("higher-profile", config.getValue("my.prop", String.class));
     }
 
+    @Test
+    public void propertyNames() {
+        final SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
+                SMALLRYE_PROFILE, "prof");
+
+        assertEquals("2", config.getConfigValue("my.prop").getValue());
+        assertEquals("1", config.getConfigValue("prof.only").getValue());
+
+        final List<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        assertFalse(properties.contains("%prof.my.prop"));
+        assertTrue(properties.contains("my.prop"));
+        assertTrue(properties.contains("prof.only"));
+    }
+
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
-                .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .withInterceptors(
                         new ProfileConfigSourceInterceptor("prof"),

@@ -1,7 +1,15 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Priority;
 
@@ -74,6 +82,50 @@ public class ConfigSourceInterceptorTest {
                 .build();
 
         assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
+    public void names() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(KeyValuesConfigSource.config("my.prop", "1",
+                        "%prof.my.prop", "${%prof.my.prop.profile}",
+                        "%prof.my.prop.profile", "2",
+                        SMALLRYE_PROFILE, "prof"))
+                .build();
+
+        Set<String> names = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(names.contains("my.prop"));
+        assertTrue(names.contains("my.prop.profile"));
+        assertFalse(names.contains("%prof.my.prop"));
+        assertFalse(names.contains("%prof.my.prop.profile"));
+    }
+
+    @Test
+    public void replaceNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(KeyValuesConfigSource.config("my.prop", "1"))
+                .withInterceptors(new ConfigSourceInterceptor() {
+                    @Override
+                    public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                        return context.proceed(name);
+                    }
+
+                    @Override
+                    public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
+                        return Stream.of("another.prop").collect(toSet()).iterator();
+                    }
+                })
+                .build();
+
+        assertEquals("1", config.getRawValue("my.prop"));
+        Set<String> names = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(1, names.size());
+        assertFalse(names.contains("my.prop"));
+        assertTrue(names.contains("another.prop"));
     }
 
     private static class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {

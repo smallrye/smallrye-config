@@ -15,13 +15,14 @@
  */
 package io.smallrye.config;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-public class KeyValuesConfigSource implements ConfigSource {
+public class KeyValuesConfigSource implements ConfigSource, Serializable {
 
     private final Map<String, String> properties = new HashMap<>();
 
