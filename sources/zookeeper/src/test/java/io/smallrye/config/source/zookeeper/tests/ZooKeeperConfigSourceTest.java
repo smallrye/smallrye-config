@@ -5,15 +5,18 @@
  */
 package io.smallrye.config.source.zookeeper.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Fail.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -22,24 +25,17 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.weld.junit4.WeldInitiator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import io.smallrye.config.common.AbstractConfigSource;
-import io.smallrye.config.source.zookeeper.ZooKeeperConfigSource;
+import io.smallrye.config.inject.ConfigProducer;
 
 /**
  * Test the ConfigSource
  */
-@RunWith(Arquillian.class)
 public class ZooKeeperConfigSourceTest {
 
     private static final Logger logger = Logger.getLogger(ZooKeeperConfigSourceTest.class.getName());
@@ -51,8 +47,12 @@ public class ZooKeeperConfigSourceTest {
     private final String ZK_KEY = "/" + APPLICATION_ID + "/" + PROPERTY_NAME;
     private final String PROPERTY_VALUE = "some.value";
 
-    public ZooKeeperConfigSourceTest() {
-    }
+    @Rule
+    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class)
+            .addBeans()
+            .activate(ApplicationScoped.class)
+            .inject(this)
+            .build();
 
     @Inject
     @ConfigProperty(name = "injected.property", defaultValue = "injected.property.default")
@@ -61,35 +61,6 @@ public class ZooKeeperConfigSourceTest {
     @Inject
     @ConfigProperty(name = "injected.int.property", defaultValue = "13")
     private int injectedIntProperty;
-
-    @Deployment
-    public static WebArchive createDeployment() {
-
-        //Add the Curator and Microprofile Config libraries
-        final File[] curatorFiles = Maven.resolver().resolve("org.apache.curator:curator-recipes:2.12.0").withTransitivity()
-                .asFile();
-        final File[] curatorTestFiles = Maven.resolver().resolve("org.apache.curator:curator-test:2.12.0").withTransitivity()
-                .asFile();
-        final File[] guavaFiles = Maven.resolver().resolve("com.google.guava:guava:25.1-jre").withTransitivity().asFile();
-        final File[] swarmMPCFiles = Maven.resolver().resolve("org.wildfly.swarm:microprofile-config:1.0.1")
-                .withoutTransitivity().asFile();
-        final File[] assertJFiles = Maven.resolver().resolve("org.assertj:assertj-core:3.10.0").withoutTransitivity().asFile();
-
-        return ShrinkWrap.create(WebArchive.class, "ZkMicroProfileConfigTest.war")
-                .addPackage(ZooKeeperConfigSource.class.getPackage())
-                .addPackage(AbstractConfigSource.class.getPackage())
-                .addAsLibraries(curatorFiles)
-                .addAsLibraries(swarmMPCFiles)
-                .addAsLibraries(curatorTestFiles)
-                .addAsLibraries(guavaFiles)
-                .addAsLibraries(assertJFiles)
-                .addAsResource(
-                        new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"),
-                        "META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource")
-                .addAsResource(new File("src/test/resources/META-INF/microprofile-config.properties"),
-                        "META-INF/microprofile-config.properties")
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
 
     @Before
     public void setUpClass() {
@@ -106,13 +77,12 @@ public class ZooKeeperConfigSourceTest {
 
     @Test
     public void testGettingProperty() {
-
         logger.info("ZooKeeperConfigSourceTest.testGettingProperty");
 
         Config cfg = ConfigProvider.getConfig();
 
         //Check that the ZK ConfigSource will work
-        assertThat(cfg.getValue("io.smallrye.configsource.zookeeper.url", String.class)).isNotNull();
+        assertNotNull(cfg.getValue("io.smallrye.configsource.zookeeper.url", String.class));
 
         //Check that a property doesn't exist yet
         try {
@@ -122,7 +92,7 @@ public class ZooKeeperConfigSourceTest {
         }
 
         //Check that the optional version of the property is not present
-        assertThat(cfg.getOptionalValue(PROPERTY_NAME, String.class)).isNotPresent();
+        assertFalse(cfg.getOptionalValue(PROPERTY_NAME, String.class).isPresent());
         //setup the property in ZK
         try {
             curatorClient.createContainers(ZK_KEY);
@@ -132,17 +102,16 @@ public class ZooKeeperConfigSourceTest {
         }
 
         //check the property can be optained by a property
-        assertThat(cfg.getValue(PROPERTY_NAME, String.class)).isEqualTo(PROPERTY_VALUE);
+        assertEquals(PROPERTY_VALUE, cfg.getValue(PROPERTY_NAME, String.class));
 
         Set<String> propertyNames = new HashSet<>();
         cfg.getPropertyNames().forEach(propertyNames::add);
-        assertThat(propertyNames).contains(PROPERTY_NAME);
+        assertTrue(propertyNames.contains(PROPERTY_NAME));
     }
 
     @Test
     public void testInjection() {
-        assertThat(injectedProperty).isEqualTo("injected.property.value");
-        assertThat(injectedIntProperty).isEqualTo(17);
+        assertEquals("injected.property.value", injectedProperty);
+        assertEquals(17, injectedIntProperty);
     }
-
 }

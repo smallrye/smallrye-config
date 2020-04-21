@@ -1,53 +1,41 @@
 package io.smallrye.config.converter.json;
 
-import java.io.File;
 import java.io.StringReader;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonReader;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.weld.junit4.WeldInitiator;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import io.smallrye.config.inject.ConfigExtension;
+import io.smallrye.config.inject.ConfigProducer;
 
 /**
  * Testing the injection of a JsonArray
  * 
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@RunWith(Arquillian.class)
 public class JsonArrayConverterTest {
+    @Rule
+    public WeldInitiator weld = WeldInitiator.from(WeldInitiator.createWeld()
+            .addExtensions(ConfigExtension.class)
+            .addBeanClass(ConfigProducer.class)
+            .addBeanClass(JsonArrayConverterTest.class))
+            .addBeans()
+            .activate(ApplicationScoped.class)
+            .inject(this)
+            .build();
 
     @Inject
     @ConfigProperty(name = "someJsonArray")
     private JsonArray someValue;
-
-    @Deployment
-    public static WebArchive createDeployment() {
-        final File[] smallryeConfig = Maven.resolver()
-                .loadPomFromFile("pom.xml")
-                .resolve("io.smallrye.config:smallrye-config")
-                .withoutTransitivity().asFile();
-
-        return ShrinkWrap.create(WebArchive.class, "JsonArrayConverterTest.war")
-                .addPackage(JsonArrayConverter.class.getPackage())
-                .addAsLibraries(smallryeConfig)
-                .addAsResource(
-                        new File("src/main/resources/META-INF/services/org.eclipse.microprofile.config.spi.Converter"),
-                        "META-INF/services/org.eclipse.microprofile.config.spi.Converter")
-                .addAsResource(JsonArrayConverterTest.class.getClassLoader().getResource("test.properties"),
-                        "META-INF/microprofile-config.properties")
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
 
     @Test
     public void testInjection() {
