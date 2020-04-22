@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -110,8 +109,7 @@ public class SmallRyeConfig implements Config, Serializable {
             for (Converter converter : builder.discoverConverters()) {
                 Type type = Converters.getConverterType(converter.getClass());
                 if (type == null) {
-                    throw new IllegalStateException(
-                            "Can not add converter " + converter + " that is not parameterized with a type");
+                    throw ConfigMessages.msg.unableToAddConverter(converter);
                 }
                 SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
             }
@@ -189,11 +187,11 @@ public class SmallRyeConfig implements Config, Serializable {
             try {
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw propertyNotFound(name);
+                throw ConfigMessages.msg.propertyNotFound(name);
             }
         }
         if (converted == null) {
-            throw propertyNotFound(name);
+            throw ConfigMessages.msg.propertyNotFound(name);
         }
         return converted;
     }
@@ -294,13 +292,9 @@ public class SmallRyeConfig implements Config, Serializable {
         return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
             final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
             if (conv == null) {
-                throw new IllegalArgumentException("No Converter registered for " + asType);
+                throw ConfigMessages.msg.noRegisteredConverter(asType);
             }
             return conv;
         });
-    }
-
-    private static NoSuchElementException propertyNotFound(final String name) {
-        return new NoSuchElementException("Property " + name + " not found");
     }
 }

@@ -116,7 +116,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             }
         }
 
-        throw new IllegalStateException("unhandled ConfigProperty");
+        throw InjectionMessages.msg.unhandledConfigProperty();
     }
 
     public Config getConfig() {

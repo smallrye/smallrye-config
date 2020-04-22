@@ -8,7 +8,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -48,19 +47,15 @@ public class ConfigProducerUtil {
             try {
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw propertyNotFound(name);
+                throw InjectionMessages.msg.propertyNotFound(name);
             }
         } else {
             converted = converter.convert(rawValue);
         }
         if (converted == null) {
-            throw propertyNotFound(name);
+            throw InjectionMessages.msg.propertyNotFound(name);
         }
         return converted;
-    }
-
-    private static NoSuchElementException propertyNotFound(final String name) {
-        return new NoSuchElementException("Required property " + name + " not found");
     }
 
     private static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final SmallRyeConfig src) {
@@ -94,7 +89,7 @@ public class ConfigProducerUtil {
         } else if (type instanceof GenericArrayType) {
             return (Class<T>) Array.newInstance(rawTypeOf(((GenericArrayType) type).getGenericComponentType()), 0).getClass();
         } else {
-            throw new IllegalArgumentException("Type has no raw type class: " + type);
+            throw InjectionMessages.msg.noRawType(type);
         }
     }
 

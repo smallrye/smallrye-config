@@ -104,13 +104,11 @@ public class ConfigExtension implements Extension {
                         String defaultValue = configProperty.defaultValue();
                         if (defaultValue == null ||
                                 defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                            adv.addDeploymentProblem(
-                                    new ConfigException(key, "No Config Value exists for required property " + key));
+                            adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(key));
                         }
                     }
                 } catch (IllegalArgumentException cause) {
-                    String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
-                    adv.addDeploymentProblem(new ConfigException(key, message, cause));
+                    adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(cause, key));
                 }
             } else if (type instanceof ParameterizedType) {
                 Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
@@ -122,13 +120,11 @@ public class ConfigExtension implements Extension {
                             String defaultValue = configProperty.defaultValue();
                             if (defaultValue == null ||
                                     defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                                adv.addDeploymentProblem(
-                                        new ConfigException(key, "No Config Value exists for required property " + key));
+                                adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(key));
                             }
                         }
                     } catch (IllegalArgumentException cause) {
-                        String message = "For " + key + ", " + cause.getClass().getSimpleName() + " - " + cause.getMessage();
-                        adv.addDeploymentProblem(new ConfigException(key, message, cause));
+                        adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(cause, key));
                     }
                 }
             }
@@ -153,7 +149,7 @@ public class ConfigExtension implements Extension {
                 return sb.toString();
             }
         }
-        throw new IllegalStateException("Could not find default name for @ConfigProperty InjectionPoint " + ip);
+        throw InjectionMessages.msg.noConfigPropertyDefaultName(ip);
     }
 
     private static boolean isClassHandledByConfigProducer(Type requiredType) {
