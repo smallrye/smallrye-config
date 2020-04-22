@@ -37,7 +37,7 @@ public class PropertiesConfigSourceProvider implements ConfigSourceProvider {
             Enumeration<URL> propertyFileUrls = classLoader.getResources(propertyFileName);
 
             if (!optional && !propertyFileUrls.hasMoreElements()) {
-                throw new IllegalStateException(propertyFileName + " wasn't found.");
+                throw ConfigMessages.msg.fileNotFound(propertyFileName);
             }
 
             while (propertyFileUrls.hasMoreElements()) {
@@ -45,7 +45,7 @@ public class PropertiesConfigSourceProvider implements ConfigSourceProvider {
                 configSources.add(new PropertiesConfigSource(propertyFileUrl));
             }
         } catch (IOException ioe) {
-            throw new IllegalStateException("problem while loading microprofile-config.properties files", ioe);
+            throw ConfigMessages.msg.failedToLoadConfig(ioe);
         }
 
     }

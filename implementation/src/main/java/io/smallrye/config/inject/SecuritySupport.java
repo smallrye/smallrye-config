@@ -19,14 +19,12 @@ package io.smallrye.config.inject;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import org.jboss.logging.Logger;
+import io.smallrye.config.ConfigLogging;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
 class SecuritySupport {
-    private static final Logger LOG = Logger.getLogger("io.smallrye.config");
-
     private SecuritySupport() {
     }
 
@@ -39,7 +37,7 @@ class SecuritySupport {
                 try {
                     tccl = Thread.currentThread().getContextClassLoader();
                 } catch (SecurityException ex) {
-                    LOG.warn("Unable to get context classloader instance.", ex);
+                    ConfigLogging.log.failedToRetrieveClassloader(ex);
                 }
                 return tccl;
             });
