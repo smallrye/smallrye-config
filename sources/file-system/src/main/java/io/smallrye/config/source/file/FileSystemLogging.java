@@ -11,6 +11,6 @@ interface FileSystemLogging extends BasicLogger {
     FileSystemLogging log = Logger.getMessageLogger(FileSystemLogging.class, FileSystemLogging.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 1000, value = "Unable to read content from file %s. Exception: %s")
+    @Message(id = 3000, value = "Unable to read content from file %s. Exception: %s")
     void failedToReadFileContent(String file, String cause);
 }
