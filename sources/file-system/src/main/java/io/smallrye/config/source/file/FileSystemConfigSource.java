@@ -47,7 +47,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
  * </code>
  * </pre>
  *
- * <code>new DirConfigSource("foo")</code> will provide 2 properties:
+ * <code>new FileSystemConfigSource(new File("foo"), 100)</code> will provide 2 properties:
  * <ul>
  * <li><code>num.max</code></li>
  * <li><code>num.size</code></li>
