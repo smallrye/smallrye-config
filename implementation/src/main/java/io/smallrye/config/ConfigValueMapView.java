@@ -15,7 +15,7 @@ import java.util.Set;
  *
  * Use this to wrap the ConfigValue map and expose it where a Map of String name and String value is required.
  */
-public class ConfigValueMapView extends AbstractMap<String, String> {
+public final class ConfigValueMapView extends AbstractMap<String, String> {
     private final Map<String, ConfigValue> delegate;
 
     ConfigValueMapView(final Map<String, ConfigValue> delegate) {

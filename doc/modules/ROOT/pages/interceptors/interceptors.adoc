@@ -15,11 +15,15 @@ An interceptor can be created by implementing the
 https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceInterceptor.java[ConfigSourceInterceptor]
 interface.
 
-The `ConfigSourceInterceptor` has a single method `ConfigValue getValue(ConfigSourceInterceptorContext context, String name)`
-to intercept the resolution of a configuration key. The `ConfigSourceInterceptorContext` is used to proceed with
-the interceptor chain. The chain can be short-circuited by returning an instance of `ConfigValue`.
+The `ConfigSourceInterceptor` is able to intercept the resolution of a configuration name with the method
+`ConfigValue getValue(ConfigSourceInterceptorContext context, String name)`. The `ConfigSourceInterceptorContext` is
+used to proceed with the interceptor chain. The chain can be short-circuited by returning an instance of `ConfigValue`.
 
 The `ConfigValue` objects hold information about the key name, value, config source origin and ordinal.
+
+Additionally, the `ConfigSourceInterceptor` may also intercept resolution of configuration names of configuration
+`ConfigValue` values with the methods `Iterator<String> iterateNames(ConfigSourceInterceptorContext context)` and
+`Iterator<ConfigValue> iterateValues(ConfigSourceInterceptorContext context)`.
 
 The Interceptor Chain is applied before any Conversion is performed on the Configuration.
 

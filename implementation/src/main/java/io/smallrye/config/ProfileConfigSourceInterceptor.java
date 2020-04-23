@@ -1,7 +1,10 @@
 package io.smallrye.config;
 
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.annotation.Priority;
 
@@ -41,17 +44,36 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         if (profile != null) {
-            final ConfigValue profileValue = context.proceed("%" + profile + "." + name);
+            final String normalizeName = normalizeName(name);
+            final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
             if (profileValue != null) {
-                final ConfigValue originalValue = context.proceed(name);
+                final ConfigValue originalValue = context.proceed(normalizeName);
                 if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(profileValue, originalValue) > 0) {
                     return originalValue;
                 } else {
-                    return profileValue;
+                    return profileValue.withName(normalizeName);
                 }
             }
         }
 
         return context.proceed(name);
+    }
+
+    @Override
+    public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
+        final Set<String> names = new HashSet<>();
+        context.iterateNames().forEachRemaining(name -> names.add(normalizeName(name)));
+        return names.iterator();
+    }
+
+    @Override
+    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
+        final Set<ConfigValue> values = new HashSet<>();
+        context.iterateValues().forEachRemaining(value -> values.add(value.withName(normalizeName(value.getName()))));
+        return values.iterator();
+    }
+
+    private String normalizeName(final String name) {
+        return name.startsWith("%" + profile + ".") ? name.substring(profile.length() + 2) : name;
     }
 }
