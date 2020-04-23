@@ -83,7 +83,7 @@ public final class Converters {
                 try {
                     return Class.forName(value, true, SecuritySupport.getContextClassLoader());
                 } catch (ClassNotFoundException e) {
-                    throw new IllegalArgumentException(e);
+                    throw ConfigMessages.msg.classConverterNotFound(e, value);
                 }
             })));
 
@@ -101,7 +101,7 @@ public final class Converters {
                 try {
                     return InetAddress.getByName(value);
                 } catch (UnknownHostException e) {
-                    throw new IllegalArgumentException(e);
+                    throw ConfigMessages.msg.unknownHost(e, value);
                 }
             })));
 
@@ -707,7 +707,7 @@ public final class Converters {
             } else if (array instanceof double[]) {
                 return arrayType.cast(Arrays.copyOf((double[]) array, newSize));
             } else {
-                throw new IllegalStateException();
+                throw ConfigMessages.msg.unknownArrayType();
             }
         }
     }

@@ -278,8 +278,7 @@ class ConfigValueProperties extends HashMap<String, ConfigValue> {
                                 value = (value << 4) + 10 + aChar - 'A';
                                 break;
                             default:
-                                throw new IllegalArgumentException(
-                                        "Malformed \\uxxxx encoding.");
+                                throw ConfigMessages.msg.malformedEncoding();
                         }
                     }
                     out[outLen++] = (char) value;

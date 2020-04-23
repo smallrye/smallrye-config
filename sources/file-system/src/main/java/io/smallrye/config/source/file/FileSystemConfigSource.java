@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
-
 import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
@@ -61,7 +59,6 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = 654034634846856045L;
 
     private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
-    private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
     FileSystemConfigSource(File dir) {
         this(dir, DEFAULT_ORDINAL);
@@ -84,8 +81,7 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
                 return stream.filter(p -> p.toFile().isFile())
                         .collect(Collectors.toMap(it -> it.getFileName().toString(), FileSystemConfigSource::readContent));
             } catch (Exception e) {
-                LOG.warnf("Unable to read content from file %s. Exception: %s", directory.getAbsolutePath(),
-                        e.getLocalizedMessage());
+                FileSystemLogging.log.failedToReadFileContent(directory.getAbsolutePath(), e.getLocalizedMessage());
             }
         }
         return Collections.emptyMap();
