@@ -1,8 +1,6 @@
 package io.smallrye.config.events.regex;
 
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +15,6 @@ import io.smallrye.config.events.ChangeEvent;
 @Interceptor
 @Priority(100)
 public class RegexFilterInterceptor {
-    private static final Logger log = Logger.getLogger(RegexFilterInterceptor.class.getName());
-
     @AroundInvoke
     public Object observer(InvocationContext ctx) throws Exception {
 
@@ -37,8 +33,7 @@ public class RegexFilterInterceptor {
             if (!b)
                 return null;
         } else {
-            log.log(Level.WARNING, "Can not find ChangeEvent parameter for method {0}. @RegexFilter is being ignored",
-                    ctx.getMethod().getName());
+            RegexLogging.log.changeEventParameterMissing(ctx.getMethod().getName());
         }
         return ctx.proceed();
     }

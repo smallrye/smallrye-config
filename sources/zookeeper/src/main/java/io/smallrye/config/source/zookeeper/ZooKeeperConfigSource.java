@@ -2,8 +2,6 @@ package io.smallrye.config.source.zookeeper;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -25,8 +23,6 @@ import io.smallrye.config.common.AbstractConfigSource;
 public class ZooKeeperConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 3127679154588598693L;
 
-    private static final Logger logger = Logger.getLogger(ZooKeeperConfigSource.class.getName());
-
     //Apache Curator framework used to access Zookeeper
     private AtomicReference<CuratorFramework> curatorReference = new AtomicReference<>();
 
@@ -37,10 +33,10 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
     private static final String IGNORED_PREFIX = "io.smallrye.configsource.zookeeper";
 
     //Property the URL of the Zookeeper instance will be read from
-    private static final String ZOOKEEPER_URL_KEY = "io.smallrye.configsource.zookeeper.url";
+    static final String ZOOKEEPER_URL_KEY = "io.smallrye.configsource.zookeeper.url";
 
     //Property of the Application Id. This will be the root znode for an application's properties
-    private static final String APPLICATION_ID_KEY = "io.smallrye.configsource.zookeeper.applicationId";
+    static final String APPLICATION_ID_KEY = "io.smallrye.configsource.zookeeper.applicationId";
 
     //Name of this ConfigSource
     private static final String ZOOKEEPER_CONFIG_SOURCE_NAME = "io.smallrye.configsource.zookeeper";
@@ -58,7 +54,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
             final List<String> children = getCuratorClient().getChildren().forPath(applicationId);
             propertyNames.addAll(children);
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            ZooKeepperLogging.log.failedToRetrievePropertyNames(e);
         }
 
         return propertyNames;
@@ -76,7 +72,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
                 props.put(key, value);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            ZooKeepperLogging.log.failedToRetrieveProperties(e);
         }
 
         return props;
@@ -102,7 +98,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
                 return null;
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            ZooKeepperLogging.log.failedToRetrieveValue(e, key);
         }
         return null;
     }
@@ -120,8 +116,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
             //Only create the ZK Client if the properties exist.
             if (zookeeperUrl.isPresent() && optApplicationId.isPresent()) {
 
-                logger.info("Configuring ZooKeeperConfigSource using url: " + zookeeperUrl + ", applicationId: "
-                        + optApplicationId.get());
+                ZooKeepperLogging.log.configuringZookeeper(zookeeperUrl.get(), optApplicationId.get());
 
                 applicationId = optApplicationId.get();
 
@@ -133,8 +128,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
                 cachedClient.start();
 
             } else {
-                throw new ZooKeeperConfigException(
-                        "Please set properties for \"" + ZOOKEEPER_URL_KEY + "\" and \"" + APPLICATION_ID_KEY + "\"");
+                throw ZooKeeperMessages.msg.propertiesNotSet();
             }
         }
         return cachedClient;

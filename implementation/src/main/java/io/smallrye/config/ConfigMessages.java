@@ -67,4 +67,22 @@ interface ConfigMessages {
 
     @Message(id = 17, value = "Configuration already registered for the given class loader")
     IllegalStateException configAlreadyRegistered();
+
+    @Message(id = 18, value = "Malformed \\uxxxx encoding")
+    IllegalArgumentException malformedEncoding();
+
+    @Message(id = 19, value = "Failed to create new instance from Converter constructor")
+    IllegalArgumentException constructorConverterFailure(@Cause Throwable cause);
+
+    @Message(id = 20, value = "Failed to convert value with static method")
+    IllegalArgumentException staticMethodConverterFailure(@Cause Throwable cause);
+
+    @Message(id = 21, value = "Converter class %s not found")
+    IllegalArgumentException classConverterNotFound(@Cause Throwable cause, String className);
+
+    @Message(id = 22, value = "Host, %s, not found")
+    IllegalArgumentException unknownHost(@Cause Throwable cause, String host);
+
+    @Message(id = 23, value = "Array type being converted is unknown")
+    IllegalArgumentException unknownArrayType();
 }

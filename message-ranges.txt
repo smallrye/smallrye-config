@@ -1,0 +1,43 @@
+# This document is intended to establish the ranges for message IDs in the various sub-projects.
+
+# Range     = owner
+
+00000-00999 = smallrye-config [io.smallrye.confing] (messages)
+
+01000-01999 = smallrye-config [io.smallrye.config] (logging)
+
+02000-02999 = smallrye-config [io.smallrye.config.inject] (messages)
+
+03000-03999 = smallrye-config-source-file-system (logging)
+
+04000-04999 = smallrye-config-source-zookeeper
+
+05000-05999 = smallrye-config-events
+
+06000-06999 =
+
+07000-07999 =
+
+08000-08999 =
+
+09000-09999 =
+
+10000-10999 =
+
+11000-11999 =
+
+12000-12999 =
+
+13000-13999 =
+
+14000-14999 =
+
+15000-15999 =
+
+16000-16999 =
+
+17000-17999 =
+
+18000-18999 =
+
+19000-19999 =
