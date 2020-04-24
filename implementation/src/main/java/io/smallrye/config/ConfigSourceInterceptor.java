@@ -23,8 +23,8 @@ import java.util.Iterator;
  *
  * A {@link ConfigSourceInterceptor} implementation class can specify a priority by way of the standard
  * {@code javax.annotation.Priority} annotation. If no priority is explicitly assigned, the default priority value
- * of {@code 100} is assumed. If multiple interceptors are registered with the same priority, then their execution
- * order may be non deterministic.
+ * of {@code io.smallrye.config.Priorities#APPLICATION} is assumed. If multiple interceptors are registered with the
+ * same priority, then their execution order may be non deterministic.
  */
 public interface ConfigSourceInterceptor extends Serializable {
     /**

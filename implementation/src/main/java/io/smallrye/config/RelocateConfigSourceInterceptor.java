@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-@Priority(400)
+@Priority(Priorities.LIBRARY + 1000)
 public class RelocateConfigSourceInterceptor implements ConfigSourceInterceptor {
     private final Function<String, String> mapping;
 

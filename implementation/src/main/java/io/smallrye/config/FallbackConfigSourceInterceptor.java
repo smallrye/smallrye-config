@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-@Priority(300)
+@Priority(Priorities.LIBRARY + 400)
 public class FallbackConfigSourceInterceptor implements ConfigSourceInterceptor {
     private final Function<String, String> mapping;
 

@@ -161,7 +161,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(-Integer.MAX_VALUE);
+                return OptionalInt.of(Priorities.LIBRARY + 100);
             }
         }));
 

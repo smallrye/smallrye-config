@@ -38,27 +38,77 @@ The `ConfigSourceInterceptorFactory` may initialize the interceptor with access 
 (so it can be used to configure the interceptor and retrieve configuration values) and set the priority.
 
 Alternatively, interceptors may be registered via the Programmatic API in `SmallRyeConfigBuilder#withInterceptors` or
-`SmallRyeConfigBuilder.withInterceptorFactories`.
+`SmallRyeConfigBuilder#withInterceptorFactories`.
 
 === Priority
 
 A ConfigSourceInterceptor implementation class can specify a priority by way of the standard `javax.annotation.Priority`
-annotation. If no priority is explicitly assigned, the default priority value of `100` is assumed. If multiple
-interceptors are registered with the same priority, then their execution order may be non-deterministic.
+annotation. If no priority is explicitly assigned, the default priority value of
+`io.smallrye.config.Priorities.APPLICATION` is assumed. If multiple interceptors are registered with the same priority,
+then their execution order may be non-deterministic.
+
+A collection of built-in priority constants can be found in `io.smallrye.config.Priorities`. It is recommended to use
+`io.smallrye.config.Priorities.APPLICATION` has a baseline for user defined interceptors.
 
 == Built-In Interceptors
 
-SmallRye Config provides the following built-in Interceptors:
+SmallRye Config provides the following built-in Interceptors (ordered by priority):
 
-* <<expression-interceptor>>
-* <<profile-interceptor>>
 * <<relocate-interceptor>>
+* <<profile-interceptor>>
+* <<expression-interceptor>>
 * <<fallback-interceptor>>
 * <<logging-interceptor>>
+* <<secret-keys-interceptor>>
 
 None of the interceptors is registered by default. Registration needs to happen via the ServiceLoader
-mechanism, via the Programmatic API or by calling `SmallRyeConfigBuilder.addDefaultInterceptors`, which adds the
-`ExpressionConfigSourceInterceptor` and the `ProfileConfigSourceInterceptor`.
+mechanism, via the Programmatic API or by calling `SmallRyeConfigBuilder#addDefaultInterceptors`, which adds the
+`ExpressionConfigSourceInterceptor`, the `ProfileConfigSourceInterceptor` and the `SecretKeysConfigSourceInterceptor`.
+
+[[relocate-interceptor]]
+=== RelocateConfigSourceInterceptor
+
+The `RelocateConfigSourceInterceptor` allows relocating a configuration name to another name, by providing a
+transformation function or just a simple key value map.
+
+Consider when a configuration key is renamed, lookup needs to happen on the new name, but also on the old name if the
+ConfigSources are not updated yet. The relocation function gives priority to the new resolved configuration name or
+resolves to the old name if no value is found under the new relocation name.
+
+The following `RelocateConfigSourceInterceptor` can relocate configuration names in the `smallrye.config`
+namespace to the `microprofile.config` namespace:
+
+[source,java]
+----
+new RelocateConfigSourceInterceptor(
+    name -> name.startsWith("smallrye.config") ?
+    name.replaceAll("smallrye\\.config", "microprofile.config") :
+    name));
+----
+
+Relocation can also be done with Expression expansion.
+
+[[profile-interceptor]]
+=== ProfileConfigSourceInterceptor
+
+The `ProfileConfigSourceInterceptor` allows multiple configurations with the same name and selects them via
+a profile property.
+
+To be able to set properties with the same name, each property needs to be prefixed with `%` followed by the profile
+name and a dot:
+
+[source,properties]
+----
+my.prop=1234
+%dev.my.prop=5678
+----
+
+Lookup is always done using the `my.prop` property name. To use the profile `dev`, the configuration
+`smallrye.config.profile=dev` has to be set into any valid ConfigSource.
+
+When looking up the property `my.prop` with the `dev` profile active the value is `5678`.
+
+Only one profile can be active at any given time.
 
 [[expression-interceptor]]
 === ExpressionConfigSourceInterceptor
@@ -85,58 +135,13 @@ Additionally, the Expression Expansion engine supports the following segments:
 If an expression cannot be expanded and no default is supplied a `NoSuchElementException` is thrown.
 
 Expression expansion may be selectively disabled with the API
-`io.smallrye.config.Expressions.withoutExpansion(java.lang.Runnable)`.
-
-[[profile-interceptor]]
-=== ProfileConfigSourceInterceptor
-
-The `ProfileConfigSourceInterceptor` allows multiple configurations with the same name and selects them via
-a profile property.
-
-To be able to set properties with the same name, each property needs to be prefixed with `%` followed by the profile
-name and a dot:
-
-[source,properties]
-----
-my.prop=1234
-%dev.my.prop=5678
-----
-
-Lookup is always done using the `my.prop` property name. To use the profile `dev`, the configuration
-`smallrye.config.profile=dev` has to be set into any valid ConfigSource.
-
-When looking up the property `my.prop` with the `dev` profile active the value is `5678`.
-
-Only one profile can be active at any given time.
+`io.smallrye.config.Expressions#withoutExpansion(java.lang.Runnable)`.
 
 ==== Config Priority over Profiles
 
 A ConfigSource with the highest priority, that defines `my.prop` will take priority over another low priority
 ConfigSource that defines `%dev.my.prop`. This allows overriding profiles properties regardless of the active
 profile.
-
-[[relocate-interceptor]]
-=== RelocateConfigSourceInterceptor
-
-The `RelocateConfigSourceInterceptor` allows relocating a configuration name to another name, by providing a
-transformation function or just a simple key value map.
-
-Consider when a configuration key is renamed, lookup needs to happen on the new name, but also on the old name if the
-ConfigSources are not updated yet. The relocation function gives priority to the new resolved configuration name or
-resolves to the old name if no value is found under the new relocation name.
-
-The following `RelocateConfigSourceInterceptor` can relocate configuration names in the `smallrye.config`
-namespace to the `microprofile.config` namespace:
-
-[source,java]
-----
-new RelocateConfigSourceInterceptor(
-    name -> name.startsWith("smallrye.config") ?
-    name.replaceAll("smallrye\\.config", "microprofile.config") :
-    name));
-----
-
-Relocation can also be done with Expression expansion.
 
 [[fallback-interceptor]]
 === FallbackConfigSourceInterceptor
@@ -167,3 +172,8 @@ information includes config name and value, the config source origing and locati
 
 The log is done as `debug`, so the debug threshold must be set to `debug` for the `io.smallrye.config` appender to
 display the logs.
+
+[[secret-keys-interceptor]]
+=== SecretKeysConfigSourceInterceptor
+
+The `SecretKeysConfigSourceInterceptor` supports the xref:config/secret-keys.adoc[Secret Keys] feature.

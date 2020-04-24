@@ -151,7 +151,7 @@ public class ConfigSourceInterceptorTest {
         }
     }
 
-    @Priority(300)
+    @Priority(Priorities.APPLICATION + 300)
     private static class HighPriorityConfigSourceInterceptor implements ConfigSourceInterceptor {
         @Override
         public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
@@ -159,7 +159,7 @@ public class ConfigSourceInterceptorTest {
         }
     }
 
-    @Priority(200)
+    @Priority(Priorities.APPLICATION + 200)
     private static class LowerPriorityConfigSourceInterceptor implements ConfigSourceInterceptor {
         @Override
         public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {

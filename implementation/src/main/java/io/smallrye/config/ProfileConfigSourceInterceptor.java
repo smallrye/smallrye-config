@@ -8,7 +8,7 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-@Priority(600)
+@Priority(Priorities.LIBRARY + 800)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public static final String SMALLRYE_PROFILE = "smallrye.config.profile";
 
