@@ -84,6 +84,9 @@ Additionally, the Expression Expansion engine supports the following segments:
 
 If an expression cannot be expanded and no default is supplied a `NoSuchElementException` is thrown.
 
+Expression expansion may be selectively disabled with the API
+`io.smallrye.config.Expressions.withoutExpansion(java.lang.Runnable)`.
+
 [[profile-interceptor]]
 === ProfileConfigSourceInterceptor
 

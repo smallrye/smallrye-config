@@ -1,18 +1,35 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ExpressionConfigSourceInterceptor.disable;
-import static io.smallrye.config.ExpressionConfigSourceInterceptor.enable;
+import java.util.function.Supplier;
 
-public class Expressions {
+public final class Expressions {
+    private static final ThreadLocal<Boolean> ENABLE = ThreadLocal.withInitial(() -> Boolean.TRUE);
+
+    private Expressions() {
+        throw new UnsupportedOperationException();
+    }
+
+    public static boolean isEnabled() {
+        return ENABLE.get();
+    }
+
     public static void withoutExpansion(final Runnable action) {
-        if (disable()) {
+        withoutExpansion(() -> {
+            action.run();
+            return null;
+        });
+    }
+
+    public static <T> T withoutExpansion(Supplier<T> supplier) {
+        if (isEnabled()) {
+            ENABLE.set(false);
             try {
-                action.run();
+                return supplier.get();
             } finally {
-                enable();
+                ENABLE.set(true);
             }
         } else {
-            action.run();
+            return supplier.get();
         }
     }
 }
