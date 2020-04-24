@@ -7,7 +7,7 @@ import javax.annotation.Priority;
 
 import io.smallrye.common.expression.Expression;
 
-@Priority(500)
+@Priority(Priorities.LIBRARY + 600)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {

@@ -20,9 +20,9 @@ import java.util.OptionalInt;
  */
 public interface ConfigSourceInterceptorFactory {
     /**
-     * The default priority value, {@code 100}.
+     * The default priority value, {@link Priorities#APPLICATION}.
      */
-    int DEFAULT_PRIORITY = 100;
+    int DEFAULT_PRIORITY = Priorities.APPLICATION;
 
     /**
      * Gets the {@link ConfigSourceInterceptor} from the ConfigSourceInterceptorFactory. Implementations of this

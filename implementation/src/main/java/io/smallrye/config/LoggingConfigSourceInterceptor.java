@@ -2,6 +2,9 @@ package io.smallrye.config;
 
 import static io.smallrye.config.SecretKeys.doLocked;
 
+import javax.annotation.Priority;
+
+@Priority(Priorities.LIBRARY + 200)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
