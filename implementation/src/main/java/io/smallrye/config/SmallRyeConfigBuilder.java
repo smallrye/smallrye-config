@@ -52,6 +52,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private Map<Type, ConverterWithPriority> converters = new HashMap<>();
+    private String profile = null;
     private Set<String> secretKeys = new HashSet<>();
     private List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -145,7 +146,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return new ProfileConfigSourceInterceptor(context);
+                return profile != null ? new ProfileConfigSourceInterceptor(profile)
+                        : new ProfileConfigSourceInterceptor(context);
             }
 
             @Override
@@ -196,6 +198,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         this.interceptors.addAll(Stream.of(interceptorFactories)
                 .map(InterceptorWithPriority::new)
                 .collect(Collectors.toList()));
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withProfile(String profile) {
+        addDefaultInterceptors();
+        this.profile = profile;
         return this;
     }
 

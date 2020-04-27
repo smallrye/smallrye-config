@@ -177,6 +177,16 @@ public class ProfileConfigSourceInterceptorTest {
         assertTrue(properties.contains("prof.only"));
     }
 
+    @Test
+    public void profileName() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("my.prop", "1", "%prof.my.prop", "2"))
+                .withProfile("prof")
+                .build();
+
+        assertEquals("2", config.getConfigValue("my.prop").getValue());
+    }
+
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(KeyValuesConfigSource.config(keyValues))
