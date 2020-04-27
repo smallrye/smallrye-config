@@ -65,6 +65,7 @@
 
   <modules>
     <module>common</module>
+    <module>api</module>
     <module>implementation</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
@@ -117,6 +118,11 @@
       <!-- External SmallRye Dependencies -->
       <dependency>
         <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-annotation</artifactId>
+        <version>${version.smallrye.common}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
         <artifactId>smallrye-common-expression</artifactId>
         <version>${version.smallrye.common}</version>
       </dependency>
@@ -127,6 +133,11 @@
       </dependency>
 
       <!-- Dependencies provided by the project -->
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-common</artifactId>
