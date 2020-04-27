@@ -9,8 +9,18 @@ import io.smallrye.common.expression.Expression;
 
 @Priority(Priorities.LIBRARY + 600)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final int MAX_DEPTH = 32;
+
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+        return getValue(context, name, 1);
+    }
+
+    private ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name, final int depth) {
+        if (depth == MAX_DEPTH) {
+            throw ConfigMessages.msg.expressionExpansionTooDepth(name);
+        }
+
         final ConfigValue configValue = context.proceed(name);
 
         if (!Expressions.isEnabled()) {
@@ -23,7 +33,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
         final Expression expression = Expression.compile(configValue.getValue(), LENIENT_SYNTAX, NO_TRIM);
         final String expanded = expression.evaluate((resolveContext, stringBuilder) -> {
-            final ConfigValue resolve = context.proceed(resolveContext.getKey());
+            final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
             if (resolve != null) {
                 stringBuilder.append(resolve.getValue());
             } else if (resolveContext.hasDefault()) {

@@ -78,6 +78,25 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
+    public void multipleExpansions() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "my.prop.two", "${my.prop}", "my.prop.three",
+                "${my.prop.two}", "my.prop.four", "${my.prop.three}");
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getRawValue("my.prop.two"));
+        assertEquals("1234", config.getRawValue("my.prop.three"));
+        assertEquals("1234", config.getRawValue("my.prop.four"));
+    }
+
+    @Test
+    public void infiniteExpansion() {
+        SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "${my.prop}");
+
+        assertThrows("Recursive expression expansion is too deep for my.prop", IllegalArgumentException.class,
+                () -> config.getRawValue("my.prop"));
+    }
+
+    @Test
     public void withoutExpansion() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
