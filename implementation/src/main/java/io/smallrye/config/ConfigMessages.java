@@ -88,4 +88,7 @@ interface ConfigMessages {
 
     @Message(id = 24, value = "Not allowed to access secret key %s")
     SecurityException notAllowed(String name);
+
+    @Message(id = 25, value = "Recursive expression expansion is too deep for %s")
+    IllegalArgumentException expressionExpansionTooDepth(String name);
 }
