@@ -22,6 +22,7 @@ import static java.util.Collections.unmodifiableMap;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
@@ -40,6 +41,11 @@ class SysPropConfigSource extends AbstractConfigSource {
     @Override
     public Map<String, String> getProperties() {
         return getSystemProperties();
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return getProperties().keySet();
     }
 
     @Override
