@@ -23,6 +23,7 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
@@ -40,6 +41,11 @@ class SysPropConfigSource extends AbstractConfigSource {
     public Map<String, String> getProperties() {
         return Collections.unmodifiableMap(
                 propertiesToMap(AccessController.doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return getProperties().keySet();
     }
 
     @Override

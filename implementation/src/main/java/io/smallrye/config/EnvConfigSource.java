@@ -20,6 +20,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
@@ -37,6 +38,11 @@ public class EnvConfigSource extends AbstractConfigSource {
     public Map<String, String> getProperties() {
         return Collections
                 .unmodifiableMap(AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(getProperties().keySet());
     }
 
     @Override

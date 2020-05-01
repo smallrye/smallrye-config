@@ -3,6 +3,7 @@ package io.smallrye.config;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -47,6 +48,11 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
     public MapBackedConfigValueConfigSource(String name, Map<String, ConfigValue> propertyMap, int defaultOrdinal,
             boolean copy) {
         this(name, copy ? new LinkedHashMap<>(propertyMap) : propertyMap, defaultOrdinal);
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return properties.keySet();
     }
 
     @Override
