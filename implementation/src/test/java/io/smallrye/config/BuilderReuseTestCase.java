@@ -72,13 +72,9 @@ public class BuilderReuseTestCase {
         builder.withConverter(Integer.class, 3000, converter3000); //priority is 3000
         final SmallRyeConfig config3 = builder.build();
 
-        Converter<Integer> converter1 = config1.getConverter(Integer.class);
-        Converter<Integer> converter2 = config2.getConverter(Integer.class);
-        Converter<Integer> converter3 = config3.getConverter(Integer.class);
-
-        assertEquals(converter1000, converter1);
-        assertEquals(converter2000, converter2);
-        assertEquals(converter3000, converter3);
+        assertEquals(converter1000, config1.getConverter(Integer.class).get());
+        assertEquals(converter2000, config2.getConverter(Integer.class).get());
+        assertEquals(converter3000, config3.getConverter(Integer.class).get());
     }
 
     @Priority(2500)

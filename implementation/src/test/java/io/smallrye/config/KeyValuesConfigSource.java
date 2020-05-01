@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -33,6 +34,11 @@ public class KeyValuesConfigSource implements ConfigSource, Serializable {
     @Override
     public Map<String, String> getProperties() {
         return Collections.unmodifiableMap(properties);
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(properties.keySet());
     }
 
     @Override
