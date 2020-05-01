@@ -56,7 +56,7 @@ public class ConvertersStringCleanupTestCase<T> {
     @MethodSource("data")
     public void testSimple(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(string));
     }
 
@@ -64,7 +64,7 @@ public class ConvertersStringCleanupTestCase<T> {
     @MethodSource("data")
     public void testTrailingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(string + " "));
     }
 
@@ -72,7 +72,7 @@ public class ConvertersStringCleanupTestCase<T> {
     @MethodSource("data")
     public void testLeadingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(" " + string));
     }
 
@@ -80,7 +80,7 @@ public class ConvertersStringCleanupTestCase<T> {
     @MethodSource("data")
     public void testLeadingAndTrailingWhitespaces(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
-        final Converter<T> converter = config.getConverter(type);
+        final Converter<T> converter = config.requireConverter(type);
         assertEquals(expected, converter.convert(" \t " + string + "\t\t "));
     }
 
