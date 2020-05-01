@@ -22,6 +22,7 @@ import static java.util.Collections.unmodifiableMap;
 
 import java.security.PrivilegedAction;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.smallrye.config.common.AbstractConfigSource;
@@ -42,6 +43,11 @@ public class EnvConfigSource extends AbstractConfigSource {
     @Override
     public Map<String, String> getProperties() {
         return getEnvProperties();
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.unmodifiableSet(getProperties().keySet());
     }
 
     @Override
