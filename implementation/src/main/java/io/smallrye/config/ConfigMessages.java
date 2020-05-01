@@ -121,4 +121,7 @@ interface ConfigMessages {
 
     @Message(id = 35, value = "Failed to load resource")
     IllegalStateException failedToLoadResource(@Cause Throwable cause);
+
+    @Message(id = 36, value = "Type %s not supported for unwrapping.")
+    IllegalArgumentException getTypeNotSupportedForUnwrapping(Class<?> type);
 }
