@@ -314,7 +314,8 @@ public class SmallRyeConfig implements Config, Serializable {
         ConfigSources(final List<ConfigSource> sources, final ConfigSources configSources) {
             sources.sort(CONFIG_SOURCE_COMPARATOR);
 
-            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
+            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(
+                    EMPTY, null);
 
             for (int i = sources.size() - 1; i >= 0; i--) {
                 current = new SmallRyeConfigSourceInterceptorContext(configSourceInterceptor(sources.get(i)), current);

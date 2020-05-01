@@ -25,9 +25,9 @@
     <version>1.7.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>smallrye-config</artifactId>
+  <artifactId>smallrye-config-api</artifactId>
 
-  <name>SmallRye: MicroProfile Config Implementation</name>
+  <name>SmallRye: MicroProfile Config API</name>
 
   <dependencies>
     <dependency>
@@ -46,50 +46,14 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-common</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.smallrye.common</groupId>
-      <artifactId>smallrye-common-expression</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.common</groupId>
-      <artifactId>smallrye-common-constraint</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
+      <artifactId>smallrye-common-annotation</artifactId>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-junit4</artifactId>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.enterprise</groupId>
-          <artifactId>cdi-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 
@@ -99,10 +63,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <environmentVariables>
-            <!-- Used by EnvConfigSourceTestCase -->
-            <SMALLRYE_MP_CONFIG_PROP>1234</SMALLRYE_MP_CONFIG_PROP>
-          </environmentVariables>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>
           <argLine>-Xmx512m</argLine>
