@@ -143,6 +143,20 @@
           <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.jboss.bridger</groupId>
+        <artifactId>bridger</artifactId>
+        <version>1.5.Final</version>
+        <executions>
+          <execution>
+            <id>weave</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>transform</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
