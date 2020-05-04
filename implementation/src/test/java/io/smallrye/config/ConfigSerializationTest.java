@@ -7,6 +7,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.function.Function;
 
 import org.junit.Test;
 
@@ -16,6 +18,8 @@ public class ConfigSerializationTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
+                .withInterceptors(new RelocateConfigSourceInterceptor((Serializable & Function<String, String>) name -> name))
+                .withInterceptors(new FallbackConfigSourceInterceptor((Serializable & Function<String, String>) name -> name))
                 .withSources(ConfigValueConfigSourceWrapper.wrap(KeyValuesConfigSource.config("my.prop", "1")))
                 .build();
 
