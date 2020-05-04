@@ -142,7 +142,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     List<InterceptorWithPriority> getDefaultInterceptors() {
         final List<InterceptorWithPriority> interceptors = new ArrayList<>();
 
-        interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -152,9 +151,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(600);
+                return OptionalInt.of(Priorities.LIBRARY + 800);
             }
         }));
+        interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
