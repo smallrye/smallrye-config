@@ -95,10 +95,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return discoveredSources;
     }
 
-    List<Converter> discoverConverters() {
-        List<Converter> discoveredConverters = new ArrayList<>();
-        ServiceLoader<Converter> converterLoader = ServiceLoader.load(Converter.class, classLoader);
-        converterLoader.forEach(discoveredConverters::add);
+    List<Converter<?>> discoverConverters() {
+        List<Converter<?>> discoveredConverters = new ArrayList<>();
+        ServiceLoader.load(Converter.class, classLoader).forEach(discoveredConverters::add);
         return discoveredConverters;
     }
 
@@ -236,11 +235,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    static void addConverter(Type type, Converter converter, Map<Type, ConverterWithPriority> converters) {
+    static void addConverter(Type type, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
         addConverter(type, getPriority(converter), converter, converters);
     }
 
-    static void addConverter(Type type, int priority, Converter converter,
+    static void addConverter(Type type, int priority, Converter<?> converter,
             Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
         ConverterWithPriority oldConverter = converters.get(type);
@@ -306,15 +305,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class ConverterWithPriority {
-        private final Converter converter;
+        private final Converter<?> converter;
         private final int priority;
 
-        private ConverterWithPriority(Converter converter, int priority) {
+        private ConverterWithPriority(Converter<?> converter, int priority) {
             this.converter = converter;
             this.priority = priority;
         }
 
-        Converter getConverter() {
+        Converter<?> getConverter() {
             return converter;
         }
 
