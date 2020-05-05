@@ -315,6 +315,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class InterceptorWithPriority {
+        static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
 
@@ -332,12 +334,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                         return priority;
                     }
 
-                    final Integer annotationPriorityOrDefault = Optional
-                            .ofNullable(interceptor.getClass().getAnnotation(Priority.class))
-                            .map(Priority::value)
-                            .orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
-
-                    return OptionalInt.of(annotationPriorityOrDefault);
+                    return Optional.ofNullable(interceptor.getClass().getAnnotation(Priority.class))
+                            .map(priority1 -> OptionalInt.of(priority1.value()))
+                            .orElse(OPTIONAL_DEFAULT_PRIORITY);
                 }
             });
         }
