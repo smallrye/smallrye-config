@@ -2,8 +2,6 @@ package io.smallrye.config;
 
 import java.util.Objects;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * The ConfigValue is a metadata object that holds additional information after the lookup of a configuration.
  * <p>
@@ -16,7 +14,6 @@ import io.smallrye.common.annotation.Experimental;
  * This is used together with {@link ConfigValueConfigSource} and {@link ConfigSourceInterceptor} to expose the
  * Configuration lookup metadata.
  */
-@Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
 public class ConfigValue {
     private final String name;
     private final String value;

@@ -47,10 +47,6 @@
     </dependency>
     <dependency>
       <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config-common</artifactId>
     </dependency>
     <dependency>

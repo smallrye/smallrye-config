@@ -5,8 +5,6 @@ import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * Extends the original {@link ConfigSource} to expose methods that return a {@link ConfigValue}. The
  * {@link ConfigValue} allows to retrieve additional metadata associated with the configuration resolution.
@@ -19,7 +17,6 @@ import io.smallrye.common.annotation.Experimental;
  *
  * Ideally, this should move the the MicroProfile Config API, once the concept is well-proven.
  */
-@Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
 public interface ConfigValueConfigSource extends ConfigSource {
     /**
      * Return the {@link ConfigValue} for the specified property in this configuration source.

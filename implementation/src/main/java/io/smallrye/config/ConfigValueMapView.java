@@ -9,15 +9,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * The ConfigValueMapView is view over a Map of String configs names and ConfigValue value.
  * <p>
  *
  * Use this to wrap the ConfigValue map and expose it where a Map of String name and String value is required.
  */
-@Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
 public final class ConfigValueMapView extends AbstractMap<String, String> {
     private final Map<String, ConfigValue> delegate;
 

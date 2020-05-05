@@ -21,7 +21,7 @@ public class ConfigValueMapStringViewTest {
 
     @Test
     public void isEmpty() {
-        assertTrue(new ConfigValueMapStringView(new HashMap<>(), "test", 1).isEmpty());
+        assertTrue(new ConfigValueMapView(new HashMap<>()).isEmpty());
     }
 
     @Test
