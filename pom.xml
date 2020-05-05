@@ -117,6 +117,11 @@
       <!-- External SmallRye Dependencies -->
       <dependency>
         <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-annotation</artifactId>
+        <version>${version.smallrye.common}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
         <artifactId>smallrye-common-expression</artifactId>
         <version>${version.smallrye.common}</version>
       </dependency>
