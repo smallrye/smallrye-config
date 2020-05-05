@@ -49,12 +49,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private static final String WEB_INF_MICROPROFILE_CONFIG_PROPERTIES = "WEB-INF/classes/META-INF/microprofile-config.properties";
 
     // sources are not sorted by their ordinals
-    private List<ConfigSource> sources = new ArrayList<>();
+    private final List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
-    private Map<Type, ConverterWithPriority> converters = new HashMap<>();
+    private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private String profile = null;
-    private Set<String> secretKeys = new HashSet<>();
-    private List<InterceptorWithPriority> interceptors = new ArrayList<>();
+    private final Set<String> secretKeys = new HashSet<>();
+    private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
