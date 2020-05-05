@@ -271,10 +271,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return converters;
     }
 
-    Set<String> getSecretKeys() {
-        return secretKeys;
-    }
-
     List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
     }
@@ -315,10 +311,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         Converter<?> getConverter() {
             return converter;
-        }
-
-        int getPriority() {
-            return priority;
         }
     }
 
