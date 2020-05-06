@@ -2,7 +2,7 @@
 
 # Range     = owner
 
-00000-00999 = smallrye-config [io.smallrye.confing] (messages)
+00000-00999 = smallrye-config [io.smallrye.config] (messages)
 
 01000-01999 = smallrye-config [io.smallrye.config] (logging)
 
