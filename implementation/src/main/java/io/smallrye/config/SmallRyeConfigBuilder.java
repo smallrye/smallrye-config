@@ -49,12 +49,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private static final String WEB_INF_MICROPROFILE_CONFIG_PROPERTIES = "WEB-INF/classes/META-INF/microprofile-config.properties";
 
     // sources are not sorted by their ordinals
-    private List<ConfigSource> sources = new ArrayList<>();
+    private final List<ConfigSource> sources = new ArrayList<>();
     private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
-    private Map<Type, ConverterWithPriority> converters = new HashMap<>();
+    private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private String profile = null;
-    private Set<String> secretKeys = new HashSet<>();
-    private List<InterceptorWithPriority> interceptors = new ArrayList<>();
+    private final Set<String> secretKeys = new HashSet<>();
+    private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -95,10 +95,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return discoveredSources;
     }
 
-    List<Converter> discoverConverters() {
-        List<Converter> discoveredConverters = new ArrayList<>();
-        ServiceLoader<Converter> converterLoader = ServiceLoader.load(Converter.class, classLoader);
-        converterLoader.forEach(discoveredConverters::add);
+    List<Converter<?>> discoverConverters() {
+        List<Converter<?>> discoveredConverters = new ArrayList<>();
+        ServiceLoader.load(Converter.class, classLoader).forEach(discoveredConverters::add);
         return discoveredConverters;
     }
 
@@ -236,11 +235,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    static void addConverter(Type type, Converter converter, Map<Type, ConverterWithPriority> converters) {
+    static void addConverter(Type type, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
         addConverter(type, getPriority(converter), converter, converters);
     }
 
-    static void addConverter(Type type, int priority, Converter converter,
+    static void addConverter(Type type, int priority, Converter<?> converter,
             Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
         ConverterWithPriority oldConverter = converters.get(type);
@@ -270,10 +269,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     Map<Type, ConverterWithPriority> getConverters() {
         return converters;
-    }
-
-    Set<String> getSecretKeys() {
-        return secretKeys;
     }
 
     List<InterceptorWithPriority> getInterceptors() {
@@ -306,24 +301,22 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class ConverterWithPriority {
-        private final Converter converter;
+        private final Converter<?> converter;
         private final int priority;
 
-        private ConverterWithPriority(Converter converter, int priority) {
+        private ConverterWithPriority(Converter<?> converter, int priority) {
             this.converter = converter;
             this.priority = priority;
         }
 
-        Converter getConverter() {
+        Converter<?> getConverter() {
             return converter;
-        }
-
-        int getPriority() {
-            return priority;
         }
     }
 
     static class InterceptorWithPriority {
+        static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
 
@@ -341,12 +334,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                         return priority;
                     }
 
-                    final Integer annotationPriorityOrDefault = Optional
-                            .ofNullable(interceptor.getClass().getAnnotation(Priority.class))
-                            .map(Priority::value)
-                            .orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
-
-                    return OptionalInt.of(annotationPriorityOrDefault);
+                    return Optional.ofNullable(interceptor.getClass().getAnnotation(Priority.class))
+                            .map(priority1 -> OptionalInt.of(priority1.value()))
+                            .orElse(OPTIONAL_DEFAULT_PRIORITY);
                 }
             });
         }
