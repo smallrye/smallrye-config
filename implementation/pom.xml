@@ -46,8 +46,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-api</artifactId>
+      <groupId>io.smallrye.common</groupId>
+      <artifactId>smallrye-common-annotation</artifactId>
     </dependency>
     <dependency>
       <groupId>io.smallrye.config</groupId>

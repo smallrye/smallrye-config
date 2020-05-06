@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -96,6 +97,20 @@ public class ConfigValueMapViewTest {
         assertTrue(values.contains(null));
         assertTrue(values.contains("1234"));
         assertThrows(UnsupportedOperationException.class, () -> values.remove("1234"));
+    }
+
+    @Test
+    public void configSourceMap() throws IOException {
+        final ConfigValuePropertiesConfigSource configSource = new ConfigValuePropertiesConfigSource(
+                ConfigValueMapViewTest.class.getResource("/config-values.properties"));
+        final Map<String, String> properties = configSource.getProperties();
+
+        assertEquals("abc", properties.get("my.prop"));
+        assertEquals("abc", properties.get("my.prop"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.remove("x"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.put("x", "x"));
+        assertThrows(UnsupportedOperationException.class, () -> properties.putAll(new HashMap<>()));
+        assertThrows(UnsupportedOperationException.class, properties::clear);
     }
 
     private ConfigValueMapView sampleMap() {
