@@ -7,6 +7,8 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 final class ConfigValueConfigSourceWrapper implements ConfigValueConfigSource, Serializable {
+    private static final long serialVersionUID = -1109094614437147326L;
+
     private final ConfigSource configSource;
 
     private ConfigValueConfigSourceWrapper(final ConfigSource configSource) {

@@ -72,6 +72,8 @@ public interface ConfigSourceInterceptor extends Serializable {
     }
 
     ConfigSourceInterceptor EMPTY = new ConfigSourceInterceptor() {
+        private static final long serialVersionUID = 5749001327530543433L;
+
         @Override
         public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
             return null;

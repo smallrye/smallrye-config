@@ -7,6 +7,8 @@ import javax.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 1000)
 public class RelocateConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final long serialVersionUID = 3476637906383945843L;
+
     private final Function<String, String> mapping;
 
     public RelocateConfigSourceInterceptor(final Function<String, String> mapping) {

@@ -9,6 +9,8 @@ import io.smallrye.common.expression.Expression;
 
 @Priority(Priorities.LIBRARY + 600)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final long serialVersionUID = -539336551011916218L;
+
     private static final int MAX_DEPTH = 32;
 
     @Override

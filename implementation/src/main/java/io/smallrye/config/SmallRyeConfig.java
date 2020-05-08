@@ -267,6 +267,8 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private static class ConfigSources implements Serializable {
+        private static final long serialVersionUID = 3483018375584151712L;
+
         private final List<ConfigSource> sources;
         private final List<ConfigSourceInterceptor> interceptors;
         private final ConfigSourceInterceptorContext interceptorChain;
