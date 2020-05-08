@@ -6,6 +6,8 @@ import javax.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 200)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final long serialVersionUID = 367246512037404779L;
+
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         try {

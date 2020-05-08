@@ -1,9 +1,8 @@
 package io.smallrye.config;
 
-import java.io.Serializable;
 import java.util.function.Supplier;
 
-public final class SecretKeys implements Serializable {
+public final class SecretKeys {
     private static final ThreadLocal<Boolean> LOCKED = ThreadLocal.withInitial(() -> Boolean.TRUE);
 
     private SecretKeys() {

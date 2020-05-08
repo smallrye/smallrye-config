@@ -9,6 +9,8 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final long serialVersionUID = 5513331820671039755L;
+
     private final ConfigValueConfigSource configSource;
 
     private SmallRyeConfigSourceInterceptor(final ConfigSource configSource) {

@@ -12,6 +12,7 @@ import javax.annotation.Priority;
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public static final String SMALLRYE_PROFILE = "smallrye.config.profile";
 
+    private static final long serialVersionUID = -6305289277993917313L;
     private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (o1, o2) -> {
         int res = Integer.compare(o2.getConfigSourceOrdinal(), o1.getConfigSourceOrdinal());
         if (res != 0) {

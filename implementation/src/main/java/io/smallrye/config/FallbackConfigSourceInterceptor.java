@@ -7,6 +7,8 @@ import javax.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 400)
 public class FallbackConfigSourceInterceptor implements ConfigSourceInterceptor {
+    private static final long serialVersionUID = 1472367702046537565L;
+
     private final Function<String, String> mapping;
 
     public FallbackConfigSourceInterceptor(final Function<String, String> mapping) {

@@ -3,8 +3,10 @@ package io.smallrye.config;
 import java.util.Iterator;
 
 class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorContext {
-    private ConfigSourceInterceptor interceptor;
-    private SmallRyeConfigSourceInterceptorContext next;
+    private static final long serialVersionUID = 6654406739008729337L;
+
+    private final ConfigSourceInterceptor interceptor;
+    private final SmallRyeConfigSourceInterceptorContext next;
 
     SmallRyeConfigSourceInterceptorContext(
             final ConfigSourceInterceptor interceptor,
