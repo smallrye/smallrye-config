@@ -40,7 +40,7 @@ jobs:
           git config --global user.email "smallrye@googlegroups.com"
           git checkout -b release
           mvn -B release:prepare -Prelease -DreleaseVersion=${{steps.metadata.outputs.current-version}} -s maven-settings.xml
-          git checkout master
+          git checkout ${{github.base_ref}}
           git rebase release
           mvn -B release:perform -Prelease -s maven-settings.xml
           git push

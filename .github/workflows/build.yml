@@ -2,6 +2,8 @@ name: SmallRye Build
 
 on:
   push:
+    branches: 
+      - master
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
