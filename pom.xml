@@ -34,6 +34,7 @@
   <url>http://smallrye.io</url>
 
   <properties>
+    <version.asm>7.0</version.asm>
     <version.eclipse.microprofile.config>1.4</version.eclipse.microprofile.config>
     <version.smallrye.common>1.0.2</version.smallrye.common>
 
@@ -66,6 +67,7 @@
   <modules>
     <module>common</module>
     <module>implementation</module>
+    <module>mapper</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
     <module>sources/yaml</module>
@@ -112,6 +114,12 @@
             <artifactId>junit</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${version.asm}</version>
       </dependency>
 
       <!-- External SmallRye Dependencies -->

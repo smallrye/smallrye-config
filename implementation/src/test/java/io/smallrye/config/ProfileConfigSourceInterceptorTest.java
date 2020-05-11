@@ -23,8 +23,8 @@ public class ProfileConfigSourceInterceptorTest {
 
         assertEquals("2", config.getValue("my.prop", String.class));
 
-        assertEquals("my.prop", config.getConfigValue("my.prop").getName());
-        assertEquals("my.prop", config.getConfigValue("%prof.my.prop").getName());
+        assertEquals("my.prop", config.getRawConfigValue("my.prop").getName());
+        assertEquals("my.prop", config.getRawConfigValue("%prof.my.prop").getName());
     }
 
     @Test
@@ -168,8 +168,8 @@ public class ProfileConfigSourceInterceptorTest {
         final SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
                 SMALLRYE_PROFILE, "prof");
 
-        assertEquals("2", config.getConfigValue("my.prop").getValue());
-        assertEquals("1", config.getConfigValue("prof.only").getValue());
+        assertEquals("2", config.getRawConfigValue("my.prop").getValue());
+        assertEquals("1", config.getRawConfigValue("prof.only").getValue());
 
         final List<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertFalse(properties.contains("%prof.my.prop"));
@@ -184,7 +184,7 @@ public class ProfileConfigSourceInterceptorTest {
                 .withProfile("prof")
                 .build();
 
-        assertEquals("2", config.getConfigValue("my.prop").getValue());
+        assertEquals("2", config.getRawConfigValue("my.prop").getValue());
     }
 
     private static Config buildConfig(String... keyValues) {

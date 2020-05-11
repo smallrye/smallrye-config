@@ -174,7 +174,13 @@ public class SmallRyeConfig implements Config, Serializable {
         return Objects.equals(expected, getRawValue(name));
     }
 
-    ConfigValue getConfigValue(String name) {
+    /**
+     * Get the <em>raw value</em> of a configuration property.
+     *
+     * @param name the property name (must not be {@code null})
+     * @return the raw value, or {@code null} if no property value was discovered for the given property name
+     */
+    public ConfigValue getRawConfigValue(String name) {
         return configSources.get().getInterceptorChain().proceed(name);
     }
 
@@ -185,7 +191,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * @return the raw value, or {@code null} if no property value was discovered for the given property name
      */
     public String getRawValue(String name) {
-        final ConfigValue configValue = getConfigValue(name);
+        final ConfigValue configValue = getRawConfigValue(name);
         return configValue != null ? configValue.getValue() : null;
     }
 

@@ -13,7 +13,7 @@ public class SmallRyeConfigTest {
     @Test
     public void addConfigSource() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().addDefaultInterceptors().build();
-        assertNull(config.getConfigValue("my.prop"));
+        assertNull(config.getRawConfigValue("my.prop"));
 
         config.addConfigSource(KeyValuesConfigSource.config("my.prop", "1"));
         assertEquals("1", config.getRawValue("my.prop"));
@@ -22,7 +22,7 @@ public class SmallRyeConfigTest {
     @Test
     public void addMultiple() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().addDefaultInterceptors().build();
-        assertNull(config.getConfigValue("my.prop"));
+        assertNull(config.getRawConfigValue("my.prop"));
 
         config.addConfigSource(KeyValuesConfigSource.config("my.prop", "1"));
         assertEquals("1", config.getRawValue("my.prop"));
