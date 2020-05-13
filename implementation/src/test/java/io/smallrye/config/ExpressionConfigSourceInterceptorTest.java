@@ -25,7 +25,7 @@ public class ExpressionConfigSourceInterceptorTest {
     @Test
     public void composedExpressions() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${${compose}}", "compose",
-                                            "my.prop");
+                "my.prop");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
@@ -79,7 +79,7 @@ public class ExpressionConfigSourceInterceptorTest {
     @Test
     public void multipleExpansions() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "my.prop.two", "${my.prop}", "my.prop.three",
-                                            "${my.prop.two}", "my.prop.four", "${my.prop.three}");
+                "${my.prop.two}", "my.prop.four", "${my.prop.three}");
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("1234", config.getRawValue("my.prop.two"));
@@ -106,6 +106,16 @@ public class ExpressionConfigSourceInterceptorTest {
         Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
 
         assertEquals("1234", config.getValue("expression", String.class));
+    }
+
+    @Test
+    public void escape() {
+        assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getRawValue("expression"));
+
+        assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
+                buildConfig("camel.expression",
+                        "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
+                                .getRawValue("camel.expression"));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
