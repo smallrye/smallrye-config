@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.enterprise.inject.spi.InjectionPoint;
 
@@ -79,6 +80,8 @@ public class ConfigProducerUtil {
                 return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), HashSet::new);
             } else if (rawType == Optional.class) {
                 return (Converter<T>) Converters.newOptionalConverter(resolveConverter(typeArgs[0], src));
+            } else if (rawType == Supplier.class) {
+                return resolveConverter(typeArgs[0], src);
             }
         }
         // just try the raw type
