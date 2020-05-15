@@ -315,7 +315,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class InterceptorWithPriority {
-        static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt
+                .of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
 
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
@@ -346,11 +347,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             this.priority = factory.getPriority().orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
         }
 
-        public ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
+        ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
             return factory.getInterceptor(context);
         }
 
-        public int getPriority() {
+        int getPriority() {
             return priority;
         }
     }

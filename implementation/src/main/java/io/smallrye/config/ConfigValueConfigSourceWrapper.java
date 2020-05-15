@@ -62,6 +62,10 @@ final class ConfigValueConfigSourceWrapper implements ConfigValueConfigSource, S
         return configSource.getOrdinal();
     }
 
+    ConfigSource unwrap() {
+        return configSource;
+    }
+
     static ConfigValueConfigSource wrap(final ConfigSource configSource) {
         if (configSource instanceof ConfigValueConfigSource) {
             return (ConfigValueConfigSource) configSource;
