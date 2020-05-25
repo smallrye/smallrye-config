@@ -61,9 +61,10 @@ SmallRye Config provides the following built-in Interceptors (ordered by priorit
 * <<logging-interceptor>>
 * <<secret-keys-interceptor>>
 
-None of the interceptors is registered by default. Registration needs to happen via the ServiceLoader
-mechanism, via the Programmatic API or by calling `SmallRyeConfigBuilder#addDefaultInterceptors`, which adds the
-`ExpressionConfigSourceInterceptor`, the `ProfileConfigSourceInterceptor` and the `SecretKeysConfigSourceInterceptor`.
+The `ExpressionConfigSourceInterceptor`, the `ProfileConfigSourceInterceptor` and the
+`SecretKeysConfigSourceInterceptor` are registered by default with each new instance of `Config`. Other interceptors
+require registration via the ServiceLoader mechanism or via the Programmatic API
+`io.smallrye.config.SmallRyeConfigBuilder#withInterceptors`.
 
 [[relocate-interceptor]]
 === RelocateConfigSourceInterceptor
