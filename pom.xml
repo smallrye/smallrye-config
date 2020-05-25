@@ -40,6 +40,7 @@
     <version.weld.junit>2.0.1.Final</version.weld.junit>
 
     <!-- Sonar settings -->
+    <sonar.projectKey>smallrye_smallrye-config</sonar.projectKey>
     <sonar.projectName>SmallRye Config</sonar.projectName>
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>

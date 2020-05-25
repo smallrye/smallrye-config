@@ -17,7 +17,7 @@ import io.smallrye.common.annotation.Experimental;
  * ConfigValueConfigSource tries to make this possible.
  * <p>
  *
- * Ideally, this should move the the MicroProfile Config API, once the concept is well-proven.
+ * Ideally, this should move the MicroProfile Config API, once the concept is well-proven.
  */
 @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
 public interface ConfigValueConfigSource extends ConfigSource {
