@@ -20,6 +20,7 @@ import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
@@ -112,6 +113,13 @@ public class ConfigProducer implements Serializable {
     @ConfigProperty
     <T> Optional<T> produceOptionalConfigValue(InjectionPoint ip) {
         return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    <T> Supplier<T> produceSupplierConfigValue(InjectionPoint ip) {
+        return () -> ConfigProducerUtil.getValue(ip, getConfig(ip));
     }
 
     @Dependent
