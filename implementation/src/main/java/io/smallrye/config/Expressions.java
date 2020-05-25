@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("squid:S5164")
 public final class Expressions {
     private static final ThreadLocal<Boolean> ENABLE = ThreadLocal.withInitial(() -> Boolean.TRUE);
 
