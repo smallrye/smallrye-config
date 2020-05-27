@@ -55,6 +55,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private String profile = null;
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
+    private ConfigValidator configValidator = null;
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -229,6 +230,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withValidator(ConfigValidator configValidator) {
+        this.configValidator = configValidator;
+        return this;
+    }
+
     @Deprecated
     public SmallRyeConfigBuilder withWrapper(UnaryOperator<ConfigSource> wrapper) {
         sourceWrappers = sourceWrappers.andThen(wrapper);
@@ -273,6 +279,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
+    }
+
+    ConfigValidator getConfigValidator() {
+        return configValidator;
     }
 
     boolean isAddDefaultSources() {

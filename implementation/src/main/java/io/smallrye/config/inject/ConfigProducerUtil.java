@@ -57,6 +57,8 @@ public class ConfigProducerUtil {
         if (converted == null) {
             throw InjectionMessages.msg.propertyNotFound(name);
         }
+        src.getConfigValidator()
+                .validate(injectionPoint.getMember().getDeclaringClass(), injectionPoint.getMember().getName(), converted);
         return converted;
     }
 

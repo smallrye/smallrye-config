@@ -65,10 +65,12 @@ public class SmallRyeConfig implements Config, Serializable {
     private final AtomicReference<ConfigSources> configSources;
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
+    private final ConfigValidator configValidator;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
+        this.configValidator = buildValidator(builder);
     }
 
     @Deprecated
@@ -77,6 +79,9 @@ public class SmallRyeConfig implements Config, Serializable {
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
+        this.configValidator = (klass, propertyName, value) -> {
+
+        };
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -128,6 +133,11 @@ public class SmallRyeConfig implements Config, Serializable {
                 (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
 
         return converters;
+    }
+
+    private ConfigValidator buildValidator(final SmallRyeConfigBuilder builder) {
+        return Optional.ofNullable(builder.getConfigValidator()).orElse((klass, propertyName, value) -> {
+        });
     }
 
     // no @Override
@@ -264,6 +274,10 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             return conv;
         });
+    }
+
+    public ConfigValidator getConfigValidator() {
+        return configValidator;
     }
 
     private static class ConfigSources implements Serializable {
