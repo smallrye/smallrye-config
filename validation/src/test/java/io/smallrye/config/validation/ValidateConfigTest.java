@@ -23,7 +23,7 @@ public class ValidateConfigTest extends InjectionTest {
             .build();
 
     @Test
-    public void inject() {
+    public void max() {
         assertThrows(ConfigValidationException.class, () -> CDI.current().select(MaxConfigValidation.class).get());
     }
 

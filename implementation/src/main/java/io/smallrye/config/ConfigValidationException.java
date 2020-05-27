@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import io.smallrye.common.annotation.Experimental;
+
+@Experimental("")
 public class ConfigValidationException extends RuntimeException {
     public ConfigValidationException() {
     }

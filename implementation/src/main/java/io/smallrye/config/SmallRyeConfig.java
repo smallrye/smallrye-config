@@ -79,9 +79,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
-        this.configValidator = (klass, propertyName, value) -> {
-
-        };
+        this.configValidator = ConfigValidator.EMPTY;
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -136,8 +134,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private ConfigValidator buildValidator(final SmallRyeConfigBuilder builder) {
-        return Optional.ofNullable(builder.getConfigValidator()).orElse((klass, propertyName, value) -> {
-        });
+        return Optional.ofNullable(builder.getConfigValidator()).orElse(ConfigValidator.EMPTY);
     }
 
     // no @Override
@@ -184,7 +181,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return Objects.equals(expected, getRawValue(name));
     }
 
-    ConfigValue getConfigValue(String name) {
+    public ConfigValue getConfigValue(String name) {
         return configSources.get().getInterceptorChain().proceed(name);
     }
 
