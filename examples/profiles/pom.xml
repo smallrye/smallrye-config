@@ -31,7 +31,6 @@
   <name>SmallRye Config Examples: Profiles</name>
 
   <properties>
-    <version.smallrye.config>${project.version}</version.smallrye.config>
     <version.weld.junit>2.0.1.Final</version.weld.junit>
   </properties>
 
@@ -39,7 +38,7 @@
     <dependency>
       <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config</artifactId>
-      <version>${version.smallrye.config}</version>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
