@@ -8,11 +8,11 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 public abstract class InjectionTest {
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         final URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
@@ -23,7 +23,7 @@ public abstract class InjectionTest {
         Thread.currentThread().setContextClassLoader(urlClassLoader);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(contextClassLoader.getParent());

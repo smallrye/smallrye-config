@@ -16,7 +16,7 @@
 
 package io.smallrye.config;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
@@ -31,7 +31,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import org.eclipse.microprofile.config.spi.Converter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -307,16 +307,16 @@ public class ConvertersTestCase {
     public void testShortValue() {
         final SmallRyeConfig config = buildConfig("simple.short", "2");
         final short expected = 2;
-        assertEquals("Unexpected value for short config", expected, (short) config.getValue("simple.short", Short.class));
-        assertEquals("Unexpected value for short config", expected, (short) config.getValue("simple.short", Short.TYPE));
+        assertEquals(expected, (short) config.getValue("simple.short", Short.class), "Unexpected value for short config");
+        assertEquals(expected, (short) config.getValue("simple.short", Short.TYPE), "Unexpected value for short config");
     }
 
     @Test
     public void testByte() {
         final SmallRyeConfig config = buildConfig("simple.byte", "2");
         final byte expected = 2;
-        assertEquals("Unexpected value for byte config", expected, (byte) config.getValue("simple.byte", Byte.class));
-        assertEquals("Unexpected value for byte config", expected, (byte) config.getValue("simple.byte", Byte.TYPE));
+        assertEquals(expected, (byte) config.getValue("simple.byte", Byte.class), "Unexpected value for byte config");
+        assertEquals(expected, (byte) config.getValue("simple.byte", Byte.TYPE), "Unexpected value for byte config");
     }
 
     @SafeVarargs
