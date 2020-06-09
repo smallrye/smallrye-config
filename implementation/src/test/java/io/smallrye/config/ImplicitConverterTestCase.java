@@ -1,8 +1,8 @@
 package io.smallrye.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,7 +15,7 @@ import java.time.LocalDate;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ImplicitConverterTestCase {
 
@@ -65,7 +65,8 @@ public class ImplicitConverterTestCase {
             fail("Constructor converter should be serializable, but could not deserialize a previously serialized instance: "
                     + ex);
         }
-        assertEquals("Converted values to have same file path", converter.convert("/bad/path").getPath(),
-                ((File) ((Converter) readObject).convert("/bad/path")).getPath());
+        assertEquals(converter.convert("/bad/path").getPath(),
+                ((File) ((Converter) readObject).convert("/bad/path")).getPath(),
+                "Converted values to have same file path");
     }
 }

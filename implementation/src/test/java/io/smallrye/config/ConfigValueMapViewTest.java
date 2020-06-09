@@ -1,9 +1,9 @@
 package io.smallrye.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ConfigValueMapViewTest {
     @Test
@@ -47,26 +47,28 @@ public class ConfigValueMapViewTest {
         assertNull(map.get("my.null"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void put() {
-        sampleMap().put("x", "x");
+        assertThrows(UnsupportedOperationException.class, () -> sampleMap().put("x", "x"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void remove() {
-        sampleMap().remove("my.prop");
+        assertThrows(UnsupportedOperationException.class, () -> sampleMap().remove("my.prop"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void putAll() {
-        final HashMap<String, String> newMap = new HashMap<>();
-        newMap.put("key", "value");
-        sampleMap().putAll(newMap);
+        assertThrows(UnsupportedOperationException.class, () -> {
+            final HashMap<String, String> newMap = new HashMap<>();
+            newMap.put("key", "value");
+            sampleMap().putAll(newMap);
+        });
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void clear() {
-        sampleMap().clear();
+        assertThrows(UnsupportedOperationException.class, () -> sampleMap().clear());
     }
 
     @Test

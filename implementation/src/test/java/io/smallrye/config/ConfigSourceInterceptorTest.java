@@ -2,9 +2,9 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -14,8 +14,8 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Priority;
 
 import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ConfigSourceInterceptorTest {
     @Test
@@ -28,7 +28,7 @@ public class ConfigSourceInterceptorTest {
                 .build();
 
         final String value = config.getValue("my.prop", String.class);
-        Assert.assertEquals("4567", value);
+        Assertions.assertEquals("4567", value);
     }
 
     @Test
@@ -41,7 +41,7 @@ public class ConfigSourceInterceptorTest {
                 .build();
 
         final String value = config.getValue("my.prop", String.class);
-        Assert.assertEquals("higher", value);
+        Assertions.assertEquals("higher", value);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class ConfigSourceInterceptorTest {
                 .build();
 
         final String value = config.getValue("my.prop.loader", String.class);
-        Assert.assertEquals("loader", value);
+        Assertions.assertEquals("loader", value);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class ConfigSourceInterceptorTest {
                 .build();
 
         final String value = config.getValue("my.prop.loader", String.class);
-        Assert.assertEquals("higher", value);
+        Assertions.assertEquals("higher", value);
     }
 
     @Test

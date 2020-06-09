@@ -16,21 +16,20 @@
 
 package io.smallrye.config.source.file;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class FileSystemConfigSourceTestCase {
-
     @Test
     public void testConfigSourceFromDir() throws URISyntaxException {
         URL configDirURL = this.getClass().getResource("configDir");

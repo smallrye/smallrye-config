@@ -1,5 +1,7 @@
 package io.smallrye.config.converter.json;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.StringReader;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -9,10 +11,11 @@ import javax.json.JsonArray;
 import javax.json.JsonReader;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.weld.junit4.WeldInitiator;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.jboss.weld.junit5.WeldInitiator;
+import org.jboss.weld.junit5.WeldJunit5Extension;
+import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.inject.ConfigExtension;
 import io.smallrye.config.inject.ConfigProducer;
@@ -22,8 +25,9 @@ import io.smallrye.config.inject.ConfigProducer;
  * 
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
+@ExtendWith(WeldJunit5Extension.class)
 public class JsonArrayConverterTest {
-    @Rule
+    @WeldSetup
     public WeldInitiator weld = WeldInitiator.from(WeldInitiator.createWeld()
             .addExtensions(ConfigExtension.class)
             .addBeanClass(ConfigProducer.class)
@@ -41,7 +45,7 @@ public class JsonArrayConverterTest {
     public void testInjection() {
         try (JsonReader jsonReader = Json.createReader(new StringReader("[\"value1\",\"value2\",\"value3\"]"))) {
             JsonArray jsonArray = jsonReader.readArray();
-            Assert.assertEquals(jsonArray, someValue);
+            assertEquals(jsonArray, someValue);
         }
     }
 }
