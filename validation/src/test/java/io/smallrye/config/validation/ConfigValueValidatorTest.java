@@ -20,7 +20,27 @@ public class ConfigValueValidatorTest {
                 .build();
 
         final ConfigValue configValue = config.getConfigValue("my.prop");
-        final ConfigValueNew configValueNew = new ConfigValueNew() {
+        // Programatic API to validate
+        assertThrows(ConfigValidationException.class,
+                () -> configValue(config, configValue).max(10).min(0).getAs(Integer.class));
+    }
+
+    @Test
+    public void validateWithConfig() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(KeyValuesConfigSource.config("my.prop", "1234",
+                        "my.prop.valid.max", "10"))
+                .withValidator(new SmallRyeConfigValidator())
+                .build();
+
+        final ConfigValue configValue = config.getConfigValue("my.prop");
+        assertThrows(ConfigValidationException.class, () -> configValue(config, configValue).getAs(Integer.class));
+    }
+
+    public static ConfigValueNew configValue(final SmallRyeConfig config, final ConfigValue configValue) {
+        return new ConfigValueNew() {
             final ConfigValueValidatorBuilder validatorBuilder = new ConfigValueValidatorBuilder();
 
             @Override
@@ -36,6 +56,15 @@ public class ConfigValueValidatorTest {
             @Override
             public <T> T getAs(final Class<T> klass) {
                 final T value = config.getValue(getName(), klass);
+
+                // Probably we need to add a flag if we want to validate or not? So we don't have to do all these checks?
+                if (!validatorBuilder.hasMax()) {
+                    config.getOptionalValue(getName() + ".valid.max", Long.class).ifPresent(validatorBuilder::max);
+                }
+                if (!validatorBuilder.hasMin()) {
+                    config.getOptionalValue(getName() + ".valid.min", Long.class).ifPresent(validatorBuilder::min);
+                }
+
                 ((SmallRyeConfigValidator) config.getConfigValidator()).validate(validatorBuilder, value);
                 return value;
             }
@@ -57,8 +86,5 @@ public class ConfigValueValidatorTest {
                 return this;
             }
         };
-
-        // Programatic API to validate
-        assertThrows(ConfigValidationException.class, () -> configValueNew.max(10).min(0).getAs(Integer.class));
     }
 }
