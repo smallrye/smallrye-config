@@ -1,44 +1,33 @@
 package io.smallrye.config.events;
 
-import java.io.File;
 import java.util.Optional;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.weld.junit5.WeldInitiator;
+import org.jboss.weld.junit5.WeldJunit5Extension;
+import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.events.regex.RegexFilter;
-import io.smallrye.config.events.regex.RegexFilterInterceptor;
+import io.smallrye.config.inject.ConfigProducer;
 
 /**
  * Testing that the events fire correctly
  * 
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
-@RunWith(Arquillian.class)
+@ExtendWith(WeldJunit5Extension.class)
 public class ChangeEventNotifierTest {
-
-    @Deployment
-    public static WebArchive createDeployment() {
-        final File[] smallryeConfig = Maven.resolver()
-                .loadPomFromFile("pom.xml")
-                .resolve("io.smallrye.config:smallrye-config")
-                .withoutTransitivity().asFile();
-
-        return ShrinkWrap.create(WebArchive.class, "ChangeEventNotifierTest.war")
-                .addPackage(ChangeEventNotifier.class.getPackage())
-                .addPackage(RegexFilterInterceptor.class.getPackage())
-                .addAsLibraries(smallryeConfig)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
+    @WeldSetup
+    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class, ChangeEventNotifier.class)
+            .addBeans()
+            .activate(ApplicationScoped.class)
+            .inject(this)
+            .build();
 
     @Test
     public void testNewType() {
@@ -84,33 +73,33 @@ public class ChangeEventNotifierTest {
     }
 
     public void listenForNew(@Observes @TypeFilter(Type.NEW) ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting new type", Type.NEW, changeEvent.getType());
+        Assertions.assertEquals(Type.NEW, changeEvent.getType(), "Expecting new type");
     }
 
     public void listenForUpdate(@Observes @TypeFilter(Type.UPDATE) ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting update type", Type.UPDATE, changeEvent.getType());
+        Assertions.assertEquals(Type.UPDATE, changeEvent.getType(), "Expecting update type");
     }
 
     public void listenForRemove(@Observes @TypeFilter(Type.REMOVE) ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting remove type", Type.REMOVE, changeEvent.getType());
+        Assertions.assertEquals(Type.REMOVE, changeEvent.getType(), "Expecting remove type");
     }
 
     public void listenForCertainKey(@Observes @KeyFilter("some.key") ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting certain key", "some.key", changeEvent.getKey());
+        Assertions.assertEquals("Expecting certain key", "some.key", changeEvent.getKey());
     }
 
     public void listenForCertainKeyAndUpdate(
             @Observes @TypeFilter(Type.UPDATE) @KeyFilter("some.key") ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting certain key", "some.key", changeEvent.getKey());
-        Assert.assertEquals("Expecting update type", Type.UPDATE, changeEvent.getType());
+        Assertions.assertEquals("Expecting certain key", "some.key", changeEvent.getKey());
+        Assertions.assertEquals(Type.UPDATE, changeEvent.getType(), "Expecting update type");
     }
 
     public void listenForCertainSource(@Observes @SourceFilter("SomeConfigSource") ChangeEvent changeEvent) {
-        Assert.assertEquals("Expecting certain config source", "SomeConfigSource", changeEvent.getFromSource());
+        Assertions.assertEquals("Expecting certain config source", "SomeConfigSource", changeEvent.getFromSource());
     }
 
     @RegexFilter("^testcase\\..+")
     public void listenForKeyPattern(@Observes ChangeEvent changeEvent) {
-        Assert.assertTrue("Expecting key to start with certain value", changeEvent.getKey().startsWith("testcase"));
+        Assertions.assertTrue(changeEvent.getKey().startsWith("testcase"), "Expecting key to start with certain value");
     }
 }
