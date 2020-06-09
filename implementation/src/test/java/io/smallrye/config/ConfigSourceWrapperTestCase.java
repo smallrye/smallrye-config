@@ -18,16 +18,16 @@
 
 package io.smallrye.config;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  */
@@ -109,7 +109,7 @@ public class ConfigSourceWrapperTestCase {
 
     static <T> T assertIsInstance(Class<T> expected, Object thing) {
         assertNotNull(thing);
-        assertTrue("Expected instance of " + expected + ", got " + thing.getClass(), expected.isInstance(thing));
+        assertTrue(expected.isInstance(thing), "Expected instance of " + expected + ", got " + thing.getClass());
         return expected.cast(thing);
     }
 }

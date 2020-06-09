@@ -1,10 +1,10 @@
 package io.smallrye.config.source.hocon;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HoconConfigSourceTest {
 

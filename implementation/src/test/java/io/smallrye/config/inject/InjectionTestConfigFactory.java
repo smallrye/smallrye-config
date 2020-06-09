@@ -36,6 +36,8 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                         return this.getClass().getName();
                     }
                 })
+                .withSources(KeyValuesConfigSource.config("optional.int.value", "1", "optional.long.value", "2",
+                        "optional.double.value", "3.3"))
                 .withSecretKeys("secret")
                 .build();
     }

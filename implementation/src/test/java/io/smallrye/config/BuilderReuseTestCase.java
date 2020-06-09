@@ -18,12 +18,15 @@
 
 package io.smallrye.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Iterator;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  */
@@ -39,10 +42,10 @@ public class BuilderReuseTestCase {
         final Iterable<ConfigSource> cs2 = config2.getConfigSources();
         final Iterator<ConfigSource> it1 = cs1.iterator();
         final Iterator<ConfigSource> it2 = cs2.iterator();
-        Assert.assertTrue(it1.hasNext() && it2.hasNext());
-        Assert.assertEquals(it1.next().getClass(), it2.next().getClass());
-        Assert.assertTrue(it1.hasNext() && it2.hasNext());
-        Assert.assertEquals(it1.next().getClass(), it2.next().getClass());
-        Assert.assertFalse(it1.hasNext() || it2.hasNext());
+        assertTrue(it1.hasNext() && it2.hasNext());
+        assertEquals(it1.next().getClass(), it2.next().getClass());
+        assertTrue(it1.hasNext() && it2.hasNext());
+        assertEquals(it1.next().getClass(), it2.next().getClass());
+        assertFalse(it1.hasNext() || it2.hasNext());
     }
 }

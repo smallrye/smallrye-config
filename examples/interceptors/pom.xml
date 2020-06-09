@@ -21,7 +21,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>18</version>
+    <version>20</version>
   </parent>
 
   <groupId>io.smallrye.config.examples</groupId>
@@ -41,22 +41,15 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Test Dependencies -->
     <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-core-impl</artifactId>
-      <version>${version.weld.core}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${version.junit}</version>
-      <scope>test</scope>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
     </dependency>
 
     <dependency>
       <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-junit4</artifactId>
+      <artifactId>weld-junit5</artifactId>
       <version>${version.weld.junit}</version>
       <scope>test</scope>
     </dependency>

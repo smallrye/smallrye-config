@@ -2,16 +2,16 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
