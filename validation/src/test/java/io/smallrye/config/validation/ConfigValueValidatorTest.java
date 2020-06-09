@@ -1,10 +1,10 @@
 package io.smallrye.config.validation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
+import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -21,6 +21,8 @@ public class ConfigValueValidatorTest {
 
         final ConfigValue configValue = config.getConfigValue("my.prop");
         final ConfigValueNew configValueNew = new ConfigValueNew() {
+            final ConfigValueValidatorBuilder validatorBuilder = new ConfigValueValidatorBuilder();
+
             @Override
             public String getName() {
                 return configValue.getName();
@@ -33,21 +35,20 @@ public class ConfigValueValidatorTest {
 
             @Override
             public <T> T getAs(final Class<T> klass) {
-                // This call makes a new lookup. We need a method that just performs the conversion without the lookup.
-
-                // This should be ConfigValue
-                config.getConfigValidator().validate(null);
-
-                return config.getValue(getName(), klass);
+                final T value = config.getValue(getName(), klass);
+                ((SmallRyeConfigValidator) config.getConfigValidator()).validate(validatorBuilder, value);
+                return value;
             }
 
             @Override
             public ConfigValueNew min(final long size) {
+                validatorBuilder.min(size);
                 return this;
             }
 
             @Override
             public ConfigValueNew max(final long size) {
+                validatorBuilder.max(size);
                 return this;
             }
 
@@ -58,8 +59,6 @@ public class ConfigValueValidatorTest {
         };
 
         // Programatic API to validate
-        final Integer integer = configValueNew.max(10).min(0).getAs(Integer.class);
-        assertNotNull(integer);
-        assertEquals(1234, integer.intValue());
+        assertThrows(ConfigValidationException.class, () -> configValueNew.max(10).min(0).getAs(Integer.class));
     }
 }
