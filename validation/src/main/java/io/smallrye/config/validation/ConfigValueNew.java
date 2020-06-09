@@ -10,9 +10,5 @@ public interface ConfigValueNew {
 
     <T> T getAs(Class<T> klass);
 
-    ConfigValueNew min(long size);
-
-    ConfigValueNew max(long size);
-
-    ConfigValueNew pattern(String pattern);
+    ConfigValueValidator validator();
 }

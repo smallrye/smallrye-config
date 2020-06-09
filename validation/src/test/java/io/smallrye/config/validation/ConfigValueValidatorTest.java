@@ -22,7 +22,7 @@ public class ConfigValueValidatorTest {
         final ConfigValue configValue = config.getConfigValue("my.prop");
         // Programatic API to validate
         assertThrows(ConfigValidationException.class,
-                () -> configValue(config, configValue).max(10).min(0).getAs(Integer.class));
+                () -> configValue(config, configValue).validator().max(10).min(0).getAs(Integer.class));
     }
 
     @Test
@@ -39,9 +39,21 @@ public class ConfigValueValidatorTest {
         assertThrows(ConfigValidationException.class, () -> configValue(config, configValue).getAs(Integer.class));
     }
 
-    public static ConfigValueNew configValue(final SmallRyeConfig config, final ConfigValue configValue) {
-        return new ConfigValueNew() {
+    public static ConfigValueValidator configValue(final SmallRyeConfig config, final ConfigValue configValue) {
+        return new ConfigValueValidator() {
             final ConfigValueValidatorBuilder validatorBuilder = new ConfigValueValidatorBuilder();
+
+            @Override
+            public ConfigValueValidator max(final long value) {
+                validatorBuilder.max(value);
+                return this;
+            }
+
+            @Override
+            public ConfigValueValidator min(final long value) {
+                validatorBuilder.min(value);
+                return this;
+            }
 
             @Override
             public String getName() {
@@ -55,34 +67,21 @@ public class ConfigValueValidatorTest {
 
             @Override
             public <T> T getAs(final Class<T> klass) {
-                final T value = config.getValue(getName(), klass);
-
-                // Probably we need to add a flag if we want to validate or not? So we don't have to do all these checks?
                 if (!validatorBuilder.hasMax()) {
                     config.getOptionalValue(getName() + ".valid.max", Long.class).ifPresent(validatorBuilder::max);
                 }
+
                 if (!validatorBuilder.hasMin()) {
                     config.getOptionalValue(getName() + ".valid.min", Long.class).ifPresent(validatorBuilder::min);
                 }
 
-                ((SmallRyeConfigValidator) config.getConfigValidator()).validate(validatorBuilder, value);
-                return value;
+                ((SmallRyeConfigValidator) config.getConfigValidator()).validate(validatorBuilder, getValue());
+                // lookup was already made in getValue, so we need a method to perform conversion only.
+                return config.getValue(getName(), klass);
             }
 
             @Override
-            public ConfigValueNew min(final long size) {
-                validatorBuilder.min(size);
-                return this;
-            }
-
-            @Override
-            public ConfigValueNew max(final long size) {
-                validatorBuilder.max(size);
-                return this;
-            }
-
-            @Override
-            public ConfigValueNew pattern(final String pattern) {
+            public ConfigValueValidator validator() {
                 return this;
             }
         };

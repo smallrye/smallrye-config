@@ -1,14 +1,7 @@
 package io.smallrye.config.validation;
 
-public class ConfigValueValidator<T> {
-    private final T value;
-    private ConfigValueValidator<T> validator;
+public interface ConfigValueValidator extends ConfigValueNew {
+    ConfigValueValidator max(final long value);
 
-    public ConfigValueValidator(final T value) {
-        this.value = value;
-    }
-
-    public T getValue() {
-        return value;
-    }
+    ConfigValueValidator min(final long value);
 }

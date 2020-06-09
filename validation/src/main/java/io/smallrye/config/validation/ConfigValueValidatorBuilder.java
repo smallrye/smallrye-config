@@ -6,14 +6,16 @@ public class ConfigValueValidatorBuilder {
     private long min;
     private boolean hasMin;
 
-    public void max(long value) {
+    public ConfigValueValidatorBuilder max(long value) {
         this.max = value;
         this.hasMax = true;
+        return this;
     }
 
-    public void min(long value) {
+    public ConfigValueValidatorBuilder min(long value) {
         this.min = value;
         this.hasMin = true;
+        return this;
     }
 
     public long getMax() {
