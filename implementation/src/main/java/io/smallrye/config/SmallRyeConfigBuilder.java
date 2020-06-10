@@ -258,7 +258,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return priority;
     }
 
-    List<ConfigSource> getSources() {
+    protected List<ConfigSource> getSources() {
         return sources;
     }
 
@@ -267,7 +267,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return sourceWrappers;
     }
 
-    Map<Type, ConverterWithPriority> getConverters() {
+    protected Map<Type, ConverterWithPriority> getConverters() {
         return converters;
     }
 
@@ -275,7 +275,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
-    boolean isAddDefaultSources() {
+    protected boolean isAddDefaultSources() {
         return addDefaultSources;
     }
 
@@ -283,11 +283,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDefaultInterceptors;
     }
 
-    boolean isAddDiscoveredSources() {
+    protected boolean isAddDiscoveredSources() {
         return addDiscoveredSources;
     }
 
-    boolean isAddDiscoveredConverters() {
+    protected boolean isAddDiscoveredConverters() {
         return addDiscoveredConverters;
     }
 
