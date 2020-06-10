@@ -1,8 +1,8 @@
 package io.smallrye.config;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ConfigSourcePropertySubstitutionTest {
     @Test
@@ -10,7 +10,7 @@ public class ConfigSourcePropertySubstitutionTest {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "${prop.replace}", "prop.replace", "1234");
 
         final String value = config.getValue("my.prop", String.class);
-        Assert.assertEquals("1234", value);
+        Assertions.assertEquals("1234", value);
     }
 
     private static Config buildConfig(String... keyValues) {

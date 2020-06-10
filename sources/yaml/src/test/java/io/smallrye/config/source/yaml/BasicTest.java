@@ -1,8 +1,10 @@
 package io.smallrye.config.source.yaml;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BasicTest {
 
@@ -15,8 +17,8 @@ public class BasicTest {
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
 
-        Assert.assertEquals("something", src.getValue("foo.bar.baz"));
-        Assert.assertEquals("something else", src.getValue("foo.bar.zap"));
+        assertEquals("something", src.getValue("foo.bar.baz"));
+        assertEquals("something else", src.getValue("foo.bar.zap"));
     }
 
     @Test
@@ -26,7 +28,7 @@ public class BasicTest {
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
 
-        Assert.assertEquals("something", src.getValue("foo"));
+        assertEquals("something", src.getValue("foo"));
     }
 
     @Test
@@ -40,7 +42,7 @@ public class BasicTest {
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
 
-        Assert.assertEquals("cat,dog,chicken", src.getValue("foo.bar"));
+        assertEquals("cat,dog,chicken", src.getValue("foo.bar"));
     }
 
     @Test
@@ -54,13 +56,13 @@ public class BasicTest {
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
 
-        Assert.assertEquals("cat\\,dog,mouse\\,rat,chicken\\,turkey", src.getValue("foo.bar"));
+        assertEquals("cat\\,dog,mouse\\,rat,chicken\\,turkey", src.getValue("foo.bar"));
     }
 
     @Test
     public void testEmptyFile() {
         String yaml = "";
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
-        Assert.assertNotNull("Should create config source for empty file correctly", src);
+        assertNotNull(src, "Should create config source for empty file correctly");
     }
 }

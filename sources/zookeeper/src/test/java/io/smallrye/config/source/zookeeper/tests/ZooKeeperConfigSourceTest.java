@@ -5,11 +5,11 @@
  */
 package io.smallrye.config.source.zookeeper.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashSet;
 import java.util.NoSuchElementException;
@@ -22,32 +22,36 @@ import javax.inject.Inject;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.test.TestingServer;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.weld.junit4.WeldInitiator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.jboss.weld.junit5.WeldInitiator;
+import org.jboss.weld.junit5.WeldJunit5Extension;
+import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.inject.ConfigProducer;
 
 /**
  * Test the ConfigSource
  */
+@ExtendWith(WeldJunit5Extension.class)
 public class ZooKeeperConfigSourceTest {
-
     private static final Logger logger = Logger.getLogger(ZooKeeperConfigSourceTest.class.getName());
 
-    private CuratorFramework curatorClient;
+    private static TestingServer testServer;
+    private static CuratorFramework curatorClient;
 
     private final String APPLICATION_ID = "test1";
     private final String PROPERTY_NAME = "some.property";
     private final String ZK_KEY = "/" + APPLICATION_ID + "/" + PROPERTY_NAME;
     private final String PROPERTY_VALUE = "some.value";
 
-    @Rule
+    @WeldSetup
     public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class)
             .addBeans()
             .activate(ApplicationScoped.class)
@@ -62,17 +66,26 @@ public class ZooKeeperConfigSourceTest {
     @ConfigProperty(name = "injected.int.property", defaultValue = "13")
     private int injectedIntProperty;
 
-    @Before
-    public void setUpClass() {
-        //Connection to ZK so that we can add in a property
+    @BeforeAll
+    static void setUpClass() throws Exception {
+        testServer = new TestingServer(2181, true);
+
+        //Add a property that's going to be injected
         curatorClient = CuratorFrameworkFactory.newClient("localhost:2181", new ExponentialBackoffRetry(1000, 3));
         curatorClient.start();
+        curatorClient.createContainers("/test1/injected.property");
+        curatorClient.setData().forPath("/test1/injected.property", "injected.property.value".getBytes());
+
+        curatorClient.createContainers("/test1/injected.int.property");
+        curatorClient.setData().forPath("/test1/injected.int.property", "17".getBytes());
     }
 
-    @After
-    public void tearDownClass() {
-        logger.info("Teardown ");
+    @AfterAll
+    static void tearDownClass() throws Exception {
         curatorClient.close();
+
+        testServer.close();
+        testServer.stop();
     }
 
     @Test

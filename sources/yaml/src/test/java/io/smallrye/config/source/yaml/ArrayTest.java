@@ -1,8 +1,9 @@
 package io.smallrye.config.source.yaml;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ArrayTest {
 
@@ -20,6 +21,6 @@ public class ArrayTest {
                 "          uri: \"https://www.google.com\"";
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
-        Assert.assertNotNull(src.getValue("de.javahippie.mpadmin.instances"));
+        assertNotNull(src.getValue("de.javahippie.mpadmin.instances"));
     }
 }
