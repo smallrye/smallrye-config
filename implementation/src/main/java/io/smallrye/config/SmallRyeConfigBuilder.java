@@ -160,6 +160,19 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 600);
             }
         }));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                final Map<String, String> relocations = new HashMap<>();
+                relocations.put(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE, "mp.config.profile");
+                return new RelocateConfigSourceInterceptor(relocations);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 800 - 1);
+            }
+        }));
         interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
         interceptors.add(new InterceptorWithPriority(new SecretKeysConfigSourceInterceptor(secretKeys)));
 

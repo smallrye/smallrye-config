@@ -188,6 +188,21 @@ public class ProfileConfigSourceInterceptorTest {
         assertEquals("2", config.getConfigValue("my.prop").getValue());
     }
 
+    @Test
+    public void mpProfileRelocate() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(
+                        KeyValuesConfigSource.config("my.prop", "1", "%prof.my.prop", "2", "mp.config.profile", "prof"))
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+
+        assertEquals("my.prop", config.getConfigValue("my.prop").getName());
+        assertEquals("my.prop", config.getConfigValue("%prof.my.prop").getName());
+        assertEquals("2", config.getConfigValue("my.prop").getValue());
+    }
+
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(KeyValuesConfigSource.config(keyValues))
