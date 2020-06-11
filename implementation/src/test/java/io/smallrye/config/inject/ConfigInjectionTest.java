@@ -39,6 +39,7 @@ public class ConfigInjectionTest extends InjectionTest {
         assertEquals("1234", configBean.getMyProp());
         assertEquals("1234", configBean.getExpansion());
         assertEquals("12345678", configBean.getSecret());
+        assertEquals("5678", configBean.getMyPropProfile());
         assertThrows(SecurityException.class, () -> configBean.getConfig().getValue("secret", String.class),
                 "Not allowed to access secret key secret");
     }
@@ -81,6 +82,9 @@ public class ConfigInjectionTest extends InjectionTest {
         @ConfigProperty(name = "secret")
         private String secret;
         @Inject
+        @ConfigProperty(name = "my.prop.profile")
+        private String myPropProfile;
+        @Inject
         private Config config;
         @Inject
         @ConfigProperty(name = "my.prop")
@@ -105,6 +109,10 @@ public class ConfigInjectionTest extends InjectionTest {
 
         String getSecret() {
             return secret;
+        }
+
+        String getMyPropProfile() {
+            return myPropProfile;
         }
 
         Config getConfig() {
