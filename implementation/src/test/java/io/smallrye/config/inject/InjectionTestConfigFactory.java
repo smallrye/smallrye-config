@@ -1,7 +1,9 @@
 package io.smallrye.config.inject;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -17,13 +19,19 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
         return configProviderResolver.getBuilder().forClassLoader(classLoader)
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678"))
+                .withSources(KeyValuesConfigSource.config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678",
+                        "mp.config.profile", "prof", "my.prop.profile", "1234", "%prof.my.prop.profile", "5678"))
                 .withSources(new ConfigSource() {
                     int counter = 1;
 
                     @Override
                     public Map<String, String> getProperties() {
                         return new HashMap<>();
+                    }
+
+                    @Override
+                    public Set<String> getPropertyNames() {
+                        return new HashSet<>();
                     }
 
                     @Override
