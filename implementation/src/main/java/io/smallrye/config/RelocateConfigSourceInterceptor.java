@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -16,7 +17,7 @@ public class RelocateConfigSourceInterceptor implements ConfigSourceInterceptor 
     }
 
     public RelocateConfigSourceInterceptor(final Map<String, String> mappings) {
-        this(name -> mappings.getOrDefault(name, name));
+        this((Serializable & Function<String, String>) name -> mappings.getOrDefault(name, name));
     }
 
     @Override
