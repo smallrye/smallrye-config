@@ -21,7 +21,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class ProfileConfigSourceInterceptorTest {
     @Test
     public void profile() {
-        final SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
 
@@ -176,7 +176,7 @@ public class ProfileConfigSourceInterceptorTest {
 
     @Test
     public void propertyNames() {
-        final SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
                 SMALLRYE_PROFILE, "prof");
 
         assertEquals("2", config.getConfigValue("my.prop").getValue());
@@ -190,7 +190,7 @@ public class ProfileConfigSourceInterceptorTest {
 
     @Test
     void excludePropertiesFromInactiveProfiles() {
-        final SmallRyeConfig config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
+        final Config config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
 
         final List<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertTrue(properties.contains("my.prop"));
@@ -269,7 +269,22 @@ public class ProfileConfigSourceInterceptorTest {
         assertEquals("5678", config.getRawValue("my.prop"));
     }
 
-    private static SmallRyeConfig buildConfig(String... keyValues) {
+    @Test
+    public void mpProfileRelocate() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(
+                        KeyValuesConfigSource.config("my.prop", "1", "%prof.my.prop", "2", "mp.config.profile", "prof"))
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+
+        assertEquals("my.prop", config.getConfigValue("my.prop").getName());
+        assertEquals("my.prop", config.getConfigValue("%prof.my.prop").getName());
+        assertEquals("2", config.getConfigValue("my.prop").getValue());
+    }
+
+    private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(config(keyValues))
                 .withInterceptors(
