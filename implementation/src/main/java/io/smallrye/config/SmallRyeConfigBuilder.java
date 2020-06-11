@@ -148,6 +148,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 .getConfigSources(classLoader));
         defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
                 .getConfigSources(classLoader));
+        defaultSources
+                .addAll(new ProfilePropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                        .getConfigSources(classLoader));
+        defaultSources
+                .addAll(new ProfilePropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                        .getConfigSources(classLoader));
 
         return defaultSources;
     }
@@ -170,6 +176,19 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             @Override
             public OptionalInt getPriority() {
                 return OptionalInt.of(Priorities.LIBRARY + 600);
+            }
+        }));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                final Map<String, String> relocations = new HashMap<>();
+                relocations.put(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE, "mp.config.profile");
+                return new RelocateConfigSourceInterceptor(relocations);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 600 - 1);
             }
         }));
         interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
