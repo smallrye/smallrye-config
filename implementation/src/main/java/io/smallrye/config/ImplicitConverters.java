@@ -64,9 +64,9 @@ class ImplicitConverters {
 
     private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
         try {
-            final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
+            final Constructor<? extends T> declaredConstructor = SecuritySupport.getDeclaredConstructor(clazz, paramType);
             if (!isAccessible(declaredConstructor)) {
-                declaredConstructor.setAccessible(true);
+                SecuritySupport.setAccessible(declaredConstructor, true);
             }
             return new ConstructorConverter<>(declaredConstructor);
         } catch (NoSuchMethodException e) {
@@ -86,7 +86,7 @@ class ImplicitConverters {
                 return null;
             }
             if (!isAccessible(method)) {
-                method.setAccessible(true);
+                SecuritySupport.setAccessible(method, true);
             }
             return new StaticMethodConverter<>(clazz, method);
         } catch (NoSuchMethodException e) {

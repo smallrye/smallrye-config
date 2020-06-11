@@ -22,4 +22,12 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.DEBUG)
     @Message(id = 1002, value = "The config %s was not found")
     void notFound(String name);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1003, value = "Unable to get declared constructor for class %s with arguments %s")
+    void failedToRetrieveDeclaredConstructor(@Cause Throwable cause, String clazz, String paramTypes);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1004, value = "Unable to set accessible flag on %s")
+    void failedToSetAccessible(@Cause Throwable cause, String accessibleObject);
 }
