@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
+import io.smallrye.common.annotation.Experimental;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -174,8 +175,10 @@ public class SmallRyeConfig implements Config, Serializable {
         return Objects.equals(expected, getRawValue(name));
     }
 
-    ConfigValue getConfigValue(String name) {
-        return configSources.get().getInterceptorChain().proceed(name);
+    @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
+    public ConfigValue getConfigValue(String name) {
+        final ConfigValue configValue = configSources.get().getInterceptorChain().proceed(name);
+        return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
     }
 
     /**
@@ -186,7 +189,7 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     public String getRawValue(String name) {
         final ConfigValue configValue = getConfigValue(name);
-        return configValue != null ? configValue.getValue() : null;
+        return configValue != null && configValue.getValue() != null ? configValue.getValue() : null;
     }
 
     @Override

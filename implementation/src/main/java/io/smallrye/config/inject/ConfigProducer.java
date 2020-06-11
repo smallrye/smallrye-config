@@ -31,6 +31,8 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import io.smallrye.config.ConfigValue;
+
 /**
  * CDI producer for {@link Config} bean.
  *
@@ -155,5 +157,12 @@ public class ConfigProducer implements Serializable {
     @ConfigProperty
     OptionalDouble produceOptionalDoubleConfigProperty(InjectionPoint ip) {
         return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    ConfigValue produceConfigValue(InjectionPoint ip) {
+        return ConfigProducerUtil.getConfigValue(ip, getConfig(ip));
     }
 }
