@@ -58,7 +58,7 @@ class SmallRyeConfigTest {
     void getValuesConverter() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(config("my.list", "1,2,3,4")).build();
 
-        List<Integer> values = config.getValues("my.list", config.getConverter(Integer.class), ArrayList::new);
+        List<Integer> values = config.getValues("my.list", config.getConverter(Integer.class).get(), ArrayList::new);
         assertEquals(Arrays.asList(1, 2, 3, 4), values);
     }
 
@@ -75,7 +75,7 @@ class SmallRyeConfigTest {
     void getOptionalValuesConverter() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(config("my.list", "1,2,3,4")).build();
 
-        Optional<List<Integer>> values = config.getOptionalValues("my.list", config.getConverter(Integer.class),
+        Optional<List<Integer>> values = config.getOptionalValues("my.list", config.getConverter(Integer.class).get(),
                 ArrayList::new);
         assertTrue(values.isPresent());
         assertEquals(Arrays.asList(1, 2, 3, 4), values.get());
