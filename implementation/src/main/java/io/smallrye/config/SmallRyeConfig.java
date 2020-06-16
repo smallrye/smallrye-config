@@ -45,6 +45,8 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.mapper.ConfigMapping;
+import io.smallrye.config.mapper.ConfigurationValidationException;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
@@ -209,6 +211,26 @@ public class SmallRyeConfig implements Config, Serializable {
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
         return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+    }
+
+    @Experimental("TODO")
+    public <T> T getConfigProperties(Class<T> klass) {
+        return getConfigProperties(klass, "");
+    }
+
+    @Experimental("TODO")
+    public <T> T getConfigProperties(Class<T> klass, String prefix) {
+        final ConfigMapping configMapping = ConfigMapping.builder()
+                .addRoot(prefix, klass)
+                .build();
+
+        try {
+            final ConfigMapping.Result result = configMapping.mapConfiguration(this);
+            return result.getConfigRoot(prefix, klass);
+        } catch (ConfigurationValidationException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e.getCause());
+        }
     }
 
     @Override
