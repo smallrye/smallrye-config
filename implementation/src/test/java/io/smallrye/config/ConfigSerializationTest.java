@@ -23,7 +23,7 @@ public class ConfigSerializationTest {
                 .withSources(ConfigValueConfigSourceWrapper.wrap(KeyValuesConfigSource.config("my.prop", "1")))
                 .build();
 
-        assertEquals("1", config.getRawConfigValue("my.prop").getValue());
+        assertEquals("1", config.getConfigValue("my.prop").getValue());
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(byteArrayOutputStream)) {
@@ -41,6 +41,6 @@ public class ConfigSerializationTest {
         }
 
         SmallRyeConfig serialized = (SmallRyeConfig) readObject;
-        assertEquals("1", serialized.getRawConfigValue("my.prop").getValue());
+        assertEquals("1", serialized.getConfigValue("my.prop").getValue());
     }
 }
