@@ -2,9 +2,10 @@
 
 * xref:config/config.adoc[Config]
 
+* xref:config-sources/config-sources.adoc[Config Sources]
+
+* xref:converters/converters.adoc[Converters]
+
 * xref:interceptors/interceptors.adoc[Interceptors]
 
-* Extensions
-** xref:config-sources/config-sources.adoc[Config Sources]
-** xref:converters/converters.adoc[Converters]
-** xref:cdi/cdi.adoc[CDI]
+* xref:cdi/cdi.adoc[CDI]

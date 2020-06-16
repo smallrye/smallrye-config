@@ -43,6 +43,14 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
         return values.iterator();
     }
 
+    public ConfigSource getSource() {
+        if (configSource instanceof ConfigValueConfigSourceWrapper) {
+            return ((ConfigValueConfigSourceWrapper) configSource).unwrap();
+        }
+
+        return configSource;
+    }
+
     public static ConfigSourceInterceptor configSourceInterceptor(final ConfigSource configSource) {
         return new SmallRyeConfigSourceInterceptor(configSource);
     }

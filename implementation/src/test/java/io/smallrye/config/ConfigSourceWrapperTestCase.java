@@ -105,6 +105,11 @@ public class ConfigSourceWrapperTestCase {
         public String getName() {
             return delegate.getName();
         }
+
+        @Override
+        public int getOrdinal() {
+            return delegate.getOrdinal();
+        }
     }
 
     static <T> T assertIsInstance(Class<T> expected, Object thing) {

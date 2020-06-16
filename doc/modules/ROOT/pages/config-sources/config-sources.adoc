@@ -5,6 +5,28 @@ include::../attributes.adoc[]
 
 = Config Sources
 
+SmallRye Config provides a few enhancements and extensions to MicroProfile Config `ConfigSource`.
+
+== Config Source Factory
+
+Another way to create a `ConfigSource` is via the `ConfigSourceFactory`. The difference between the SmallRye Factory
+and the standard way to create a `ConfigSource` as specified in MicroProfile Config, is the Factory ability to provide
+a context with access to the available configuration.
+
+By implementing https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceFactoryjava[ConfigSourceFactory], the ConfigSource is made available via the
+`ConfigSource getSource(ConfigSourceContext context)` method. The `ConfigSourceFactory` can be also assigned a priority,
+like any other `ConfigSource` by overriding the method `OptionalInt getPriority()`.
+
+When the Factory is initializing, a `ConfigSourceContext` is provided, that allows to call a single method
+`ConfigValue getValue(String name)`. This method lookups configurations names in all `ConfigSources` that are already
+initialized by the `Config`. These are the `ConfigSources` with higher priority than the Factory. With the
+`ConfigSourceFactory` it is possible to bootstrap a `ConfigSource` that configures itself with other `ConfigSources`.
+
+Registration of a `ConfigSourceFactory` is done via the `ServiceLoader` mechanism by providing the
+implementation classes in a `META-INF/services/io.smallrye.config.ConfigSourceFactory` file. Alternatively, factories
+may be registered via the Programmatic API in `SmallRyeConfigBuilder#withSources`.
+
+== Available Config Sources
 In addition to the default Config Sources specified by MicroProfile Config (Environment Variables, System Properties
 and `microprofile-config.properties` file), SmallRye Config provides the following additional Sources:
 

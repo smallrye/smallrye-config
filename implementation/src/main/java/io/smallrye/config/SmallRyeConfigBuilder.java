@@ -92,6 +92,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 classLoader);
         configSourceProviderLoader.forEach(configSourceProvider -> configSourceProvider.getConfigSources(classLoader)
                 .forEach(discoveredSources::add));
+
+        ServiceLoader<ConfigSourceFactory> configSourceFactoryLoader = ServiceLoader.load(ConfigSourceFactory.class,
+                classLoader);
+        configSourceFactoryLoader.forEach(this::withSources);
+
         return discoveredSources;
     }
 
@@ -183,6 +188,24 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withSources(Collection<ConfigSource> configSources) {
         sources.addAll(configSources);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
+        Stream.of(configSourceFactories).forEach(configSourceFactory -> {
+            interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+                @Override
+                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                    return SmallRyeConfigSourceInterceptor.configSourceInterceptor(
+                            configSourceFactory.getSource(context::proceed));
+                }
+
+                @Override
+                public OptionalInt getPriority() {
+                    return configSourceFactory.getPriority();
+                }
+            }));
+        });
         return this;
     }
 
@@ -315,7 +338,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class InterceptorWithPriority {
-        static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt
+                .of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
 
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
@@ -346,11 +370,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             this.priority = factory.getPriority().orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
         }
 
-        public ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
+        ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
             return factory.getInterceptor(context);
         }
 
-        public int getPriority() {
+        int getPriority() {
             return priority;
         }
     }
