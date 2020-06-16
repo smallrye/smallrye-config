@@ -617,7 +617,7 @@ public final class ConfigMapping {
         // lazily sweep
         for (String name : config.getPropertyNames()) {
             // may be null
-            ConfigValue configValue = config.getRawConfigValue(name);
+            ConfigValue configValue = config.getConfigValue(name);
             NameIterator ni = new NameIterator(name);
             BiConsumer<MappingContext, NameIterator> action = matchActions.findRootValue(ni);
             if (action != null) {

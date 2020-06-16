@@ -31,6 +31,8 @@ public class MapperTests {
 
         @Default("this is the default")
         String helloWorldWithDefault();
+
+        Integer port();
     }
 
     @Test
@@ -44,17 +46,19 @@ public class MapperTests {
         try {
             mapping.mapConfiguration(config);
         } catch (ConfigurationValidationException e) {
-            assertEquals(1, e.getProblemCount());
+            assertEquals(2, e.getProblemCount());
         }
 
         cb = new SmallRyeConfigBuilder();
         cb.withSources(configSource(singletonMap("test.hello-world", "here I am!")));
+        cb.withSources(configSource(singletonMap("test.port", "8080")));
         mapping.registerDefaultValues(cb);
         config = cb.build();
         Result result = mapping.mapConfiguration(config);
         Basic basic = result.getConfigRoot("test", Basic.class);
         assertEquals("here I am!", basic.helloWorld());
         assertEquals("this is the default", basic.helloWorldWithDefault());
+        assertEquals(8080, basic.port().intValue());
     }
 
     public interface SomeTypes {
