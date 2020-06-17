@@ -1,5 +1,6 @@
 package io.smallrye.config.mapper;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -14,7 +15,9 @@ import io.smallrye.common.function.Functions;
  * A multi-level key map.
  */
 public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
-    private static final Object NO_VALUE = new Object();
+    private static final Object NO_VALUE = new Serializable() {
+        private static final long serialVersionUID = -6072559389176920349L;
+    };
 
     private static final long serialVersionUID = 3584966224369608557L;
 

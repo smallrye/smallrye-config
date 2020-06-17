@@ -17,6 +17,7 @@
 package io.smallrye.config;
 
 import java.lang.reflect.Type;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +57,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final Map<String, String> defaultValues = new HashMap<>();
+    private final Set<Map.Entry<String, Class<?>>> mappings = new HashSet<>();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -224,6 +226,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withMapping(Class<?> klass) {
+        return withMapping(klass, "");
+    }
+
+    public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
+        mappings.add(new AbstractMap.SimpleImmutableEntry<>(prefix, klass));
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
@@ -290,6 +301,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     Map<String, String> getDefaultValues() {
         return defaultValues;
+    }
+
+    Set<Map.Entry<String, Class<?>>> getMappings() {
+        return mappings;
     }
 
     protected boolean isAddDefaultSources() {
