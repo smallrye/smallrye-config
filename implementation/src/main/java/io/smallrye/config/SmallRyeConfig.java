@@ -59,9 +59,12 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
+    private final ConfigMapping configMapping;
+
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
+        this.configMapping = buildConfigMapping(builder);
     }
 
     @Deprecated
@@ -70,6 +73,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
+        this.configMapping = ConfigMapping.builder().build();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -131,6 +135,14 @@ public class SmallRyeConfig implements Config, Serializable {
                 (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
 
         return converters;
+    }
+
+    private ConfigMapping buildConfigMapping(final SmallRyeConfigBuilder builder) {
+        final ConfigMapping.Builder mappingBuilder = ConfigMapping.builder();
+        for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
+            mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
+        }
+        return mappingBuilder.build();
     }
 
     // no @Override
@@ -220,13 +232,19 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Experimental("TODO")
     public <T> T getConfigProperties(Class<T> klass, String prefix) {
-        final ConfigMapping configMapping = ConfigMapping.builder()
-                .addRoot(prefix, klass)
-                .build();
-
         try {
             final ConfigMapping.Result result = configMapping.mapConfiguration(this);
-            return result.getConfigRoot(prefix, klass);
+            final T configRoot = result.getConfigRoot(prefix, klass);
+            // Build one on the fly
+            // Think if we want to merge the unknown one with the current configMapping.
+            if (configRoot == null) {
+                return ConfigMapping.builder()
+                        .addRoot(prefix, klass)
+                        .build()
+                        .mapConfiguration(this)
+                        .getConfigRoot(prefix, klass);
+            }
+            return configRoot;
         } catch (ConfigurationValidationException e) {
             throw new IllegalArgumentException(e.getMessage());
         }

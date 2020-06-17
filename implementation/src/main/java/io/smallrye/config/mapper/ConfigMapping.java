@@ -8,6 +8,7 @@ import static io.smallrye.config.mapper.ConfigurationInterface.PrimitiveProperty
 import static io.smallrye.config.mapper.ConfigurationInterface.Property;
 import static io.smallrye.config.mapper.ConfigurationInterface.getConfigurationInterface;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 /**
  *
  */
-public final class ConfigMapping {
+public final class ConfigMapping implements Serializable {
     /**
      * The do-nothing action is used when the matched property is eager.
      */

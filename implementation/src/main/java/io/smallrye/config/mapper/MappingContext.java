@@ -91,7 +91,7 @@ public final class MappingContext {
         return interfaceType.cast(instance);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public <T> Converter<T> getValueConverter(Class<?> enclosingType, String field) {
         return (Converter<T>) convertersByTypeAndField
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())

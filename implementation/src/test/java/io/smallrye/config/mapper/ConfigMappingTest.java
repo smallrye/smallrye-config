@@ -50,6 +50,39 @@ public class ConfigMappingTest {
         assertEquals(8080, configProperties.port());
     }
 
+    @Test
+    void splitRoots() throws Exception {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
+                KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
+                .build();
+
+        final ConfigMapping configMapping = ConfigMapping.builder()
+                .addRoot("server", SplitRootServerHostAndPort.class)
+                .addRoot("server", SplitRootServerName.class)
+                .build();
+
+        final ConfigMapping.Result result = configMapping.mapConfiguration(config);
+        final SplitRootServerHostAndPort server = result.getConfigRoot("server", SplitRootServerHostAndPort.class);
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+
+        final SplitRootServerName name = result.getConfigRoot("server", SplitRootServerName.class);
+        assertEquals("konoha", name.name());
+    }
+
+    @Test
+    void splitRootsInConfig() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name",
+                        "konoha"))
+                .withMapping(SplitRootServerHostAndPort.class, "server")
+                .withMapping(SplitRootServerName.class, "server")
+                .build();
+        final SplitRootServerHostAndPort server = config.getConfigProperties(SplitRootServerHostAndPort.class, "server");
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+    }
+
     interface Configs {
         String host();
 
@@ -58,5 +91,15 @@ public class ConfigMappingTest {
         String getHost();
 
         int getPort();
+    }
+
+    interface SplitRootServerHostAndPort {
+        String host();
+
+        int port();
+    }
+
+    interface SplitRootServerName {
+        String name();
     }
 }
