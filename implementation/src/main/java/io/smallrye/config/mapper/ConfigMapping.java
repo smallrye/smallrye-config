@@ -25,6 +25,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
+import io.smallrye.config.DefaultValuesConfigSource;
+import io.smallrye.config.KeyMap;
+import io.smallrye.config.NameIterator;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 

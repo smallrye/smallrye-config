@@ -29,7 +29,7 @@ public class MapperTests {
     public interface Basic {
         String helloWorld();
 
-        @Default("this is the default")
+        @WithDefault("this is the default")
         String helloWorldWithDefault();
 
         Integer port();
