@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Converters;
 import io.smallrye.config.SmallRyeConfig;
 
@@ -195,7 +194,8 @@ public final class MappingContext {
         return new NoSuchElementException("A required configuration group of type " + type.getName() + " was not provided");
     }
 
-    public void unknownConfigElement(final ConfigValue configValue) {
+    public void unknownConfigElement(final String propertyName) {
+        problems.add(new Problem(propertyName + " does not map to any root"));
     }
 
     void fillInOptionals() {
