@@ -1,14 +1,14 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
 import java.util.Collections;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-final class DefaultValuesConfigSource implements ConfigSource {
+public final class DefaultValuesConfigSource implements ConfigSource {
     private final KeyMap<String> defaultValues;
 
-    DefaultValuesConfigSource(final KeyMap<String> defaultValues) {
+    public DefaultValuesConfigSource(final KeyMap<String> defaultValues) {
         this.defaultValues = defaultValues;
     }
 

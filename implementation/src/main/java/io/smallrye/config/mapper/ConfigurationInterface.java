@@ -944,7 +944,7 @@ public final class ConfigurationInterface {
         Class<?> rawType = rawTypeOf(type);
         if (rawType.isPrimitive()) {
             // primitive!
-            Default annotation = method.getAnnotation(Default.class);
+            WithDefault annotation = method.getAnnotation(WithDefault.class);
             return new PrimitiveProperty(method, propertyName, rawType, convertWith,
                     annotation == null ? null : annotation.value());
         }
@@ -972,13 +972,13 @@ public final class ConfigurationInterface {
             // fall out (leaf)
         }
         // otherwise it's a leaf
-        Default annotation = method.getAnnotation(Default.class);
+        WithDefault annotation = method.getAnnotation(WithDefault.class);
         return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
     }
 
     private static Class<? extends Converter<?>> getConvertWith(final Type type) {
         if (type instanceof AnnotatedType) {
-            ConvertWith annotation = ((AnnotatedType) type).getAnnotation(ConvertWith.class);
+            WithConverter annotation = ((AnnotatedType) type).getAnnotation(WithConverter.class);
             if (annotation != null) {
                 return annotation.value();
             } else {
