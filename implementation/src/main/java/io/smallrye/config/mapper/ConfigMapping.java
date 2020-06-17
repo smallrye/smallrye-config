@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -23,7 +24,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
-import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -616,15 +616,18 @@ public final class ConfigMapping {
         }
         // lazily sweep
         for (String name : config.getPropertyNames()) {
-            // may be null
-            ConfigValue configValue = config.getConfigValue(name);
+            // filter properties in root
+            if (!isPropertyInRoot(name)) {
+                break;
+            }
+
             NameIterator ni = new NameIterator(name);
             BiConsumer<MappingContext, NameIterator> action = matchActions.findRootValue(ni);
             if (action != null) {
                 // ni is positioned at the end of the string
                 action.accept(context, ni);
-            } else if (configValue != null) {
-                context.unknownConfigElement(configValue);
+            } else {
+                context.unknownConfigElement(name);
             }
         }
         ArrayList<ConfigurationValidationException.Problem> problems = context.getProblems();
@@ -634,6 +637,16 @@ public final class ConfigMapping {
         }
         context.fillInOptionals();
         return new Result(context.getRootsMap());
+    }
+
+    private boolean isPropertyInRoot(String propertyName) {
+        final Set<String> registeredRoots = roots.keySet();
+        for (String registeredRoot : registeredRoots) {
+            if (propertyName.startsWith(registeredRoot)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static final class Builder {
