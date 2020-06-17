@@ -228,7 +228,7 @@ public class SmallRyeConfig implements Config, Serializable {
             final ConfigMapping.Result result = configMapping.mapConfiguration(this);
             return result.getConfigRoot(prefix, klass);
         } catch (ConfigurationValidationException e) {
-            throw new IllegalArgumentException(e.getCause());
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
