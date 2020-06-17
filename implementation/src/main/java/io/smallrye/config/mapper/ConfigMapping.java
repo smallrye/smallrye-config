@@ -94,6 +94,10 @@ public final class ConfigMapping {
 
     static String skewer(String camelHumps, int start, int end, StringBuilder b) {
         assert !camelHumps.isEmpty() : "Method seems to have an empty name";
+        if (camelHumps.startsWith("get")) {
+            camelHumps = camelHumps.substring(3);
+            end = camelHumps.length();
+        }
         int cp = camelHumps.codePointAt(start);
         b.appendCodePoint(Character.toLowerCase(cp));
         start += Character.charCount(cp);

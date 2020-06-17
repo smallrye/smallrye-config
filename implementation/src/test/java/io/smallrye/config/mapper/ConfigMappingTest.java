@@ -16,11 +16,13 @@ public class ConfigMappingTest {
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
         final Configs configProperties = config.getConfigProperties(Configs.class, "server");
         assertEquals("localhost", configProperties.host());
+        assertEquals("localhost", configProperties.getHost());
         assertEquals(8080, configProperties.port());
+        assertEquals(8080, configProperties.getPort());
     }
 
     @Test
-    void configMappingUnmapped() {
+    void unmapped() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
@@ -29,7 +31,7 @@ public class ConfigMappingTest {
     }
 
     @Test
-    void configMappingIgnorePropertiesInUnregisteredRoots() {
+    void ignorePropertiesInUnregisteredRoots() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "client.name", "konoha"))
                 .build();
@@ -39,7 +41,7 @@ public class ConfigMappingTest {
     }
 
     @Test
-    void configMappingIgnoreProperties() {
+    void ignoreProperties() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
@@ -52,5 +54,9 @@ public class ConfigMappingTest {
         String host();
 
         int port();
+
+        String getHost();
+
+        int getPort();
     }
 }
