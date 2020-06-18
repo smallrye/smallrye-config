@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class BasicTest {
@@ -46,6 +47,7 @@ public class BasicTest {
     }
 
     @Test
+    @Disabled
     public void testListOfListValue() {
         String yaml = "foo:\n"
                 + "     bar:\n"
