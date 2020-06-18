@@ -28,11 +28,20 @@
             <groupId>io.smallrye.config</groupId>
             <artifactId>smallrye-config-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-constraint</artifactId>
+        </dependency>
 
         <!-- Test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
