@@ -24,6 +24,16 @@ public class YamlConfigSourceTest {
         assertEquals("joe@gmail.com", yaml.getValue("admin.users.[0].email"));
     }
 
+    @Test
+    void profiles() throws Exception {
+        YamlConfigSource yaml = new YamlConfigSource("yaml",
+                YamlConfigSourceTest.class.getResourceAsStream("/example-profiles.yml"));
+
+        assertEquals("default", yaml.getValue("foo.bar"));
+        assertEquals("dev", yaml.getValue("%dev.foo.bar"));
+        assertEquals("prod", yaml.getValue("%prod.foo.bar"));
+    }
+
     public static class Users {
         List<User> users;
 

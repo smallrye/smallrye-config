@@ -47,9 +47,14 @@ public class YamlConfigSource extends MapBackedConfigSource {
     @SuppressWarnings("unchecked")
     private static Map<String, String> streamToMap(InputStream inputStream) throws IOException {
         Assert.checkNotNullParam("inputStream", inputStream);
-        final Map<String, Object> yamlInput;
+        final Map<String, String> yamlInput = new TreeMap<>();
         try {
-            yamlInput = new Yaml().loadAs(inputStream, HashMap.class);
+            final Iterable<Object> objects = new Yaml().loadAll(inputStream);
+            for (Object object : objects) {
+                if (object instanceof Map) {
+                    yamlInput.putAll(yamlInputToMap((Map<String, Object>) object));
+                }
+            }
             inputStream.close();
         } catch (Throwable t) {
             try {
@@ -59,7 +64,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
             }
             throw t;
         }
-        return yamlInputToMap(yamlInput);
+        return yamlInput;
     }
 
     @SuppressWarnings("unchecked")

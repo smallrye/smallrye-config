@@ -1,0 +1,14 @@
+---
+foo:
+  bar:
+    default
+---
+"%dev":
+  foo:
+    bar:
+      dev
+---
+"%prod":
+  foo:
+    bar:
+      prod
