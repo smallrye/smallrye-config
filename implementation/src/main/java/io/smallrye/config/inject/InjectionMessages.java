@@ -11,14 +11,17 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.annotations.Param;
 import org.jboss.logging.annotations.Pos;
+import org.jboss.logging.annotations.Signature;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface InjectionMessages {
     InjectionMessages msg = Messages.getBundle(InjectionMessages.class);
 
+    @Signature(messageIndex = 1, value = { String.class, String.class })
     @Message(id = 2000, value = "No Config Value exists for required property %s")
     ConfigException noConfigValue(@Param @Pos(1) String key);
 
+    @Signature(messageIndex = 1, value = { String.class, String.class, Throwable.class })
     @Message(id = 2001, value = "Failed to retrieve config for key %s")
     ConfigException retrieveConfigFailure(@Cause IllegalArgumentException cause, @Param @Pos(1) String key);
 
