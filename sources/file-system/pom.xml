@@ -4,7 +4,7 @@
     <parent>
         <artifactId>smallrye-config-parent</artifactId>
         <groupId>io.smallrye.config</groupId>
-        <version>1.8.1-SNAPSHOT</version>
+        <version>1.8.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -31,9 +31,8 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
         </dependency>
     </dependencies>
 

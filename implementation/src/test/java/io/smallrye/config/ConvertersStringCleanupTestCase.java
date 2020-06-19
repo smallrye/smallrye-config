@@ -16,78 +16,69 @@
 
 package io.smallrye.config;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class ConvertersStringCleanupTestCase<T> {
-
-    @Parameterized.Parameters(name = "{0} - {2}")
-    public static Object[][] data() {
-        return new Object[][] {
-                { Boolean.class, true, "true" },
-                { Boolean.class, false, "NO" },
-                { Double.class, 1.0d, "1.0" },
-                { Float.class, 1.0f, "1.0" },
-                { Long.class, 42L, "42" },
-                { Integer.class, 42, "42" },
-                { Class.class, Integer.class, "java.lang.Integer" },
-                { OptionalInt.class, OptionalInt.of(42), "42" },
-                { OptionalLong.class, OptionalLong.of(42L), "42" },
-                { OptionalDouble.class, OptionalDouble.of(1.0d), "1.0" },
-                { OptionalDouble.class, OptionalDouble.of(1.0d), "1.0" },
-                { Boolean.class, null, "" },
-                { Double.class, null, "" },
-                { Float.class, null, "" },
-                { Long.class, null, "" },
-                { Integer.class, null, "" },
-                { Class.class, null, "" },
-                { OptionalInt.class, OptionalInt.empty(), "" },
-                { OptionalLong.class, OptionalLong.empty(), "" },
-                { OptionalDouble.class, OptionalDouble.empty(), "" },
-                { OptionalDouble.class, OptionalDouble.empty(), "" }
-        };
+    public static Stream<Arguments> data() {
+        return Stream.of(
+                Arguments.of(Boolean.class, true, "true"),
+                Arguments.of(Boolean.class, false, "NO"),
+                Arguments.of(Double.class, 1.0d, "1.0"),
+                Arguments.of(Float.class, 1.0f, "1.0"),
+                Arguments.of(Long.class, 42L, "42"),
+                Arguments.of(Integer.class, 42, "42"),
+                Arguments.of(Class.class, Integer.class, "java.lang.Integer"),
+                Arguments.of(OptionalInt.class, OptionalInt.of(42), "42"),
+                Arguments.of(OptionalLong.class, OptionalLong.of(42L), "42"),
+                Arguments.of(OptionalDouble.class, OptionalDouble.of(1.0d), "1.0"),
+                Arguments.of(OptionalDouble.class, OptionalDouble.of(1.0d), "1.0"),
+                Arguments.of(Boolean.class, null, ""),
+                Arguments.of(Double.class, null, ""),
+                Arguments.of(Float.class, null, ""),
+                Arguments.of(Long.class, null, ""),
+                Arguments.of(Integer.class, null, ""),
+                Arguments.of(Class.class, null, ""),
+                Arguments.of(OptionalInt.class, OptionalInt.empty(), ""),
+                Arguments.of(OptionalLong.class, OptionalLong.empty(), ""),
+                Arguments.of(OptionalDouble.class, OptionalDouble.empty(), ""),
+                Arguments.of(OptionalDouble.class, OptionalDouble.empty(), ""));
     }
 
-    private final Class<T> type;
-    private final T expected;
-    private final String string;
-
-    public ConvertersStringCleanupTestCase(Class<T> type, T expected, String string) {
-        this.type = type;
-        this.expected = expected;
-        this.string = string;
-    }
-
-    @Test
-    public void testSimple() {
+    @ParameterizedTest(name = "{0} - {2}")
+    @MethodSource("data")
+    public void testSimple(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(string));
     }
 
-    @Test
-    public void testTrailingSpace() {
+    @ParameterizedTest(name = "{0} - {2}")
+    @MethodSource("data")
+    public void testTrailingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(string + " "));
     }
 
-    @Test
-    public void testLeadingSpace() {
+    @ParameterizedTest(name = "{0} - {2}")
+    @MethodSource("data")
+    public void testLeadingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(" " + string));
     }
 
-    @Test
-    public void testLeadingAndTrailingWhitespaces() {
+    @ParameterizedTest(name = "{0} - {2}")
+    @MethodSource("data")
+    public void testLeadingAndTrailingWhitespaces(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(" \t " + string + "\t\t "));

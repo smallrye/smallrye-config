@@ -1,4 +1,4 @@
-package io.smallrye.config.inject;
+package io.smallrye.config.util.injection;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ public abstract class InjectionTest {
         final URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
                 new URL("memory", null, 0, "/",
                         new InMemoryStreamHandler(
-                                "io.smallrye.config.inject.InjectionTestConfigFactory"))
+                                "io.smallrye.config.util.injection.InjectionTestConfigFactory"))
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
     }

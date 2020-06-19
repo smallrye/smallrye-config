@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
-    <version>1.8.1-SNAPSHOT</version>
+    <version>1.8.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config-common</artifactId>
@@ -23,10 +23,10 @@
       <artifactId>jboss-logging</artifactId>
     </dependency>
 
+    <!-- Test Dependencies -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
     </dependency>
   </dependencies>
 

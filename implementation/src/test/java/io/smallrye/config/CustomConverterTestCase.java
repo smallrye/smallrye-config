@@ -1,11 +1,11 @@
 package io.smallrye.config;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CustomConverterTestCase {
 

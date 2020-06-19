@@ -1,10 +1,10 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class InterceptorChainTest {
     @Test

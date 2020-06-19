@@ -55,7 +55,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private String profile = null;
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
     private boolean addDiscoveredSources = false;
@@ -92,6 +92,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 classLoader);
         configSourceProviderLoader.forEach(configSourceProvider -> configSourceProvider.getConfigSources(classLoader)
                 .forEach(discoveredSources::add));
+
+        ServiceLoader<ConfigSourceFactory> configSourceFactoryLoader = ServiceLoader.load(ConfigSourceFactory.class,
+                classLoader);
+        configSourceFactoryLoader.forEach(this::withSources);
+
         return discoveredSources;
     }
 
@@ -120,7 +125,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    List<ConfigSource> getDefaultSources() {
+    protected List<ConfigSource> getDefaultSources() {
         List<ConfigSource> defaultSources = new ArrayList<>();
 
         defaultSources.add(new EnvConfigSource());
@@ -183,6 +188,24 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withSources(Collection<ConfigSource> configSources) {
         sources.addAll(configSources);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
+        Stream.of(configSourceFactories).forEach(configSourceFactory -> {
+            interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+                @Override
+                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                    return SmallRyeConfigSourceInterceptor.configSourceInterceptor(
+                            configSourceFactory.getSource(context::proceed));
+                }
+
+                @Override
+                public OptionalInt getPriority() {
+                    return configSourceFactory.getPriority();
+                }
+            }));
+        });
         return this;
     }
 
@@ -258,7 +281,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return priority;
     }
 
-    List<ConfigSource> getSources() {
+    protected List<ConfigSource> getSources() {
         return sources;
     }
 
@@ -267,7 +290,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return sourceWrappers;
     }
 
-    Map<Type, ConverterWithPriority> getConverters() {
+    protected Map<Type, ConverterWithPriority> getConverters() {
         return converters;
     }
 
@@ -275,7 +298,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
-    boolean isAddDefaultSources() {
+    protected boolean isAddDefaultSources() {
         return addDefaultSources;
     }
 
@@ -283,11 +306,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDefaultInterceptors;
     }
 
-    boolean isAddDiscoveredSources() {
+    protected boolean isAddDiscoveredSources() {
         return addDiscoveredSources;
     }
 
-    boolean isAddDiscoveredConverters() {
+    protected boolean isAddDiscoveredConverters() {
         return addDiscoveredConverters;
     }
 
@@ -315,7 +338,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class InterceptorWithPriority {
-        static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt
+                .of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
 
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
@@ -346,11 +370,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             this.priority = factory.getPriority().orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
         }
 
-        public ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
+        ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
             return factory.getInterceptor(context);
         }
 
-        public int getPriority() {
+        int getPriority() {
             return priority;
         }
     }

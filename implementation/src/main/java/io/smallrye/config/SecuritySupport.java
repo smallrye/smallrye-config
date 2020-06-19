@@ -16,8 +16,13 @@
 
 package io.smallrye.config;
 
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
@@ -39,6 +44,50 @@ class SecuritySupport {
                 }
                 return tccl;
             });
+        }
+    }
+
+    static void setAccessible(AccessibleObject object, boolean flag) {
+        if (System.getSecurityManager() == null) {
+            object.setAccessible(flag);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+
+                try {
+                    object.setAccessible(flag);
+                } catch (SecurityException ex) {
+                    ConfigLogging.log.failedToSetAccessible(ex, object.toString());
+                }
+                return null;
+            });
+        }
+    }
+
+    static <T> Constructor<? extends T> getDeclaredConstructor(Class<T> clazz, Class<?>... paramTypes)
+            throws NoSuchMethodException {
+        if (System.getSecurityManager() == null) {
+            return clazz.getDeclaredConstructor(paramTypes);
+        } else {
+            try {
+                return AccessController.doPrivileged((PrivilegedExceptionAction<Constructor<? extends T>>) () -> {
+                    Constructor<? extends T> constructor = null;
+                    try {
+                        constructor = clazz.getDeclaredConstructor(paramTypes);
+
+                    } catch (SecurityException ex) {
+                        ConfigLogging.log.failedToRetrieveDeclaredConstructor(ex, clazz.toString(),
+                                Arrays.toString(paramTypes));
+                    }
+                    return constructor;
+                });
+            } catch (PrivilegedActionException e) {
+                Exception e2 = e.getException();
+                if (e2 instanceof NoSuchMethodException) {
+                    throw (NoSuchMethodException) e2;
+                } else {
+                    throw new RuntimeException(e2);
+                }
+            }
         }
     }
 

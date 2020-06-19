@@ -14,11 +14,10 @@ import io.smallrye.common.annotation.Experimental;
  * initialized.
  * <p>
  *
- * Instances of this interface will be discovered by {@code SmallRyeConfigBuilder#addDiscoveredInterceptors()} via the
+ * Instances of this interface will be discovered by {@link SmallRyeConfigBuilder#addDiscoveredInterceptors()} via the
  * {@link java.util.ServiceLoader} mechanism and can be registered by providing a
- * {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory}
- * {@linkplain ClassLoader#getResource(String) resource} which contains the fully qualified class name of the
- * custom {@code ConfigSourceProvider} implementation.
+ * {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory} which contains the fully qualified class
+ * name of the custom {@link ConfigSourceInterceptor} implementation.
  */
 @Experimental("Interceptor API to intercept resolution of a configuration name")
 public interface ConfigSourceInterceptorFactory {

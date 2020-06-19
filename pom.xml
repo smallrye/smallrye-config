@@ -22,12 +22,12 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>18</version>
+    <version>20</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
   <artifactId>smallrye-config-parent</artifactId>
-  <version>1.8.1-SNAPSHOT</version>
+  <version>1.8.2-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Config Parent</name>
@@ -93,7 +93,7 @@
 
       <dependency>
         <groupId>org.jboss.weld</groupId>
-        <artifactId>weld-junit4</artifactId>
+        <artifactId>weld-junit5</artifactId>
         <version>${version.weld.junit}</version>
         <scope>test</scope>
       </dependency>
