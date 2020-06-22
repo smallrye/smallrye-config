@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.smallrye.config.inject.ConfigProducer;
+import io.smallrye.config.inject.ConfigExtension;
 
 /**
  * Test the ConfigSource
@@ -52,7 +52,7 @@ public class ZooKeeperConfigSourceTest {
     private final String PROPERTY_VALUE = "some.value";
 
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class)
+    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ZooKeeperConfigSourceTest.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)

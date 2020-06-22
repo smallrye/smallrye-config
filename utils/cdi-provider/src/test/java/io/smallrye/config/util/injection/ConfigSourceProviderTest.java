@@ -15,7 +15,7 @@ import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.smallrye.config.inject.ConfigProducer;
+import io.smallrye.config.inject.ConfigExtension;
 
 /**
  * Testing the injection of a Config source name and the Config Source Map
@@ -25,7 +25,7 @@ import io.smallrye.config.inject.ConfigProducer;
 @ExtendWith(WeldJunit5Extension.class)
 public class ConfigSourceProviderTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class, ConfigSourceProvider.class)
+    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigSourceProvider.class)
             .addBeans()
             .inject(this)
             .build();

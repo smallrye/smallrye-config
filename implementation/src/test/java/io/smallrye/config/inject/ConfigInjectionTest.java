@@ -21,7 +21,7 @@ import io.smallrye.config.ConfigValue;
 @ExtendWith(WeldJunit5Extension.class)
 public class ConfigInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class, ConfigBean.class)
+    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigBean.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)

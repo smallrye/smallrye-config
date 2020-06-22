@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.events.regex.RegexFilter;
-import io.smallrye.config.inject.ConfigProducer;
+import io.smallrye.config.inject.ConfigExtension;
 
 /**
  * Testing that the events fire correctly
@@ -23,7 +23,7 @@ import io.smallrye.config.inject.ConfigProducer;
 @ExtendWith(WeldJunit5Extension.class)
 public class ChangeEventNotifierTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class, ChangeEventNotifier.class)
+    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ChangeEventNotifier.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 public class SupplierInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigProducer.class, SupplierBean.class)
+    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, SupplierBean.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)

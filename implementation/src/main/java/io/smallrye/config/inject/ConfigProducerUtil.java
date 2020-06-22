@@ -40,7 +40,7 @@ public class ConfigProducerUtil {
         }
         final SmallRyeConfig src = (SmallRyeConfig) config;
         Converter<T> converter = resolveConverter(injectionPoint, src);
-        String rawValue = getRawValue(src, name);
+        String rawValue = getRawValue(name, src);
         if (rawValue == null) {
             rawValue = getDefaultValue(injectionPoint);
         }
@@ -75,11 +75,11 @@ public class ConfigProducerUtil {
         return configValue;
     }
 
-    private static String getRawValue(SmallRyeConfig config, String name) {
+    public static String getRawValue(String name, SmallRyeConfig config) {
         return SecretKeys.doUnlocked(() -> config.getRawValue(name));
     }
 
-    private static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final SmallRyeConfig src) {
+    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final SmallRyeConfig src) {
         return resolveConverter(injectionPoint.getType(), src);
     }
 
