@@ -126,7 +126,7 @@ public class ConfigExtension implements Extension {
             Type type = injectionPoint.getType();
 
             // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
-            if (type instanceof Class && ConfigValue.class.isAssignableFrom((Class<?>) type)
+            if (type instanceof Class && org.eclipse.microprofile.config.ConfigValue.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalInt.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalLong.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalDouble.class.isAssignableFrom((Class<?>) type)
