@@ -109,6 +109,9 @@ public class ConfigExtension implements Extension {
 
             // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
             if (type instanceof Class && ConfigValue.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && OptionalInt.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && OptionalLong.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && OptionalDouble.class.isAssignableFrom((Class<?>) type)
                     || type instanceof ParameterizedType
                             && (Optional.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
                                     || Provider.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
