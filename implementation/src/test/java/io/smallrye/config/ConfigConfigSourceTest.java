@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -28,6 +29,11 @@ public class ConfigConfigSourceTest {
 
                             @Override
                             public Map<String, String> getProperties() {
+                                return null;
+                            }
+
+                            @Override
+                            public Set<String> getPropertyNames() {
                                 return null;
                             }
 
@@ -69,6 +75,11 @@ public class ConfigConfigSourceTest {
 
                             @Override
                             public Map<String, String> getProperties() {
+                                return null;
+                            }
+
+                            @Override
+                            public Set<String> getPropertyNames() {
                                 return null;
                             }
 
