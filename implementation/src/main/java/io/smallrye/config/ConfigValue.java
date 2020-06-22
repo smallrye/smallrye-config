@@ -17,7 +17,7 @@ import io.smallrye.common.annotation.Experimental;
  * Configuration lookup metadata.
  */
 @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
-public class ConfigValue {
+public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue {
     private final String name;
     private final String value;
     private final String configSourceName;
@@ -33,12 +33,24 @@ public class ConfigValue {
         this.lineNumber = builder.lineNumber;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public String getSourceName() {
+        return getConfigSourceName();
+    }
+
+    @Override
+    public int getSourceOrdinal() {
+        return getConfigSourceOrdinal();
     }
 
     public String getConfigSourceName() {
