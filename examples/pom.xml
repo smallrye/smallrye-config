@@ -32,5 +32,6 @@
     <module>interceptors</module>
     <module>expansion</module>
     <module>profiles</module>
+    <module>configmap</module>
   </modules>
 </project>

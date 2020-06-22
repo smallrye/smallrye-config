@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: configmap-app
+spec:
+  type: "LoadBalancer"
+  ports:
+    - name: "http"
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: configmap-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configmap-app
+  labels:
+    app: configmap-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: configmap-app
+  template:
+    metadata:
+      labels:
+        app: configmap-app
+    spec:
+      containers:
+        - name: configmap-app
+          image: docker-registry:5000/smallrye-config-examples/configmap-app
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONFIG_MAP_DIR_SOURCE
+              value: "/usr/local/apps/config"
+          volumeMounts:
+            - name: configmap-app
+              mountPath: /usr/local/apps/config
+      volumes:
+        - name: configmap-app
+          configMap:
+            name: configmap-app
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-app
+  labels:
+    app: configmap-app
+data:
+  smallrye.config.example.configmap.foo: something
+  smallrye.config.example.configmap.bar: something-else

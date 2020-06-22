@@ -60,8 +60,12 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
 
     private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
 
-    FileSystemConfigSource(File dir) {
+    public FileSystemConfigSource(File dir) {
         this(dir, DEFAULT_ORDINAL);
+    }
+
+    public FileSystemConfigSource(String dir) {
+        this(new File(dir), DEFAULT_ORDINAL);
     }
 
     /**
@@ -71,7 +75,7 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
      * @param ordinal the ordinal value
      */
     public FileSystemConfigSource(File dir, int ordinal) {
-        super("DirConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir), ordinal);
+        super("FileSystemConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir), ordinal);
     }
 
     private static Map<String, String> scan(File directory) {
