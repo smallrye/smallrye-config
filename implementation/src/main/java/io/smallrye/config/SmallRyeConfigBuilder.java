@@ -95,7 +95,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         ServiceLoader<ConfigSourceFactory> configSourceFactoryLoader = ServiceLoader.load(ConfigSourceFactory.class,
                 classLoader);
-        configSourceFactoryLoader.forEach(this::withSources);
+        configSourceFactoryLoader.forEach(factory -> discoveredSources.add(new ConfigurableConfigSource(factory)));
 
         return discoveredSources;
     }
@@ -193,18 +193,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
         Stream.of(configSourceFactories).forEach(configSourceFactory -> {
-            interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
-                @Override
-                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                    return SmallRyeConfigSourceInterceptor.configSourceInterceptor(
-                            configSourceFactory.getSource(context::proceed));
-                }
-
-                @Override
-                public OptionalInt getPriority() {
-                    return configSourceFactory.getPriority();
-                }
-            }));
+            sources.add(new ConfigurableConfigSource(configSourceFactory));
         });
         return this;
     }

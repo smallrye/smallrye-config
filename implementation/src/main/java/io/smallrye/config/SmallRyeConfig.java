@@ -283,9 +283,16 @@ public class SmallRyeConfig implements Config, Serializable {
                 initInterceptors.add(initInterceptor);
             }
 
+            this.interceptorChain = current;
+            // This init any ConfigSourceFactory with current build chain (regular sources + interceptors).
+            initInterceptors.stream()
+                    .map(ConfigSourceInterceptorWithPriority::getInterceptor)
+                    .filter(SmallRyeConfigSourceInterceptor.class::isInstance)
+                    .map(SmallRyeConfigSourceInterceptor.class::cast)
+                    .forEach(interceptor -> interceptor.apply(interceptorChain::proceed));
+
             this.sources = Collections.unmodifiableList(getSources(initInterceptors));
             this.interceptors = Collections.unmodifiableList(initInterceptors);
-            this.interceptorChain = current;
         }
 
         /**

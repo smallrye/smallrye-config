@@ -11,7 +11,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 5513331820671039755L;
 
-    private final ConfigValueConfigSource configSource;
+    private ConfigValueConfigSource configSource;
 
     private SmallRyeConfigSourceInterceptor(final ConfigSource configSource) {
         this(wrap(configSource));
@@ -19,6 +19,12 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private SmallRyeConfigSourceInterceptor(final ConfigValueConfigSource configSource) {
         this.configSource = configSource;
+    }
+
+    public void apply(final ConfigSourceContext context) {
+        if (getSource() instanceof ConfigurableConfigSource) {
+            this.configSource = wrap(((ConfigurableConfigSource) getSource()).getSource(context));
+        }
     }
 
     @Override
@@ -43,7 +49,7 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
         return values.iterator();
     }
 
-    public ConfigSource getSource() {
+    ConfigSource getSource() {
         if (configSource instanceof ConfigValueConfigSourceWrapper) {
             return ((ConfigValueConfigSourceWrapper) configSource).unwrap();
         }
@@ -51,7 +57,7 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
         return configSource;
     }
 
-    public static ConfigSourceInterceptor configSourceInterceptor(final ConfigSource configSource) {
+    static ConfigSourceInterceptor configSourceInterceptor(final ConfigSource configSource) {
         return new SmallRyeConfigSourceInterceptor(configSource);
     }
 }

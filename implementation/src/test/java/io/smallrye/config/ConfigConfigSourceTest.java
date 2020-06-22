@@ -2,7 +2,6 @@ package io.smallrye.config;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 import java.util.Map;
@@ -89,6 +88,7 @@ public class ConfigConfigSourceTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("KeyValuesConfigSource", config.getConfigValue("my.prop").getConfigSourceName());
-        assertNull(config.getRawValue("any"));
+        assertEquals("1234", config.getRawValue("any"));
+        assertEquals("test", config.getConfigValue("any").getConfigSourceName());
     }
 }
