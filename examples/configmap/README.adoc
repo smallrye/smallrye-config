@@ -1,0 +1,76 @@
+= Kubernetes ConfigMap ConfigSource Example
+
+In this example, the `FileSystemConfigSource` is used to access a Kubernetes ConfigMap configuration.
+
+== Setup
+
+Since the `FileSystemConfigSource` is implemented in a separate `SmallRyeConfig` module, it requires an additional
+dependency in the project that wants to read configuration from Kubernetes ConfigMap.
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config-source-file-system</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+== Implementation
+
+The `FileSystemConfigSource` needs to be registed with the application. The recommended way is to use a
+`ConfigSourceFactory` via the standard ServiceLoader mechanism. The factory gives the option to configure the
+`FileSystemConfigSource` with higher priority ConfigSources.
+
+[source,java]
+----
+public class ConfigMapConfigSourceFactory implements ConfigSourceFactory {
+    @Override
+    public ConfigSource getSource(final ConfigSourceContext context) {
+        final ConfigValue value = context.getValue("CONFIG_MAP_DIR_SOURCE");
+        if (value == null || value.getValue() == null) {
+            throw new IllegalArgumentException("CONFIG_MAP_DIR_SOURCE not defined");
+        }
+
+        return new FileSystemConfigSource(value.getValue());
+    }
+
+    @Override
+    public OptionalInt getPriority() {
+        return OptionalInt.of(200);
+    }
+}
+----
+
+In this case, the volume path to read the Kubernetes ConfigMap comes from an environment variable configuration.
+
+== Run
+
+The example starts a simple http server with a single endpoint im `/configMap`. To deploy the example in a Kubernetes
+cluster requires the following steps.
+
+Set up a local Docker Registry first to store the generated Docker images:
+
+[source,bash]
+----
+docker run -d -p 5000:5000 --restart=always --name docker-registry registry:2
+----
+
+Set up a host in '/etc/hosts' pointing `127.0.0.1` to `docker-registry`.
+
+Build the example with:
+
+[source,bash]
+----
+mvn package docker:build docker:push
+----
+
+Deploy to Kubernetes with:
+
+[source,bash]
+----
+kubectl apply -f .kubernetes
+----
+
+Call tbe endpoint `curl http://localhost:8080/configMap`. This should list all the configurations set in the Kubernets
+Config Map. The Kubernetes and ConfigMap configuration can be found in `.kubernetes/configmap-app.yml`.
