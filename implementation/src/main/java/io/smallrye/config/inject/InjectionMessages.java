@@ -36,4 +36,7 @@ public interface InjectionMessages {
 
     @Message(id = 2005, value = "Type has no raw type class: %s")
     IllegalArgumentException noRawType(Type type);
+
+    @Message(id = 2006, value = "The property %s cannot be converted to %s")
+    IllegalArgumentException illegalConversion(String name, Type type);
 }

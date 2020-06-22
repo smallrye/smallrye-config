@@ -16,14 +16,19 @@
 
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
+import static java.util.stream.Collectors.toSet;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
@@ -41,6 +46,11 @@ import javax.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.SecretKeys;
+import io.smallrye.config.SmallRyeConfig;
 
 /**
  * CDI Extension to produces Config bean.
@@ -92,41 +102,39 @@ public class ConfigExtension implements Extension {
     }
 
     void validate(@Observes AfterDeploymentValidation adv) {
-
-        Config config = ConfigProvider.getConfig();
+        Config config = ConfigProvider.getConfig(getContextClassLoader());
+        Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : injectionPoints) {
             Type type = injectionPoint.getType();
+
+            // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
+            if (type instanceof Class && ConfigValue.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof ParameterizedType
+                            && (Optional.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
+                                    || Provider.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
+                                    || Supplier.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))) {
+                return;
+            }
+
             ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
-            if (type instanceof Class) {
-                String key = getConfigKey(injectionPoint, configProperty);
-                try {
-                    if (!config.getOptionalValue(key, (Class<?>) type).isPresent()) {
-                        String defaultValue = configProperty.defaultValue();
-                        if (defaultValue == null ||
-                                defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                            adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(key));
-                        }
-                    }
-                } catch (IllegalArgumentException cause) {
-                    adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(cause, key));
+            String name = getConfigKey(injectionPoint, configProperty);
+
+            // Check if the name is part of the properties first. Since properties can be a subset, then search for the actual property for a value.
+            if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, (SmallRyeConfig) config) == null) {
+                if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                    adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
                 }
-            } else if (type instanceof ParameterizedType) {
-                Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
-                // for collections, we only check if the property config exists without trying to convert it
-                if (Collection.class.isAssignableFrom(rawType)) {
-                    String key = getConfigKey(injectionPoint, configProperty);
-                    try {
-                        if (!config.getOptionalValue(key, String.class).isPresent()) {
-                            String defaultValue = configProperty.defaultValue();
-                            if (defaultValue == null ||
-                                    defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                                adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(key));
-                            }
-                        }
-                    } catch (IllegalArgumentException cause) {
-                        adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(cause, key));
-                    }
-                }
+            }
+
+            try {
+                // Check if there is a Converter registed for the injected type
+                Converter<?> resolvedConverter = ConfigProducerUtil.resolveConverter(injectionPoint, (SmallRyeConfig) config);
+
+                // Check if the value can be converted. The TCK checks this, but this requires to get the value eagerly.
+                // This should not be required!
+                SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getOptionalValue(name, resolvedConverter));
+            } catch (IllegalArgumentException e) {
+                adv.addDeploymentProblem(e);
             }
         }
     }
@@ -172,6 +180,8 @@ public class ConfigExtension implements Extension {
                 || requiredType == Character.TYPE
                 || requiredType == OptionalInt.class
                 || requiredType == OptionalLong.class
-                || requiredType == OptionalDouble.class;
+                || requiredType == OptionalDouble.class
+                || requiredType == Supplier.class
+                || requiredType == ConfigValue.class;
     }
 }
