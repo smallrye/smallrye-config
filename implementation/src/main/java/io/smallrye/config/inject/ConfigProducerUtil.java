@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.Config;
@@ -120,13 +122,13 @@ public class ConfigProducerUtil {
         for (Annotation qualifier : injectionPoint.getQualifiers()) {
             if (qualifier.annotationType().equals(ConfigProperty.class)) {
                 ConfigProperty configProperty = ((ConfigProperty) qualifier);
-                return ConfigExtension.getConfigKey(injectionPoint, configProperty);
+                return getConfigKey(injectionPoint, configProperty);
             }
         }
         return null;
     }
 
-    private static String getDefaultValue(InjectionPoint injectionPoint) {
+    public static String getDefaultValue(InjectionPoint injectionPoint) {
         for (Annotation qualifier : injectionPoint.getQualifiers()) {
             if (qualifier.annotationType().equals(ConfigProperty.class)) {
                 String str = ((ConfigProperty) qualifier).defaultValue();
@@ -147,5 +149,26 @@ public class ConfigProducerUtil {
             }
         }
         return null;
+    }
+
+    static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
+        String key = configProperty.name();
+        if (!key.trim().isEmpty()) {
+            return key;
+        }
+        if (ip.getAnnotated() instanceof AnnotatedMember) {
+            AnnotatedMember<?> member = (AnnotatedMember<?>) ip.getAnnotated();
+            AnnotatedType<?> declaringType = member.getDeclaringType();
+            if (declaringType != null) {
+                String[] parts = declaringType.getJavaClass().getCanonicalName().split("\\.");
+                StringBuilder sb = new StringBuilder(parts[0]);
+                for (int i = 1; i < parts.length; i++) {
+                    sb.append(".").append(parts[i]);
+                }
+                sb.append(".").append(member.getJavaMember().getName());
+                return sb.toString();
+            }
+        }
+        throw InjectionMessages.msg.noConfigPropertyDefaultName(ip);
     }
 }

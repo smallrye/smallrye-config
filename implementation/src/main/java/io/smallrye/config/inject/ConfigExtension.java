@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.inject;
 
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
@@ -34,7 +33,6 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -120,7 +118,7 @@ public class ConfigExtension implements Extension {
             }
 
             ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
-            String name = getConfigKey(injectionPoint, configProperty);
+            String name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
 
             // Check if the name is part of the properties first. Since properties can be a subset, then search for the actual property for a value.
             if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, (SmallRyeConfig) config) == null) {
@@ -140,27 +138,6 @@ public class ConfigExtension implements Extension {
                 adv.addDeploymentProblem(e);
             }
         }
-    }
-
-    static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
-        String key = configProperty.name();
-        if (!key.trim().isEmpty()) {
-            return key;
-        }
-        if (ip.getAnnotated() instanceof AnnotatedMember) {
-            AnnotatedMember member = (AnnotatedMember) ip.getAnnotated();
-            AnnotatedType declaringType = member.getDeclaringType();
-            if (declaringType != null) {
-                String[] parts = declaringType.getJavaClass().getCanonicalName().split("\\.");
-                StringBuilder sb = new StringBuilder(parts[0]);
-                for (int i = 1; i < parts.length; i++) {
-                    sb.append(".").append(parts[i]);
-                }
-                sb.append(".").append(member.getJavaMember().getName());
-                return sb.toString();
-            }
-        }
-        throw InjectionMessages.msg.noConfigPropertyDefaultName(ip);
     }
 
     private static boolean isClassHandledByConfigProducer(Type requiredType) {

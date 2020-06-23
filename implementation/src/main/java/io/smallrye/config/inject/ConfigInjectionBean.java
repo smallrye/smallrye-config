@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.inject;
 
 import java.lang.annotation.Annotation;
@@ -86,7 +85,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
         InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new InjectionPointMetadataInjectionPoint(), context);
         Annotated annotated = ip.getAnnotated();
         ConfigProperty configProperty = annotated.getAnnotation(ConfigProperty.class);
-        String key = ConfigExtension.getConfigKey(ip, configProperty);
+        String key = ConfigProducerUtil.getConfigKey(ip, configProperty);
         String defaultValue = configProperty.defaultValue();
 
         if (annotated.getBaseType() instanceof ParameterizedType) {
