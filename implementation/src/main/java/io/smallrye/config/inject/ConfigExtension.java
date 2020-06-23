@@ -56,24 +56,23 @@ import io.smallrye.config.SmallRyeConfig;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class ConfigExtension implements Extension {
-
-    private Set<InjectionPoint> injectionPoints = new HashSet<>();
+    private final Set<InjectionPoint> injectionPoints = new HashSet<>();
 
     public ConfigExtension() {
     }
 
-    void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
+    protected void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
         AnnotatedType<ConfigProducer> configBean = bm.createAnnotatedType(ConfigProducer.class);
         bbd.addAnnotatedType(configBean, ConfigProducer.class.getName());
     }
 
-    void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
+    protected void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
             injectionPoints.add(pip.getInjectionPoint());
         }
     }
 
-    void registerCustomBeans(@Observes AfterBeanDiscovery abd, BeanManager bm) {
+    protected void registerCustomBeans(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         Set<Class<?>> customTypes = new HashSet<>();
         for (InjectionPoint ip : injectionPoints) {
             Type requiredType = ip.getType();
@@ -99,7 +98,7 @@ public class ConfigExtension implements Extension {
         }
     }
 
-    void validate(@Observes AfterDeploymentValidation adv) {
+    protected void validate(@Observes AfterDeploymentValidation adv) {
         Config config = ConfigProvider.getConfig(getContextClassLoader());
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : injectionPoints) {
