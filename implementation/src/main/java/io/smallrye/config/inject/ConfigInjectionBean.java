@@ -53,14 +53,14 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
     }
 
     private final BeanManager bm;
-    private final Class clazz;
+    private final Class<?> clazz;
 
     /**
-     * only access via {@link #getConfig(}
+     * only access via {@link #getConfig()}
      */
     private Config _config;
 
-    public ConfigInjectionBean(BeanManager bm, Class clazz) {
+    public ConfigInjectionBean(BeanManager bm, Class<?> clazz) {
         this.bm = bm;
         this.clazz = clazz;
     }
@@ -81,6 +81,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T create(CreationalContext<T> context) {
         InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new InjectionPointMetadataInjectionPoint(), context);
         Annotated annotated = ip.getAnnotated();
@@ -101,17 +102,13 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
                 return (T) getConfig().getValue(key, paramTypeClass);
             }
         } else {
-            Class annotatedTypeClass = (Class) annotated.getBaseType();
-            if (defaultValue == null || defaultValue.length() == 0) {
+            Class<?> annotatedTypeClass = (Class<?>) annotated.getBaseType();
+            if (defaultValue.length() == 0) {
                 return (T) getConfig().getValue(key, annotatedTypeClass);
             } else {
-                Config config = getConfig();
-                Optional<T> optionalValue = config.getOptionalValue(key, annotatedTypeClass);
-                if (optionalValue.isPresent()) {
-                    return optionalValue.get();
-                } else {
-                    return (T) ((SmallRyeConfig) config).convert(defaultValue, annotatedTypeClass);
-                }
+                Optional<T> optionalValue = (Optional<T>) getConfig().getOptionalValue(key, annotatedTypeClass);
+                return optionalValue.orElseGet(
+                        () -> (T) ((SmallRyeConfig) getConfig()).convert(defaultValue, annotatedTypeClass));
             }
         }
 
@@ -187,7 +184,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
         @SuppressWarnings("serial")
         @Override
         public Set<Annotation> getQualifiers() {
-            return Collections.<Annotation> singleton(new AnnotationLiteral<Default>() {
+            return Collections.singleton(new AnnotationLiteral<Default>() {
             });
         }
 

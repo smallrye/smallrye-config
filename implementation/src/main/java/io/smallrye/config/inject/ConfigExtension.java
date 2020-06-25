@@ -94,7 +94,7 @@ public class ConfigExtension implements Extension {
         }
 
         for (Class<?> customType : customTypes) {
-            abd.addBean(new ConfigInjectionBean(bm, customType));
+            abd.addBean(new ConfigInjectionBean<>(bm, customType));
         }
     }
 
