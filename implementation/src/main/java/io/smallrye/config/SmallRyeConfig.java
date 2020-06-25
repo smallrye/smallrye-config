@@ -45,6 +45,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -76,6 +77,16 @@ public class SmallRyeConfig implements Config, Serializable {
         }
         if (builder.isAddDefaultSources()) {
             sourcesToBuild.addAll(builder.getDefaultSources());
+        }
+        if (!builder.getDefaultValues().isEmpty()) {
+            sourcesToBuild.add(new MapBackedConfigSource("DefaultValuesConfigSource", builder.getDefaultValues()) {
+                private static final long serialVersionUID = -2569643736033594267L;
+
+                @Override
+                public int getOrdinal() {
+                    return Integer.MIN_VALUE;
+                }
+            });
         }
 
         // wrap all
