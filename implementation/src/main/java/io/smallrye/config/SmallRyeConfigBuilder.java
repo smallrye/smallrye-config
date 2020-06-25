@@ -55,6 +55,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private String profile = null;
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
+    private final Map<String, String> defaultValues = new HashMap<>();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -223,6 +224,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withDefaultValue(String name, String value) {
+        this.defaultValues.put(name, value);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
+        this.defaultValues.putAll(defaultValues);
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
@@ -285,6 +296,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
+    }
+
+    Map<String, String> getDefaultValues() {
+        return defaultValues;
     }
 
     protected boolean isAddDefaultSources() {
