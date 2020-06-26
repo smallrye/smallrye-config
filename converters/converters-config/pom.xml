@@ -23,11 +23,12 @@
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
     <version>1.8.2-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
   </parent>
 
-  <artifactId>smallrye-config</artifactId>
+  <artifactId>smallrye-config-converters</artifactId>
 
-  <name>SmallRye: MicroProfile Config Implementation</name>
+  <name>SmallRye: Converters MicroProfile Config Bridge</name>
 
   <dependencies>
     <dependency>
@@ -36,63 +37,14 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jakarta.enterprise</groupId>
-      <artifactId>jakarta.enterprise.cdi-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.common</groupId>
-      <artifactId>smallrye-common-annotation</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-converters</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.common</groupId>
-      <artifactId>smallrye-common-expression</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.smallrye.common</groupId>
-      <artifactId>smallrye-common-constraint</artifactId>
+      <groupId>io.smallrye.converters</groupId>
+      <artifactId>smallrye-converters</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-junit5</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.enterprise</groupId>
-          <artifactId>cdi-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

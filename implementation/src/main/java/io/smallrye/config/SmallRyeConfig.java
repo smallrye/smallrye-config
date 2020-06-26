@@ -26,14 +26,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -45,6 +43,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.converters.ConfigConverters;
+import io.smallrye.config.converters.SmallRyeConfigConverters;
+import io.smallrye.config.converters.SmallRyeConfigConvertersBuilder;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -53,8 +54,7 @@ public class SmallRyeConfig implements Config, Serializable {
     private static final long serialVersionUID = 8138651532357898263L;
 
     private final AtomicReference<ConfigSources> configSources;
-    private final Map<Type, Converter<?>> converters;
-    private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
+    private final ConfigConverters converters;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
@@ -65,8 +65,7 @@ public class SmallRyeConfig implements Config, Serializable {
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
         this.configSources = new AtomicReference<>(
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
-        this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        this.converters.putAll(converters);
+        this.converters = new SmallRyeConfigConvertersBuilder().withConverters(converters).build();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -100,24 +99,14 @@ public class SmallRyeConfig implements Config, Serializable {
         return interceptors;
     }
 
-    private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
-        final Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>(builder.getConverters());
+    private ConfigConverters buildConverters(final SmallRyeConfigBuilder builder) {
+        final SmallRyeConfigConvertersBuilder convertersBuilder = builder.getConvertersBuilder();
 
         if (builder.isAddDiscoveredConverters()) {
-            for (Converter converter : builder.discoverConverters()) {
-                Type type = Converters.getConverterType(converter.getClass());
-                if (type == null) {
-                    throw ConfigMessages.msg.unableToAddConverter(converter);
-                }
-                SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
-            }
+            convertersBuilder.withConverters(builder.discoverConverters());
         }
 
-        final ConcurrentHashMap<Type, Converter<?>> converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        convertersToBuild.forEach(
-                (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
-
-        return converters;
+        return convertersBuilder.build();
     }
 
     // no @Override
@@ -126,7 +115,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        return getValue(name, SmallRyeConfigConverters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -187,7 +176,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
-        return getValue(name, Converters.newOptionalConverter(converter));
+        return getValue(name, SmallRyeConfigConverters.newOptionalConverter(converter));
     }
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
@@ -197,7 +186,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        return getOptionalValue(name, SmallRyeConfigConverters.newCollectionConverter(converter, collectionFactory));
     }
 
     @Override
@@ -230,25 +219,12 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @SuppressWarnings("unchecked")
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
-        return optionalConverters.computeIfAbsent(asType,
-                clazz -> Converters.newOptionalConverter(getConverter((Class) clazz)));
+        return converters.getOptionalConverter(asType);
     }
 
     @SuppressWarnings("unchecked")
     public <T> Converter<T> getConverter(Class<T> asType) {
-        if (asType.isPrimitive()) {
-            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(asType));
-        }
-        if (asType.isArray()) {
-            return Converters.newArrayConverter(getConverter(asType.getComponentType()), asType);
-        }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> {
-            final Converter<?> conv = ImplicitConverters.getConverter((Class<?>) clazz);
-            if (conv == null) {
-                throw ConfigMessages.msg.noRegisteredConverter(asType);
-            }
-            return conv;
-        });
+        return converters.getConverter(asType);
     }
 
     private static class ConfigSources implements Serializable {

@@ -21,9 +21,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.Converters;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.converters.SmallRyeConfigConverters;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
@@ -92,11 +92,13 @@ public class ConfigProducerUtil {
             ParameterizedType paramType = (ParameterizedType) type;
             Type[] typeArgs = paramType.getActualTypeArguments();
             if (rawType == List.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), ArrayList::new);
+                return (Converter<T>) SmallRyeConfigConverters.newCollectionConverter(resolveConverter(typeArgs[0], src),
+                        ArrayList::new);
             } else if (rawType == Set.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), HashSet::new);
+                return (Converter<T>) SmallRyeConfigConverters.newCollectionConverter(resolveConverter(typeArgs[0], src),
+                        HashSet::new);
             } else if (rawType == Optional.class) {
-                return (Converter<T>) Converters.newOptionalConverter(resolveConverter(typeArgs[0], src));
+                return (Converter<T>) SmallRyeConfigConverters.newOptionalConverter(resolveConverter(typeArgs[0], src));
             } else if (rawType == Supplier.class) {
                 return resolveConverter(typeArgs[0], src);
             }
