@@ -25,11 +25,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
-import io.smallrye.config.DefaultValuesConfigSource;
 import io.smallrye.config.KeyMap;
 import io.smallrye.config.NameIterator;
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigBuilder;
 
 /**
  *
@@ -602,10 +600,8 @@ public final class ConfigMapping implements Serializable {
         return new Builder();
     }
 
-    public <B extends SmallRyeConfigBuilder> B registerDefaultValues(B builder) {
-        Assert.checkNotNullParam("builder", builder);
-        builder.withSources(new DefaultValuesConfigSource(defaultValues));
-        return builder;
+    public Map<String, String> getDefaultValues() {
+        return Collections.unmodifiableMap(defaultValues.toMap());
     }
 
     public Result mapConfiguration(SmallRyeConfig config) throws ConfigurationValidationException {

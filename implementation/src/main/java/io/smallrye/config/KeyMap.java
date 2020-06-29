@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -249,5 +250,23 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
 
     public String toString() {
         return toString(new StringBuilder()).toString();
+    }
+
+    public Map<String, V> toMap() {
+        final Map<String, V> map = new HashMap<>();
+        unwrap(this, "", map);
+        return map;
+    }
+
+    private void unwrap(KeyMap<V> keyMap, String key, Map<String, V> map) {
+        for (String path : keyMap.keySet()) {
+            final KeyMap<V> nested = keyMap.get(path);
+            final String nestedKey = key.length() == 0 ? path : key + "." + path;
+            if (!nested.hasRootValue()) {
+                unwrap(nested, nestedKey, map);
+            } else {
+                map.put(nestedKey, nested.getRootValue());
+            }
+        }
     }
 }

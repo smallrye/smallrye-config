@@ -62,18 +62,31 @@ public class SmallRyeConfig implements Config, Serializable {
     private final ConfigMapping configMapping;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
+        this.configMapping = buildConfigMapping(builder);
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
-        this.configMapping = buildConfigMapping(builder);
     }
 
     @Deprecated
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
+        this.configMapping = ConfigMapping.builder().build();
         this.configSources = new AtomicReference<>(
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
-        this.configMapping = ConfigMapping.builder().build();
+    }
+
+    private ConfigMapping buildConfigMapping(final SmallRyeConfigBuilder builder) {
+        final ConfigMapping.Builder mappingBuilder = ConfigMapping.builder();
+        for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
+            mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
+        }
+
+        final ConfigMapping configMapping = mappingBuilder.build();
+        final Map<String, String> defaultValues = configMapping.getDefaultValues();
+        defaultValues.forEach((name, value) -> builder.getDefaultValues().putIfAbsent(name, value));
+
+        return configMapping;
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -135,14 +148,6 @@ public class SmallRyeConfig implements Config, Serializable {
                 (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
 
         return converters;
-    }
-
-    private ConfigMapping buildConfigMapping(final SmallRyeConfigBuilder builder) {
-        final ConfigMapping.Builder mappingBuilder = ConfigMapping.builder();
-        for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
-            mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
-        }
-        return mappingBuilder.build();
     }
 
     // no @Override
