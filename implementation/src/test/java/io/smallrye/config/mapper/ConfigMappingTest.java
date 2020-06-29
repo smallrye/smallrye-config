@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.KeyValuesConfigSource;
@@ -167,6 +168,19 @@ public class ConfigMappingTest {
         assertEquals("foo", config.getRawValue("foo"));
     }
 
+    @Test
+    void converters() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+            .withSources(KeyValuesConfigSource.config("foo", "notbar"))
+                .withMapping(Converters.class)
+                .withConverter(String.class, 100, new FooBarConverter())
+                .build();
+        final Converters converters = config.getConfigProperties(Converters.class);
+
+        assertEquals("bar", converters.foo());
+        assertEquals("bar", config.getValue("foo", String.class));
+    }
+
     interface Configs {
         String host();
 
@@ -257,5 +271,17 @@ public class ConfigMappingTest {
 
         @WithDefault("bar")
         String bar();
+    }
+
+    public interface Converters {
+        @WithConverter(FooBarConverter.class)
+        String foo();
+    }
+
+    public static class FooBarConverter implements Converter<String> {
+        @Override
+        public String convert(final String value) {
+            return "bar";
+        }
     }
 }
