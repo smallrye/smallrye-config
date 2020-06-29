@@ -45,6 +45,10 @@ public class KeyValuesConfigSource implements ConfigSource, Serializable {
         return "KeyValuesConfigSource";
     }
 
+    public static ConfigSource config(Map<String, String> properties) {
+        return new KeyValuesConfigSource(properties);
+    }
+
     public static ConfigSource config(String... keyValues) {
         if (keyValues.length % 2 != 0) {
             throw new IllegalArgumentException("keyValues array must be a multiple of 2");
