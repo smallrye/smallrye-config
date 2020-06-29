@@ -45,9 +45,9 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.common.MapBackedConfigSource;
 import io.smallrye.config.mapper.ConfigMapping;
 import io.smallrye.config.mapper.ConfigurationValidationException;
-import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -246,7 +246,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             return configRoot;
         } catch (ConfigurationValidationException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e);
         }
     }
 

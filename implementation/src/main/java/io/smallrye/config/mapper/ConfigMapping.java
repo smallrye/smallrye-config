@@ -35,11 +35,12 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  *
  */
 public final class ConfigMapping implements Serializable {
+    private static final long serialVersionUID = 3977667610888849912L;
+
     /**
      * The do-nothing action is used when the matched property is eager.
      */
     private static final BiConsumer<MappingContext, NameIterator> DO_NOTHING = Functions.discardingBiConsumer();
-
     private static final KeyMap<BiConsumer<MappingContext, NameIterator>> IGNORE_EVERYTHING;
 
     static {
@@ -632,9 +633,19 @@ public final class ConfigMapping implements Serializable {
             NameIterator ni = new NameIterator(name);
             BiConsumer<MappingContext, NameIterator> action = matchActions.findRootValue(ni);
             if (action != null) {
-                // ni is positioned at the end of the string
                 action.accept(context, ni);
             } else {
+                // Search if there is an empty prefix
+                KeyMap<BiConsumer<MappingContext, NameIterator>> emptyPrefixMap = matchActions.get("");
+                if (emptyPrefixMap != null) {
+                    ni.goToStart();
+                    BiConsumer<MappingContext, NameIterator> emptyPrefixAction = emptyPrefixMap.findRootValue(ni);
+                    if (emptyPrefixAction != null) {
+                        emptyPrefixAction.accept(context, ni);
+                        continue;
+                    }
+                }
+
                 context.unknownConfigElement(name);
             }
         }
@@ -658,20 +669,10 @@ public final class ConfigMapping implements Serializable {
     }
 
     public static final class Builder {
-        SmallRyeConfig config;
         final Map<String, List<ConfigurationInterface>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
 
         Builder() {
-        }
-
-        public SmallRyeConfig getConfig() {
-            return config;
-        }
-
-        public Builder setConfig(final SmallRyeConfig config) {
-            this.config = config;
-            return this;
         }
 
         public Builder addRoot(String path, Class<?> type) {
