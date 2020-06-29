@@ -791,6 +791,14 @@ public final class ConfigurationInterface {
             return false;
         }
         // stack: -
+        Label _continue = new Label();
+
+        ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
+
+        ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
+        // if length != 0 (mean that a prefix exists and not the empty prefix)
+        ctor.visitJumpInsn(Opcodes.IFEQ, _continue);
+
         ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
         // stack: sb
         ctor.visitLdcInsn(Character.valueOf('.'));
@@ -798,6 +806,13 @@ public final class ConfigurationInterface {
         ctor.visitInsn(Opcodes.I2C);
         // stack: sb '.'
         ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';', false);
+
+        ctor.visitInsn(Opcodes.POP);
+
+        ctor.visitLabel(_continue);
+
+        ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
+
         // stack: sb
         if (property.hasPropertyName()) {
             ctor.visitLdcInsn(property.getPropertyName());

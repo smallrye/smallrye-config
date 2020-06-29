@@ -3,11 +3,15 @@ package io.smallrye.config.mapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 public class ConfigMappingTest {
     @Test
@@ -83,6 +87,41 @@ public class ConfigMappingTest {
         assertEquals(8080, server.port());
     }
 
+    @Test
+    void subGroups() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name",
+                        "konoha"))
+                .withMapping(ServerSub.class, "server")
+                .build();
+        final ServerSub server = config.getConfigProperties(ServerSub.class, "server");
+        assertEquals("localhost", server.subHostAndPort().host());
+        assertEquals(8080, server.subHostAndPort().port());
+        assertEquals("konoha", server.subName().name());
+    }
+
+    @Test
+    void types() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("int", "9");
+                put("long", "9999999999");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new MapBackedConfigSource("test", typesConfig) {
+                })
+                .withMapping(SomeTypes.class)
+                .build();
+        final SomeTypes types = config.getConfigProperties(SomeTypes.class);
+
+        assertEquals(9, types.intPrimitive());
+        assertEquals(9, types.intWrapper());
+        assertEquals(9999999999L, types.longPrimitive());
+        assertEquals(9999999999L, types.longWrapper());
+    }
+
     interface Configs {
         String host();
 
@@ -101,5 +140,37 @@ public class ConfigMappingTest {
 
     interface SplitRootServerName {
         String name();
+    }
+
+    interface ServerSub {
+        @WithParentName
+        ServerSubHostAndPort subHostAndPort();
+
+        @WithParentName
+        ServerSubName subName();
+    }
+
+    interface ServerSubHostAndPort {
+        String host();
+
+        int port();
+    }
+
+    interface ServerSubName {
+        String name();
+    }
+
+    public interface SomeTypes {
+        @WithName("int")
+        int intPrimitive();
+
+        @WithName("int")
+        Integer intWrapper();
+
+        @WithName("long")
+        long longPrimitive();
+
+        @WithName("long")
+        Long longWrapper();
     }
 }
