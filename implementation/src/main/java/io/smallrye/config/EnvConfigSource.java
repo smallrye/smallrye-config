@@ -20,7 +20,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
@@ -29,8 +28,6 @@ import io.smallrye.config.common.AbstractConfigSource;
  */
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
-
-    private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
 
     EnvConfigSource() {
         super("EnvConfigSource", 300);
@@ -57,7 +54,7 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
 
         // replace non-alphanumeric characters by underscores
-        String sanitizedName = PATTERN.matcher(name).replaceAll("_");
+        String sanitizedName = replaceNonAlphanumericByUnderscores(name);
 
         value = properties.get(sanitizedName);
         if (value != null) {
@@ -66,5 +63,21 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
         return properties.get(sanitizedName.toUpperCase());
+    }
+
+    private String replaceNonAlphanumericByUnderscores(String name) {
+        int length = name.length();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char c = name.charAt(i);
+            if ('a' <= c && c <= 'z' ||
+                    'A' <= c && c <= 'Z' ||
+                    '0' <= c && c <= '9') {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
     }
 }
