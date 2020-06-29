@@ -155,6 +155,18 @@ public class ConfigMappingTest {
         assertEquals(Stream.of(1, 2, 3).collect(toList()), types.listInts());
     }
 
+    @Test
+    void defaults() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Defaults.class)
+                .build();
+        final Defaults defaults = config.getConfigProperties(Defaults.class);
+
+        assertEquals("foo", defaults.foo());
+        assertEquals("bar", defaults.bar());
+        assertEquals("foo", config.getRawValue("foo"));
+    }
+
     interface Configs {
         String host();
 
@@ -237,5 +249,13 @@ public class ConfigMappingTest {
 
         @WithName("ints")
         List<Integer> listInts();
+    }
+
+    public interface Defaults {
+        @WithDefault("foo")
+        String foo();
+
+        @WithDefault("bar")
+        String bar();
     }
 }
