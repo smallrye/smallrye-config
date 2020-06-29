@@ -1,17 +1,20 @@
 package io.smallrye.config.mapper;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
-import io.smallrye.config.common.MapBackedConfigSource;
 
 public class ConfigMappingTest {
     @Test
@@ -106,12 +109,15 @@ public class ConfigMappingTest {
             {
                 put("int", "9");
                 put("long", "9999999999");
+                put("float", "99.9");
+                put("double", "99.99");
+                put("char", "c");
+                put("boolean", "true");
             }
         };
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new MapBackedConfigSource("test", typesConfig) {
-                })
+                .withSources(KeyValuesConfigSource.config(typesConfig))
                 .withMapping(SomeTypes.class)
                 .build();
         final SomeTypes types = config.getConfigProperties(SomeTypes.class);
@@ -120,6 +126,33 @@ public class ConfigMappingTest {
         assertEquals(9, types.intWrapper());
         assertEquals(9999999999L, types.longPrimitive());
         assertEquals(9999999999L, types.longWrapper());
+        assertEquals(99.9f, types.floatPrimitive());
+        assertEquals(99.9f, types.floatWrapper());
+        assertEquals(99.99, types.doublePrimitive());
+        assertEquals(99.99, types.doubleWrapper());
+        assertEquals('c', types.charPrimitive());
+        assertEquals('c', types.charWrapper());
+        assertTrue(types.booleanPrimitive());
+        assertTrue(types.booleanWrapper());
+    }
+
+    @Test
+    void collectionTypes() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("strings", "foo,bar");
+                put("ints", "1,2,3");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withMapping(CollectionTypes.class)
+                .build();
+        final CollectionTypes types = config.getConfigProperties(CollectionTypes.class);
+
+        assertEquals(Stream.of("foo", "bar").collect(toList()), types.listStrings());
+        assertEquals(Stream.of(1, 2, 3).collect(toList()), types.listInts());
     }
 
     interface Configs {
@@ -172,5 +205,37 @@ public class ConfigMappingTest {
 
         @WithName("long")
         Long longWrapper();
+
+        @WithName("float")
+        float floatPrimitive();
+
+        @WithName("float")
+        Float floatWrapper();
+
+        @WithName("double")
+        double doublePrimitive();
+
+        @WithName("double")
+        Double doubleWrapper();
+
+        @WithName("char")
+        char charPrimitive();
+
+        @WithName("char")
+        Character charWrapper();
+
+        @WithName("boolean")
+        boolean booleanPrimitive();
+
+        @WithName("boolean")
+        Boolean booleanWrapper();
+    }
+
+    public interface CollectionTypes {
+        @WithName("strings")
+        List<String> listStrings();
+
+        @WithName("ints")
+        List<Integer> listInts();
     }
 }
