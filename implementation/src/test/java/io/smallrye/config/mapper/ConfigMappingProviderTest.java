@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
-public class ConfigMappingTest {
+public class ConfigMappingProviderTest {
     @Test
     void configMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
@@ -34,12 +34,12 @@ public class ConfigMappingTest {
 
     @Test
     void configMappingBuilder() throws Exception {
-        final ConfigMapping configMapping = ConfigMapping.builder().addRoot("server", Server.class)
+        final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder().addRoot("server", Server.class)
                 .addIgnored("server", "name").build();
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
 
-        final Server server = configMapping.mapConfiguration(config).getConfigRoot("server", Server.class);
+        final Server server = configMappingProvider.mapConfiguration(config).getConfigRoot("server", Server.class);
         assertEquals("localhost", server.host());
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.port());
@@ -81,12 +81,12 @@ public class ConfigMappingTest {
                 config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
 
-        final ConfigMapping configMapping = ConfigMapping.builder()
+        final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder()
                 .addRoot("server", SplitRootServerHostAndPort.class)
                 .addRoot("server", SplitRootServerName.class)
                 .build();
 
-        final ConfigMapping.Result result = configMapping.mapConfiguration(config);
+        final ConfigMappingProvider.Result result = configMappingProvider.mapConfiguration(config);
         final SplitRootServerHostAndPort server = result.getConfigRoot("server", SplitRootServerHostAndPort.class);
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());

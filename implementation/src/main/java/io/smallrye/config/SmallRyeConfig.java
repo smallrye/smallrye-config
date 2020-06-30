@@ -46,7 +46,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
 import io.smallrye.config.common.MapBackedConfigSource;
-import io.smallrye.config.mapper.ConfigMapping;
+import io.smallrye.config.mapper.ConfigMappingProvider;
 import io.smallrye.config.mapper.ConfigurationValidationException;
 
 /**
@@ -59,34 +59,34 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final ConfigMapping configMapping;
+    private final ConfigMappingProvider configMappingProvider;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
-        this.configMapping = buildConfigMapping(builder);
+        this.configMappingProvider = buildConfigMapping(builder);
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
     }
 
     @Deprecated
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
-        this.configMapping = ConfigMapping.builder().build();
+        this.configMappingProvider = ConfigMappingProvider.builder().build();
         this.configSources = new AtomicReference<>(
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
     }
 
-    private ConfigMapping buildConfigMapping(final SmallRyeConfigBuilder builder) {
-        final ConfigMapping.Builder mappingBuilder = ConfigMapping.builder();
+    private ConfigMappingProvider buildConfigMapping(final SmallRyeConfigBuilder builder) {
+        final ConfigMappingProvider.Builder mappingBuilder = ConfigMappingProvider.builder();
         for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
             mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
         }
 
-        final ConfigMapping configMapping = mappingBuilder.build();
-        final Map<String, String> defaultValues = configMapping.getDefaultValues();
+        final ConfigMappingProvider configMappingProvider = mappingBuilder.build();
+        final Map<String, String> defaultValues = configMappingProvider.getDefaultValues();
         defaultValues.forEach((name, value) -> builder.getDefaultValues().putIfAbsent(name, value));
 
-        return configMapping;
+        return configMappingProvider;
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -238,12 +238,12 @@ public class SmallRyeConfig implements Config, Serializable {
     @Experimental("TODO")
     public <T> T getConfigProperties(Class<T> klass, String prefix) {
         try {
-            final ConfigMapping.Result result = configMapping.mapConfiguration(this);
+            final ConfigMappingProvider.Result result = configMappingProvider.mapConfiguration(this);
             final T configRoot = result.getConfigRoot(prefix, klass);
             // Build one on the fly
             // Think if we want to merge the unknown one with the current configMapping.
             if (configRoot == null) {
-                return ConfigMapping.builder()
+                return ConfigMappingProvider.builder()
                         .addRoot(prefix, klass)
                         .build()
                         .mapConfiguration(this)
