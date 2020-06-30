@@ -32,7 +32,7 @@ import io.smallrye.config.SmallRyeConfig;
 /**
  *
  */
-public final class ConfigMapping implements Serializable {
+public final class ConfigMappingProvider implements Serializable {
     private static final long serialVersionUID = 3977667610888849912L;
 
     /**
@@ -52,7 +52,7 @@ public final class ConfigMapping implements Serializable {
     private final KeyMap<BiConsumer<MappingContext, NameIterator>> matchActions;
     private final KeyMap<String> defaultValues;
 
-    ConfigMapping(final Builder builder) {
+    ConfigMappingProvider(final Builder builder) {
         roots = new HashMap<>(builder.roots);
         final ArrayDeque<String> currentPath = new ArrayDeque<>();
         KeyMap<BiConsumer<MappingContext, NameIterator>> matchActions = new KeyMap<>();
@@ -688,8 +688,8 @@ public final class ConfigMapping implements Serializable {
             return this;
         }
 
-        public ConfigMapping build() {
-            return new ConfigMapping(this);
+        public ConfigMappingProvider build() {
+            return new ConfigMappingProvider(this);
         }
     }
 

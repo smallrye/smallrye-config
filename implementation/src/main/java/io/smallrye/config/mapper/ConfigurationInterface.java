@@ -1,6 +1,6 @@
 package io.smallrye.config.mapper;
 
-import static io.smallrye.config.mapper.ConfigMapping.skewer;
+import static io.smallrye.config.mapper.ConfigMappingProvider.skewer;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getType;
