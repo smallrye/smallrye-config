@@ -187,6 +187,26 @@ public class ConfigMappingTest {
     }
 
     @Test
+    void maps() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("server.host", "localhost");
+                put("server.port", "8080");
+                put("another-server", "localhost");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withMapping(Maps.class)
+                .build();
+        final Maps maps = config.getConfigProperties(Maps.class);
+
+        assertEquals("localhost", maps.server().get("server").host());
+        assertEquals("localhost", maps.anotherServer().get("another-server"));
+    }
+
+    @Test
     void defaults() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Defaults.class)
@@ -313,6 +333,13 @@ public class ConfigMappingTest {
 
         @WithName("ints")
         List<Integer> listInts();
+    }
+
+    public interface Maps {
+        @WithParentName
+        Map<String, Server> server();
+
+        Map<String, String> anotherServer();
     }
 
     public interface Defaults {

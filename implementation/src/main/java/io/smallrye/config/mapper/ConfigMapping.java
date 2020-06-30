@@ -377,20 +377,17 @@ public final class ConfigMapping implements Serializable {
         Class<? extends Converter<?>> keyConvertWith = property.hasKeyConvertWith() ? property.getKeyConvertWith() : null;
         Class<?> keyRawType = property.getKeyRawType();
 
-        currentPath.addLast("*");
         if (valueProperty.isLeaf()) {
             LeafProperty leafProperty = valueProperty.asLeaf();
             Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
             Class<?> valueRawType = leafProperty.getValueRawType();
 
-            matchActions.find(currentPath).putRootValue((mc, ni) -> {
+            matchActions.findOrAdd(currentPath).putRootValue((mc, ni) -> {
                 StringBuilder sb = mc.getStringBuilder();
                 sb.setLength(0);
-                ni.previous();
                 sb.append(ni.getAllPreviousSegments());
                 String configKey = sb.toString();
                 Map<?, ?> map = getEnclosingMap.apply(mc, ni);
-                ni.next();
                 String rawMapKey = ni.getPreviousSegment();
                 Converter<?> keyConv;
                 SmallRyeConfig config = mc.getConfig();
@@ -409,6 +406,7 @@ public final class ConfigMapping implements Serializable {
                 ((Map) map).put(key, config.getValue(configKey, valueConv));
             });
         } else if (valueProperty.isMap()) {
+            currentPath.addLast("*");
             processLazyMap(currentPath, matchActions, defaultValues, valueProperty.asMap(), (mc, ni) -> {
                 ni.previous();
                 Map<?, ?> enclosingMap = getEnclosingMap.apply(mc, ni);
@@ -426,6 +424,7 @@ public final class ConfigMapping implements Serializable {
             }, enclosingGroup);
         } else {
             assert valueProperty.isGroup();
+            currentPath.addLast("*");
             final GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, property,
                     enclosingGroup, valueProperty.asGroup());
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, valueProperty.asGroup(),
