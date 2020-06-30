@@ -169,7 +169,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     public KeyMap<V> findOrAdd(final String[] keys, int off, int len) {
         String seg = keys[off];
         KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
-        return next.findOrAdd(keys, off + 1, len - 1);
+        return off + 1 > len - 1 ? next : next.findOrAdd(keys, off + 1, len - 1);
     }
 
     public V findRootValue(final String path) {

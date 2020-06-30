@@ -1,5 +1,6 @@
 package io.smallrye.config.mapper;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,7 +17,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -24,7 +24,7 @@ public class ConfigMappingTest {
     @Test
     void configMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
+                config("server.host", "localhost", "server.port", "8080")).build();
         final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals("localhost", configProperties.getHost());
@@ -33,9 +33,23 @@ public class ConfigMappingTest {
     }
 
     @Test
+    void configMappingBuilder() throws Exception {
+        final ConfigMapping configMapping = ConfigMapping.builder().addRoot("server", Server.class)
+                .addIgnored("server", "name").build();
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
+                config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
+
+        final Server server = configMapping.mapConfiguration(config).getConfigRoot("server", Server.class);
+        assertEquals("localhost", server.host());
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.port());
+        assertEquals(8080, server.getPort());
+    }
+
+    @Test
     void unmapped() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
+                config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
         // TODO - Most likely we want to do a warning here, but just to try out the feature.
         assertThrows(Exception.class, () -> config.getConfigProperties(Server.class, "server"));
@@ -44,7 +58,7 @@ public class ConfigMappingTest {
     @Test
     void ignorePropertiesInUnregisteredRoots() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "client.name", "konoha"))
+                config("server.host", "localhost", "server.port", "8080", "client.name", "konoha"))
                 .build();
         final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
@@ -55,7 +69,7 @@ public class ConfigMappingTest {
     void ignoreProperties() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
+                .withSources(config("server.host", "localhost", "server.port", "8080")).build();
         final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
@@ -64,7 +78,7 @@ public class ConfigMappingTest {
     @Test
     void splitRoots() throws Exception {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
+                config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
 
         final ConfigMapping configMapping = ConfigMapping.builder()
@@ -84,7 +98,7 @@ public class ConfigMappingTest {
     @Test
     void splitRootsInConfig() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name",
+                .withSources(config("server.host", "localhost", "server.port", "8080", "server.name",
                         "konoha"))
                 .withMapping(SplitRootServerHostAndPort.class, "server")
                 .withMapping(SplitRootServerName.class, "server")
@@ -97,7 +111,7 @@ public class ConfigMappingTest {
     @Test
     void subGroups() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name",
+                .withSources(config("server.host", "localhost", "server.port", "8080", "server.name",
                         "konoha"))
                 .withMapping(ServerSub.class, "server")
                 .build();
@@ -121,7 +135,7 @@ public class ConfigMappingTest {
         };
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withSources(config(typesConfig))
                 .withMapping(SomeTypes.class)
                 .build();
         final SomeTypes types = config.getConfigProperties(SomeTypes.class);
@@ -152,7 +166,7 @@ public class ConfigMappingTest {
         };
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withSources(config(typesConfig))
                 .withMapping(Optionals.class)
                 .build();
         final Optionals optionals = config.getConfigProperties(Optionals.class);
@@ -177,7 +191,7 @@ public class ConfigMappingTest {
         };
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withSources(config(typesConfig))
                 .withMapping(CollectionTypes.class)
                 .build();
         final CollectionTypes types = config.getConfigProperties(CollectionTypes.class);
@@ -197,7 +211,7 @@ public class ConfigMappingTest {
         };
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withSources(config(typesConfig))
                 .withMapping(Maps.class)
                 .build();
         final Maps maps = config.getConfigProperties(Maps.class);
@@ -232,7 +246,7 @@ public class ConfigMappingTest {
     @Test
     void converters() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config("foo", "notbar"))
+                .withSources(config("foo", "notbar"))
                 .withMapping(Converters.class)
                 .withConverter(String.class, 100, new FooBarConverter())
                 .build();
@@ -240,6 +254,32 @@ public class ConfigMappingTest {
 
         assertEquals("bar", converters.foo());
         assertEquals("bar", config.getValue("foo", String.class));
+    }
+
+    @Test
+    void mix() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("server.host", "localhost");
+                put("server.port", "8080");
+                put("server.name", "server");
+                put("client.host", "clienthost");
+                put("client.port", "80");
+                put("client.name", "client");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(typesConfig))
+                .withMapping(ComplexSample.class)
+                .build();
+
+        final ComplexSample sample = config.getConfigProperties(ComplexSample.class);
+        assertEquals("localhost", sample.server().subHostAndPort().host());
+        assertEquals(8080, sample.server().subHostAndPort().port());
+        assertTrue(sample.client().isPresent());
+        assertEquals("clienthost", sample.client().get().subHostAndPort().host());
+        assertEquals(80, sample.client().get().subHostAndPort().port());
     }
 
     interface Server {
@@ -348,6 +388,12 @@ public class ConfigMappingTest {
 
         @WithDefault("bar")
         String bar();
+    }
+
+    public interface ComplexSample {
+        ServerSub server();
+
+        Optional<ServerSub> client();
     }
 
     public interface Converters {
