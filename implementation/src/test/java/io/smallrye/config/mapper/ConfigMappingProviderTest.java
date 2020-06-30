@@ -19,6 +19,9 @@ import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 
 public class ConfigMappingProviderTest {
     @Test
