@@ -34,6 +34,9 @@ import org.objectweb.asm.Opcodes;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 import io.smallrye.config.inject.InjectionMessages;
 import sun.misc.Unsafe;
 
