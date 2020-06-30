@@ -402,6 +402,11 @@ public final class ConfigurationInterface {
             return this;
         }
 
+        @Override
+        public boolean isLeaf() {
+            return nestedProperty.isLeaf();
+        }
+
         public MayBeOptionalProperty getNestedProperty() {
             return nestedProperty;
         }

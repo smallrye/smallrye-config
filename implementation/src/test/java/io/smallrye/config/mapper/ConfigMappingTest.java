@@ -8,9 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.KeyValuesConfigSource;
@@ -22,7 +25,7 @@ public class ConfigMappingTest {
     void configMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
-        final Configs configProperties = config.getConfigProperties(Configs.class, "server");
+        final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals("localhost", configProperties.getHost());
         assertEquals(8080, configProperties.port());
@@ -35,7 +38,7 @@ public class ConfigMappingTest {
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
         // TODO - Most likely we want to do a warning here, but just to try out the feature.
-        assertThrows(Exception.class, () -> config.getConfigProperties(Configs.class, "server"));
+        assertThrows(Exception.class, () -> config.getConfigProperties(Server.class, "server"));
     }
 
     @Test
@@ -43,7 +46,7 @@ public class ConfigMappingTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080", "client.name", "konoha"))
                 .build();
-        final Configs configProperties = config.getConfigProperties(Configs.class, "server");
+        final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
@@ -53,7 +56,7 @@ public class ConfigMappingTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080")).build();
-        final Configs configProperties = config.getConfigProperties(Configs.class, "server");
+        final Server configProperties = config.getConfigProperties(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
@@ -138,6 +141,33 @@ public class ConfigMappingTest {
     }
 
     @Test
+    void optionals() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("server.host", "localhost");
+                put("server.port", "8080");
+                put("optional", "optional");
+                put("optional.int", "9");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config(typesConfig))
+                .withMapping(Optionals.class)
+                .build();
+        final Optionals optionals = config.getConfigProperties(Optionals.class);
+
+        assertTrue(optionals.server().isPresent());
+        assertEquals("localhost", optionals.server().get().host());
+        assertEquals(8080, optionals.server().get().port());
+
+        assertTrue(optionals.optional().isPresent());
+        assertEquals("optional", optionals.optional().get());
+        assertTrue(optionals.optionalInt().isPresent());
+        assertEquals(9, optionals.optionalInt().getAsInt());
+    }
+
+    @Test
     void collectionTypes() {
         final Map<String, String> typesConfig = new HashMap<String, String>() {
             {
@@ -169,9 +199,20 @@ public class ConfigMappingTest {
     }
 
     @Test
+    @Disabled
+    void defaultsOnTheFly() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+        final Defaults defaults = config.getConfigProperties(Defaults.class);
+
+        assertEquals("foo", defaults.foo());
+        assertEquals("bar", defaults.bar());
+        assertEquals("foo", config.getRawValue("foo"));
+    }
+
+    @Test
     void converters() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
-            .withSources(KeyValuesConfigSource.config("foo", "notbar"))
+                .withSources(KeyValuesConfigSource.config("foo", "notbar"))
                 .withMapping(Converters.class)
                 .withConverter(String.class, 100, new FooBarConverter())
                 .build();
@@ -181,7 +222,7 @@ public class ConfigMappingTest {
         assertEquals("bar", config.getValue("foo", String.class));
     }
 
-    interface Configs {
+    interface Server {
         String host();
 
         int port();
@@ -255,6 +296,15 @@ public class ConfigMappingTest {
 
         @WithName("boolean")
         Boolean booleanWrapper();
+    }
+
+    public interface Optionals {
+        Optional<Server> server();
+
+        Optional<String> optional();
+
+        @WithName("optional.int")
+        OptionalInt optionalInt();
     }
 
     public interface CollectionTypes {
