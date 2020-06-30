@@ -455,7 +455,7 @@ public final class ConfigurationInterface {
         }
 
         public Class<? extends Converter<?>> getConvertWith() {
-            return Assert.checkNotNullParam("convertWith", convertWith);
+            return convertWith;
         }
 
         public boolean hasConvertWith() {
@@ -626,7 +626,7 @@ public final class ConfigurationInterface {
                 // stack: obj? obj?
                 fio.visitJumpInsn(Opcodes.IFNULL, _continue);
                 // stack: obj
-                fio.visitTypeInsn(Opcodes.CHECKCAST, getDescriptor(Map.class));
+                fio.visitTypeInsn(Opcodes.CHECKCAST, I_MAP);
                 // stack: map
                 fio.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 // stack: map this
