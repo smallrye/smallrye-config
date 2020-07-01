@@ -163,4 +163,8 @@ public class ConfigExtension implements Extension {
                 || requiredType == Supplier.class
                 || requiredType == ConfigValue.class;
     }
+
+    protected Set<InjectionPoint> getInjectionPoints() {
+        return injectionPoints;
+    }
 }
