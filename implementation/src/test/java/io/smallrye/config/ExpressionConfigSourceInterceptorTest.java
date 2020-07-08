@@ -64,7 +64,7 @@ public class ExpressionConfigSourceInterceptorTest {
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
-        assertEquals("SRCFG00011: Could not expand value my.prop in property expression", exception.getMessage());
+        assertEquals("SRCFG00014: Property expression not found", exception.getMessage());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ExpressionConfigSourceInterceptorTest {
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
-        assertEquals("SRCFG00011: Could not expand value compose in property expression", exception.getMessage());
+        assertEquals("SRCFG00014: Property expression not found", exception.getMessage());
     }
 
     @Test
