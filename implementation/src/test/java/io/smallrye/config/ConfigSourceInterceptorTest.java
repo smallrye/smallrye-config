@@ -85,6 +85,20 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
+    public void notFailExpansionInactive() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config("my.prop", "${expansion}",
+                        "%prof.my.prop", "${%prof.my.prop.profile}",
+                        "%prof.my.prop.profile", "2",
+                        SMALLRYE_PROFILE, "prof"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+    }
+
+    @Test
     public void names() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
