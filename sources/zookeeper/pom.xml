@@ -30,7 +30,7 @@
 
     <properties>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <version.curator>5.0.0</version.curator>
+        <version.curator>5.1.0</version.curator>
     </properties>
 
     <dependencies>
