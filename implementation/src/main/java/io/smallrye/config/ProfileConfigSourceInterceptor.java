@@ -3,6 +3,7 @@ package io.smallrye.config;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -48,12 +49,15 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
             final String normalizeName = normalizeName(name);
             final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
             if (profileValue != null) {
-                final ConfigValue originalValue = context.proceed(normalizeName);
-                if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(profileValue, originalValue) > 0) {
-                    return originalValue;
-                } else {
-                    return profileValue.withName(normalizeName);
+                try {
+                    final ConfigValue originalValue = context.proceed(normalizeName);
+                    if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(profileValue, originalValue) > 0) {
+                        return originalValue;
+                    }
+                } catch (final NoSuchElementException e) {
+                    // We couldn't find the main property so we fallback to the profile property because it exists.
                 }
+                return profileValue.withName(normalizeName);
             }
         }
 

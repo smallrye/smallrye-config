@@ -64,7 +64,7 @@ public class ExpressionConfigSourceInterceptorTest {
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
-        assertEquals("SRCFG00014: Property expression not found", exception.getMessage());
+        assertEquals("SRCFG00011: Could not expand value my.prop in property expression", exception.getMessage());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ExpressionConfigSourceInterceptorTest {
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
-        assertEquals("SRCFG00014: Property expression not found", exception.getMessage());
+        assertEquals("SRCFG00011: Could not expand value compose in property expression", exception.getMessage());
     }
 
     @Test
@@ -116,6 +116,14 @@ public class ExpressionConfigSourceInterceptorTest {
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
                                 .getRawValue("camel.expression"));
+    }
+
+    @Test
+    void expressionMissing() {
+        final SmallRyeConfig config = buildConfig("my.prop", "${expression}", "my.prop.partial", "${expression}partial");
+
+        assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
+        assertThrows(Exception.class, () -> config.getValue("my.prop.partial", String.class));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
