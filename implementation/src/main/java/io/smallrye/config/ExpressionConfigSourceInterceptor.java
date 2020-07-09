@@ -40,8 +40,6 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 stringBuilder.append(resolve.getValue());
             } else if (resolveContext.hasDefault()) {
                 resolveContext.expandDefault();
-            } else {
-                throw ConfigMessages.msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName());
             }
         });
 
