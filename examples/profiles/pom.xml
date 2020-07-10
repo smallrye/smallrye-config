@@ -25,7 +25,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>profiles</artifactId>
-  <version>1.8.3</version>
+  <version>1.8.4-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: Profiles</name>
 
@@ -72,8 +72,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>1.8.3</tag>
-  </scm>
 </project>
