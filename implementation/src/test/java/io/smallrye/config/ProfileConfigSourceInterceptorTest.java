@@ -1,10 +1,10 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
-import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -46,20 +46,7 @@ public class ProfileConfigSourceInterceptorTest {
     public void expressions() {
         final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_PROFILE, "prof");
 
-        assertEquals("1", config.getValue("my.prop", String.class));
-    }
-
-    @Test
-    public void expressionsOrdinals() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new PropertiesConfigSource(singletonMap("my.prop", "1"), "test", 100))
-                .withSources(new PropertiesConfigSource(singletonMap("%prof.my.prop", "${my.prop}"), "test", 200))
-                .withInterceptors(
-                        new ProfileConfigSourceInterceptor("prof"),
-                        new ExpressionConfigSourceInterceptor())
-                .build();
-
-        assertEquals("1", config.getValue("my.prop", String.class));
+        assertThrows(IllegalArgumentException.class, () -> config.getValue("my.prop", String.class));
     }
 
     @Test
