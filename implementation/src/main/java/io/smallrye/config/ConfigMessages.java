@@ -94,4 +94,7 @@ interface ConfigMessages {
 
     @Message(id = 26, value = "%s cannot be converted into a UUID")
     IllegalArgumentException malformedUUID(@Cause Throwable cause, String malformedUUID);
+
+    @Message(id = 27, value = "Could not find a mapping for %s with prefix %s")
+    NoSuchElementException mappingNotFound(String className, String prefix);
 }

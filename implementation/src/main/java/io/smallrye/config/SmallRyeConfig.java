@@ -231,26 +231,21 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Experimental("TODO")
-    public <T> T getConfigProperties(Class<T> klass) {
-        return getConfigProperties(klass, "");
+    public <T> T getConfigMapping(Class<T> klass) {
+        return getConfigMapping(klass, "");
     }
 
     @Experimental("TODO")
-    public <T> T getConfigProperties(Class<T> klass, String prefix) {
+    public <T> T getConfigMapping(Class<T> klass, String prefix) {
         try {
             final ConfigMappingProvider.Result result = configMappingProvider.mapConfiguration(this);
             final T configRoot = result.getConfigRoot(prefix, klass);
-            // Build one on the fly
-            // Think if we want to merge the unknown one with the current configMapping.
             if (configRoot == null) {
-                return ConfigMappingProvider.builder()
-                        .addRoot(prefix, klass)
-                        .build()
-                        .mapConfiguration(this)
-                        .getConfigRoot(prefix, klass);
+                throw ConfigMessages.msg.mappingNotFound(klass.getName(), prefix);
             }
             return configRoot;
         } catch (ConfigurationValidationException e) {
+            // TODO - Map in ConfigMessages
             throw new IllegalArgumentException(e);
         }
     }
