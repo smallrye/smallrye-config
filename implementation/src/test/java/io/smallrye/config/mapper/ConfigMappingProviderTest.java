@@ -31,9 +31,7 @@ public class ConfigMappingProviderTest {
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
         final Server configProperties = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", configProperties.host());
-        assertEquals("localhost", configProperties.getHost());
         assertEquals(8080, configProperties.port());
-        assertEquals(8080, configProperties.getPort());
     }
 
     @Test
@@ -53,9 +51,7 @@ public class ConfigMappingProviderTest {
 
         final Server server = configMappingProvider.mapConfiguration(config).getConfigRoot("server", Server.class);
         assertEquals("localhost", server.host());
-        assertEquals("localhost", server.getHost());
         assertEquals(8080, server.port());
-        assertEquals(8080, server.getPort());
     }
 
     @Test
@@ -289,10 +285,6 @@ public class ConfigMappingProviderTest {
         String host();
 
         int port();
-
-        String getHost();
-
-        int getPort();
     }
 
     interface SplitRootServerHostAndPort {
