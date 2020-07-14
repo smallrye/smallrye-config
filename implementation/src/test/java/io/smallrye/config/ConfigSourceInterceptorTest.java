@@ -142,6 +142,22 @@ public class ConfigSourceInterceptorTest {
         assertTrue(names.contains("another.prop"));
     }
 
+    @Test
+    void expandActiveProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(KeyValuesConfigSource.config(
+                        "app.http.port", "8081",
+                        "%dev.app.http.port", "8082",
+                        "%test.app.http.port", "8083",
+                        "real.port", "${app.http.port}"))
+                .withProfile("dev")
+                .build();
+
+        assertEquals("8082", config.getRawValue("real.port"));
+    }
+
     private static class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 

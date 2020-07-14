@@ -55,8 +55,8 @@ A collection of built-in priority constants can be found in `io.smallrye.config.
 SmallRye Config provides the following built-in Interceptors (ordered by priority):
 
 * <<relocate-interceptor>>
-* <<profile-interceptor>>
 * <<expression-interceptor>>
+* <<profile-interceptor>>
 * <<fallback-interceptor>>
 * <<logging-interceptor>>
 * <<secret-keys-interceptor>>
@@ -88,28 +88,6 @@ new RelocateConfigSourceInterceptor(
 ----
 
 Relocation can also be done with Expression expansion.
-
-[[profile-interceptor]]
-=== ProfileConfigSourceInterceptor
-
-The `ProfileConfigSourceInterceptor` allows multiple configurations with the same name and selects them via
-a profile property.
-
-To be able to set properties with the same name, each property needs to be prefixed with `%` followed by the profile
-name and a dot:
-
-[source,properties]
-----
-my.prop=1234
-%dev.my.prop=5678
-----
-
-Lookup is always done using the `my.prop` property name. To use the profile `dev`, the configuration
-`smallrye.config.profile=dev` has to be set into any valid ConfigSource.
-
-When looking up the property `my.prop` with the `dev` profile active the value is `5678`.
-
-Only one profile can be active at any given time.
 
 [[expression-interceptor]]
 === ExpressionConfigSourceInterceptor
@@ -143,6 +121,28 @@ Expression expansion may be selectively disabled with the API
 A ConfigSource with the highest priority, that defines `my.prop` will take priority over another low priority
 ConfigSource that defines `%dev.my.prop`. This allows overriding profiles properties regardless of the active
 profile.
+
+[[profile-interceptor]]
+=== ProfileConfigSourceInterceptor
+
+The `ProfileConfigSourceInterceptor` allows multiple configurations with the same name and selects them via
+a profile property.
+
+To be able to set properties with the same name, each property needs to be prefixed with `%` followed by the profile
+name and a dot:
+
+[source,properties]
+----
+my.prop=1234
+%dev.my.prop=5678
+----
+
+Lookup is always done using the `my.prop` property name. To use the profile `dev`, the configuration
+`smallrye.config.profile=dev` has to be set into any valid ConfigSource.
+
+When looking up the property `my.prop` with the `dev` profile active the value is `5678`.
+
+Only one profile can be active at any given time.
 
 [[fallback-interceptor]]
 === FallbackConfigSourceInterceptor
