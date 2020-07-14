@@ -7,7 +7,7 @@ import javax.annotation.Priority;
 
 import io.smallrye.common.expression.Expression;
 
-@Priority(Priorities.LIBRARY + 600)
+@Priority(Priorities.LIBRARY + 800)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -539336551011916218L;
 
