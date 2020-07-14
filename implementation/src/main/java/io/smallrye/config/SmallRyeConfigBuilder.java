@@ -150,21 +150,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 800);
+                return OptionalInt.of(Priorities.LIBRARY + 600);
             }
         }));
         interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
-        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
-            @Override
-            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return new SecretKeysConfigSourceInterceptor(secretKeys);
-            }
-
-            @Override
-            public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 100);
-            }
-        }));
+        interceptors.add(new InterceptorWithPriority(new SecretKeysConfigSourceInterceptor(secretKeys)));
 
         return interceptors;
     }
