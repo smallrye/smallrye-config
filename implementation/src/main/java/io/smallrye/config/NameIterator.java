@@ -73,15 +73,17 @@ public final class NameIterator {
     private static final int FS_BACKSLASH = 2;
     private static final int FS_QUOTE_BACKSLASH = 3;
 
+    //@formatter:off
     /*
      * Iteration cookie format
      *
      * Bit: 14...12 11 ... 0
      * ┌───────┬────────────┐
-     * │ state │ position │
-     * │ │ (signed) │
+     * │ state │ position   │
+     * │       │ (signed)   │
      * └───────┴────────────┘
      */
+    //@formatter:on
 
     /**
      * Create a new iteration cookie at the current position.
