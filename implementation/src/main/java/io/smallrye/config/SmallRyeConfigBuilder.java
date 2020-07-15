@@ -17,7 +17,6 @@
 package io.smallrye.config;
 
 import java.lang.reflect.Type;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +40,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.mapper.ConfigMappingProvider;
+
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
@@ -57,7 +58,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final Map<String, String> defaultValues = new HashMap<>();
-    private final Set<Map.Entry<String, Class<?>>> mappings = new HashSet<>();
+    private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -231,7 +232,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
-        mappings.add(new AbstractMap.SimpleImmutableEntry<>(prefix, klass));
+        mappingsBuilder.addRoot(prefix, klass);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withMappingIgnore(String path) {
+        mappingsBuilder.addIgnored(path);
         return this;
     }
 
@@ -303,8 +309,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultValues;
     }
 
-    Set<Map.Entry<String, Class<?>>> getMappings() {
-        return mappings;
+    ConfigMappingProvider.Builder getMappingsBuilder() {
+        return mappingsBuilder;
     }
 
     protected boolean isAddDefaultSources() {

@@ -76,11 +76,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private ConfigMappingProvider buildConfigMapping(final SmallRyeConfigBuilder builder) {
-        final ConfigMappingProvider.Builder mappingBuilder = ConfigMappingProvider.builder();
-        for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
-            mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
-        }
-        return mappingBuilder.build();
+        return builder.getMappingsBuilder().build();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
