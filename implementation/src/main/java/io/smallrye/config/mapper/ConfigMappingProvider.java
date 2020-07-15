@@ -595,8 +595,8 @@ public final class ConfigMappingProvider implements Serializable {
         return new Builder();
     }
 
-    public Map<String, String> getDefaultValues() {
-        return Collections.unmodifiableMap(defaultValues.toMap());
+    public KeyMap<String> getDefaultValues() {
+        return defaultValues;
     }
 
     public Result mapConfiguration(SmallRyeConfig config) throws ConfigurationValidationException {

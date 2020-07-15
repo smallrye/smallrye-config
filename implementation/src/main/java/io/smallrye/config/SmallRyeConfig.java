@@ -45,7 +45,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
-import io.smallrye.config.common.MapBackedConfigSource;
 import io.smallrye.config.mapper.ConfigMappingProvider;
 import io.smallrye.config.mapper.ConfigurationValidationException;
 
@@ -81,12 +80,7 @@ public class SmallRyeConfig implements Config, Serializable {
         for (final Map.Entry<String, Class<?>> mapping : builder.getMappings()) {
             mappingBuilder.addRoot(mapping.getKey(), mapping.getValue());
         }
-
-        final ConfigMappingProvider configMappingProvider = mappingBuilder.build();
-        final Map<String, String> defaultValues = configMappingProvider.getDefaultValues();
-        defaultValues.forEach((name, value) -> builder.getDefaultValues().putIfAbsent(name, value));
-
-        return configMappingProvider;
+        return mappingBuilder.build();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -97,9 +91,11 @@ public class SmallRyeConfig implements Config, Serializable {
         if (builder.isAddDefaultSources()) {
             sourcesToBuild.addAll(builder.getDefaultSources());
         }
-        if (!builder.getDefaultValues().isEmpty()) {
-            sourcesToBuild.add(new MapBackedConfigSource("DefaultValuesConfigSource", builder.getDefaultValues()) {
-                private static final long serialVersionUID = -2569643736033594267L;
+        if (!builder.getDefaultValues().isEmpty() || !configMappingProvider.getDefaultValues().isEmpty()) {
+            final KeyMap<String> defaultValues = configMappingProvider.getDefaultValues();
+            builder.getDefaultValues().forEach((key, value) -> defaultValues.findOrAdd(key).putRootValue(value));
+            sourcesToBuild.add(new KeyMapBackedConfigSource("DefaultValuesConfigSource", defaultValues) {
+                private static final long serialVersionUID = 7847969724478280439L;
 
                 @Override
                 public int getOrdinal() {
