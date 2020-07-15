@@ -678,9 +678,9 @@ public final class ConfigMappingProvider implements Serializable {
             return this;
         }
 
-        public Builder addIgnored(String... patternSegments) {
-            Assert.checkNotNullParam("patternSegments", patternSegments);
-            ignored.add(patternSegments);
+        public Builder addIgnored(String path) {
+            Assert.checkNotNullParam("path", path);
+            ignored.add(path.split("\\."));
             return this;
         }
 

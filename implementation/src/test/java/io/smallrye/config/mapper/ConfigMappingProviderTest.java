@@ -45,7 +45,7 @@ public class ConfigMappingProviderTest {
     @Test
     void configMappingBuilder() throws Exception {
         final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder().addRoot("server", Server.class)
-                .addIgnored("server", "name").build();
+                .addIgnored("server.name").build();
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
 
@@ -72,6 +72,25 @@ public class ConfigMappingProviderTest {
         final Server configProperties = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
+    }
+
+    @Test
+    void ignoreSomeProperties() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Server.class, "server")
+                .withMapping(Client.class, "client")
+                .withMappingIgnore("client.**")
+                .withSources(config("server.host", "localhost", "server.port", "8080", "client.host", "localhost",
+                        "client.port", "8080", "client.name", "konoha"))
+                .build();
+
+        final Server server = config.getConfigMapping(Server.class, "server");
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+
+        final Client client = config.getConfigMapping(Client.class, "client");
+        assertEquals("localhost", client.host());
+        assertEquals(8080, client.port());
     }
 
     @Test
@@ -282,6 +301,12 @@ public class ConfigMappingProviderTest {
     }
 
     interface Server {
+        String host();
+
+        int port();
+    }
+
+    interface Client {
         String host();
 
         int port();
