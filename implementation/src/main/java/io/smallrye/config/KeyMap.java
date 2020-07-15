@@ -143,7 +143,8 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         String seg = ni.getNextSegment();
         ni.next();
         try {
-            return computeIfAbsent(seg, k -> new KeyMap<>()).findOrAdd(ni);
+            KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+            return next.findOrAdd(ni);
         } finally {
             ni.previous();
         }
@@ -169,7 +170,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     public KeyMap<V> findOrAdd(final String[] keys, int off, int len) {
         String seg = keys[off];
         KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
-        return off + 1 > len - 1 ? next : next.findOrAdd(keys, off + 1, len - 1);
+        return off + 1 > len - 1 ? next : next.findOrAdd(keys, off + 1, len);
     }
 
     public V findRootValue(final String path) {
@@ -262,10 +263,17 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         for (String path : keyMap.keySet()) {
             final KeyMap<V> nested = keyMap.get(path);
             final String nestedKey = key.length() == 0 ? path : key + "." + path;
+            if (nested.any != null) {
+                map.put(nestedKey + ".*", nested.any.getRootValue());
+                unwrap(nested.any, nestedKey + ".*", map);
+            }
             if (!nested.hasRootValue()) {
                 unwrap(nested, nestedKey, map);
             } else {
                 map.put(nestedKey, nested.getRootValue());
+                if (!nested.keySet().isEmpty()) {
+                    unwrap(nested, nestedKey, map);
+                }
             }
         }
     }
