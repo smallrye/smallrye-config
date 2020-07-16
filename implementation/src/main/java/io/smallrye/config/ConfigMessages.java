@@ -91,4 +91,7 @@ interface ConfigMessages {
 
     @Message(id = 25, value = "Recursive expression expansion is too deep for %s")
     IllegalArgumentException expressionExpansionTooDepth(String name);
+
+    @Message(id = 26, value = "%s cannot be converted into a UUID")
+    IllegalArgumentException malformedUUID(@Cause Throwable cause, String malformedUUID);
 }

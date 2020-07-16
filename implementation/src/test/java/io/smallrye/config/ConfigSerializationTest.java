@@ -30,14 +30,14 @@ public class ConfigSerializationTest {
             out.writeObject(config);
         } catch (Exception e) {
             e.printStackTrace();
-            fail("Config should be serializable, but could not serialize it");
+            fail("Config should be serializable, but could not serialize it", e);
         }
 
         Object readObject = null;
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()))) {
             readObject = in.readObject();
         } catch (Exception e) {
-            fail("Config config should be serializable, but could not deserialize the instance");
+            fail("Config config should be serializable, but could not deserialize the instance", e);
         }
 
         SmallRyeConfig serialized = (SmallRyeConfig) readObject;
