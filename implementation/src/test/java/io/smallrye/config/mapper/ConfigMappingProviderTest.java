@@ -43,6 +43,16 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
+    void noPrefix() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Server.class)
+                .withSources(config("host", "localhost", "port", "8080")).build();
+        final Server configProperties = config.getConfigMapping(Server.class);
+        assertEquals("localhost", configProperties.host());
+        assertEquals(8080, configProperties.port());
+    }
+
+    @Test
     void configMappingBuilder() throws Exception {
         final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder().addRoot("server", Server.class)
                 .addIgnored("server.name").build();
