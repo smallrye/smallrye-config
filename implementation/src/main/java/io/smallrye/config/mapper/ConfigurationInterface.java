@@ -44,7 +44,6 @@ import sun.misc.Unsafe;
  * Information about a configuration interface.
  */
 public final class ConfigurationInterface {
-    static final boolean usefulDebugInfo = true;
     static final ConfigurationInterface[] NO_TYPES = new ConfigurationInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
     static final ClassValue<ConfigurationInterface> cv = new ClassValue<ConfigurationInterface>() {
@@ -52,9 +51,12 @@ public final class ConfigurationInterface {
             return createConfigurationInterface(type);
         }
     };
+    static final boolean usefulDebugInfo;
     static final Unsafe unsafe;
 
     static {
+        usefulDebugInfo = Boolean.parseBoolean(System.getProperty("io.smallrye.config.mapper.useful-debug-info"));
+
         unsafe = AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
             public Unsafe run() {
                 try {
@@ -849,9 +851,8 @@ public final class ConfigurationInterface {
     Class<?> createConfigurationObjectClass() {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         String internalName = getInternalName(interfaceType);
-        String className = usefulDebugInfo ? getInternalName(getClass()) : internalName; // ignored by the VM, probably?
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
-        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, className, null, I_OBJECT,
+        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, getInternalName(getClass()), null, I_OBJECT,
                 new String[] { I_CONFIGURATION_OBJECT, internalName });
         visitor.visitSource(null, null);
         MethodVisitor ctor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
@@ -895,7 +896,7 @@ public final class ConfigurationInterface {
         // stack: sb
         fio.visitVarInsn(Opcodes.ASTORE, V_STRING_BUILDER);
         // stack: -
-        addProperties(visitor, className, ctor, fio, new HashSet<>());
+        addProperties(visitor, getInternalName(getClass()), ctor, fio, new HashSet<>());
         // stack: -
         fio.visitInsn(Opcodes.RETURN);
         fio.visitLabel(fioEnd);
