@@ -28,11 +28,6 @@ public abstract class KeyMapBackedConfigSource extends AbstractConfigSource {
 
     @Override
     public String getValue(final String propertyName) {
-        final String value = properties.findRootValue(propertyName);
-        if (value == null) {
-            // In case of searching for an empty root.
-            return properties.findRootValue("." + propertyName);
-        }
-        return value;
+        return properties.findRootValue(propertyName);
     }
 }

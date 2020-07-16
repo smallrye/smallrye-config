@@ -60,7 +60,10 @@ public final class ConfigMappingProvider implements Serializable {
         for (Map.Entry<String, List<ConfigurationInterface>> entry : roots.entrySet()) {
             NameIterator rootNi = new NameIterator(entry.getKey());
             while (rootNi.hasNext()) {
-                currentPath.add(rootNi.getNextSegment());
+                final String nextSegment = rootNi.getNextSegment();
+                if (!nextSegment.isEmpty()) {
+                    currentPath.add(nextSegment);
+                }
                 rootNi.next();
             }
             List<ConfigurationInterface> roots = entry.getValue();
@@ -626,17 +629,6 @@ public final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                // Search if there is an empty prefix
-                KeyMap<BiConsumer<MappingContext, NameIterator>> emptyPrefixMap = matchActions.get("");
-                if (emptyPrefixMap != null) {
-                    ni.goToStart();
-                    BiConsumer<MappingContext, NameIterator> emptyPrefixAction = emptyPrefixMap.findRootValue(ni);
-                    if (emptyPrefixAction != null) {
-                        emptyPrefixAction.accept(context, ni);
-                        continue;
-                    }
-                }
-
                 context.unknownConfigElement(name);
             }
         }
