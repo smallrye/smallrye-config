@@ -43,7 +43,6 @@ public final class ConfigMappingProvider implements Serializable {
 
     static {
         final KeyMap<BiConsumer<MappingContext, NameIterator>> map = new KeyMap<>();
-        map.putAny(map);
         map.putRootValue(DO_NOTHING);
         IGNORE_EVERYTHING = map;
     }

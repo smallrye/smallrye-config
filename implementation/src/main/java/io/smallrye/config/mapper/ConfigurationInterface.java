@@ -75,7 +75,6 @@ public final class ConfigurationInterface {
     private final Class<?> interfaceType;
     private final ConfigurationInterface[] superTypes;
     private final Property[] properties;
-    private final Class<? extends ConfigurationObject> implClass;
     private final Constructor<? extends ConfigurationObject> constructor;
     private final Map<String, Property> propertiesByName;
 
@@ -84,9 +83,9 @@ public final class ConfigurationInterface {
         this.interfaceType = interfaceType;
         this.superTypes = superTypes;
         this.properties = properties;
-        implClass = createConfigurationObjectClass().asSubclass(ConfigurationObject.class);
         try {
-            constructor = implClass.getDeclaredConstructor(MappingContext.class);
+            constructor = createConfigurationObjectClass().asSubclass(ConfigurationObject.class)
+                    .getDeclaredConstructor(MappingContext.class);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
@@ -811,7 +810,7 @@ public final class ConfigurationInterface {
 
         ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
         // stack: sb
-        ctor.visitLdcInsn(Character.valueOf('.'));
+        ctor.visitLdcInsn('.');
         // stack: sb '.'
         ctor.visitInsn(Opcodes.I2C);
         // stack: sb '.'
