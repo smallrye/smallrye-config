@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -118,6 +119,15 @@ public final class Converters {
     static final Converter<Byte> BYTE_CONVERTER = BuiltInConverter.of(13,
             newTrimmingConverter(newEmptyValueConverter(Byte::valueOf)));
 
+    static final Converter<UUID> UUID_CONVERTER = BuiltInConverter.of(14,
+            newTrimmingConverter(newEmptyValueConverter((s) -> {
+                try {
+                    return UUID.fromString(s);
+                } catch (IllegalArgumentException e) {
+                    throw ConfigMessages.msg.malformedUUID(e, s);
+                }
+            })));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -147,6 +157,8 @@ public final class Converters {
         ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
 
         ALL_CONVERTERS.put(Byte.class, BYTE_CONVERTER);
+
+        ALL_CONVERTERS.put(UUID.class, UUID_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
@@ -860,6 +872,8 @@ public final class Converters {
                     return SHORT_CONVERTER;
                 case 13:
                     return BYTE_CONVERTER;
+                case 14:
+                    return UUID_CONVERTER;
                 default:
                     throw ConfigMessages.msg.unknownConverterId(id);
             }

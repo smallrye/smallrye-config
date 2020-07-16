@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -89,4 +92,47 @@ public class CustomConverterTestCase {
         } catch (NoSuchElementException expected) {
         }
     }
+
+    @Test
+    public void testUUID() {
+        String uuidStringTruth = "e4b3d0cf-55a2-4c01-a5d0-fe016fdc9195";
+        String secondUuidStringTruth = "c2d88ee5-e981-4de2-ac54-8b887cc2acbc";
+        UUID uuidUUIDTruth = UUID.fromString(uuidStringTruth);
+        UUID secondUuidUUIDTruth = UUID.fromString(secondUuidStringTruth);
+        final Config config = buildConfig(
+                "uuid.key", uuidStringTruth,
+                "uuid.whitespace", " ",
+                "uuid.shouting", uuidStringTruth.toUpperCase(Locale.ROOT),
+                "uuid.multiple", uuidStringTruth + "," + secondUuidStringTruth);
+
+        // Check a UUID is correctly parsed from the config source into the expected UUID
+        assertEquals(uuidUUIDTruth, config.getValue("uuid.key", UUID.class), "Unexpected value for UUID config");
+
+        // Check non-existent / just whitespace values are treated as empty
+        assertFalse(config.getOptionalValue("uuid.nonexistant", UUID.class).isPresent(), "UUID shouldn't exist");
+        assertFalse(config.getOptionalValue("uuid.whitespace", UUID.class).isPresent(), "UUID shouldn't exist");
+
+        // Check a capitalised UUID still works correctly
+        assertEquals(uuidUUIDTruth, config.getValue("uuid.shouting", UUID.class), "Uppercase UUID incorrectly converted");
+
+        // Check UUIDs work fine in arrays
+        ArrayList<UUID> values = ((SmallRyeConfig) config).getValues("uuid.multiple", UUID.class, ArrayList::new);
+        assertEquals(uuidUUIDTruth, values.get(0), "Unexpected list item in UUID config");
+        assertEquals(secondUuidUUIDTruth, values.get(1), "Unexpected list item in UUID config");
+
+    }
+
+    @Test
+    public void testMalformedUUID() {
+        final Config config = buildConfig(
+                "uuid.invalid", "notauuid");
+
+        IllegalArgumentException thrownException = assertThrows(IllegalArgumentException.class, () -> {
+            config.getValue("uuid.invalid", UUID.class);
+        }, "Malformed UUID should throw exception");
+        assertEquals("SRCFG00026: notauuid cannot be converted into a UUID", thrownException.getMessage(),
+                "Exception message is incorrect");
+
+    }
+
 }
