@@ -3,7 +3,7 @@ package io.smallrye.config.mapper;
 import io.smallrye.common.constraint.Assert;
 
 /**
- *
+ * An exception which is thrown when a configuration validation problem occurs.
  */
 public class ConfigurationValidationException extends Exception {
     private static final long serialVersionUID = -2637730579475070264L;
