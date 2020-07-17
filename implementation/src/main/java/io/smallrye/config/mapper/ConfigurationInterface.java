@@ -43,7 +43,7 @@ import sun.misc.Unsafe;
 /**
  * Information about a configuration interface.
  */
-public final class ConfigurationInterface {
+final class ConfigurationInterface {
     static final ConfigurationInterface[] NO_TYPES = new ConfigurationInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
     static final ClassValue<ConfigurationInterface> cv = new ClassValue<ConfigurationInterface>() {

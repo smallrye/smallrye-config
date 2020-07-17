@@ -41,7 +41,6 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.mapper.ConfigMappingProvider;
-import io.smallrye.config.mapper.ConfigurationValidationException;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -343,7 +342,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         try {
             getConfigMapping().mapConfiguration(config);
-        } catch (ConfigurationValidationException e) {
+        } catch (ConfigValidationException e) {
             throw new IllegalStateException(e);
         }
 

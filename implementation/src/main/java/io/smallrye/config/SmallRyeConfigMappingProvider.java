@@ -7,7 +7,6 @@ import java.util.Map;
 
 import io.smallrye.config.mapper.ConfigMappingProvider;
 import io.smallrye.config.mapper.ConfigurationObject;
-import io.smallrye.config.mapper.ConfigurationValidationException;
 
 public class SmallRyeConfigMappingProvider implements Serializable {
     private static final long serialVersionUID = -7807593615345914368L;
@@ -23,7 +22,7 @@ public class SmallRyeConfigMappingProvider implements Serializable {
         return configMappingProvider.getDefaultValues();
     }
 
-    public void mapConfiguration(final SmallRyeConfig config) throws ConfigurationValidationException {
+    public void mapConfiguration(final SmallRyeConfig config) throws ConfigValidationException {
         final ConfigMappingProvider.Result result = configMappingProvider.mapConfiguration(config);
         rootsMap.putAll(result.getRootsMap());
     }
