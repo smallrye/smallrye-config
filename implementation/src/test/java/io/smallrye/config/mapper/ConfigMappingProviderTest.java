@@ -3,6 +3,7 @@ package io.smallrye.config.mapper;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,6 +23,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 public class ConfigMappingProviderTest {
     @Test
@@ -65,12 +67,9 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
-    void unmapped() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
-                .build();
-        // TODO - Most likely we want to do a warning here, but just to try out the feature.
-        assertThrows(Exception.class, () -> config.getConfigMapping(Server.class, "server"));
+    void unknownConfigElement() {
+        assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(Server.class, "server").build());
     }
 
     @Test
@@ -308,6 +307,26 @@ public class ConfigMappingProviderTest {
         assertTrue(sample.client().isPresent());
         assertEquals("clienthost", sample.client().get().subHostAndPort().host());
         assertEquals(80, sample.client().get().subHostAndPort().port());
+    }
+
+    @Test
+    void noDynamicValues() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Server.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(new MapBackedConfigSource("test", new HashMap<>(), Integer.MAX_VALUE) {
+                    private int counter = 1;
+
+                    @Override
+                    public String getValue(final String propertyName) {
+                        return counter++ + "";
+                    }
+                }).build();
+
+        final Server server = config.getConfigMapping(Server.class, "server");
+
+        assertNotEquals(config.getRawValue("server.port"), config.getRawValue("server.port"));
+        assertEquals(server.port(), server.port());
     }
 
     interface Server {
