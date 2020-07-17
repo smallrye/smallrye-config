@@ -30,9 +30,10 @@ import io.smallrye.config.SmallRyeConfig;
  *
  * @author <a href="https://github.com/guhilling">Gunnar Hilling</a>
  */
-public class ConfigProducerUtil {
+public final class ConfigProducerUtil {
 
     private ConfigProducerUtil() {
+        throw new UnsupportedOperationException();
     }
 
     public static <T> T getValue(InjectionPoint injectionPoint, Config config) {
@@ -151,7 +152,7 @@ public class ConfigProducerUtil {
         return null;
     }
 
-    static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
+    public static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
         String key = configProperty.name();
         if (!key.trim().isEmpty()) {
             return key;

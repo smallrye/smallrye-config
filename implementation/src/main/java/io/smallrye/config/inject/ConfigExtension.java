@@ -94,7 +94,7 @@ public class ConfigExtension implements Extension {
         }
 
         for (Class<?> customType : customTypes) {
-            abd.addBean(new ConfigInjectionBean(bm, customType));
+            abd.addBean(new ConfigInjectionBean<>(bm, customType));
         }
     }
 
@@ -162,5 +162,9 @@ public class ConfigExtension implements Extension {
                 || requiredType == OptionalDouble.class
                 || requiredType == Supplier.class
                 || requiredType == ConfigValue.class;
+    }
+
+    protected Set<InjectionPoint> getInjectionPoints() {
+        return injectionPoints;
     }
 }
