@@ -55,7 +55,8 @@ final class ConfigurationInterface {
     static final Unsafe unsafe;
 
     static {
-        usefulDebugInfo = Boolean.parseBoolean(System.getProperty("io.smallrye.config.mapper.useful-debug-info"));
+        usefulDebugInfo = Boolean.parseBoolean(AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty("io.smallrye.config.mapper.useful-debug-info")));
 
         unsafe = AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
             public Unsafe run() {
