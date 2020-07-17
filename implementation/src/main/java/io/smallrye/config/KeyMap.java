@@ -219,6 +219,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         return newMap;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder b) {
         b.append("KeyMap(");
         V rootValue = this.rootValue;
@@ -232,17 +233,21 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         KeyMap<V> any = this.any;
         if (iterator.hasNext()) {
             Entry<String, KeyMap<V>> entry = iterator.next();
-            b.append(entry.getKey()).append("=>").append(entry.getValue());
+            b.append(entry.getKey()).append("=>");
+            entry.getValue().toString(b);
             while (iterator.hasNext()) {
                 entry = iterator.next();
-                b.append(',').append(entry.getKey()).append("=>").append(entry.getValue());
+                b.append(',').append(entry.getKey()).append("=>");
+                entry.getValue().toString(b);
             }
             if (any != null) {
-                b.append(',').append("(any)=>").append(any);
+                b.append(',').append("(any)=>");
+                any.toString(b);
             }
         } else {
             if (any != null) {
-                b.append("(any)=>").append(any);
+                b.append("(any)=>");
+                any.toString(b);
             }
         }
         b.append('}');
