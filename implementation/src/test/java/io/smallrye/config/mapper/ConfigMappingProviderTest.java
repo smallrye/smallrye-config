@@ -2,7 +2,9 @@ package io.smallrye.config.mapper;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -268,6 +270,9 @@ public class ConfigMappingProviderTest {
         assertEquals("foo", defaults.foo());
         assertEquals("bar", defaults.bar());
         assertEquals("foo", config.getRawValue("foo"));
+
+        final List<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        assertFalse(propertyNames.contains("foo"));
     }
 
     @Test
