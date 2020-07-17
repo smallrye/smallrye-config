@@ -59,7 +59,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final Map<String, String> defaultValues = new HashMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
-    private SmallRyeConfigMappingProvider mappingProvider;
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -310,10 +309,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultValues;
     }
 
-    SmallRyeConfigMappingProvider getConfigMapping() {
-        return mappingProvider;
-    }
-
     protected boolean isAddDefaultSources() {
         return addDefaultSources;
     }
@@ -336,17 +331,34 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        mappingProvider = new SmallRyeConfigMappingProvider(mappingsBuilder.build());
+        final ConfigMappingProvider mappingProvider = mappingsBuilder.build();
+        if (!defaultValues.isEmpty() || !mappingProvider.getDefaultValues().isEmpty()) {
+            final KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
+            defaultValues.forEach((key, value) -> mappingProviderDefaultValues.findOrAdd(key).putRootValue(value));
+            withSources(new KeyMapBackedConfigSource("DefaultValuesConfigSource", mappingProviderDefaultValues) {
+                private static final long serialVersionUID = 7847969724478280439L;
+
+                @Override
+                public Map<String, String> getProperties() {
+                    return new HashMap<>();
+                }
+
+                @Override
+                public int getOrdinal() {
+                    return Integer.MIN_VALUE;
+                }
+            });
+        }
 
         final SmallRyeConfig config = new SmallRyeConfig(this);
 
         try {
-            getConfigMapping().mapConfiguration(config);
+            final ConfigMappingProvider.Result result = mappingProvider.mapConfiguration(config);
+            config.registerValidMappings(result.getRootsMap());
+            return config;
         } catch (ConfigValidationException e) {
             throw new IllegalStateException(e);
         }
-
-        return config;
     }
 
     static class ConverterWithPriority {

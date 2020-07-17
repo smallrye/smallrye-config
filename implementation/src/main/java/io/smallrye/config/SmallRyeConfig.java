@@ -45,7 +45,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
-import io.smallrye.config.mapper.ConfigMappingProvider;
+import io.smallrye.config.mapper.ConfigurationObject;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -57,17 +57,15 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final SmallRyeConfigMappingProvider configMapping;
+    private final Map<Class<?>, Map<String, ConfigurationObject>> mappings = new HashMap<>();
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
-        this.configMapping = builder.getConfigMapping();
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
     }
 
     @Deprecated
     protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
-        this.configMapping = new SmallRyeConfigMappingProvider(ConfigMappingProvider.builder().build());
         this.configSources = new AtomicReference<>(
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
@@ -81,23 +79,6 @@ public class SmallRyeConfig implements Config, Serializable {
         }
         if (builder.isAddDefaultSources()) {
             sourcesToBuild.addAll(builder.getDefaultSources());
-        }
-        if (!builder.getDefaultValues().isEmpty() || !configMapping.getDefaultValues().isEmpty()) {
-            final KeyMap<String> defaultValues = configMapping.getDefaultValues();
-            builder.getDefaultValues().forEach((key, value) -> defaultValues.findOrAdd(key).putRootValue(value));
-            sourcesToBuild.add(new KeyMapBackedConfigSource("DefaultValuesConfigSource", defaultValues) {
-                private static final long serialVersionUID = 7847969724478280439L;
-
-                @Override
-                public Map<String, String> getProperties() {
-                    return new HashMap<>();
-                }
-
-                @Override
-                public int getOrdinal() {
-                    return Integer.MIN_VALUE;
-                }
-            });
         }
 
         // wrap all
@@ -223,15 +204,20 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Experimental("TODO")
-    public <T> T getConfigMapping(Class<T> klass) {
-        return getConfigMapping(klass, "");
+    void registerValidMappings(Map<Class<?>, Map<String, ConfigurationObject>> mappings) {
+        this.mappings.putAll(mappings);
     }
 
     @Experimental("TODO")
-    public <T> T getConfigMapping(Class<T> klass, String prefix) {
-        final T configRoot = configMapping.getConfigMapping(klass, prefix);
+    public <T> T getConfigMapping(Class<T> type) {
+        return getConfigMapping(type, "");
+    }
+
+    @Experimental("TODO")
+    public <T> T getConfigMapping(Class<T> type, String prefix) {
+        final T configRoot = type.cast(mappings.getOrDefault(type, Collections.emptyMap()).get(prefix));
         if (configRoot == null) {
-            throw ConfigMessages.msg.mappingNotFound(klass.getName(), prefix);
+            throw ConfigMessages.msg.mappingNotFound(type.getName(), prefix);
         }
         return configRoot;
     }
