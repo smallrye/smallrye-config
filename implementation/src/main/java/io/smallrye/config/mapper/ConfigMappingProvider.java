@@ -602,6 +602,10 @@ public final class ConfigMappingProvider implements Serializable {
     }
 
     public Result mapConfiguration(SmallRyeConfig config) throws ConfigurationValidationException {
+        if (roots.isEmpty()) {
+            return new Result(new HashMap<>());
+        }
+
         Assert.checkNotNullParam("config", config);
         final MappingContext context = new MappingContext(config);
         // eagerly populate roots
@@ -684,11 +688,15 @@ public final class ConfigMappingProvider implements Serializable {
         private final Map<Class<?>, Map<String, ConfigurationObject>> rootsMap;
 
         Result(final Map<Class<?>, Map<String, ConfigurationObject>> rootsMap) {
-            this.rootsMap = rootsMap;
+            this.rootsMap = Collections.unmodifiableMap(rootsMap);
         }
 
         public <T> T getConfigRoot(String path, Class<T> type) {
             return type.cast(rootsMap.getOrDefault(type, Collections.emptyMap()).get(path));
+        }
+
+        public Map<Class<?>, Map<String, ConfigurationObject>> getRootsMap() {
+            return rootsMap;
         }
     }
 }

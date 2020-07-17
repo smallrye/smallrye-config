@@ -41,6 +41,7 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.mapper.ConfigMappingProvider;
+import io.smallrye.config.mapper.ConfigurationValidationException;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -59,6 +60,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final Map<String, String> defaultValues = new HashMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
+    private SmallRyeConfigMappingProvider mappingProvider;
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
@@ -309,8 +311,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultValues;
     }
 
-    ConfigMappingProvider.Builder getMappingsBuilder() {
-        return mappingsBuilder;
+    SmallRyeConfigMappingProvider getConfigMapping() {
+        return mappingProvider;
     }
 
     protected boolean isAddDefaultSources() {
@@ -335,7 +337,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        return new SmallRyeConfig(this);
+        mappingProvider = new SmallRyeConfigMappingProvider(mappingsBuilder.build());
+
+        final SmallRyeConfig config = new SmallRyeConfig(this);
+
+        try {
+            getConfigMapping().mapConfiguration(config);
+        } catch (ConfigurationValidationException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return config;
     }
 
     static class ConverterWithPriority {
