@@ -89,6 +89,11 @@ public class SmallRyeConfig implements Config, Serializable {
                 private static final long serialVersionUID = 7847969724478280439L;
 
                 @Override
+                public Map<String, String> getProperties() {
+                    return new HashMap<>();
+                }
+
+                @Override
                 public int getOrdinal() {
                     return Integer.MIN_VALUE;
                 }
