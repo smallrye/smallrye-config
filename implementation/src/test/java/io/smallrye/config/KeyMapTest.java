@@ -125,4 +125,17 @@ public class KeyMapTest {
         assertEquals("baz", properties.get("root.foo.bar.*"));
         assertEquals("anything", properties.get("root.foo.bar.*.baz"));
     }
+
+    @Test
+    void string() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("root.foo").putRootValue("bar");
+        map.findOrAdd("root.foo.bar").putRootValue("baz");
+        map.findOrAdd("root.foo.bar.*").putRootValue("baz");
+        map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
+
+        assertEquals(
+                "KeyMap(no value) {root=>KeyMap(no value) {foo=>KeyMap(value=bar) {bar=>KeyMap(value=baz) {(any)=>KeyMap(value=baz) {baz=>KeyMap(value=anything) {}}}}}}",
+                map.toString());
+    }
 }
