@@ -25,6 +25,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
+import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.KeyMap;
 import io.smallrye.config.NameIterator;
 import io.smallrye.config.SmallRyeConfig;
@@ -601,7 +602,7 @@ public final class ConfigMappingProvider implements Serializable {
         return defaultValues;
     }
 
-    public Result mapConfiguration(SmallRyeConfig config) throws ConfigurationValidationException {
+    public Result mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
         if (roots.isEmpty()) {
             return new Result(new HashMap<>());
         }
@@ -635,10 +636,10 @@ public final class ConfigMappingProvider implements Serializable {
                 context.unknownConfigElement(name);
             }
         }
-        ArrayList<ConfigurationValidationException.Problem> problems = context.getProblems();
+        ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
         if (!problems.isEmpty()) {
-            throw new ConfigurationValidationException(
-                    problems.toArray(ConfigurationValidationException.Problem.NO_PROBLEMS));
+            throw new ConfigValidationException(
+                    problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
         return new Result(context.getRootsMap());

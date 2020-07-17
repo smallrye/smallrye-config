@@ -1,11 +1,11 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
 import io.smallrye.common.constraint.Assert;
 
 /**
  * An exception which is thrown when a configuration validation problem occurs.
  */
-public class ConfigurationValidationException extends Exception {
+public class ConfigValidationException extends Exception {
     private static final long serialVersionUID = -2637730579475070264L;
 
     private final Problem[] problems;
@@ -15,7 +15,7 @@ public class ConfigurationValidationException extends Exception {
      *
      * @param problems the reported problems
      */
-    public ConfigurationValidationException(final Problem[] problems) {
+    public ConfigValidationException(final Problem[] problems) {
         super(list("Configuration validation failed", problems));
         this.problems = problems;
     }

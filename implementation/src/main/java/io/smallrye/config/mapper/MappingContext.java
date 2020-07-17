@@ -1,5 +1,6 @@
 package io.smallrye.config.mapper;
 
+import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.mapper.ConfigurationInterface.LeafProperty;
 import static io.smallrye.config.mapper.ConfigurationInterface.MapProperty;
 import static io.smallrye.config.mapper.ConfigurationInterface.PrimitiveProperty;
@@ -7,7 +8,6 @@ import static io.smallrye.config.mapper.ConfigurationInterface.Property;
 import static io.smallrye.config.mapper.ConfigurationInterface.getConfigurationInterface;
 import static io.smallrye.config.mapper.ConfigurationInterface.rawTypeOf;
 import static io.smallrye.config.mapper.ConfigurationInterface.typeOfParameter;
-import static io.smallrye.config.mapper.ConfigurationValidationException.Problem;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -31,7 +31,7 @@ import io.smallrye.config.SmallRyeConfig;
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
  * mapping has completed.
  */
-public final class MappingContext {
+final class MappingContext {
 
     private final Map<Class<?>, Map<String, Map<Object, Object>>> enclosedThings = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, ConfigurationObject>> roots = new IdentityHashMap<>();
