@@ -2,7 +2,9 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.MapBackedConfigSource;
@@ -96,5 +99,14 @@ public class SmallRyeConfigTest {
 
         assertEquals(1234, config.convert("1234", Integer.class).intValue());
         assertNull(config.convert(null, Integer.class));
+    }
+
+    @Test
+    void unwrap() {
+        Config config = new SmallRyeConfigBuilder().build();
+        SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
+
+        assertNotNull(smallRyeConfig);
+        assertThrows(IllegalArgumentException.class, () -> config.unwrap(Object.class));
     }
 }
