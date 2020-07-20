@@ -170,7 +170,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 800 - 1);
+                return OptionalInt.of(Priorities.LIBRARY + 600 - 1);
             }
         }));
         interceptors.add(new InterceptorWithPriority(new ExpressionConfigSourceInterceptor()));
