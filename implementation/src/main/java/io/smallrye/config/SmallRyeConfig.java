@@ -235,6 +235,16 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Override
+    public <T> T getConfigProperties(final Class<T> configProperties, final String prefix) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T getConfigProperties(final Class<T> configProperties) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Iterable<String> getPropertyNames() {
         final HashSet<String> names = new HashSet<>();
         configSources.get().getInterceptorChain().iterateNames().forEachRemaining(names::add);
@@ -300,6 +310,15 @@ public class SmallRyeConfig implements Config, Serializable {
             return conv == null ? null : Converters.newArrayConverter(conv, asType);
         }
         return (Converter<T>) converters.computeIfAbsent(asType, clazz -> ImplicitConverters.getConverter((Class<?>) clazz));
+    }
+
+    @Override
+    public <T> T unwrap(final Class<T> type) {
+        if (Config.class.isAssignableFrom(type)) {
+            return type.cast(this);
+        }
+
+        throw ConfigMessages.msg.getTypeNotSupportedForUnwrapping(type);
     }
 
     private static class ConfigSources implements Serializable {
