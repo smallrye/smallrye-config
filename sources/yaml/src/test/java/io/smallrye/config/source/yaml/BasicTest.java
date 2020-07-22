@@ -4,13 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class BasicTest {
-
+class BasicTest {
     @Test
-    public void testBasicKeyValue() {
+    void basicKeyValue() {
         String yaml = "foo:\n"
                 + "    bar:\n"
                 + "         baz: something\n"
@@ -23,7 +21,7 @@ public class BasicTest {
     }
 
     @Test
-    public void testNullKeyValue() {
+    void nullKeyValue() {
         String yaml = "foo:\n"
                 + "    ~: something\n";
 
@@ -33,7 +31,7 @@ public class BasicTest {
     }
 
     @Test
-    public void testListValue() {
+    void listValue() {
         String yaml = "foo:\n"
                 + "     bar:\n"
                 + "        ~:\n"
@@ -47,22 +45,7 @@ public class BasicTest {
     }
 
     @Test
-    @Disabled
-    public void testListOfListValue() {
-        String yaml = "foo:\n"
-                + "     bar:\n"
-                + "        ~:\n"
-                + "           - [cat, dog]\n"
-                + "           - [mouse, rat]\n"
-                + "           - [chicken, turkey]\n";
-
-        ConfigSource src = new YamlConfigSource("Yaml", yaml);
-
-        assertEquals("cat\\,dog,mouse\\,rat,chicken\\,turkey", src.getValue("foo.bar"));
-    }
-
-    @Test
-    public void testEmptyFile() {
+    void EmptyFile() {
         String yaml = "";
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
         assertNotNull(src, "Should create config source for empty file correctly");

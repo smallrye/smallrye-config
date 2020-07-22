@@ -2,13 +2,20 @@ package io.smallrye.config.source.yaml;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
+
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 
 public class YamlConfigSourceTest {
     @Test
@@ -32,6 +39,61 @@ public class YamlConfigSourceTest {
         assertEquals("default", yaml.getValue("foo.bar"));
         assertEquals("dev", yaml.getValue("%dev.foo.bar"));
         assertEquals("prod", yaml.getValue("%prod.foo.bar"));
+    }
+
+    @Test
+    void list() {
+        String yaml = "quarkus:\n" +
+                "  http:\n" +
+                "    ssl:\n" +
+                "      protocols:\n" +
+                "        - TLSv1.2\n" +
+                "        - TLSv1.3";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        String[] values = config.getValue("quarkus.http.ssl.protocols", String[].class);
+        assertEquals(2, values.length);
+        assertEquals("TLSv1.2", values[0]);
+        assertEquals("TLSv1.3", values[1]);
+
+        List<String> list = config.getValues("quarkus.http.ssl.protocols", String.class, ArrayList::new);
+        assertEquals(2, list.size());
+        assertEquals("TLSv1.2", list.get(0));
+        assertEquals("TLSv1.3", list.get(1));
+    }
+
+    @Test
+    void config() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml")))
+                .withConverter(Users.class, 100, new UserConverter())
+                .build();
+
+        final Users users = config.getValue("admin.users", Users.class);
+        assertEquals(2, users.getUsers().size());
+        assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
+        assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
+
+        assertEquals("joe@gmail.com", config.getRawValue("admin.users.[0].email"));
+    }
+
+    @Test
+    void propertyNames() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example.yml")))
+                .withConverter(Users.class, 100, new UserConverter())
+                .build();
+
+        final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                .collect(toList());
+
+        assertTrue(propertyNames.contains("quarkus.http.port"));
+        assertTrue(propertyNames.contains("quarkus.http.ssl-port"));
+        assertTrue(propertyNames.contains("quarkus.http.ssl.protocols"));
+        assertFalse(propertyNames.contains("quarkus.http.ssl.protocols.[0]"));
+        assertEquals("TLSv1.2", config.getRawValue("quarkus.http.ssl.protocols.[0]"));
+        assertFalse(propertyNames.contains("quarkus.http.ssl.protocols.[1]"));
+        assertEquals("TLSv1.3", config.getRawValue("quarkus.http.ssl.protocols.[1]"));
     }
 
     public static class Users {
