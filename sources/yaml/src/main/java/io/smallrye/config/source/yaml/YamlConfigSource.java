@@ -98,6 +98,10 @@ public class YamlConfigSource extends MapBackedConfigSource {
     @SuppressWarnings("unchecked")
     private static void flattenYaml(String path, Map<String, Object> source, Map<String, String> target) {
         source.forEach((key, value) -> {
+            if (key != null && key.indexOf('.') != -1) {
+                key = "\"" + key + "\"";
+            }
+
             if (key != null && !key.isEmpty() && path != null && !path.isEmpty()) {
                 key = path + "." + key;
             } else if (path != null && !path.isEmpty()) {
@@ -135,6 +139,17 @@ public class YamlConfigSource extends MapBackedConfigSource {
             dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
             target.put(key,
                     new Yaml(dumperOptions).dump(Collections.singletonMap(key.substring(key.lastIndexOf(".") + 1), source)));
+        }
+    }
+
+    private static void escapeQuotes(StringBuilder b, String src) {
+        int cp;
+        for (int i = 0; i < src.length(); i += Character.charCount(cp)) {
+            cp = src.codePointAt(i);
+            if (cp == '\\' || cp == '"') {
+                b.append('\\');
+            }
+            b.appendCodePoint(cp);
         }
     }
 
