@@ -20,3 +20,9 @@ quarkus:
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
   swagger-ui:
     always-include: true
+
+  jib:
+    jvm-arguments:
+      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - "-Dquarkus.http.host=0.0.0.0"
+      - "-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
