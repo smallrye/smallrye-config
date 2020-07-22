@@ -130,7 +130,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
         if (source.stream().allMatch(o -> o instanceof String)) {
             target.put(key, source.stream().map(o -> {
                 StringBuilder sb = new StringBuilder();
-                escapeCommas(sb, o.toString(), 0);
+                escapeCommas(sb, o.toString(), 1);
                 return sb.toString();
             }).collect(Collectors.joining(",")));
         } else {
@@ -139,17 +139,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
             dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
             target.put(key,
                     new Yaml(dumperOptions).dump(Collections.singletonMap(key.substring(key.lastIndexOf(".") + 1), source)));
-        }
-    }
-
-    private static void escapeQuotes(StringBuilder b, String src) {
-        int cp;
-        for (int i = 0; i < src.length(); i += Character.charCount(cp)) {
-            cp = src.codePointAt(i);
-            if (cp == '\\' || cp == '"') {
-                b.append('\\');
-            }
-            b.appendCodePoint(cp);
         }
     }
 

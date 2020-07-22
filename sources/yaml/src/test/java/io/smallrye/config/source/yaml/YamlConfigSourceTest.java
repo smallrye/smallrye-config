@@ -113,6 +113,19 @@ public class YamlConfigSourceTest {
         assertNotNull(config.getRawValue("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
     }
 
+    @Test
+    void commas() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(
+                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example.yml")))
+                .withConverter(Users.class, 100, new UserConverter())
+                .build();
+
+        String[] values = config.getValue("quarkus.jib.jvm-arguments", String[].class);
+        assertEquals(3, values.length);
+        assertEquals("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", values[0]);
+    }
+
     public static class Users {
         List<User> users;
 
