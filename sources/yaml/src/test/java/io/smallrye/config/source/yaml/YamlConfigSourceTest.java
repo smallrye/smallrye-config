@@ -3,6 +3,7 @@ package io.smallrye.config.source.yaml;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -94,6 +95,22 @@ public class YamlConfigSourceTest {
         assertEquals("TLSv1.2", config.getRawValue("quarkus.http.ssl.protocols.[0]"));
         assertFalse(propertyNames.contains("quarkus.http.ssl.protocols.[1]"));
         assertEquals("TLSv1.3", config.getRawValue("quarkus.http.ssl.protocols.[1]"));
+    }
+
+    @Test
+    void quotedProperties() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(
+                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-quotes.yml")))
+                .withConverter(Users.class, 100, new UserConverter())
+                .build();
+
+        final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                .collect(toList());
+
+        assertTrue(propertyNames.contains("quarkus.log.category.liquibase.level"));
+        assertTrue(propertyNames.contains("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
+        assertNotNull(config.getRawValue("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
     }
 
     public static class Users {
