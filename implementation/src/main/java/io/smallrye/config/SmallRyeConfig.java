@@ -56,7 +56,7 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings = new HashMap<>();
+    private final ConfigMappings mappings = new ConfigMappings();
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
@@ -203,8 +203,8 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Experimental("TODO")
-    void registerValidMappings(Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
-        this.mappings.putAll(mappings);
+    void registerMappings(Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
+        this.mappings.registerConfigMappings(mappings);
     }
 
     @Experimental("TODO")
@@ -214,11 +214,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Experimental("TODO")
     public <T> T getConfigMapping(Class<T> type, String prefix) {
-        final T configRoot = type.cast(mappings.getOrDefault(type, Collections.emptyMap()).get(prefix));
-        if (configRoot == null) {
-            throw ConfigMessages.msg.mappingNotFound(type.getName(), prefix);
-        }
-        return configRoot;
+        return mappings.getConfigMapping(type, prefix);
     }
 
     @Override
