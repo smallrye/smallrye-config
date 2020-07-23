@@ -12,7 +12,6 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -601,9 +600,9 @@ final class ConfigMappingProvider implements Serializable {
         return defaultValues;
     }
 
-    public Result mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+    public ConfigMappings mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
         if (roots.isEmpty()) {
-            return new Result(new HashMap<>());
+            return new ConfigMappings(new HashMap<>());
         }
 
         Assert.checkNotNullParam("config", config);
@@ -641,7 +640,7 @@ final class ConfigMappingProvider implements Serializable {
                     problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
-        return new Result(context.getRootsMap());
+        return new ConfigMappings(context.getRootsMap());
     }
 
     private boolean isPropertyInRoot(String propertyName) {
@@ -681,22 +680,6 @@ final class ConfigMappingProvider implements Serializable {
 
         public ConfigMappingProvider build() {
             return new ConfigMappingProvider(this);
-        }
-    }
-
-    public static final class Result {
-        private final Map<Class<?>, Map<String, ConfigMappingObject>> rootsMap;
-
-        Result(final Map<Class<?>, Map<String, ConfigMappingObject>> rootsMap) {
-            this.rootsMap = Collections.unmodifiableMap(rootsMap);
-        }
-
-        public <T> T getConfigRoot(String path, Class<T> type) {
-            return type.cast(rootsMap.getOrDefault(type, Collections.emptyMap()).get(path));
-        }
-
-        public Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
-            return rootsMap;
         }
     }
 }

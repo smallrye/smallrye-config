@@ -42,6 +42,14 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
+    void unregisteredConfigMapping() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("host", "localhost", "port", "8080")).build();
+        assertThrows(NoSuchElementException.class, () -> config.getConfigMapping(Server.class),
+                "Could not find a mapping for " + Server.class.getName() + "with prefix");
+    }
+
+    @Test
     void noPrefix() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class)
@@ -58,7 +66,7 @@ public class ConfigMappingProviderTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
 
-        final Server server = configMappingProvider.mapConfiguration(config).getConfigRoot("server", Server.class);
+        final Server server = configMappingProvider.mapConfiguration(config).getConfigMapping(Server.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
     }
@@ -121,12 +129,12 @@ public class ConfigMappingProviderTest {
                 .addRoot("server", SplitRootServerName.class)
                 .build();
 
-        final ConfigMappingProvider.Result result = configMappingProvider.mapConfiguration(config);
-        final SplitRootServerHostAndPort server = result.getConfigRoot("server", SplitRootServerHostAndPort.class);
+        final ConfigMappings result = configMappingProvider.mapConfiguration(config);
+        final SplitRootServerHostAndPort server = result.getConfigMapping(SplitRootServerHostAndPort.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
 
-        final SplitRootServerName name = result.getConfigRoot("server", SplitRootServerName.class);
+        final SplitRootServerName name = result.getConfigMapping(SplitRootServerName.class, "server");
         assertEquals("konoha", name.name());
     }
 
