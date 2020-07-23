@@ -6,7 +6,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -28,20 +30,32 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     private static final long serialVersionUID = -418186029484956531L;
 
+    private final Set<String> propertyNames;
+
+    public YamlConfigSource(String name, Map<String, String> source, int ordinal) {
+        super(name, source, ordinal, false);
+        this.propertyNames = filterIndexedNames(source.keySet());
+    }
+
     public YamlConfigSource(String name, InputStream stream) throws IOException {
         this(name, stream, ORDINAL);
     }
 
     public YamlConfigSource(String name, InputStream stream, int defaultOrdinal) throws IOException {
-        super(name, streamToMap(stream), defaultOrdinal, false);
+        this(name, streamToMap(stream), defaultOrdinal);
     }
 
-    public YamlConfigSource(String name, String str) {
-        this(name, str, ORDINAL);
+    public YamlConfigSource(String name, String source) {
+        this(name, source, ORDINAL);
     }
 
-    public YamlConfigSource(String name, String str, int defaultOrdinal) {
-        super(name, stringToMap(str), defaultOrdinal, false);
+    public YamlConfigSource(String name, String source, int ordinal) {
+        this(name, stringToMap(source), ordinal);
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return propertyNames;
     }
 
     @SuppressWarnings("unchecked")
@@ -84,6 +98,10 @@ public class YamlConfigSource extends MapBackedConfigSource {
     @SuppressWarnings("unchecked")
     private static void flattenYaml(String path, Map<String, Object> source, Map<String, String> target) {
         source.forEach((key, value) -> {
+            if (key != null && key.indexOf('.') != -1) {
+                key = "\"" + key + "\"";
+            }
+
             if (key != null && !key.isEmpty() && path != null && !path.isEmpty()) {
                 key = path + "." + key;
             } else if (path != null && !path.isEmpty()) {
@@ -112,7 +130,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
         if (source.stream().allMatch(o -> o instanceof String)) {
             target.put(key, source.stream().map(o -> {
                 StringBuilder sb = new StringBuilder();
-                escapeCommas(sb, o.toString(), 0);
+                escapeCommas(sb, o.toString(), 1);
                 return sb.toString();
             }).collect(Collectors.joining(",")));
         } else {
@@ -135,5 +153,10 @@ public class YamlConfigSource extends MapBackedConfigSource {
             }
             b.appendCodePoint(cp);
         }
+    }
+
+    private static Set<String> filterIndexedNames(Set<String> names) {
+        final Pattern pattern = Pattern.compile(".*\\[[0-9]+].*");
+        return names.stream().filter(s -> !pattern.matcher(s).find()).collect(Collectors.toSet());
     }
 }

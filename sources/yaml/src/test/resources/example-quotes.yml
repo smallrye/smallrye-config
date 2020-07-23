@@ -1,0 +1,7 @@
+quarkus:
+  log:
+    category:
+      "liquibase.changelog.ChangeSet":
+        level: INFO
+      "liquibase":
+        level: WARN
