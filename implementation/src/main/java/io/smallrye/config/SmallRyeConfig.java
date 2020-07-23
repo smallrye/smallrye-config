@@ -45,7 +45,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
-import io.smallrye.config.mapper.ConfigurationObject;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -57,7 +56,7 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final Map<Class<?>, Map<String, ConfigurationObject>> mappings = new HashMap<>();
+    private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings = new HashMap<>();
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
@@ -204,7 +203,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Experimental("TODO")
-    void registerValidMappings(Map<Class<?>, Map<String, ConfigurationObject>> mappings) {
+    void registerValidMappings(Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
         this.mappings.putAll(mappings);
     }
 

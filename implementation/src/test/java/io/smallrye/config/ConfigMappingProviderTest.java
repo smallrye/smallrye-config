@@ -1,4 +1,4 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
@@ -20,11 +20,6 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigBuilder;
-import io.smallrye.config.WithConverter;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 public class ConfigMappingProviderTest {

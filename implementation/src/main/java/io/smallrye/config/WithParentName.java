@@ -1,4 +1,4 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
