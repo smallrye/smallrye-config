@@ -65,3 +65,6 @@ client/shade/dependency-reduced-pom.xml
 
 # Antora
 build
+
+# formatter cache directories
+.cache
