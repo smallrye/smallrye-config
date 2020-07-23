@@ -1,6 +1,6 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
-import static io.smallrye.config.mapper.ConfigMappingProvider.skewer;
+import static io.smallrye.config.ConfigMappingProvider.skewer;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getType;
@@ -28,26 +28,23 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import io.smallrye.common.constraint.Assert;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.WithConverter;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
 import io.smallrye.config.inject.InjectionMessages;
 import sun.misc.Unsafe;
 
 /**
  * Information about a configuration interface.
  */
-final class ConfigurationInterface {
-    static final ConfigurationInterface[] NO_TYPES = new ConfigurationInterface[0];
+final class ConfigMappingInterface {
+    static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
-    static final ClassValue<ConfigurationInterface> cv = new ClassValue<ConfigurationInterface>() {
-        protected ConfigurationInterface computeValue(final Class<?> type) {
+    static final ClassValue<ConfigMappingInterface> cv = new ClassValue<ConfigMappingInterface>() {
+        protected ConfigMappingInterface computeValue(final Class<?> type) {
             return createConfigurationInterface(type);
         }
     };
@@ -74,19 +71,19 @@ final class ConfigurationInterface {
     }
 
     private final Class<?> interfaceType;
-    private final ConfigurationInterface[] superTypes;
+    private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
-    private final Constructor<? extends ConfigurationObject> constructor;
+    private final Constructor<? extends ConfigMappingObject> constructor;
     private final Map<String, Property> propertiesByName;
 
-    ConfigurationInterface(final Class<?> interfaceType, final ConfigurationInterface[] superTypes,
+    ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
         this.interfaceType = interfaceType;
         this.superTypes = superTypes;
         this.properties = properties;
         try {
-            constructor = createConfigurationObjectClass().asSubclass(ConfigurationObject.class)
-                    .getDeclaredConstructor(MappingContext.class);
+            constructor = createConfigurationObjectClass().asSubclass(ConfigMappingObject.class)
+                    .getDeclaredConstructor(ConfigMappingContext.class);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
@@ -103,7 +100,7 @@ final class ConfigurationInterface {
      * @param interfaceType the interface type (must not be {@code null})
      * @return the configuration interface, or {@code null} if the type does not appear to be a configuration interface
      */
-    public static ConfigurationInterface getConfigurationInterface(Class<?> interfaceType) {
+    public static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
         Assert.checkNotNullParam("interfaceType", interfaceType);
         return cv.get(interfaceType);
     }
@@ -136,7 +133,7 @@ final class ConfigurationInterface {
      * @return the supertype definition
      * @throws IndexOutOfBoundsException if {@code index} is invalid
      */
-    public ConfigurationInterface getSuperType(int index) throws IndexOutOfBoundsException {
+    public ConfigMappingInterface getSuperType(int index) throws IndexOutOfBoundsException {
         if (index < 0 || index >= superTypes.length)
             throw new IndexOutOfBoundsException();
         return superTypes[index];
@@ -169,7 +166,7 @@ final class ConfigurationInterface {
         return propertiesByName.get(name);
     }
 
-    Constructor<? extends ConfigurationObject> getConstructor() {
+    Constructor<? extends ConfigMappingObject> getConstructor() {
         return constructor;
     }
 
@@ -418,14 +415,14 @@ final class ConfigurationInterface {
     }
 
     public static final class GroupProperty extends MayBeOptionalProperty {
-        private final ConfigurationInterface groupType;
+        private final ConfigMappingInterface groupType;
 
-        GroupProperty(final Method method, final String propertyName, final ConfigurationInterface groupType) {
+        GroupProperty(final Method method, final String propertyName, final ConfigMappingInterface groupType) {
             super(method, propertyName);
             this.groupType = groupType;
         }
 
-        public ConfigurationInterface getGroupType() {
+        public ConfigMappingInterface getGroupType() {
             return groupType;
         }
 
@@ -542,12 +539,12 @@ final class ConfigurationInterface {
         }
     }
 
-    static ConfigurationInterface createConfigurationInterface(Class<?> interfaceType) {
+    static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
         }
         // first, find any supertypes
-        ConfigurationInterface[] superTypes = getSuperTypes(interfaceType.getInterfaces(), 0, 0);
+        ConfigMappingInterface[] superTypes = getSuperTypes(interfaceType.getInterfaces(), 0, 0);
         // now find any properties
         Property[] properties = getProperties(interfaceType.getDeclaredMethods(), 0, 0);
         // is it anything?
@@ -556,16 +553,16 @@ final class ConfigurationInterface {
             return null;
         } else {
             // it is a proper configuration interface
-            return new ConfigurationInterface(interfaceType, superTypes, properties);
+            return new ConfigMappingInterface(interfaceType, superTypes, properties);
         }
     }
 
     private static final String I_CLASS = getInternalName(Class.class);
     private static final String I_COLLECTIONS = getInternalName(Collections.class);
-    private static final String I_CONFIGURATION_OBJECT = getInternalName(ConfigurationObject.class);
+    private static final String I_CONFIGURATION_OBJECT = getInternalName(ConfigMappingObject.class);
     private static final String I_CONVERTER = getInternalName(Converter.class);
     private static final String I_MAP = getInternalName(Map.class);
-    private static final String I_MAPPING_CONTEXT = getInternalName(MappingContext.class);
+    private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_OPTIONAL = getInternalName(Optional.class);
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
@@ -791,7 +788,7 @@ final class ConfigurationInterface {
             // end loop
         }
         // subtype overrides supertype
-        for (ConfigurationInterface superType : superTypes) {
+        for (ConfigMappingInterface superType : superTypes) {
             superType.addProperties(cv, className, ctor, fio, visited);
         }
     }
@@ -917,18 +914,18 @@ final class ConfigurationInterface {
         return unsafe.defineAnonymousClass(usefulDebugInfo ? getClass() : interfaceType, writer.toByteArray(), null);
     }
 
-    private static ConfigurationInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
+    private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
         if (si == interfaces.length) {
             if (ti == 0) {
                 return NO_TYPES;
             } else {
-                return new ConfigurationInterface[ti];
+                return new ConfigMappingInterface[ti];
             }
         }
         Class<?> item = interfaces[si];
-        ConfigurationInterface ci = getConfigurationInterface(item);
+        ConfigMappingInterface ci = getConfigurationInterface(item);
         if (ci != null) {
-            ConfigurationInterface[] array = getSuperTypes(interfaces, si + 1, ti + 1);
+            ConfigMappingInterface[] array = getSuperTypes(interfaces, si + 1, ti + 1);
             array[ti] = ci;
             return array;
         } else {
@@ -988,7 +985,7 @@ final class ConfigurationInterface {
                 Type valueType = typeOfParameter(type, 1);
                 return new MapProperty(method, propertyName, keyType, keyConvertWith, getPropertyDef(method, valueType));
             }
-            ConfigurationInterface configurationInterface = getConfigurationInterface(rawType);
+            ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
             if (configurationInterface != null) {
                 // it's a group
                 return new GroupProperty(method, propertyName, configurationInterface);
@@ -1061,4 +1058,145 @@ final class ConfigurationInterface {
         }
     }
 
+    static final class Debugging {
+        static StackTraceElement getCaller() {
+            return new Throwable().getStackTrace()[2];
+        }
+
+        static final class MethodVisitorImpl extends MethodVisitor {
+
+            MethodVisitorImpl(final int api) {
+                super(api);
+            }
+
+            MethodVisitorImpl(final int api, final MethodVisitor methodVisitor) {
+                super(api, methodVisitor);
+            }
+
+            public void visitInsn(final int opcode) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitInsn(opcode);
+            }
+
+            public void visitIntInsn(final int opcode, final int operand) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitIntInsn(opcode, operand);
+            }
+
+            public void visitVarInsn(final int opcode, final int var) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitVarInsn(opcode, var);
+            }
+
+            public void visitTypeInsn(final int opcode, final String type) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitTypeInsn(opcode, type);
+            }
+
+            public void visitFieldInsn(final int opcode, final String owner, final String name, final String descriptor) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitFieldInsn(opcode, owner, name, descriptor);
+            }
+
+            public void visitMethodInsn(final int opcode, final String owner, final String name, final String descriptor) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitMethodInsn(opcode, owner, name, descriptor);
+            }
+
+            public void visitMethodInsn(final int opcode, final String owner, final String name, final String descriptor,
+                    final boolean isInterface) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+            }
+
+            public void visitInvokeDynamicInsn(final String name, final String descriptor, final Handle bootstrapMethodHandle,
+                    final Object... bootstrapMethodArguments) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
+            }
+
+            public void visitJumpInsn(final int opcode, final Label label) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitJumpInsn(opcode, label);
+            }
+
+            public void visitLdcInsn(final Object value) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitLdcInsn(value);
+            }
+
+            public void visitIincInsn(final int var, final int increment) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitIincInsn(var, increment);
+            }
+
+            public void visitTableSwitchInsn(final int min, final int max, final Label dflt, final Label... labels) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitTableSwitchInsn(min, max, dflt, labels);
+            }
+
+            public void visitLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitLookupSwitchInsn(dflt, keys, labels);
+            }
+
+            public void visitMultiANewArrayInsn(final String descriptor, final int numDimensions) {
+                Label l = new Label();
+                visitLabel(l);
+                visitLineNumber(getCaller().getLineNumber(), l);
+                super.visitMultiANewArrayInsn(descriptor, numDimensions);
+            }
+        }
+
+        static final class ClassVisitorImpl extends ClassVisitor {
+
+            final String sourceFile;
+
+            ClassVisitorImpl(final int api) {
+                super(api);
+                sourceFile = getCaller().getFileName();
+            }
+
+            ClassVisitorImpl(final ClassWriter cw) {
+                super(Opcodes.ASM7, cw);
+                sourceFile = getCaller().getFileName();
+            }
+
+            public void visitSource(final String source, final String debug) {
+                super.visitSource(sourceFile, debug);
+            }
+
+            public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
+                    final String signature,
+                    final String[] exceptions) {
+                return new MethodVisitorImpl(api, super.visitMethod(access, name, descriptor, signature, exceptions));
+            }
+        }
+    }
 }

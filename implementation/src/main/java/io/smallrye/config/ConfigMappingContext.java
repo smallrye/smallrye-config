@@ -1,13 +1,13 @@
-package io.smallrye.config.mapper;
+package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterface.LeafProperty;
+import static io.smallrye.config.ConfigMappingInterface.MapProperty;
+import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
+import static io.smallrye.config.ConfigMappingInterface.Property;
+import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
+import static io.smallrye.config.ConfigMappingInterface.rawTypeOf;
+import static io.smallrye.config.ConfigMappingInterface.typeOfParameter;
 import static io.smallrye.config.ConfigValidationException.Problem;
-import static io.smallrye.config.mapper.ConfigurationInterface.LeafProperty;
-import static io.smallrye.config.mapper.ConfigurationInterface.MapProperty;
-import static io.smallrye.config.mapper.ConfigurationInterface.PrimitiveProperty;
-import static io.smallrye.config.mapper.ConfigurationInterface.Property;
-import static io.smallrye.config.mapper.ConfigurationInterface.getConfigurationInterface;
-import static io.smallrye.config.mapper.ConfigurationInterface.rawTypeOf;
-import static io.smallrye.config.mapper.ConfigurationInterface.typeOfParameter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -24,34 +24,31 @@ import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.Converters;
-import io.smallrye.config.SmallRyeConfig;
-
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
  * mapping has completed.
  */
-final class MappingContext {
+final class ConfigMappingContext {
 
     private final Map<Class<?>, Map<String, Map<Object, Object>>> enclosedThings = new IdentityHashMap<>();
-    private final Map<Class<?>, Map<String, ConfigurationObject>> roots = new IdentityHashMap<>();
+    private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, Converter<?>>> convertersByTypeAndField = new IdentityHashMap<>();
     private final List<Map<Class<?>, Map<String, Converter<?>>>> keyConvertersByDegreeTypeAndField = new ArrayList<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
-    private final List<ConfigurationObject> allInstances = new ArrayList<>();
+    private final List<ConfigMappingObject> allInstances = new ArrayList<>();
     private final SmallRyeConfig config;
     private final StringBuilder stringBuilder = new StringBuilder();
     private final ArrayList<Problem> problems = new ArrayList<>();
 
-    MappingContext(final SmallRyeConfig config) {
+    ConfigMappingContext(final SmallRyeConfig config) {
         this.config = config;
     }
 
-    public ConfigurationObject getRoot(Class<?> rootType, String rootPath) {
+    public ConfigMappingObject getRoot(Class<?> rootType, String rootPath) {
         return roots.getOrDefault(rootType, Collections.emptyMap()).get(rootPath);
     }
 
-    public void registerRoot(Class<?> rootType, String rootPath, ConfigurationObject root) {
+    public void registerRoot(Class<?> rootType, String rootPath, ConfigMappingObject root) {
         roots.computeIfAbsent(rootType, x -> new HashMap<>()).put(rootPath, root);
     }
 
@@ -70,8 +67,8 @@ final class MappingContext {
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
-        Constructor<? extends ConfigurationObject> constructor = getConfigurationInterface(interfaceType).getConstructor();
-        ConfigurationObject instance;
+        Constructor<? extends ConfigMappingObject> constructor = getConfigurationInterface(interfaceType).getConstructor();
+        ConfigMappingObject instance;
         try {
             instance = constructor.newInstance(this);
         } catch (InstantiationException e) {
@@ -96,7 +93,7 @@ final class MappingContext {
         return (Converter<T>) convertersByTypeAndField
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())
                 .computeIfAbsent(field, x -> {
-                    ConfigurationInterface ci = getConfigurationInterface(enclosingType);
+                    ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
                     Property property = ci.getProperty(field);
                     boolean optional = property.isOptional();
                     if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()) {
@@ -144,7 +141,7 @@ final class MappingContext {
         return (Converter<T>) map
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())
                 .computeIfAbsent(field, x -> {
-                    ConfigurationInterface ci = getConfigurationInterface(enclosingType);
+                    ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
                     MapProperty property = ci.getProperty(field).asMap();
                     while (degree + 1 > property.getLevels()) {
                         property = property.getValueProperty().asMap();
@@ -199,7 +196,7 @@ final class MappingContext {
     }
 
     void fillInOptionals() {
-        for (ConfigurationObject instance : allInstances) {
+        for (ConfigMappingObject instance : allInstances) {
             instance.fillInOptionals(this);
         }
     }
@@ -220,7 +217,7 @@ final class MappingContext {
         return problems;
     }
 
-    Map<Class<?>, Map<String, ConfigurationObject>> getRootsMap() {
+    Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
         return roots;
     }
 }
