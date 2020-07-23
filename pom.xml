@@ -35,7 +35,7 @@
 
   <properties>
     <version.eclipse.microprofile.config>1.4</version.eclipse.microprofile.config>
-    <version.smallrye.common>1.0.2</version.smallrye.common>
+    <version.smallrye.common>1.1.0</version.smallrye.common>
 
     <version.weld.junit>2.0.1.Final</version.weld.junit>
 
