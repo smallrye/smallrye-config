@@ -1,11 +1,15 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
+
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public final class ConfigMappings implements Serializable {
@@ -23,7 +27,7 @@ public final class ConfigMappings implements Serializable {
 
     public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
             throws ConfigValidationException {
-        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder();
+        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder().validateUnknown(false);
         for (ConfigMappingWithPrefix mapping : mappings) {
             builder.addRoot(mapping.getPrefix(), mapping.getKlass());
         }
@@ -44,7 +48,12 @@ public final class ConfigMappings implements Serializable {
     }
 
     <T> T getConfigMapping(Class<T> type) {
-        return getConfigMapping(type, getPrefix(type));
+        final String prefix = Optional.ofNullable(type.getAnnotation(ConfigMapping.class))
+                .map(ConfigMapping::prefix)
+                .orElseGet(() -> Optional.ofNullable(type.getAnnotation(ConfigProperties.class)).map(ConfigProperties::prefix)
+                        .orElse(""));
+
+        return getConfigMapping(type, prefix);
     }
 
     <T> T getConfigMapping(Class<T> type, String prefix) {
@@ -52,7 +61,7 @@ public final class ConfigMappings implements Serializable {
             return getConfigMapping(type);
         }
 
-        final Map<String, ConfigMappingObject> mappingsForType = mappings.get(type);
+        final Map<String, ConfigMappingObject> mappingsForType = mappings.get(getConfigMappingClass(type));
         if (mappingsForType == null) {
             throw ConfigMessages.msg.mappingNotFound(type.getName());
         }
@@ -60,6 +69,10 @@ public final class ConfigMappings implements Serializable {
         final ConfigMappingObject configMappingObject = mappingsForType.get(prefix);
         if (configMappingObject == null) {
             throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
+        }
+
+        if (configMappingObject instanceof ConfigMappingClassMapper) {
+            return type.cast(((ConfigMappingClassMapper) configMappingObject).map());
         }
 
         return type.cast(configMappingObject);

@@ -12,8 +12,8 @@ import io.smallrye.common.annotation.Experimental;
  * The name of the configuration property or group.
  */
 @Documented
-@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.FIELD })
 @Experimental("ConfigMapping API to group configuration properties")
 public @interface WithName {
     /**

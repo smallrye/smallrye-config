@@ -13,7 +13,7 @@ import io.smallrye.common.annotation.Experimental;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.FIELD })
 @Experimental("ConfigMapping API to group configuration properties")
 public @interface WithDefault {
     /**
