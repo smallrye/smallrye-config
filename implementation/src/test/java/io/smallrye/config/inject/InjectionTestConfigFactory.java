@@ -47,7 +47,8 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
     }
 
     @ConfigMapping("server")
-    interface Server {
+    // TODO - radcortez - Add validation that interface has to be public.
+    public interface Server {
         String host();
 
         int port();
