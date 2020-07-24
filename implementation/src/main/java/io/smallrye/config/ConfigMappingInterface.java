@@ -848,11 +848,15 @@ final class ConfigMappingInterface {
     Class<?> createConfigurationObjectClass() {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
-        String interfaceName = getInternalName(interfaceType);
-        String className = interfaceName + "Impl";
-        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, className, null, I_OBJECT, new String[] {
+
+        String interfacePackage = interfaceType.getPackage().getName();
+        String className = getClass().getPackage().getName() + "." + interfaceType.getSimpleName() +
+                interfacePackage.hashCode() + "Impl";
+        String classInternalName = className.replace('.', '/');
+
+        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, classInternalName, null, I_OBJECT, new String[] {
                 I_CONFIGURATION_OBJECT,
-                interfaceName
+                getInternalName(interfaceType)
         });
         visitor.visitSource(null, null);
         MethodVisitor ctor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
@@ -896,7 +900,7 @@ final class ConfigMappingInterface {
         // stack: sb
         fio.visitVarInsn(Opcodes.ASTORE, V_STRING_BUILDER);
         // stack: -
-        addProperties(visitor, className, ctor, fio, new HashSet<>());
+        addProperties(visitor, classInternalName, ctor, fio, new HashSet<>());
         // stack: -
         fio.visitInsn(Opcodes.RETURN);
         fio.visitLabel(fioEnd);
@@ -914,7 +918,7 @@ final class ConfigMappingInterface {
         visitor.visitEnd();
 
         // todo: MR JAR/JDKSpecific
-        return unsafe.defineAnonymousClass(usefulDebugInfo ? getClass() : interfaceType, writer.toByteArray(), null);
+        return unsafe.defineAnonymousClass(getClass(), writer.toByteArray(), null);
     }
 
     private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
