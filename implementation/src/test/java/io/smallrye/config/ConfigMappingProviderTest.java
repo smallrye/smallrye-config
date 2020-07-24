@@ -134,6 +134,24 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
+    void validateUnknown() {
+        assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().addDefaultSources().withMapping(Server.class).build());
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withMapping(Server.class)
+                .withMapping(Server.class, "server")
+                .withValidateUnknown(false)
+                .withSources(config("server.host", "localhost", "server.port", "8080", "host", "localhost", "port", "8080"))
+                .build();
+
+        final Server configProperties = config.getConfigMapping(Server.class);
+        assertEquals("localhost", configProperties.host());
+        assertEquals(8080, configProperties.port());
+    }
+
+    @Test
     void splitRoots() throws Exception {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
@@ -391,6 +409,29 @@ public class ConfigMappingProviderTest {
 
         assertNotEquals(config.getRawValue("server.port"), config.getRawValue("server.port"));
         assertEquals(server.port(), server.port());
+    }
+
+    @Test
+    void mapClass() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerClass.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080")).build();
+        final ServerClass server = config.getConfigMapping(ServerClass.class, "server");
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
+    static class ServerClass {
+        String host;
+        int port;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
     }
 
     @Test
