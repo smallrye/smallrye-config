@@ -6,6 +6,7 @@ import static io.smallrye.config.ConfigMappingInterface.MapProperty;
 import static io.smallrye.config.ConfigMappingInterface.MayBeOptionalProperty;
 import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
 
 import java.io.Serializable;
@@ -46,6 +47,7 @@ final class ConfigMappingProvider implements Serializable {
     private final Map<String, List<Class<?>>> roots;
     private final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions;
     private final KeyMap<String> defaultValues;
+    private final boolean validateUnknown;
 
     ConfigMappingProvider(final Builder builder) {
         this.roots = new HashMap<>(builder.roots);
@@ -84,6 +86,7 @@ final class ConfigMappingProvider implements Serializable {
         }
         this.matchActions = matchActions;
         this.defaultValues = defaultValues;
+        this.validateUnknown = builder.validateUnknown;
     }
 
     static String skewer(Method method) {
@@ -389,14 +392,14 @@ final class ConfigMappingProvider implements Serializable {
                 if (keyConvertWith != null) {
                     keyConv = mc.getConverterInstance(keyConvertWith);
                 } else {
-                    keyConv = config.getConverter(keyRawType);
+                    keyConv = config.requireConverter(keyRawType);
                 }
                 Object key = keyConv.convert(rawMapKey);
                 Converter<?> valueConv;
                 if (valConvertWith != null) {
                     valueConv = mc.getConverterInstance(valConvertWith);
                 } else {
-                    valueConv = config.getConverter(valueRawType);
+                    valueConv = config.requireConverter(valueRawType);
                 }
                 ((Map) map).put(key, config.getValue(configKey, valueConv));
             });
@@ -411,7 +414,7 @@ final class ConfigMappingProvider implements Serializable {
                 if (keyConvertWith != null) {
                     keyConv = mc.getConverterInstance(keyConvertWith);
                 } else {
-                    keyConv = config.getConverter(keyRawType);
+                    keyConv = config.requireConverter(keyRawType);
                 }
                 Object key = keyConv.convert(rawMapKey);
                 return (Map) ((Map) enclosingMap).computeIfAbsent(key, x -> new HashMap<>());
@@ -632,7 +635,9 @@ final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                context.unknownConfigElement(name);
+                if (validateUnknown) {
+                    context.unknownConfigElement(name);
+                }
             }
         }
         ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
@@ -657,6 +662,7 @@ final class ConfigMappingProvider implements Serializable {
     public static final class Builder {
         final Map<String, List<Class<?>>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
+        boolean validateUnknown = true;
 
         Builder() {
         }
@@ -664,13 +670,18 @@ final class ConfigMappingProvider implements Serializable {
         public Builder addRoot(String path, Class<?> type) {
             Assert.checkNotNullParam("path", path);
             Assert.checkNotNullParam("type", type);
-            roots.computeIfAbsent(path, k -> new ArrayList<>(4)).add(type);
+            roots.computeIfAbsent(path, k -> new ArrayList<>(4)).add(getConfigMappingClass(type));
             return this;
         }
 
         public Builder addIgnored(String path) {
             Assert.checkNotNullParam("path", path);
             ignored.add(path.split("\\."));
+            return this;
+        }
+
+        public Builder validateUnknown(boolean validateUnknown) {
+            this.validateUnknown = validateUnknown;
             return this;
         }
 
