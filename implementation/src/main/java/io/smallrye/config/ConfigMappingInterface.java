@@ -847,10 +847,13 @@ final class ConfigMappingInterface {
 
     Class<?> createConfigurationObjectClass() {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        String internalName = getInternalName(interfaceType);
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
-        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, getInternalName(getClass()), null, I_OBJECT,
-                new String[] { I_CONFIGURATION_OBJECT, internalName });
+        String interfaceName = getInternalName(interfaceType);
+        String className = interfaceName + "Impl";
+        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, className, null, I_OBJECT, new String[] {
+                I_CONFIGURATION_OBJECT,
+                interfaceName
+        });
         visitor.visitSource(null, null);
         MethodVisitor ctor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
         ctor.visitParameter("context", Opcodes.ACC_FINAL);
@@ -893,7 +896,7 @@ final class ConfigMappingInterface {
         // stack: sb
         fio.visitVarInsn(Opcodes.ASTORE, V_STRING_BUILDER);
         // stack: -
-        addProperties(visitor, getInternalName(getClass()), ctor, fio, new HashSet<>());
+        addProperties(visitor, className, ctor, fio, new HashSet<>());
         // stack: -
         fio.visitInsn(Opcodes.RETURN);
         fio.visitLabel(fioEnd);

@@ -28,7 +28,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
  * mapping has completed.
  */
-final class ConfigMappingContext {
+public final class ConfigMappingContext {
 
     private final Map<Class<?>, Map<String, Map<Object, Object>>> enclosedThings = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
