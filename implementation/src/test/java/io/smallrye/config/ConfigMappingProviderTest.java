@@ -379,6 +379,29 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
+    void mapClass() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerClass.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080")).build();
+        final ServerClass server = config.getConfigMapping(ServerClass.class, "server");
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
+    static class ServerClass {
+        String host;
+        int port;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    @Test
     void configMappingAnnotation() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerAnnotated.class, "server")
