@@ -1,6 +1,7 @@
 package io.smallrye.config.inject;
 
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
+import static java.util.Optional.ofNullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -8,6 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
@@ -19,6 +21,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.SmallRyeConfig;
@@ -32,8 +35,11 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
     public ConfigMappingInjectionBean(final BeanManager bm, final AnnotatedType<T> type) {
         this.bm = bm;
         this.klass = type.getJavaClass();
-        this.prefix = getConfigMappingPrefix(type);
+        this.prefix = getPrefixFromType(type);
         this.qualifiers.add(Default.Literal.INSTANCE);
+        if (type.isAnnotationPresent(ConfigProperties.class)) {
+            this.qualifiers.add(ConfigProperties.Literal.of(prefix));
+        }
     }
 
     @Override
@@ -56,16 +62,8 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         InjectionPoint injectionPoint = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(),
                 creationalContext);
 
-        final String overridePrefix;
-        if (injectionPoint.getAnnotated() != null &&
-                injectionPoint.getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
-            overridePrefix = getConfigMappingPrefix(injectionPoint.getAnnotated());
-        } else {
-            overridePrefix = prefix;
-        }
-
         SmallRyeConfig config = (SmallRyeConfig) ConfigProvider.getConfig(getContextClassLoader());
-        return config.getConfigMapping(klass, overridePrefix);
+        return config.getConfigMapping(klass, getPrefixFromInjectionPoint(injectionPoint).orElse(prefix));
     }
 
     @Override
@@ -103,8 +101,43 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         return false;
     }
 
-    static String getConfigMappingPrefix(final Annotated annotated) {
-        return Optional.ofNullable(annotated.getAnnotation(ConfigMapping.class)).map(ConfigMapping::prefix).orElse("");
+    static String getPrefixFromType(final Annotated annotated) {
+        final Optional<String> prefixFromConfigMappingClass = ofNullable(annotated.getBaseType()).map(type -> (Class<?>) type)
+                .map(c -> c.getAnnotation(ConfigMapping.class))
+                .map(ConfigMapping::prefix);
+
+        final Optional<String> prefixFromConfigPropertiesClass = ofNullable(annotated.getBaseType())
+                .map(type -> (Class<?>) type)
+                .map(c -> c.getAnnotation(ConfigProperties.class))
+                .map(ConfigProperties::prefix)
+                .filter(prefix -> !prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX));
+
+        return Stream.of(prefixFromConfigMappingClass, prefixFromConfigPropertiesClass)
+                .flatMap(s -> s.map(Stream::of).orElseGet(Stream::empty))
+                .findFirst()
+                .orElse("");
     }
 
+    static Optional<String> getPrefixFromInjectionPoint(final InjectionPoint injectionPoint) {
+        final Optional<String> prefixFromConfigMapping = Optional.ofNullable(injectionPoint.getAnnotated())
+                .map(a -> a.getAnnotation(ConfigMapping.class))
+                .map(ConfigMapping::prefix)
+                .filter(prefix -> !prefix.isEmpty());
+
+        final Optional<String> prefixFromConfigProperties = Optional.ofNullable(injectionPoint.getAnnotated())
+                .map(a -> a.getAnnotation(ConfigProperties.class))
+                .map(ConfigProperties::prefix)
+                .filter(prefix -> !prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX));
+
+        final Optional<String> prefixFromQualifier = injectionPoint.getQualifiers().stream()
+                .filter(ConfigProperties.class::isInstance)
+                .map(ConfigProperties.class::cast)
+                .map(ConfigProperties::prefix)
+                .filter(prefix -> !prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX))
+                .findFirst();
+
+        return Stream.of(prefixFromConfigMapping, prefixFromConfigProperties, prefixFromQualifier)
+                .flatMap(s -> s.map(Stream::of).orElseGet(Stream::empty))
+                .findFirst();
+    }
 }
