@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -29,6 +30,11 @@ public class KeyMapBackedConfigSource extends AbstractConfigSource {
 
     KeyMap<String> getKeyMapProperties() {
         return properties;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return Collections.emptySet();
     }
 
     @Override
