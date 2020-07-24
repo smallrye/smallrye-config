@@ -667,7 +667,7 @@ final class ConfigMappingProvider implements Serializable {
 
         public Builder addRoot(String path, Class<?> type) {
             Assert.checkNotNullParam("type", type);
-            return addRoot(path, getConfigurationInterface(type));
+            return addRoot(path, getConfigurationInterface(ConfigMappingClass.toInterface(type)));
         }
 
         public Builder addRoot(String path, ConfigMappingInterface info) {

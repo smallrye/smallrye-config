@@ -53,10 +53,16 @@ public final class ConfigMappings implements Serializable {
             return getConfigMapping(type);
         }
 
-        final ConfigMappingObject configMappingObject = mappings.getOrDefault(type, Collections.emptyMap()).get(prefix);
+        final ConfigMappingObject configMappingObject =
+            mappings.getOrDefault(ConfigMappingClass.toInterface(type), Collections.emptyMap()).get(prefix);
         if (configMappingObject == null) {
             throw ConfigMessages.msg.mappingNotFound(type.getName(), prefix);
         }
+
+        if (configMappingObject instanceof ConfigMappingClassMapper) {
+            return type.cast(((ConfigMappingClassMapper) configMappingObject).map());
+        }
+
         return type.cast(configMappingObject);
     }
 
