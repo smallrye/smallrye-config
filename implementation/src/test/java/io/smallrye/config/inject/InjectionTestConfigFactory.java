@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
+import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigFactory;
@@ -39,6 +40,16 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                 .withSources(KeyValuesConfigSource.config("optional.int.value", "1", "optional.long.value", "2",
                         "optional.double.value", "3.3"))
                 .withSecretKeys("secret")
+                .withMapping(Server.class, "server")
+                .withDefaultValue("server.host", "localhost")
+                .withDefaultValue("server.port", "8080")
                 .build();
+    }
+
+    @ConfigMapping("server")
+    interface Server {
+        String host();
+
+        int port();
     }
 }

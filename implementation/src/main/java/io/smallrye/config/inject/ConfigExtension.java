@@ -29,7 +29,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
+import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -38,7 +40,9 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
@@ -46,6 +50,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
@@ -57,6 +62,7 @@ import io.smallrye.config.SmallRyeConfig;
  */
 public class ConfigExtension implements Extension {
     private final Set<InjectionPoint> injectionPoints = new HashSet<>();
+    private final Set<AnnotatedType<?>> configMappings = new HashSet<>();
 
     public ConfigExtension() {
     }
@@ -64,6 +70,11 @@ public class ConfigExtension implements Extension {
     protected void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
         AnnotatedType<ConfigProducer> configBean = bm.createAnnotatedType(ConfigProducer.class);
         bbd.addAnnotatedType(configBean, ConfigProducer.class.getName());
+    }
+
+    protected void processConfigMappings(
+            @Observes @WithAnnotations({ ConfigMapping.class }) ProcessAnnotatedType<?> processAnnotatedType) {
+        configMappings.add(processAnnotatedType.getAnnotatedType());
     }
 
     protected void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
@@ -95,6 +106,22 @@ public class ConfigExtension implements Extension {
 
         for (Class<?> customType : customTypes) {
             abd.addBean(new ConfigInjectionBean<>(bm, customType));
+        }
+
+        SmallRyeConfig config = (SmallRyeConfig) ConfigProvider.getConfig(getContextClassLoader());
+        for (AnnotatedType<?> configMapping : configMappings) {
+            abd.addBean()
+                    .id(configMapping.getJavaClass().toString())
+                    .beanClass(configMapping.getJavaClass())
+                    .types(configMapping.getJavaClass())
+                    .qualifiers(Default.Literal.INSTANCE)
+                    .scope(Dependent.class)
+                    .createWith(creationalContext -> {
+                        String prefix = Optional.ofNullable(configMapping.getAnnotation(ConfigMapping.class))
+                                .map(ConfigMapping::value)
+                                .orElse("");
+                        return config.getConfigMapping(configMapping.getJavaClass(), prefix);
+                    });
         }
     }
 
