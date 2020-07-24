@@ -17,16 +17,15 @@ import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import sun.misc.Unsafe;
+import io.smallrye.common.classloader.ClassDefiner;
 
 final class ConfigMappingClass {
     private static final ClassValue<Class<?>> cv = new ClassValue<Class<?>>() {
@@ -35,23 +34,6 @@ final class ConfigMappingClass {
             return createConfigurationClass(type);
         }
     };
-    private static final Unsafe unsafe;
-
-    static {
-        unsafe = AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
-            public Unsafe run() {
-                try {
-                    final Field field = Unsafe.class.getDeclaredField("theUnsafe");
-                    field.setAccessible(true);
-                    return (Unsafe) field.get(null);
-                } catch (IllegalAccessException e) {
-                    throw new IllegalAccessError(e.getMessage());
-                } catch (NoSuchFieldException e) {
-                    throw new NoSuchFieldError(e.getMessage());
-                }
-            }
-        });
-    }
 
     private static final String I_OBJECT = getInternalName(Object.class);
 
@@ -104,8 +86,7 @@ final class ConfigMappingClass {
         ctor.visitMaxs(2, 2);
         writer.visitEnd();
 
-        byte[] bytes = writer.toByteArray();
-        return unsafe.defineClass(classType.getName() + "I", bytes, 0, bytes.length, ConfigMappingClass.class.getClassLoader(),
-                null);
+        return ClassDefiner.defineClass(MethodHandles.lookup(), ConfigMappingClass.class, interfaceInternalName,
+                writer.toByteArray());
     }
 }
