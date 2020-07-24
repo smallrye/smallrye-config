@@ -10,7 +10,11 @@ public class SmallRyeConfigArchiveProcessor implements ApplicationArchiveProcess
     public void process(Archive<?> applicationArchive, TestClass testClass) {
         if (applicationArchive instanceof WebArchive) {
             WebArchive war = (WebArchive) applicationArchive;
-            war.addAsServiceProvider(SmallRyeConfigFactory.class, SmallRyeConfigTestFactory.class);
+            war.addAsServiceProvider(SmallRyeConfigFactory.class, useFactoryForTest(testClass));
         }
+    }
+
+    private static Class<?> useFactoryForTest(TestClass testClass) {
+        return SmallRyeConfigTestFactory.class;
     }
 }
