@@ -254,6 +254,10 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @SuppressWarnings("unchecked")
     public <T> Converter<T> getConverter(Class<T> asType) {
+        final Converter<?> exactConverter = converters.get(asType);
+        if (exactConverter != null) {
+            return (Converter<T>) exactConverter;
+        }
         if (asType.isPrimitive()) {
             return (Converter<T>) getConverter(Converters.wrapPrimitiveType(asType));
         }

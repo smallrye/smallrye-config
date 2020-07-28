@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -317,6 +318,16 @@ public class ConvertersTestCase {
         final byte expected = 2;
         assertEquals(expected, (byte) config.getValue("simple.byte", Byte.class), "Unexpected value for byte config");
         assertEquals(expected, (byte) config.getValue("simple.byte", Byte.TYPE), "Unexpected value for byte config");
+    }
+
+    @Test
+    void byteArray() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("byte.array", Base64.getEncoder().encodeToString("bytes".getBytes())))
+                .withConverter(byte[].class, 1000, (Converter<byte[]>) value -> Base64.getDecoder().decode(value.getBytes()))
+                .build();
+        assertEquals("Ynl0ZXM=", config.getRawValue("byte.array"));
+        assertEquals("bytes", new String(config.getValue("byte.array", byte[].class)));
     }
 
     @SafeVarargs
