@@ -136,6 +136,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 .getConfigSources(classLoader));
         defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
                 .getConfigSources(classLoader));
+        defaultSources
+                .addAll(new ProfilePropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                        .getConfigSources(classLoader));
+        defaultSources
+                .addAll(new ProfilePropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+                        .getConfigSources(classLoader));
 
         return defaultSources;
     }
