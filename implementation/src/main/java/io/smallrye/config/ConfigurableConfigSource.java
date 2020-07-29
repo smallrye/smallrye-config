@@ -2,8 +2,11 @@ package io.smallrye.config;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -39,7 +42,7 @@ class ConfigurableConfigSource implements ConfigSource {
         return factory.getPriority().orElse(DEFAULT_ORDINAL);
     }
 
-    ConfigSource getSource(ConfigSourceContext context) {
-        return factory.getSource(context);
+    List<ConfigSource> getConfigSources(ConfigSourceContext context) {
+        return StreamSupport.stream(factory.getConfigSources(context).spliterator(), false).collect(Collectors.toList());
     }
 }

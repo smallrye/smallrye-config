@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.util.Collections;
 import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -23,7 +24,11 @@ import io.smallrye.common.annotation.Experimental;
  */
 @Experimental("ConfigSource API Enhancements")
 public interface ConfigSourceFactory {
-    ConfigSource getSource(ConfigSourceContext context);
+    ConfigSource getConfigSource(ConfigSourceContext context);
+
+    default Iterable<ConfigSource> getConfigSources(ConfigSourceContext context) {
+        return Collections.singletonList(getConfigSource(context));
+    }
 
     default OptionalInt getPriority() {
         return OptionalInt.empty();

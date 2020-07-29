@@ -22,7 +22,7 @@ public class ConfigConfigSourceTest {
                 .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
                 .withSources(new ConfigSourceFactory() {
                     @Override
-                    public ConfigSource getSource(final ConfigSourceContext context) {
+                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
                         return new AbstractConfigSource("test", 1000) {
                             final String value = context.getValue("my.prop").getValue();
 
@@ -63,7 +63,7 @@ public class ConfigConfigSourceTest {
                 .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
                 .withSources(new ConfigSourceFactory() {
                     @Override
-                    public ConfigSource getSource(final ConfigSourceContext context) {
+                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
                         return new AbstractConfigSource("test", 0) {
                             final ConfigValue value = context.getValue("my.prop");
 

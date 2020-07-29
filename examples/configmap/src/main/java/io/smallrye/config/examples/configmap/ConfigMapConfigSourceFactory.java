@@ -11,7 +11,7 @@ import io.smallrye.config.source.file.FileSystemConfigSource;
 
 public class ConfigMapConfigSourceFactory implements ConfigSourceFactory {
     @Override
-    public ConfigSource getSource(final ConfigSourceContext context) {
+    public ConfigSource getConfigSource(final ConfigSourceContext context) {
         final ConfigValue value = context.getValue("config.map.dir.source");
         if (value == null || value.getValue() == null) {
             throw new IllegalArgumentException("CONFIG_MAP_DIR_SOURCE not defined");
