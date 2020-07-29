@@ -35,7 +35,7 @@
 
   <properties>
     <version.asm>8.0.1</version.asm>
-    <version.eclipse.microprofile.config>2.0-SNAPSHOT</version.eclipse.microprofile.config>
+    <version.eclipse.microprofile.config>2.0-M1</version.eclipse.microprofile.config>
     <version.smallrye.common>1.4.0</version.smallrye.common>
 
     <version.weld.junit>2.0.1.Final</version.weld.junit>
