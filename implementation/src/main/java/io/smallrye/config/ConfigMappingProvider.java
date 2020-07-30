@@ -596,11 +596,15 @@ final class ConfigMappingProvider implements Serializable {
         return new Builder();
     }
 
-    public KeyMap<String> getDefaultValues() {
+    KeyMap<String> getDefaultValues() {
         return defaultValues;
     }
 
-    public ConfigMappings mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+    ConfigMappings mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+        return mapConfiguration(config, new ConfigMappings());
+    }
+
+    ConfigMappings mapConfiguration(SmallRyeConfig config, ConfigMappings mappings) throws ConfigValidationException {
         if (roots.isEmpty()) {
             return new ConfigMappings(new HashMap<>());
         }
@@ -640,7 +644,9 @@ final class ConfigMappingProvider implements Serializable {
                     problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
-        return new ConfigMappings(context.getRootsMap());
+
+        mappings.registerConfigMappings(context.getRootsMap());
+        return mappings;
     }
 
     private boolean isPropertyInRoot(String propertyName) {

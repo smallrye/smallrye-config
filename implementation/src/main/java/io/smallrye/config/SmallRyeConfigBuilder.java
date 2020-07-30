@@ -329,7 +329,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        final ConfigMappingProvider mappingProvider = mappingsBuilder.build();
+        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
         if (!defaultValues.isEmpty() || !mappingProvider.getDefaultValues().isEmpty()) {
             final KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
             defaultValues.forEach((key, value) -> mappingProviderDefaultValues.findOrAdd(key).putRootValue(value));
@@ -348,11 +348,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             });
         }
 
-        final SmallRyeConfig config = new SmallRyeConfig(this);
-
         try {
-            final ConfigMappings result = mappingProvider.mapConfiguration(config);
-            config.registerMappings(result.getMappings());
+            ConfigMappings configMappings = new ConfigMappings();
+            SmallRyeConfig config = new SmallRyeConfig(this, configMappings);
+            mappingProvider.mapConfiguration(config, configMappings);
             return config;
         } catch (ConfigValidationException e) {
             throw new IllegalStateException(e);
