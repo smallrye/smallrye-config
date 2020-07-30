@@ -56,11 +56,12 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final ConfigMappings mappings = new ConfigMappings();
+    private final ConfigMappings mappings;
 
-    SmallRyeConfig(SmallRyeConfigBuilder builder) {
+    SmallRyeConfig(SmallRyeConfigBuilder builder, ConfigMappings mappings) {
         this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
         this.converters = buildConverters(builder);
+        this.mappings = mappings;
     }
 
     @Deprecated
@@ -69,6 +70,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
         this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         this.converters.putAll(converters);
+        this.mappings = new ConfigMappings();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -200,11 +202,6 @@ public class SmallRyeConfig implements Config, Serializable {
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
         return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
-    }
-
-    @Experimental("TODO")
-    void registerMappings(Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
-        this.mappings.registerConfigMappings(mappings);
     }
 
     @Experimental("TODO")
