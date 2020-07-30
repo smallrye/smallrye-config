@@ -139,6 +139,11 @@
         <artifactId>smallrye-common-constraint</artifactId>
         <version>${version.smallrye.common}</version>
       </dependency>
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-classloader</artifactId>
+        <version>${version.smallrye.common}</version>
+      </dependency>
 
       <!-- Dependencies provided by the project -->
       <dependency>
