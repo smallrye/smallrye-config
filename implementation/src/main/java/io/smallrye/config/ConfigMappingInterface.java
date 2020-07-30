@@ -5,11 +5,11 @@ import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getType;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,9 +33,9 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.inject.InjectionMessages;
-import sun.misc.Unsafe;
 
 /**
  * Information about a configuration interface.
@@ -49,25 +49,10 @@ final class ConfigMappingInterface {
         }
     };
     static final boolean usefulDebugInfo;
-    static final Unsafe unsafe;
 
     static {
         usefulDebugInfo = Boolean.parseBoolean(AccessController.doPrivileged(
                 (PrivilegedAction<String>) () -> System.getProperty("io.smallrye.config.mapper.useful-debug-info")));
-
-        unsafe = AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
-            public Unsafe run() {
-                try {
-                    final Field field = Unsafe.class.getDeclaredField("theUnsafe");
-                    field.setAccessible(true);
-                    return (Unsafe) field.get(null);
-                } catch (IllegalAccessException e) {
-                    throw new IllegalAccessError(e.getMessage());
-                } catch (NoSuchFieldException e) {
-                    throw new NoSuchFieldError(e.getMessage());
-                }
-            }
-        });
     }
 
     private final Class<?> interfaceType;
@@ -917,8 +902,7 @@ final class ConfigMappingInterface {
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
 
-        // todo: MR JAR/JDKSpecific
-        return unsafe.defineAnonymousClass(getClass(), writer.toByteArray(), null);
+        return ClassDefiner.defineClass(MethodHandles.lookup(), getClass(), className, writer.toByteArray());
     }
 
     private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
