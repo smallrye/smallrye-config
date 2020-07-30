@@ -9,7 +9,7 @@ package io.smallrye.config;
  * {@link RuntimePermission} on instantiation if a security manager is present.
  * <p>
  * The default implementation will create and configure a configuration with the set of discovered
- * configuration sources, the set of discovered configuration converters and the set of discoverd interceptors
+ * configuration sources, the set of discovered configuration converters and the set of discovered interceptors
  * from the given class loader.
  */
 public abstract class SmallRyeConfigFactory {
@@ -37,7 +37,25 @@ public abstract class SmallRyeConfigFactory {
      * @param classLoader the class loader (possibly {@code null})
      * @return the configuration object, or {@code null} if there is no configuration available for the given class loader
      */
-    public abstract SmallRyeConfig getConfigFor(SmallRyeConfigProviderResolver configProviderResolver, ClassLoader classLoader);
+    public SmallRyeConfig getConfigFor(SmallRyeConfigProviderResolver configProviderResolver, ClassLoader classLoader) {
+        return getConfigBuilder(configProviderResolver, classLoader).build();
+    }
+
+    /**
+     * Get the configuration builder object for the given class loader. {@link SmallRyeConfigFactory} implementations
+     * should construct the builder object with the desired configuration to be retrieved from
+     * {@link SmallRyeConfigFactory#getConfigFor(SmallRyeConfigProviderResolver, ClassLoader)}.
+     * <p>
+     * Additional builder configuration may be added by consumers of the {@link SmallRyeConfigFactory} implementation.
+     * For instance, CDI extensions can register additional elementes to the configuration object, like Config Sources
+     * or Converters.
+     *
+     * @param configProviderResolver the configuration provider resolver (not {@code null})
+     * @param classLoader the class loader (possibly {@code null})
+     * @return the configuration builder object for the given class loader.
+     */
+    public abstract SmallRyeConfigBuilder getConfigBuilder(SmallRyeConfigProviderResolver configProviderResolver,
+            ClassLoader classLoader);
 
     /**
      * The default configuration factory.
@@ -49,14 +67,15 @@ public abstract class SmallRyeConfigFactory {
         Default() {
         }
 
-        public SmallRyeConfig getConfigFor(SmallRyeConfigProviderResolver configProviderResolver, ClassLoader classLoader) {
+        @Override
+        public SmallRyeConfigBuilder getConfigBuilder(SmallRyeConfigProviderResolver configProviderResolver,
+                ClassLoader classLoader) {
             return configProviderResolver.getBuilder().forClassLoader(classLoader)
                     .addDefaultSources()
                     .addDefaultInterceptors()
                     .addDiscoveredSources()
                     .addDiscoveredConverters()
-                    .addDiscoveredInterceptors()
-                    .build();
+                    .addDiscoveredInterceptors();
         }
     }
 }

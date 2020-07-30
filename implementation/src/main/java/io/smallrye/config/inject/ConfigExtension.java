@@ -67,7 +67,7 @@ public class ConfigExtension implements Extension {
         SmallRyeConfigProviderResolver configProviderResolver = (SmallRyeConfigProviderResolver) SmallRyeConfigProviderResolver
                 .instance();
         SmallRyeConfigFactory configFactory = configProviderResolver.getFactoryFor(getContextClassLoader(), false);
-        Config config = configFactory.getConfigFor(configProviderResolver, getContextClassLoader());
+        Config config = configFactory.getConfigBuilder(configProviderResolver, getContextClassLoader()).build();
         configProviderResolver.registerConfig(config, getContextClassLoader());
 
         this.config = config;

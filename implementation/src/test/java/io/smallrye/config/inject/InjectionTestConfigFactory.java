@@ -6,14 +6,14 @@ import java.util.Map;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.KeyValuesConfigSource;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.SmallRyeConfigFactory;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
     @Override
-    public SmallRyeConfig getConfigFor(
-            final SmallRyeConfigProviderResolver configProviderResolver, final ClassLoader classLoader) {
+    public SmallRyeConfigBuilder getConfigBuilder(final SmallRyeConfigProviderResolver configProviderResolver,
+            final ClassLoader classLoader) {
         return configProviderResolver.getBuilder().forClassLoader(classLoader)
                 .addDefaultSources()
                 .addDefaultInterceptors()
@@ -38,7 +38,6 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                 })
                 .withSources(KeyValuesConfigSource.config("optional.int.value", "1", "optional.long.value", "2",
                         "optional.double.value", "3.3"))
-                .withSecretKeys("secret")
-                .build();
+                .withSecretKeys("secret");
     }
 }
