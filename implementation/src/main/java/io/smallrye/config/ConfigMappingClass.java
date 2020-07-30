@@ -51,7 +51,9 @@ final class ConfigMappingClass {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
         String classInternalName = getInternalName(classType);
-        String interfaceInternalName = classInternalName + "I";
+        String interfaceName = classType.getName() + "I";
+        String interfaceInternalName = interfaceName.replace('.', '/');
+
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
                 new String[] { getInternalName(ConfigMappingClassMapper.class) });
 
@@ -86,7 +88,7 @@ final class ConfigMappingClass {
         ctor.visitMaxs(2, 2);
         writer.visitEnd();
 
-        return ClassDefiner.defineClass(MethodHandles.lookup(), ConfigMappingClass.class, interfaceInternalName,
+        return ClassDefiner.defineClass(MethodHandles.lookup(), ConfigMappingClass.class, interfaceName,
                 writer.toByteArray());
     }
 }
