@@ -95,7 +95,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         return config;
     }
 
-    SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader, final boolean privileged) {
+    public SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader, final boolean privileged) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null && !privileged) {
             // run privileged so that the only things on the access control stack are us and the provider

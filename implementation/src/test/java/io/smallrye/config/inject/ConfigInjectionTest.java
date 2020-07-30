@@ -55,6 +55,11 @@ public class ConfigInjectionTest extends InjectionTest {
         assertNull(configValueMissing.getConfigSourceName());
     }
 
+    @Test
+    void sameConfig() {
+        assertEquals(configBean.getConfigExtension().getConfig(), configBean.getConfig());
+    }
+
     @ApplicationScoped
     public static class ConfigBean {
         @Inject
@@ -66,6 +71,8 @@ public class ConfigInjectionTest extends InjectionTest {
         @Inject
         @ConfigProperty(name = "secret")
         private String secret;
+        @Inject
+        private ConfigExtension configExtension;
         @Inject
         private Config config;
         @Inject
@@ -85,6 +92,10 @@ public class ConfigInjectionTest extends InjectionTest {
 
         String getSecret() {
             return secret;
+        }
+
+        ConfigExtension getConfigExtension() {
+            return configExtension;
         }
 
         Config getConfig() {

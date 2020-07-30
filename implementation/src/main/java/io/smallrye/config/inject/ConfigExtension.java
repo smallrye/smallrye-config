@@ -36,19 +36,22 @@ import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigFactory;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 /**
  * CDI Extension to produces Config bean.
@@ -56,9 +59,18 @@ import io.smallrye.config.SmallRyeConfig;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class ConfigExtension implements Extension {
+    private final Config config;
+
     private final Set<InjectionPoint> injectionPoints = new HashSet<>();
 
     public ConfigExtension() {
+        SmallRyeConfigProviderResolver configProviderResolver = (SmallRyeConfigProviderResolver) SmallRyeConfigProviderResolver
+                .instance();
+        SmallRyeConfigFactory configFactory = configProviderResolver.getFactoryFor(getContextClassLoader(), false);
+        Config config = configFactory.getConfigFor(configProviderResolver, getContextClassLoader());
+        configProviderResolver.registerConfig(config, getContextClassLoader());
+
+        this.config = config;
     }
 
     protected void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
@@ -86,20 +98,18 @@ public class ConfigExtension implements Extension {
                         customTypes.add((Class<?>) typeArgument);
                     }
                 }
-            } else if (requiredType instanceof Class
-                    && !isClassHandledByConfigProducer(requiredType)) {
+            } else if (requiredType instanceof Class && !isClassHandledByConfigProducer(requiredType)) {
                 // type is not produced by ConfigProducer
                 customTypes.add((Class<?>) requiredType);
             }
         }
 
         for (Class<?> customType : customTypes) {
-            abd.addBean(new ConfigInjectionBean<>(bm, customType));
+            abd.addBean(new ConfigInjectionBean<>(bm, customType, config));
         }
     }
 
     protected void validate(@Observes AfterDeploymentValidation adv) {
-        Config config = ConfigProvider.getConfig(getContextClassLoader());
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : injectionPoints) {
             Type type = injectionPoint.getType();
@@ -139,6 +149,10 @@ public class ConfigExtension implements Extension {
         }
     }
 
+    protected void shutdown(@Observes BeforeShutdown bsd) {
+        ConfigProviderResolver.instance().releaseConfig(config);
+    }
+
     private static boolean isClassHandledByConfigProducer(Type requiredType) {
         return requiredType == String.class
                 || requiredType == Boolean.class
@@ -162,6 +176,10 @@ public class ConfigExtension implements Extension {
                 || requiredType == OptionalDouble.class
                 || requiredType == Supplier.class
                 || requiredType == ConfigValue.class;
+    }
+
+    protected Config getConfig() {
+        return config;
     }
 
     protected Set<InjectionPoint> getInjectionPoints() {

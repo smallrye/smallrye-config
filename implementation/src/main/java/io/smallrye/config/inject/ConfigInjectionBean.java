@@ -37,7 +37,6 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -54,15 +53,12 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
     private final BeanManager bm;
     private final Class<?> clazz;
+    private final Config config;
 
-    /**
-     * only access via {@link #getConfig()}
-     */
-    private Config _config;
-
-    public ConfigInjectionBean(BeanManager bm, Class<?> clazz) {
+    public ConfigInjectionBean(BeanManager bm, Class<?> clazz, Config config) {
         this.bm = bm;
         this.clazz = clazz;
+        this.config = config;
     }
 
     @Override
@@ -99,27 +95,20 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
                             || ((Class<?>) rawType).isAssignableFrom(Instance.class))
                     && paramType.getActualTypeArguments().length == 1) {
                 Class<?> paramTypeClass = (Class<?>) paramType.getActualTypeArguments()[0];
-                return (T) getConfig().getValue(key, paramTypeClass);
+                return (T) config.getValue(key, paramTypeClass);
             }
         } else {
             Class<?> annotatedTypeClass = (Class<?>) annotated.getBaseType();
             if (defaultValue.length() == 0) {
-                return (T) getConfig().getValue(key, annotatedTypeClass);
+                return (T) config.getValue(key, annotatedTypeClass);
             } else {
-                Optional<T> optionalValue = (Optional<T>) getConfig().getOptionalValue(key, annotatedTypeClass);
+                Optional<T> optionalValue = (Optional<T>) config.getOptionalValue(key, annotatedTypeClass);
                 return optionalValue.orElseGet(
-                        () -> (T) ((SmallRyeConfig) getConfig()).convert(defaultValue, annotatedTypeClass));
+                        () -> (T) ((SmallRyeConfig) config).convert(defaultValue, annotatedTypeClass));
             }
         }
 
         throw InjectionMessages.msg.unhandledConfigProperty();
-    }
-
-    public Config getConfig() {
-        if (_config == null) {
-            _config = ConfigProvider.getConfig();
-        }
-        return _config;
     }
 
     @Override
