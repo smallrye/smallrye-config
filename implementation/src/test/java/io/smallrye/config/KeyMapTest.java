@@ -3,7 +3,6 @@ package io.smallrye.config;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -104,26 +103,6 @@ public class KeyMapTest {
         map.findOrAdd("", "foo").putRootValue("bar");
 
         assertEquals("bar", map.findRootValue(".foo"));
-    }
-
-    @Test
-    void unwrap() {
-        KeyMap<String> map = new KeyMap<>();
-        map.findOrAdd("root.foo").putRootValue("bar");
-        map.findOrAdd("root.foo.bar").putRootValue("baz");
-        map.findOrAdd("root.foo.bar.*").putRootValue("baz");
-        map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
-
-        Map<String, String> properties = map.toMap();
-        assertTrue(properties.containsKey("root.foo"));
-        assertTrue(properties.containsKey("root.foo.bar"));
-        assertTrue(properties.containsKey("root.foo.bar.*"));
-        assertTrue(properties.containsKey("root.foo.bar.*.baz"));
-
-        assertEquals("bar", properties.get("root.foo"));
-        assertEquals("baz", properties.get("root.foo.bar"));
-        assertEquals("baz", properties.get("root.foo.bar.*"));
-        assertEquals("anything", properties.get("root.foo.bar.*.baz"));
     }
 
     @Test

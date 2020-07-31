@@ -8,7 +8,6 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 class KeyMapBackedConfigSourceTest {
-
     @Test
     void getProperties() {
         KeyMap<String> map = new KeyMap<>();
@@ -17,12 +16,9 @@ class KeyMapBackedConfigSourceTest {
         map.findOrAdd("root.foo.bar.*").putRootValue("baz");
         map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
 
-        final ConfigSource source = getSource(map);
-        final Map<String, String> properties = source.getProperties();
-        assertTrue(properties.containsKey("root.foo"));
-        assertTrue(properties.containsKey("root.foo.bar"));
-        assertTrue(properties.containsKey("root.foo.bar.*"));
-        assertTrue(properties.containsKey("root.foo.bar.*.baz"));
+        ConfigSource source = getSource(map);
+        Map<String, String> properties = source.getProperties();
+        assertTrue(properties.isEmpty());
     }
 
     @Test
@@ -33,7 +29,7 @@ class KeyMapBackedConfigSourceTest {
         map.findOrAdd("root.foo.bar.*").putRootValue("baz");
         map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
 
-        final ConfigSource source = getSource(map);
+        ConfigSource source = getSource(map);
         assertEquals("bar", source.getValue("root.foo"));
         assertEquals("baz", source.getValue("root.foo.bar"));
         assertEquals("baz", source.getValue("root.foo.bar.x"));
@@ -45,7 +41,6 @@ class KeyMapBackedConfigSourceTest {
     }
 
     private ConfigSource getSource(final KeyMap<String> properties) {
-        return new KeyMapBackedConfigSource("test", 0, properties) {
-        };
+        return new KeyMapBackedConfigSource("test", 0, properties);
     }
 }
