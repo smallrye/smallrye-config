@@ -1,12 +1,13 @@
 package io.smallrye.config;
 
+import java.util.Collections;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
-public abstract class KeyMapBackedConfigSource extends AbstractConfigSource {
+public class KeyMapBackedConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 4378754290346888762L;
 
     private final KeyMap<String> properties;
@@ -23,7 +24,7 @@ public abstract class KeyMapBackedConfigSource extends AbstractConfigSource {
 
     @Override
     public Map<String, String> getProperties() {
-        return properties.toMap();
+        return Collections.emptyMap();
     }
 
     @Override

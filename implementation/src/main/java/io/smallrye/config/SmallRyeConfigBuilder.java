@@ -333,19 +333,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         if (!defaultValues.isEmpty() || !mappingProvider.getDefaultValues().isEmpty()) {
             final KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
             defaultValues.forEach((key, value) -> mappingProviderDefaultValues.findOrAdd(key).putRootValue(value));
-            withSources(new KeyMapBackedConfigSource("DefaultValuesConfigSource", mappingProviderDefaultValues) {
-                private static final long serialVersionUID = 7847969724478280439L;
-
-                @Override
-                public Map<String, String> getProperties() {
-                    return new HashMap<>();
-                }
-
-                @Override
-                public int getOrdinal() {
-                    return Integer.MIN_VALUE;
-                }
-            });
+            withSources(
+                    new KeyMapBackedConfigSource("DefaultValuesConfigSource", Integer.MIN_VALUE, mappingProviderDefaultValues));
         }
 
         try {
