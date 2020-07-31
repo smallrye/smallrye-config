@@ -66,7 +66,7 @@ final class ConfigMappingClass {
         Field[] declaredFields = classType.getDeclaredFields();
         for (Field declaredField : declaredFields) {
             writer.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, declaredField.getName(),
-                    getMethodDescriptor(getType(declaredField.getType())), null, null);
+                    getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField), null);
             writer.visitEnd();
         }
 
@@ -142,5 +142,17 @@ final class ConfigMappingClass {
 
         return ClassDefiner.defineClass(MethodHandles.lookup(), ConfigMappingClass.class, interfaceName,
                 writer.toByteArray());
+    }
+
+    private static String getSignature(final Field field) {
+        final String typeName = field.getGenericType().getTypeName();
+        if (typeName.indexOf('<') != -1 && typeName.indexOf('>') != -1) {
+            String signature = "()L" + typeName.replace(".", "/");
+            signature = signature.replace("<", "<L");
+            signature = signature.replace(">", ";>;");
+            return signature;
+        }
+
+        return null;
     }
 }
