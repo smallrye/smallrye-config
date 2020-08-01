@@ -40,7 +40,7 @@ jobs:
 
   quality:
     needs: [build]
-    if: github.event_name == 'push' && startsWith('smallrye', github.repository)
+    if: github.event_name == 'push' && github.repository_owner == 'smallrye'
     runs-on: ubuntu-latest
     name: quality
 
@@ -54,4 +54,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
-        run: mvn -B verify --file pom.xml -Pcoverage javadoc:javadoc sonar:sonar -Dsonar.login=$SONAR_TOKEN
+        run: mvn -B verify --file pom.xml -Pcoverage javadoc:javadoc sonar:sonar -Dsonar.projectKey=smallrye_smallrye-config -Dsonar.login=$SONAR_TOKEN
