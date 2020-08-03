@@ -24,6 +24,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -66,9 +67,29 @@ final class ConfigMappingClass {
 
         Field[] declaredFields = classType.getDeclaredFields();
         for (Field declaredField : declaredFields) {
-            writer.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, declaredField.getName(),
-                    getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField), null);
-            writer.visitEnd();
+            MethodVisitor mv = writer.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, declaredField.getName(),
+                    getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
+                    null);
+
+            if (declaredField.isAnnotationPresent(WithName.class)) {
+                AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
+                av.visit("value", declaredField.getAnnotation(WithName.class).value());
+                av.visitEnd();
+            }
+
+            if (declaredField.isAnnotationPresent(WithDefault.class)) {
+                AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
+                av.visit("value", declaredField.getAnnotation(WithDefault.class).value());
+                av.visitEnd();
+            }
+
+            if (declaredField.isAnnotationPresent(WithConverter.class)) {
+                AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithConverter.class) + ";", true);
+                av.visit("value", declaredField.getAnnotation(WithConverter.class).value());
+                av.visitEnd();
+            }
+
+            mv.visitEnd();
         }
 
         MethodVisitor ctor = writer.visitMethod(ACC_PUBLIC, "map", "()L" + I_OBJECT + ";", null, null);

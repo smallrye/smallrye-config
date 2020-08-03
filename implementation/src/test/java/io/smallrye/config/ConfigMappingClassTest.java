@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 class ConfigMappingClassTest {
@@ -50,6 +51,34 @@ class ConfigMappingClassTest {
         assertEquals(8080, server.getPort().getAsInt());
     }
 
+    @Test
+    void names() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerNames.class)
+                .withDefaultValue("h", "localhost")
+                .withDefaultValue("p", "8080")
+                .build();
+        final ServerNames server = config.getConfigMapping(ServerNames.class);
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
+    @Test
+    void defaults() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerDefaults.class).build();
+        final ServerDefaults server = config.getConfigMapping(ServerDefaults.class);
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
+    @Test
+    void converters() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerConverters.class)
+                .withConverters(new Converter[] { new ServerPortConverter() }).build();
+        final ServerConverters server = config.getConfigMapping(ServerConverters.class);
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort().getPort());
+    }
+
     static class ServerClass {
         String host;
         int port;
@@ -86,6 +115,71 @@ class ConfigMappingClassTest {
 
         public OptionalInt getPort() {
             return port;
+        }
+    }
+
+    static class ServerNames {
+        @WithName("h")
+        private String host;
+        @WithName("p")
+        private int port;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    static class ServerDefaults {
+        @WithDefault("localhost")
+        private String host;
+        @WithDefault("8080")
+        private int port;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    static class ServerConverters {
+        @WithDefault("localhost")
+        private String host;
+        @WithDefault("8080")
+        @WithConverter(ServerPortConverter.class)
+        private ServerPort port;
+
+        public String getHost() {
+            return host;
+        }
+
+        public ServerPort getPort() {
+            return port;
+        }
+    }
+
+    static class ServerPort {
+        private int port;
+
+        public ServerPort(final String port) {
+            this.port = Integer.parseInt(port);
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    static class ServerPortConverter implements Converter<ServerPort> {
+        @Override
+        public ServerPort convert(final String value) {
+            return new ServerPort(value);
         }
     }
 }
