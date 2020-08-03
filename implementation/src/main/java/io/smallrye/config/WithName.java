@@ -10,8 +10,8 @@ import java.lang.annotation.Target;
  * The name of the configuration property or group.
  */
 @Documented
-@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.FIELD })
 public @interface WithName {
     /**
      * The name of the property or group. Must not be empty.
