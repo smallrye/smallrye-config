@@ -57,7 +57,8 @@ final class ConfigMappingClass {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
         String classInternalName = getInternalName(classType);
-        String interfaceName = classType.getName() + "I";
+        String interfaceName = ConfigMappingClass.class.getPackage().getName() + "." + classType.getSimpleName() +
+                classType.getName().hashCode() + "I";
         String interfaceInternalName = interfaceName.replace('.', '/');
 
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
