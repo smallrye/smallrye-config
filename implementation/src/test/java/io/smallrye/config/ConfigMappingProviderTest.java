@@ -6,6 +6,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -337,6 +338,31 @@ public class ConfigMappingProviderTest {
         assertEquals(server.port(), server.port());
     }
 
+    @Test
+    void configMappingAnnotation() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerAnnotated.class, "server")
+                .withMapping(ServerAnnotated.class, "cloud")
+                .withSources(
+                        config("server.host", "localhost", "server.port", "8080", "cloud.host", "cloud", "cloud.port", "9090"))
+                .build();
+
+        final ServerAnnotated server = config.getConfigMapping(ServerAnnotated.class, "server");
+        assertNotNull(server);
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+
+        final ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
+        assertNotNull(cloud);
+        assertEquals("cloud", cloud.host());
+        assertEquals(9090, cloud.port());
+
+        final ServerAnnotated cloudNull = config.getConfigMapping(ServerAnnotated.class, null);
+        assertNotNull(cloudNull);
+        assertEquals("cloud", cloudNull.host());
+        assertEquals(9090, cloudNull.port());
+    }
+
     interface Server {
         String host();
 
@@ -463,5 +489,12 @@ public class ConfigMappingProviderTest {
         public String convert(final String value) {
             return "bar";
         }
+    }
+
+    @ConfigMapping(prefix = "cloud")
+    public interface ServerAnnotated {
+        String host();
+
+        int port();
     }
 }

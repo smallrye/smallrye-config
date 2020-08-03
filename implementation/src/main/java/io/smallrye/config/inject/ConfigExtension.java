@@ -15,6 +15,7 @@
  */
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.ConfigMappings.ConfigMappingWithPrefix.configMappingWithPrefix;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
@@ -30,9 +31,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
-import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -52,6 +51,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.ConfigMappings;
+import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
@@ -62,8 +63,10 @@ import io.smallrye.config.SmallRyeConfig;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class ConfigExtension implements Extension {
-    private final Set<InjectionPoint> injectionPoints = new HashSet<>();
+    private final Set<InjectionPoint> configPropertyInjectionPoints = new HashSet<>();
+
     private final Set<AnnotatedType<?>> configMappings = new HashSet<>();
+    private final Set<InjectionPoint> configMappingInjectionPoints = new HashSet<>();
 
     public ConfigExtension() {
     }
@@ -75,18 +78,28 @@ public class ConfigExtension implements Extension {
 
     protected void processConfigMappings(
             @Observes @WithAnnotations({ ConfigMapping.class }) ProcessAnnotatedType<?> processAnnotatedType) {
-        configMappings.add(processAnnotatedType.getAnnotatedType());
+
+        // Even if we filter in the CDI event, beans containing injection points of ConfigMapping are also fired.
+        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
+            // We are going to veto, because it may be a managed bean and we will use a configurator bean
+            processAnnotatedType.veto();
+            configMappings.add(processAnnotatedType.getAnnotatedType());
+        }
     }
 
     protected void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
-            injectionPoints.add(pip.getInjectionPoint());
+            configPropertyInjectionPoints.add(pip.getInjectionPoint());
+        }
+
+        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
+            configMappingInjectionPoints.add(pip.getInjectionPoint());
         }
     }
 
     protected void registerCustomBeans(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         Set<Class<?>> customTypes = new HashSet<>();
-        for (InjectionPoint ip : injectionPoints) {
+        for (InjectionPoint ip : configPropertyInjectionPoints) {
             Type requiredType = ip.getType();
             if (requiredType instanceof ParameterizedType) {
                 ParameterizedType type = (ParameterizedType) requiredType;
@@ -104,31 +117,14 @@ public class ConfigExtension implements Extension {
             }
         }
 
-        for (Class<?> customType : customTypes) {
-            abd.addBean(new ConfigInjectionBean<>(bm, customType));
-        }
-
-        SmallRyeConfig config = (SmallRyeConfig) ConfigProvider.getConfig(getContextClassLoader());
-        for (AnnotatedType<?> configMapping : configMappings) {
-            abd.addBean()
-                    .id(configMapping.getJavaClass().toString())
-                    .beanClass(configMapping.getJavaClass())
-                    .types(configMapping.getJavaClass())
-                    .qualifiers(Default.Literal.INSTANCE)
-                    .scope(Dependent.class)
-                    .createWith(creationalContext -> {
-                        String prefix = Optional.ofNullable(configMapping.getAnnotation(ConfigMapping.class))
-                                .map(ConfigMapping::value)
-                                .orElse("");
-                        return config.getConfigMapping(configMapping.getJavaClass(), prefix);
-                    });
-        }
+        customTypes.stream().map(customType -> new ConfigInjectionBean<>(bm, customType)).forEach(abd::addBean);
+        configMappings.stream().map(annotatedType -> new ConfigMappingInjectionBean<>(bm, annotatedType)).forEach(abd::addBean);
     }
 
     protected void validate(@Observes AfterDeploymentValidation adv) {
         Config config = ConfigProvider.getConfig(getContextClassLoader());
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        for (InjectionPoint injectionPoint : injectionPoints) {
+        for (InjectionPoint injectionPoint : configPropertyInjectionPoints) {
             Type type = injectionPoint.getType();
 
             // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
@@ -157,16 +153,33 @@ public class ConfigExtension implements Extension {
                 // Check if there is a Converter registed for the injected type
                 Converter<?> resolvedConverter = ConfigProducerUtil.resolveConverter(injectionPoint, (SmallRyeConfig) config);
 
-                // Check if the value can be converted. The TCK checks this, but this requires to get the value eagerly.
-                // This should not be required!
+                // Check if the value can be converted. This may cause duplicated config reads (to validate and to inject).
                 SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getOptionalValue(name, resolvedConverter));
             } catch (IllegalArgumentException e) {
                 adv.addDeploymentProblem(e);
             }
         }
+
+        Set<ConfigMappings.ConfigMappingWithPrefix> configMappingsWithPrefix = new HashSet<>();
+        for (AnnotatedType<?> configMapping : configMappings) {
+            configMappingsWithPrefix.add(configMappingWithPrefix(configMapping.getJavaClass(),
+                    ConfigMappingInjectionBean.getConfigMappingPrefix(configMapping)));
+        }
+
+        for (InjectionPoint injectionPoint : configMappingInjectionPoints) {
+            configMappingsWithPrefix.add(configMappingWithPrefix((Class<?>) injectionPoint.getType(),
+                    ConfigMappingInjectionBean.getConfigMappingPrefix(injectionPoint.getAnnotated())));
+        }
+
+        try {
+            ((SmallRyeConfig) config).getConfigMappings().registerConfigMappings((SmallRyeConfig) config,
+                    configMappingsWithPrefix);
+        } catch (ConfigValidationException e) {
+            adv.addDeploymentProblem(e);
+        }
     }
 
-    protected Set<InjectionPoint> getInjectionPoints() {
-        return injectionPoints;
+    protected Set<InjectionPoint> getConfigPropertyInjectionPoints() {
+        return configPropertyInjectionPoints;
     }
 }

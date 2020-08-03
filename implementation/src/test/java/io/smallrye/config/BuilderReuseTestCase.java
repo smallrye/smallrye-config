@@ -46,6 +46,8 @@ public class BuilderReuseTestCase {
         assertEquals(it1.next().getClass(), it2.next().getClass());
         assertTrue(it1.hasNext() && it2.hasNext());
         assertEquals(it1.next().getClass(), it2.next().getClass());
+        assertTrue(it1.hasNext() || it2.hasNext());
+        assertEquals(it1.next().getClass(), it2.next().getClass());
         assertFalse(it1.hasNext() || it2.hasNext());
     }
 }

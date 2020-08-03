@@ -81,6 +81,7 @@ public class SmallRyeConfig implements Config, Serializable {
         if (builder.isAddDefaultSources()) {
             sourcesToBuild.addAll(builder.getDefaultSources());
         }
+        sourcesToBuild.add(new DefaultValuesConfigSource(builder.getDefaultValues()));
 
         // wrap all
         final Function<ConfigSource, ConfigSource> sourceWrappersToBuild = builder.getSourceWrappers();
@@ -204,9 +205,13 @@ public class SmallRyeConfig implements Config, Serializable {
         return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
     }
 
+    public ConfigMappings getConfigMappings() {
+        return mappings;
+    }
+
     @Experimental("TODO")
     public <T> T getConfigMapping(Class<T> type) {
-        return getConfigMapping(type, "");
+        return mappings.getConfigMapping(type);
     }
 
     @Experimental("TODO")

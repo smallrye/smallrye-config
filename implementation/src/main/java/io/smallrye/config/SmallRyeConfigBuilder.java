@@ -55,7 +55,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private String profile = null;
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
-    private final Map<String, String> defaultValues = new HashMap<>();
+    private final KeyMap<String> defaultValues = new KeyMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
@@ -216,12 +216,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withDefaultValue(String name, String value) {
-        this.defaultValues.put(name, value);
+        this.defaultValues.findOrAdd(name).putRootValue(value);
         return this;
     }
 
     public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
-        this.defaultValues.putAll(defaultValues);
+        defaultValues.forEach((key, value) -> this.defaultValues.findOrAdd(key).putRootValue(value));
         return this;
     }
 
@@ -303,7 +303,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
-    Map<String, String> getDefaultValues() {
+    KeyMap<String> getDefaultValues() {
         return defaultValues;
     }
 
@@ -330,12 +330,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     @Override
     public SmallRyeConfig build() {
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
-        if (!defaultValues.isEmpty() || !mappingProvider.getDefaultValues().isEmpty()) {
-            final KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
-            defaultValues.forEach((key, value) -> mappingProviderDefaultValues.findOrAdd(key).putRootValue(value));
-            withSources(
-                    new KeyMapBackedConfigSource("DefaultValuesConfigSource", Integer.MIN_VALUE, mappingProviderDefaultValues));
-        }
+        KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
+        mappingProviderDefaultValues.forEach(defaultValues::putIfAbsent);
 
         try {
             ConfigMappings configMappings = new ConfigMappings();

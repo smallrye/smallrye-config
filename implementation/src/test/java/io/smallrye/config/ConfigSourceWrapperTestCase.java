@@ -18,7 +18,6 @@
 
 package io.smallrye.config;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,7 +44,6 @@ public class ConfigSourceWrapperTestCase {
         assertTrue(iterator.hasNext());
         source = iterator.next();
         assertIsInstance(EnvConfigSource.class, source);
-        assertFalse(iterator.hasNext());
     }
 
     @Test
@@ -60,7 +58,6 @@ public class ConfigSourceWrapperTestCase {
         assertTrue(iterator.hasNext());
         source = iterator.next();
         assertIsInstance(EnvConfigSource.class, assertIsInstance(WrappedSource.class, source).getDelegate());
-        assertFalse(iterator.hasNext());
     }
 
     @Test
@@ -80,7 +77,6 @@ public class ConfigSourceWrapperTestCase {
         assertIsInstance(EnvConfigSource.class,
                 assertIsInstance(WrappedSource.class, assertIsInstance(WrappedSource.class, source).getDelegate())
                         .getDelegate());
-        assertFalse(iterator.hasNext());
     }
 
     static class WrappedSource implements ConfigSource {
