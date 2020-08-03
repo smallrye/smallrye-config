@@ -108,14 +108,14 @@ public final class ConfigMappingContext {
                             Class<?> valueRawType = leafProperty.getValueRawType();
                             if (valueRawType == List.class) {
                                 return Converters.newCollectionConverter(
-                                        config.getConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
+                                        config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
                                         ArrayList::new);
                             } else if (valueRawType == Set.class) {
                                 return Converters.newCollectionConverter(
-                                        config.getConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
+                                        config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
                                         HashSet::new);
                             } else {
-                                return config.getConverter(valueRawType);
+                                return config.requireConverter(valueRawType);
                             }
                         }
                     } else if (property.isPrimitive()) {
@@ -123,7 +123,7 @@ public final class ConfigMappingContext {
                         if (primitiveProperty.hasConvertWith()) {
                             return getConverterInstance(primitiveProperty.getConvertWith());
                         } else {
-                            return config.getConverter(primitiveProperty.getBoxType());
+                            return config.requireConverter(primitiveProperty.getBoxType());
                         }
                     } else {
                         throw new IllegalStateException();
@@ -153,12 +153,14 @@ public final class ConfigMappingContext {
                         Class<?> valueRawType = property.getKeyRawType();
                         if (valueRawType == List.class) {
                             return Converters.newCollectionConverter(
-                                    config.getConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))), ArrayList::new);
+                                    config.requireConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))),
+                                    ArrayList::new);
                         } else if (valueRawType == Set.class) {
                             return Converters.newCollectionConverter(
-                                    config.getConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))), HashSet::new);
+                                    config.requireConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))),
+                                    HashSet::new);
                         } else {
-                            return config.getConverter(valueRawType);
+                            return config.requireConverter(valueRawType);
                         }
                     }
                 });

@@ -389,14 +389,14 @@ final class ConfigMappingProvider implements Serializable {
                 if (keyConvertWith != null) {
                     keyConv = mc.getConverterInstance(keyConvertWith);
                 } else {
-                    keyConv = config.getConverter(keyRawType);
+                    keyConv = config.requireConverter(keyRawType);
                 }
                 Object key = keyConv.convert(rawMapKey);
                 Converter<?> valueConv;
                 if (valConvertWith != null) {
                     valueConv = mc.getConverterInstance(valConvertWith);
                 } else {
-                    valueConv = config.getConverter(valueRawType);
+                    valueConv = config.requireConverter(valueRawType);
                 }
                 ((Map) map).put(key, config.getValue(configKey, valueConv));
             });
@@ -411,7 +411,7 @@ final class ConfigMappingProvider implements Serializable {
                 if (keyConvertWith != null) {
                     keyConv = mc.getConverterInstance(keyConvertWith);
                 } else {
-                    keyConv = config.getConverter(keyRawType);
+                    keyConv = config.requireConverter(keyRawType);
                 }
                 Object key = keyConv.convert(rawMapKey);
                 return (Map) ((Map) enclosingMap).computeIfAbsent(key, x -> new HashMap<>());
