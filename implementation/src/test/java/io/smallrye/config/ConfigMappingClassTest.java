@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
@@ -88,6 +89,11 @@ class ConfigMappingClassTest {
         final ServerInitialized server = config.getConfigMapping(ServerInitialized.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
+    }
+
+    @Test
+    void initializedDefault() {
+        assertThrows(Exception.class, () -> new SmallRyeConfigBuilder().withMapping(ServerInitializedDefault.class).build());
     }
 
     @Test
@@ -211,6 +217,14 @@ class ConfigMappingClassTest {
         public String getHost() {
             return host;
         }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    static class ServerInitializedDefault {
+        private int port;
 
         public int getPort() {
             return port;

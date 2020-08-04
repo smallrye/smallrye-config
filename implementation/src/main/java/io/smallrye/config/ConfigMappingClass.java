@@ -15,6 +15,7 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.V1_8;
+import static org.objectweb.asm.Type.BOOLEAN;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
@@ -124,7 +125,7 @@ final class ConfigMappingClass {
                 try {
                     declaredField.setAccessible(true);
                     Object defaultValue = declaredField.get(classInstance);
-                    if (defaultValue != null) {
+                    if (hasDefaultValue(declaredField.getType(), defaultValue)) {
                         AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
                         av.visit("value", defaultValue.toString());
                         av.visitEnd();
@@ -221,5 +222,25 @@ final class ConfigMappingClass {
         }
 
         return null;
+    }
+
+    private static boolean hasDefaultValue(final Class<?> klass, final Object value) {
+        if (value == null) {
+            return false;
+        }
+
+        if (klass.isPrimitive() && value instanceof Number && value.equals(0)) {
+            return false;
+        }
+
+        if (klass.isPrimitive() && value instanceof Boolean && value.equals(Boolean.FALSE)) {
+            return false;
+        }
+
+        if (klass.isPrimitive() && value instanceof Character && value.equals(0)) {
+            return false;
+        }
+
+        return true;
     }
 }
