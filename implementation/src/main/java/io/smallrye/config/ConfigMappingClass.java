@@ -65,6 +65,14 @@ final class ConfigMappingClass {
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
                 new String[] { getInternalName(ConfigMappingClassMapper.class) });
 
+        Object classInstance;
+        try {
+            classInstance = classType.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            classInstance = null;
+        }
+
         Field[] declaredFields = classType.getDeclaredFields();
         for (Field declaredField : declaredFields) {
             MethodVisitor mv = writer.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, declaredField.getName(),
@@ -81,6 +89,18 @@ final class ConfigMappingClass {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
                 av.visit("value", declaredField.getAnnotation(WithDefault.class).value());
                 av.visitEnd();
+            } else if (classInstance != null) {
+                try {
+                    declaredField.setAccessible(true);
+                    Object defaultValue = declaredField.get(classInstance);
+                    if (defaultValue != null) {
+                        AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
+                        av.visit("value", defaultValue.toString());
+                        av.visitEnd();
+                    }
+                } catch (IllegalAccessException e) {
+                    // Ignore
+                }
             }
 
             if (declaredField.isAnnotationPresent(WithConverter.class)) {
@@ -104,7 +124,7 @@ final class ConfigMappingClass {
             String name = declaredField.getName();
             Class<?> type = declaredField.getType();
 
-            if (declaredField.isAccessible()) {
+            if (Modifier.isPublic(declaredField.getModifiers())) {
                 ctor.visitVarInsn(ALOAD, 1);
                 ctor.visitVarInsn(ALOAD, 0);
                 ctor.visitMethodInsn(INVOKEINTERFACE, interfaceInternalName, name, getMethodDescriptor(getType(type)),
