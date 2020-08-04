@@ -79,6 +79,17 @@ class ConfigMappingClassTest {
         assertEquals(8080, server.getPort().getPort());
     }
 
+    @Test
+    void initialized() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerInitialized.class)
+                .withDefaultValue("host", "localhost")
+                //.withDefaultValue("port", "8080")
+                .build();
+        final ServerInitialized server = config.getConfigMapping(ServerInitialized.class);
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
     static class ServerClass {
         String host;
         int port;
@@ -180,6 +191,19 @@ class ConfigMappingClassTest {
         @Override
         public ServerPort convert(final String value) {
             return new ServerPort(value);
+        }
+    }
+
+    static class ServerInitialized {
+        private String host;
+        private int port = 8080;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
         }
     }
 }
