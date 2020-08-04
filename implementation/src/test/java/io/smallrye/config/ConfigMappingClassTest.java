@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -83,9 +84,18 @@ class ConfigMappingClassTest {
     void initialized() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerInitialized.class)
                 .withDefaultValue("host", "localhost")
-                //.withDefaultValue("port", "8080")
                 .build();
         final ServerInitialized server = config.getConfigMapping(ServerInitialized.class);
+        assertEquals("localhost", server.getHost());
+        assertEquals(8080, server.getPort());
+    }
+
+    @Test
+    void mpConfig20() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerMPConfig20.class)
+                .withDefaultValue("name", "localhost")
+                .build();
+        final ServerMPConfig20 server = config.getConfigMapping(ServerMPConfig20.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
@@ -197,6 +207,21 @@ class ConfigMappingClassTest {
     static class ServerInitialized {
         private String host;
         private int port = 8080;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    static class ServerMPConfig20 {
+        @ConfigProperty(name = "name")
+        private String host;
+        @ConfigProperty(defaultValue = "8080")
+        private int port;
 
         public String getHost() {
             return host;

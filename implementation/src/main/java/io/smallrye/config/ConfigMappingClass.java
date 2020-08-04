@@ -24,6 +24,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -79,6 +80,8 @@ final class ConfigMappingClass {
                     getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
                     null);
 
+            boolean hasDefault = false;
+
             if (declaredField.isAnnotationPresent(WithName.class)) {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
                 av.visit("value", declaredField.getAnnotation(WithName.class).value());
@@ -89,7 +92,35 @@ final class ConfigMappingClass {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
                 av.visit("value", declaredField.getAnnotation(WithDefault.class).value());
                 av.visitEnd();
-            } else if (classInstance != null) {
+                hasDefault = true;
+            }
+
+            if (declaredField.isAnnotationPresent(WithConverter.class)) {
+                AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithConverter.class) + ";", true);
+                av.visit("value", declaredField.getAnnotation(WithConverter.class).value());
+                av.visitEnd();
+            }
+
+            if (declaredField.isAnnotationPresent(ConfigProperty.class)) {
+                ConfigProperty configProperty = declaredField.getAnnotation(ConfigProperty.class);
+                {
+                    if (!configProperty.name().isEmpty()) {
+                        AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
+                        av.visit("value", configProperty.name());
+                        av.visitEnd();
+                    }
+                }
+                {
+                    if (!configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                        AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
+                        av.visit("value", configProperty.defaultValue());
+                        av.visitEnd();
+                        hasDefault = true;
+                    }
+                }
+            }
+
+            if (!hasDefault && classInstance != null) {
                 try {
                     declaredField.setAccessible(true);
                     Object defaultValue = declaredField.get(classInstance);
@@ -101,12 +132,6 @@ final class ConfigMappingClass {
                 } catch (IllegalAccessException e) {
                     // Ignore
                 }
-            }
-
-            if (declaredField.isAnnotationPresent(WithConverter.class)) {
-                AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithConverter.class) + ";", true);
-                av.visit("value", declaredField.getAnnotation(WithConverter.class).value());
-                av.visitEnd();
             }
 
             mv.visitEnd();
