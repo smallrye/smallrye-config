@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
-import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
+import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 
 /**
@@ -25,6 +24,6 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
 public class SmallRyeConfigExtension implements LoadableExtension {
     @Override
     public void register(ExtensionBuilder extensionBuilder) {
-        extensionBuilder.service(AuxiliaryArchiveAppender.class, SmallRyeConfigAuxiliaryArchiveAppender.class);
+        extensionBuilder.service(ApplicationArchiveProcessor.class, SmallRyeConfigArchiveProcessor.class);
     }
 }
