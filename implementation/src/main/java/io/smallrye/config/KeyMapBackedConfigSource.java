@@ -27,6 +27,10 @@ public class KeyMapBackedConfigSource extends AbstractConfigSource {
         return Collections.emptyMap();
     }
 
+    KeyMap<String> getKeyMapProperties() {
+        return properties;
+    }
+
     @Override
     public String getValue(final String propertyName) {
         return properties.findRootValue(propertyName);
