@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -19,7 +20,8 @@ import io.smallrye.config.WithDefault;
 public class ConfigMappingInjectionTest extends InjectionTest {
     @WeldSetup
     public WeldInitiator weld = WeldInitiator
-            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class)
+            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class,
+                    ServerConfigProperties.class)
             .inject(this)
             .build();
 
@@ -30,6 +32,11 @@ public class ConfigMappingInjectionTest extends InjectionTest {
     @Inject
     @ConfigMapping(prefix = "cloud")
     Server cloud;
+    @Inject
+    ServerConfigProperties serverConfigProperties;
+    @Inject
+    @ConfigProperties(prefix = "cloud")
+    ServerConfigProperties serverConfigPropertiesCloud;
 
     @Test
     void configMapping() {
@@ -50,6 +57,17 @@ public class ConfigMappingInjectionTest extends InjectionTest {
         assertNotNull(cloud);
         assertEquals("cloud", cloud.host());
         assertEquals(9090, cloud.port());
+    }
+
+    @Test
+    void configProperties() {
+        assertNotNull(serverConfigProperties);
+        assertEquals("localhost", serverConfigProperties.host);
+        assertEquals(8080, serverConfigProperties.port);
+
+        assertNotNull(serverConfigPropertiesCloud);
+        assertEquals("cloud", serverConfigPropertiesCloud.host);
+        assertEquals(9090, serverConfigPropertiesCloud.port);
     }
 
     @Test
@@ -74,5 +92,11 @@ public class ConfigMappingInjectionTest extends InjectionTest {
 
         @WithDefault("8080")
         int port();
+    }
+
+    @ConfigProperties(prefix = "server")
+    public static class ServerConfigProperties {
+        public String host;
+        public int port;
     }
 }
