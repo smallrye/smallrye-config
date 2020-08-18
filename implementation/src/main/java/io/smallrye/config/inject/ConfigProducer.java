@@ -17,6 +17,7 @@ package io.smallrye.config.inject;
 
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -160,5 +161,30 @@ public class ConfigProducer {
     @ConfigProperty
     protected ConfigValue produceConfigValue(InjectionPoint ip) {
         return ConfigProducerUtil.getConfigValue(ip, getConfig(ip));
+    }
+
+    public static boolean isClassHandledByConfigProducer(Type requiredType) {
+        return requiredType == String.class
+                || requiredType == Boolean.class
+                || requiredType == Boolean.TYPE
+                || requiredType == Integer.class
+                || requiredType == Integer.TYPE
+                || requiredType == Long.class
+                || requiredType == Long.TYPE
+                || requiredType == Float.class
+                || requiredType == Float.TYPE
+                || requiredType == Double.class
+                || requiredType == Double.TYPE
+                || requiredType == Short.class
+                || requiredType == Short.TYPE
+                || requiredType == Byte.class
+                || requiredType == Byte.TYPE
+                || requiredType == Character.class
+                || requiredType == Character.TYPE
+                || requiredType == OptionalInt.class
+                || requiredType == OptionalLong.class
+                || requiredType == OptionalDouble.class
+                || requiredType == Supplier.class
+                || requiredType == ConfigValue.class;
     }
 }

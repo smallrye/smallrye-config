@@ -15,6 +15,7 @@
  */
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
 
@@ -97,8 +98,7 @@ public class ConfigExtension implements Extension {
                         customTypes.add((Class<?>) typeArgument);
                     }
                 }
-            } else if (requiredType instanceof Class
-                    && !isClassHandledByConfigProducer(requiredType)) {
+            } else if (requiredType instanceof Class && !isClassHandledByConfigProducer(requiredType)) {
                 // type is not produced by ConfigProducer
                 customTypes.add((Class<?>) requiredType);
             }
@@ -164,31 +164,6 @@ public class ConfigExtension implements Extension {
                 adv.addDeploymentProblem(e);
             }
         }
-    }
-
-    private static boolean isClassHandledByConfigProducer(Type requiredType) {
-        return requiredType == String.class
-                || requiredType == Boolean.class
-                || requiredType == Boolean.TYPE
-                || requiredType == Integer.class
-                || requiredType == Integer.TYPE
-                || requiredType == Long.class
-                || requiredType == Long.TYPE
-                || requiredType == Float.class
-                || requiredType == Float.TYPE
-                || requiredType == Double.class
-                || requiredType == Double.TYPE
-                || requiredType == Short.class
-                || requiredType == Short.TYPE
-                || requiredType == Byte.class
-                || requiredType == Byte.TYPE
-                || requiredType == Character.class
-                || requiredType == Character.TYPE
-                || requiredType == OptionalInt.class
-                || requiredType == OptionalLong.class
-                || requiredType == OptionalDouble.class
-                || requiredType == Supplier.class
-                || requiredType == ConfigValue.class;
     }
 
     protected Set<InjectionPoint> getInjectionPoints() {
