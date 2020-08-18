@@ -236,12 +236,12 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T getConfigProperties(final Class<T> configProperties, final String prefix) {
-        throw new UnsupportedOperationException();
+        return getConfigMapping(configProperties, prefix);
     }
 
     @Override
     public <T> T getConfigProperties(final Class<T> configProperties) {
-        throw new UnsupportedOperationException();
+        return getConfigMapping(configProperties);
     }
 
     @Override

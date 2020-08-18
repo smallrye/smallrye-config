@@ -19,6 +19,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.SmallRyeConfig;
@@ -34,6 +35,9 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         this.klass = type.getJavaClass();
         this.prefix = getConfigMappingPrefix(type);
         this.qualifiers.add(Default.Literal.INSTANCE);
+        if (type.isAnnotationPresent(ConfigProperties.class)) {
+            this.qualifiers.add(ConfigProperties.Literal.of(prefix));
+        }
     }
 
     @Override
@@ -60,6 +64,15 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         if (injectionPoint.getAnnotated() != null &&
                 injectionPoint.getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
             overridePrefix = getConfigMappingPrefix(injectionPoint.getAnnotated());
+        } else if (!injectionPoint.getQualifiers().isEmpty()) {
+            overridePrefix = injectionPoint.getQualifiers()
+                    .stream()
+                    .filter(ConfigProperties.class::isInstance)
+                    .map(ConfigProperties.class::cast)
+                    .map(ConfigProperties::prefix)
+                    .findFirst()
+                    .orElse(prefix);
+
         } else {
             overridePrefix = prefix;
         }
@@ -104,7 +117,11 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
     }
 
     static String getConfigMappingPrefix(final Annotated annotated) {
-        return Optional.ofNullable(annotated.getAnnotation(ConfigMapping.class)).map(ConfigMapping::prefix).orElse("");
+        return Optional.ofNullable(annotated.getAnnotation(ConfigMapping.class))
+                .map(ConfigMapping::prefix)
+                .orElseGet(
+                        () -> Optional.ofNullable(annotated.getAnnotation(ConfigProperties.class)).map(ConfigProperties::prefix)
+                                .orElse(""));
     }
 
 }

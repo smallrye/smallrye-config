@@ -47,12 +47,12 @@ import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappings;
 import io.smallrye.config.ConfigValidationException;
-import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 /**
@@ -75,10 +75,12 @@ public class ConfigExtension implements Extension {
     }
 
     protected void processConfigMappings(
-            @Observes @WithAnnotations({ ConfigMapping.class }) ProcessAnnotatedType<?> processAnnotatedType) {
+            @Observes @WithAnnotations({ ConfigProperties.class,
+                    ConfigMapping.class }) ProcessAnnotatedType<?> processAnnotatedType) {
 
         // Even if we filter in the CDI event, beans containing injection points of ConfigMapping are also fired.
-        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
+        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigProperties.class)
+                || processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
             // We are going to veto, because it may be a managed bean and we will use a configurator bean
             processAnnotatedType.veto();
             configMappings.add(processAnnotatedType.getAnnotatedType());
@@ -90,7 +92,8 @@ public class ConfigExtension implements Extension {
             configPropertyInjectionPoints.add(pip.getInjectionPoint());
         }
 
-        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
+        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperties.class)
+                || pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
             configMappingInjectionPoints.add(pip.getInjectionPoint());
         }
     }
