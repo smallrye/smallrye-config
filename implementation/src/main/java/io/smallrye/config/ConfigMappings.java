@@ -29,7 +29,7 @@ public final class ConfigMappings implements Serializable {
 
     public void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
             throws ConfigValidationException {
-        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder();
+        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder().validateUnknown(false);
         for (ConfigMappingWithPrefix mapping : mappings) {
             builder.addRoot(mapping.getPrefix(), mapping.getKlass());
         }
