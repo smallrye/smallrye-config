@@ -15,7 +15,6 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.V1_8;
-import static org.objectweb.asm.Type.BOOLEAN;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
@@ -147,6 +146,11 @@ final class ConfigMappingClass {
         ctor.visitVarInsn(ASTORE, 1);
 
         for (Field declaredField : declaredFields) {
+            if (Modifier.isStatic(declaredField.getModifiers()) || Modifier.isVolatile(declaredField.getModifiers())
+                    || Modifier.isFinal(declaredField.getModifiers())) {
+                continue;
+            }
+
             String name = declaredField.getName();
             Class<?> type = declaredField.getType();
 
