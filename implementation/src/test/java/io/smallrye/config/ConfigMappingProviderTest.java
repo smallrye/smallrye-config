@@ -120,6 +120,24 @@ public class ConfigMappingProviderTest {
     }
 
     @Test
+    void validateUnknown() {
+        assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().addDefaultSources().withMapping(Server.class).build());
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withMapping(Server.class)
+                .withMapping(Server.class, "server")
+                .withValidateUnknown(false)
+                .withSources(config("server.host", "localhost", "server.port", "8080", "host", "localhost", "port", "8080"))
+                .build();
+
+        final Server configProperties = config.getConfigMapping(Server.class);
+        assertEquals("localhost", configProperties.host());
+        assertEquals(8080, configProperties.port());
+    }
+
+    @Test
     void splitRoots() throws Exception {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
