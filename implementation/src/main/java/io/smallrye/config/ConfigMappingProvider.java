@@ -46,6 +46,7 @@ final class ConfigMappingProvider implements Serializable {
     private final Map<String, List<ConfigMappingInterface>> roots;
     private final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions;
     private final KeyMap<String> defaultValues;
+    private final boolean validateUnknown;
 
     ConfigMappingProvider(final Builder builder) {
         roots = new HashMap<>(builder.roots);
@@ -83,6 +84,7 @@ final class ConfigMappingProvider implements Serializable {
         }
         this.matchActions = matchActions;
         this.defaultValues = defaultValues;
+        this.validateUnknown = builder.validateUnknown;
     }
 
     static String skewer(Method method) {
@@ -634,7 +636,9 @@ final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                context.unknownConfigElement(name);
+                if (validateUnknown) {
+                    context.unknownConfigElement(name);
+                }
             }
         }
         ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
@@ -661,6 +665,7 @@ final class ConfigMappingProvider implements Serializable {
     public static final class Builder {
         final Map<String, List<ConfigMappingInterface>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
+        boolean validateUnknown = true;
 
         Builder() {
         }
@@ -680,6 +685,11 @@ final class ConfigMappingProvider implements Serializable {
         public Builder addIgnored(String path) {
             Assert.checkNotNullParam("path", path);
             ignored.add(path.split("\\."));
+            return this;
+        }
+
+        public Builder validateUnknown(boolean validateUnknown) {
+            this.validateUnknown = validateUnknown;
             return this;
         }
 

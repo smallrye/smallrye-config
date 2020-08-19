@@ -14,6 +14,7 @@ public class ConfigPropertiesTestFactory extends SmallRyeConfigFactory {
                 .addDiscoveredSources()
                 .addDiscoveredConverters()
                 .addDiscoveredInterceptors()
+                .withValidateUnknown(false)
                 .withMapping(ConfigPropertiesTest.BeanThree.class)
                 .withMapping(ConfigPropertiesTest.BeanThree.class, "other")
                 .build();
