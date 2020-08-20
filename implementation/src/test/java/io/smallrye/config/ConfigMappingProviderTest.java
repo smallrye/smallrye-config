@@ -363,6 +363,19 @@ public class ConfigMappingProviderTest {
         assertEquals(9090, cloudNull.port());
     }
 
+    @Test
+    void prefixFromAnnotation() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerAnnotated.class)
+                .withSources(config("cloud.host", "cloud", "cloud.port", "9090"))
+                .build();
+
+        final ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
+        assertNotNull(cloud);
+        assertEquals("cloud", cloud.host());
+        assertEquals(9090, cloud.port());
+    }
+
     interface Server {
         String host();
 

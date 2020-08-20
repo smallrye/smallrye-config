@@ -226,7 +226,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass) {
-        return withMapping(klass, "");
+        return withMapping(klass, ConfigMappings.getPrefix(klass));
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {

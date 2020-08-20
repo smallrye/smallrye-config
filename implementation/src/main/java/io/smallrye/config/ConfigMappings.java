@@ -45,8 +45,7 @@ public final class ConfigMappings implements Serializable {
     }
 
     <T> T getConfigMapping(Class<T> type) {
-        String prefix = Optional.ofNullable(type.getAnnotation(ConfigMapping.class)).map(ConfigMapping::prefix).orElse("");
-        return getConfigMapping(type, prefix);
+        return getConfigMapping(type, getPrefix(type));
     }
 
     <T> T getConfigMapping(Class<T> type, String prefix) {
@@ -59,6 +58,10 @@ public final class ConfigMappings implements Serializable {
             throw ConfigMessages.msg.mappingNotFound(type.getName(), prefix);
         }
         return type.cast(configMappingObject);
+    }
+
+    static String getPrefix(Class<?> type) {
+        return Optional.ofNullable(type.getAnnotation(ConfigMapping.class)).map(ConfigMapping::prefix).orElse("");
     }
 
     public static final class ConfigMappingWithPrefix {
