@@ -250,7 +250,12 @@ public class ConfigMappingProviderTest {
             {
                 put("server.host", "localhost");
                 put("server.port", "8080");
-                put("another-server", "localhost");
+
+                put("server.server.host", "localhost");
+                put("server.server.port", "8080");
+
+                put("server.group.server.host", "localhost");
+                put("server.group.server.port", "8080");
             }
         };
 
@@ -260,8 +265,45 @@ public class ConfigMappingProviderTest {
                 .build();
         final Maps maps = config.getConfigMapping(Maps.class);
 
-        assertEquals("localhost", maps.server().get("server").host());
-        assertEquals("localhost", maps.anotherServer().get("another-server"));
+        assertEquals("localhost", maps.server().get("host"));
+        assertEquals(8080, Integer.valueOf(maps.server().get("port")));
+
+        assertEquals("localhost", maps.group().get("server").host());
+        assertEquals(8080, maps.group().get("server").port());
+
+        assertEquals("localhost", maps.groupParentName().get("server").host());
+        assertEquals(8080, maps.groupParentName().get("server").port());
+    }
+
+    @Test
+    void mapsEmptyPrefix() {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("host", "localhost");
+                put("port", "8080");
+
+                put("server.host", "localhost");
+                put("server.port", "8080");
+
+                put("group.server.host", "localhost");
+                put("group.server.port", "8080");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(typesConfig))
+                .withMapping(Maps.class, "")
+                .build();
+        final Maps maps = config.getConfigMapping(Maps.class, "");
+
+        assertEquals("localhost", maps.server().get("host"));
+        assertEquals(8080, Integer.valueOf(maps.server().get("port")));
+
+        assertEquals("localhost", maps.group().get("server").host());
+        assertEquals(8080, maps.group().get("server").port());
+
+        assertEquals("localhost", maps.groupParentName().get("server").host());
+        assertEquals(8080, maps.groupParentName().get("server").port());
     }
 
     @Test
@@ -471,11 +513,15 @@ public class ConfigMappingProviderTest {
         List<Integer> listInts();
     }
 
+    @ConfigMapping(prefix = "server")
     public interface Maps {
         @WithParentName
-        Map<String, Server> server();
+        Map<String, String> server();
 
-        Map<String, String> anotherServer();
+        Map<String, Server> group();
+
+        @WithParentName
+        Map<String, Server> groupParentName();
     }
 
     public interface Defaults {
