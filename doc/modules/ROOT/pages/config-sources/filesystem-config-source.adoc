@@ -35,14 +35,14 @@ The same mapping rules as defined for environment variables are applied, so the 
 
 To use the FileSystem Config Source, add the following to your Maven `pom.xml`:
 
-https://xxx[[source,xml,subs="verbatim,attributes"]
+[source,xml,subs="verbatim,attributes"]
 ----
 <dependency>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-source-file-system</artifactId>
     <version>{version}</version>
 </dependency>
-----]
+----
 
 This Config Source is not automatically registered. This means that you also need to provide your own
 `ConfigSourceProvider` implementation and registration via `ServiceLoader` to use this Config Source like documented in

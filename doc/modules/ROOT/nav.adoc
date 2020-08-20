@@ -8,4 +8,6 @@
 
 * xref:interceptors/interceptors.adoc[Interceptors]
 
+* xref:mapping/mapping.adoc[Mapping]
+
 * xref:cdi/cdi.adoc[CDI]
