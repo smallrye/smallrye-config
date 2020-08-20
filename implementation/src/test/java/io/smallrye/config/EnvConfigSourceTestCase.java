@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -53,5 +53,15 @@ public class EnvConfigSourceTestCase {
 
         assertEquals(envProp, cs.getValue("SMALLRYE-MP-CONFIG-PROP"));
         assertFalse(cs.getPropertyNames().contains("SMALLRYE-MP-CONFIG-PROP"));
+    }
+
+    @Test
+    void profileEnvVariables() {
+        assertNotNull(System.getenv("SMALLRYE_MP_CONFIG_PROP"));
+        assertNotNull(System.getenv("_ENV_SMALLRYE_MP_CONFIG_PROP"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().withProfile("env").build();
+
+        assertEquals("5678", config.getRawValue("smallrye.mp.config.prop"));
     }
 }

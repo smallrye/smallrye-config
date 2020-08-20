@@ -109,6 +109,7 @@
         <configuration>
           <environmentVariables>
             <!-- Used by EnvConfigSourceTestCase -->
+            <_ENV_SMALLRYE_MP_CONFIG_PROP>5678</_ENV_SMALLRYE_MP_CONFIG_PROP>
             <SMALLRYE_MP_CONFIG_PROP>1234</SMALLRYE_MP_CONFIG_PROP>
           </environmentVariables>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>

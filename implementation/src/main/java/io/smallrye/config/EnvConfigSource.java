@@ -65,7 +65,7 @@ public class EnvConfigSource extends AbstractConfigSource {
         return properties.get(sanitizedName.toUpperCase());
     }
 
-    private String replaceNonAlphanumericByUnderscores(String name) {
+    private static String replaceNonAlphanumericByUnderscores(String name) {
         int length = name.length();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
