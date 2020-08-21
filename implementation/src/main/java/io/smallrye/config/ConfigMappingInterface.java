@@ -952,6 +952,12 @@ final class ConfigMappingInterface {
     private static Property getPropertyDef(Method method, Type type) {
         // now figure out what kind it is
         Class<? extends Converter<?>> convertWith = getConvertWith(type);
+        if (convertWith == null) {
+            WithConverter withConverter = method.getAnnotation(WithConverter.class);
+            if (withConverter != null) {
+                convertWith = withConverter.value();
+            }
+        }
         String propertyName = getPropertyName(method);
         Class<?> rawType = rawTypeOf(type);
         if (rawType.isPrimitive()) {

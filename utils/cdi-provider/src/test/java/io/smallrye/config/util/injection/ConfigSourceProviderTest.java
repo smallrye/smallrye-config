@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
@@ -42,14 +44,17 @@ public class ConfigSourceProviderTest extends InjectionTest {
     @ConfigSourceMap
     private Map<String, ConfigSource> configSourceMap;
 
+    @Inject
+    private Config config;
+
     @Test
-    public void testInjectionByName() {
+    void injectionByName() {
         assertNotNull(systemPropertiesConfigSource);
         assertFalse(systemPropertiesConfigSource.getProperties().isEmpty());
     }
 
     @Test
-    public void testInjectOfPropertiesFile() {
+    void injectOfPropertiesFile() {
         assertNotNull(propertiesConfigSource);
         assertFalse(propertiesConfigSource.getProperties().isEmpty());
         Map<String, String> properties = propertiesConfigSource.getProperties();
@@ -59,8 +64,20 @@ public class ConfigSourceProviderTest extends InjectionTest {
     }
 
     @Test
-    public void testInjectionOfMap() {
+    void injectionOfMap() {
         assertNotNull(configSourceMap);
         assertFalse(configSourceMap.isEmpty());
+    }
+
+    @Test
+    void sourcesOrder() {
+        Iterator<ConfigSource> sources = config.getConfigSources().iterator();
+        Iterator<ConfigSource> mapSources = configSourceMap.values().iterator();
+
+        while (sources.hasNext()) {
+            assertEquals(sources.next(), mapSources.next());
+        }
+
+        assertFalse(mapSources.hasNext());
     }
 }

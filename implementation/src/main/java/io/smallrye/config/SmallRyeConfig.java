@@ -209,12 +209,12 @@ public class SmallRyeConfig implements Config, Serializable {
         return mappings;
     }
 
-    @Experimental("TODO")
+    @Experimental("ConfigMapping API to group configuration properties")
     public <T> T getConfigMapping(Class<T> type) {
         return mappings.getConfigMapping(type);
     }
 
-    @Experimental("TODO")
+    @Experimental("ConfigMapping API to group configuration properties")
     public <T> T getConfigMapping(Class<T> type, String prefix) {
         return mappings.getConfigMapping(type, prefix);
     }
