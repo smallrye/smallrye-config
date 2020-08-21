@@ -13,7 +13,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE_USE)
+@Target({ ElementType.METHOD, ElementType.TYPE_USE })
 public @interface WithConverter {
     /**
      * The converter class to use.
