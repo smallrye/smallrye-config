@@ -1,9 +1,12 @@
 package io.smallrye.config.util.injection;
 
 import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
@@ -22,11 +25,16 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 @Dependent
 public class ConfigSourceProvider {
-
     @Inject
     private Provider<Config> configProvider;
 
-    private final Map<String, ConfigSource> configSourceMap = new HashMap<>();
+    private final Map<String, ConfigSource> configSourceMap = new HashMap<String, ConfigSource>() {
+        @Override
+        public Collection<ConfigSource> values() {
+            return StreamSupport.stream(configProvider.get().getConfigSources().spliterator(), false)
+                    .collect(Collectors.toList());
+        }
+    };
 
     @PostConstruct
     public void init() {
