@@ -7,6 +7,7 @@ import java.util.Map;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.common.AbstractConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSource implements ConfigValueConfigSource {
     private static final long serialVersionUID = -4619155951589529987L;
@@ -30,8 +31,7 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
     }
 
     public MapBackedConfigValueConfigSource(String name, Map<String, ConfigValue> propertyMap, int defaultOrdinal) {
-        // TODO - read ordinal from a configuration
-        super(name, defaultOrdinal);
+        super(name, ConfigSourceUtil.getOrdinalFromMap(new ConfigValueMapView(propertyMap), defaultOrdinal));
         properties = Collections.unmodifiableMap(propertyMap);
     }
 
