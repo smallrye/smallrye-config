@@ -626,7 +626,7 @@ final class ConfigMappingProvider implements Serializable {
         for (String name : config.getPropertyNames()) {
             // filter properties in root
             if (!isPropertyInRoot(name)) {
-                break;
+                continue;
             }
 
             NameIterator ni = new NameIterator(name);
