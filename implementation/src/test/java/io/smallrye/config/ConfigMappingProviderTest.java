@@ -326,12 +326,10 @@ public class ConfigMappingProviderTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("foo", "notbar"))
                 .withMapping(Converters.class)
-                .withConverter(String.class, 100, new FooBarConverter())
                 .build();
         final Converters converters = config.getConfigMapping(Converters.class);
 
         assertEquals("bar", converters.foo());
-        assertEquals("bar", config.getValue("foo", String.class));
     }
 
     @Test
