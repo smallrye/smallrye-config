@@ -9,7 +9,6 @@ import static io.smallrye.config.ConfigMappingInterface.rawTypeOf;
 import static io.smallrye.config.ConfigMappingInterface.typeOfParameter;
 import static io.smallrye.config.ConfigValidationException.Problem;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -67,25 +66,9 @@ public final class ConfigMappingContext {
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
-        Constructor<? extends ConfigMappingObject> constructor = getConfigurationInterface(interfaceType).getConstructor();
-        ConfigMappingObject instance;
-        try {
-            instance = constructor.newInstance(this);
-        } catch (InstantiationException e) {
-            throw new InstantiationError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error e2) {
-                throw e2;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
-        }
-        allInstances.add(instance);
-        return interfaceType.cast(instance);
+        final T mappingObject = ConfigMappingObjectLoader.configMappingObject(interfaceType, this);
+        allInstances.add((ConfigMappingObject) mappingObject);
+        return mappingObject;
     }
 
     @SuppressWarnings({ "unchecked", "unused" })

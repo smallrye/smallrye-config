@@ -1,15 +1,14 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingProvider.skewer;
+import static java.util.stream.Collectors.toMap;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getType;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -24,6 +23,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.objectweb.asm.ClassVisitor;
@@ -33,14 +33,13 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.inject.InjectionMessages;
 
 /**
  * Information about a configuration interface.
  */
-final class ConfigMappingInterface {
+final class ConfigMappingInterface implements ConfigMappingMetadata {
     static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
     static final ClassValue<ConfigMappingInterface> cv = new ClassValue<ConfigMappingInterface>() {
@@ -56,27 +55,19 @@ final class ConfigMappingInterface {
     }
 
     private final Class<?> interfaceType;
+    private final String className;
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
-    private final Constructor<? extends ConfigMappingObject> constructor;
     private final Map<String, Property> propertiesByName;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
         this.interfaceType = interfaceType;
+        this.className = getClass().getPackage().getName() + "." + interfaceType.getSimpleName()
+                + interfaceType.getName().hashCode() + "Impl";
         this.superTypes = superTypes;
         this.properties = properties;
-        try {
-            constructor = createConfigurationObjectClass().asSubclass(ConfigMappingObject.class)
-                    .getDeclaredConstructor(ConfigMappingContext.class);
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        }
-        final Map<String, Property> propertiesByName = new HashMap<>();
-        for (Property property : properties) {
-            propertiesByName.put(property.getMethod().getName(), property);
-        }
-        this.propertiesByName = propertiesByName;
+        this.propertiesByName = Stream.of(properties).collect(toMap(p -> p.getMethod().getName(), p -> p));
     }
 
     /**
@@ -85,7 +76,7 @@ final class ConfigMappingInterface {
      * @param interfaceType the interface type (must not be {@code null})
      * @return the configuration interface, or {@code null} if the type does not appear to be a configuration interface
      */
-    public static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
+    static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
         Assert.checkNotNullParam("interfaceType", interfaceType);
         return cv.get(interfaceType);
     }
@@ -106,7 +97,7 @@ final class ConfigMappingInterface {
      *
      * @return the number of supertypes
      */
-    public int getSuperTypeCount() {
+    int getSuperTypeCount() {
         return superTypes.length;
     }
 
@@ -118,7 +109,7 @@ final class ConfigMappingInterface {
      * @return the supertype definition
      * @throws IndexOutOfBoundsException if {@code index} is invalid
      */
-    public ConfigMappingInterface getSuperType(int index) throws IndexOutOfBoundsException {
+    ConfigMappingInterface getSuperType(int index) throws IndexOutOfBoundsException {
         if (index < 0 || index >= superTypes.length)
             throw new IndexOutOfBoundsException();
         return superTypes[index];
@@ -129,7 +120,7 @@ final class ConfigMappingInterface {
      *
      * @return the number of properties
      */
-    public int getPropertyCount() {
+    int getPropertyCount() {
         return properties.length;
     }
 
@@ -141,18 +132,18 @@ final class ConfigMappingInterface {
      * @return the property definition
      * @throws IndexOutOfBoundsException if {@code index} is invalid
      */
-    public Property getProperty(int index) throws IndexOutOfBoundsException {
+    Property getProperty(int index) throws IndexOutOfBoundsException {
         if (index < 0 || index >= properties.length)
             throw new IndexOutOfBoundsException();
         return properties[index];
     }
 
-    public Property getProperty(final String name) {
+    Property getProperty(final String name) {
         return propertiesByName.get(name);
     }
 
-    Constructor<? extends ConfigMappingObject> getConstructor() {
-        return constructor;
+    public String getClassName() {
+        return className;
     }
 
     public static abstract class Property {
@@ -830,13 +821,9 @@ final class ConfigMappingInterface {
         // stack: -
     }
 
-    Class<?> createConfigurationObjectClass() {
+    public byte[] getClassBytes() {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
-
-        String interfacePackage = interfaceType.getPackage().getName();
-        String className = getClass().getPackage().getName() + "." + interfaceType.getSimpleName() +
-                interfacePackage.hashCode() + "Impl";
         String classInternalName = className.replace('.', '/');
 
         visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, classInternalName, null, I_OBJECT, new String[] {
@@ -902,7 +889,7 @@ final class ConfigMappingInterface {
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
 
-        return ClassDefiner.defineClass(MethodHandles.lookup(), getClass(), className, writer.toByteArray());
+        return writer.toByteArray();
     }
 
     private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {

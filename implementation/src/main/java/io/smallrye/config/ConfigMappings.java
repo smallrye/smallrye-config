@@ -68,7 +68,7 @@ public final class ConfigMappings implements Serializable {
         private final Class<?> klass;
         private final String prefix;
 
-        private ConfigMappingWithPrefix(final Class<?> klass, final String prefix) {
+        public ConfigMappingWithPrefix(final Class<?> klass, final String prefix) {
             this.klass = klass;
             this.prefix = prefix;
         }
