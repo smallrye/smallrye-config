@@ -4,14 +4,15 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("squid:S5164")
 public final class Expressions {
-    private static final ThreadLocal<Boolean> ENABLE = ThreadLocal.withInitial(() -> Boolean.TRUE);
+    private static final ThreadLocal<Boolean> ENABLE = new ThreadLocal<>();
 
     private Expressions() {
         throw new UnsupportedOperationException();
     }
 
     public static boolean isEnabled() {
-        return ENABLE.get();
+        Boolean result = ENABLE.get();
+        return result == null ? true : result;
     }
 
     public static void withoutExpansion(final Runnable action) {
@@ -27,7 +28,7 @@ public final class Expressions {
             try {
                 return supplier.get();
             } finally {
-                ENABLE.set(true);
+                ENABLE.remove();
             }
         } else {
             return supplier.get();
