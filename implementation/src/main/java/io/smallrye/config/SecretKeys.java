@@ -4,14 +4,15 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("squid:S5164")
 public final class SecretKeys {
-    private static final ThreadLocal<Boolean> LOCKED = ThreadLocal.withInitial(() -> Boolean.TRUE);
+    private static final ThreadLocal<Boolean> LOCKED = new ThreadLocal<>();
 
     private SecretKeys() {
         throw new UnsupportedOperationException();
     }
 
     public static boolean isLocked() {
-        return LOCKED.get();
+        Boolean result = LOCKED.get();
+        return result == null ? true : result;
     }
 
     public static void doUnlocked(Runnable runnable) {
@@ -27,7 +28,7 @@ public final class SecretKeys {
             try {
                 return supplier.get();
             } finally {
-                LOCKED.set(true);
+                LOCKED.remove();
             }
         } else {
             return supplier.get();
