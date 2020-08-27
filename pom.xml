@@ -27,7 +27,7 @@
 
   <groupId>io.smallrye.config</groupId>
   <artifactId>smallrye-config-parent</artifactId>
-  <version>1.8.6-SNAPSHOT</version>
+  <version>1.8.6</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Config Parent</name>
@@ -61,7 +61,7 @@
     <connection>scm:git:git@github.com:smallrye/smallrye-config.git</connection>
     <developerConnection>scm:git:git@github.com:smallrye/smallrye-config.git</developerConnection>
     <url>https://github.com/smallrye/smallrye-config/</url>
-    <tag>HEAD</tag>
+    <tag>1.8.6</tag>
   </scm>
 
   <modules>
