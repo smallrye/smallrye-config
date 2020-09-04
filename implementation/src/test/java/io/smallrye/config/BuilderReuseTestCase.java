@@ -24,8 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 
+import javax.annotation.Priority;
+
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -49,5 +53,51 @@ public class BuilderReuseTestCase {
         assertTrue(it1.hasNext() || it2.hasNext());
         assertEquals(it1.next().getClass(), it2.next().getClass());
         assertFalse(it1.hasNext() || it2.hasNext());
+    }
+
+    @Test
+    public void testConverterPriority() {
+        final ConfigBuilder builder = new SmallRyeConfigBuilder();
+        builder.addDefaultSources();
+
+        final Converter<Integer> converter1000 = new IntConverter("converter1000");
+        final Converter<Integer> converter2000 = new IntConverter("converter2000");
+        final Converter<Integer> converter3000 = new IntConverter("converter3000");
+
+        builder.withConverter(Integer.class, 1000, converter1000); //priority is 1000
+        final Config config1 = builder.build();
+
+        builder.withConverter(Integer.class, 2000, converter2000); //priority is 2000
+        final Config config2 = builder.build();
+
+        builder.withConverter(Integer.class, 3000, converter3000); //priority is 3000
+        final Config config3 = builder.build();
+
+        Converter<Integer> converter1 = config1.getConverter(Integer.class).get();
+        Converter<Integer> converter2 = config2.getConverter(Integer.class).get();
+        Converter<Integer> converter3 = config3.getConverter(Integer.class).get();
+
+        assertEquals(converter1000, converter1);
+        assertEquals(converter2000, converter2);
+        assertEquals(converter3000, converter3);
+    }
+
+    @Priority(2500)
+    private static class IntConverter implements Converter<Integer> {
+
+        private String name;
+
+        public IntConverter(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Integer convert(String value) {
+            return 1; //conversion value doesn't actually matter for this test
+        }
+
+        public String toString() {
+            return name;
+        }
     }
 }
