@@ -271,9 +271,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             Map<Type, ConverterWithPriority> converters) {
         // add the converter only if it has a higher priority than another converter for the same type
         ConverterWithPriority oldConverter = converters.get(type);
-        int newPriority = getPriority(converter);
         if (oldConverter == null || priority > oldConverter.priority) {
-            converters.put(type, new ConverterWithPriority(converter, newPriority));
+            converters.put(type, new ConverterWithPriority(converter, priority));
         }
     }
 
