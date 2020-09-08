@@ -46,6 +46,7 @@
         <configuration>
           <finalName>${project.artifactId}-app</finalName>
           <appendAssemblyId>false</appendAssemblyId>
+          <attach>false</attach>
           <archive>
             <manifest>
               <mainClass>io.smallrye.config.examples.configmap.ConfigMapApp</mainClass>
