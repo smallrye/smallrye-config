@@ -16,7 +16,6 @@
 package io.smallrye.config.inject;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Member;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -26,7 +25,6 @@ import java.util.Set;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.Bean;
@@ -83,7 +81,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
     @Override
     @SuppressWarnings("unchecked")
     public T create(CreationalContext<T> context) {
-        InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new InjectionPointMetadataInjectionPoint(), context);
+        InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(), context);
         Annotated annotated = ip.getAnnotated();
         ConfigProperty configProperty = annotated.getAnnotation(ConfigProperty.class);
         String key = ConfigProducerUtil.getConfigKey(ip, configProperty);
@@ -172,46 +170,5 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
         public String defaultValue() {
             return "";
         }
-    }
-
-    private static class InjectionPointMetadataInjectionPoint implements InjectionPoint {
-
-        @Override
-        public Type getType() {
-            return InjectionPoint.class;
-        }
-
-        @SuppressWarnings("serial")
-        @Override
-        public Set<Annotation> getQualifiers() {
-            return Collections.singleton(new AnnotationLiteral<Default>() {
-            });
-        }
-
-        @Override
-        public Bean<?> getBean() {
-            return null;
-        }
-
-        @Override
-        public Member getMember() {
-            return null;
-        }
-
-        @Override
-        public Annotated getAnnotated() {
-            return null;
-        }
-
-        @Override
-        public boolean isDelegate() {
-            return false;
-        }
-
-        @Override
-        public boolean isTransient() {
-            return false;
-        }
-
     }
 }
