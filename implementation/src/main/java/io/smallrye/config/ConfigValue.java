@@ -44,6 +44,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     }
 
     @Override
+    public String getRawValue() {
+        return null;
+    }
+
+    @Override
     public String getSourceName() {
         return getConfigSourceName();
     }

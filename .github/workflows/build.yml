@@ -31,10 +31,22 @@ jobs:
       - uses: actions/checkout@v2
         name: checkout
 
+      - uses: actions/checkout@v2
+        name: checkout mp 2.0
+        with:
+          repository: eclipse/microprofile-config
+          path: microprofile-config
+
       - uses: actions/setup-java@v1.3.0
         name: set up jdk ${{matrix.java}}
         with:
           java-version: ${{matrix.java}}
+
+      - name: build microprofile config
+        run: |
+          cd microprofile-config
+          mvn install
+          cd ..
 
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml

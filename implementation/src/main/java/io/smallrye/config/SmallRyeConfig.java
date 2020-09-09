@@ -235,16 +235,6 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Override
-    public <T> T getConfigProperties(final Class<T> configProperties, final String prefix) {
-        return getConfigMapping(configProperties, prefix);
-    }
-
-    @Override
-    public <T> T getConfigProperties(final Class<T> configProperties) {
-        return getConfigMapping(configProperties);
-    }
-
-    @Override
     public Iterable<String> getPropertyNames() {
         final HashSet<String> names = new HashSet<>();
         configSources.get().getInterceptorChain().iterateNames().forEachRemaining(names::add);

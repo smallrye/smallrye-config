@@ -19,12 +19,6 @@
                     <exclude name=".*"/>
                 </methods>
             </class>
-            <!-- TCK and spec dispute: https://github.com/eclipse/microprofile-config/issues/588 -->
-            <class name="org.eclipse.microprofile.config.tck.broken.ConfigPropertiesMissingPropertyPLTest">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
         </classes>
     </test>
 </suite>
