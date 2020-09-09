@@ -23,8 +23,10 @@ import java.time.chrono.ChronoLocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -328,6 +330,27 @@ public class ConvertersTestCase {
                 .build();
         assertEquals("Ynl0ZXM=", config.getRawValue("byte.array"));
         assertEquals("bytes", new String(config.getValue("byte.array", byte[].class)));
+    }
+
+    @Test
+    public void testCurrency() {
+        final SmallRyeConfig config = buildConfig("simple.currency", "GBP");
+        final Currency expected = Currency.getInstance("GBP");
+        assertEquals(expected.getCurrencyCode(),
+                ((Currency) config.getValue("simple.currency", Currency.class)).getCurrencyCode(),
+                "Unexpected value for byte config");
+    }
+
+    @Test
+    public void testBitSet() {
+        final SmallRyeConfig config = buildConfig("simple.bitset", "AA");
+        BitSet expected = new BitSet(8);
+        expected.set(1);
+        expected.set(3);
+        expected.set(5);
+        expected.set(7);
+        assertEquals(expected.toString(), (config.getValue("simple.bitset", BitSet.class)).toString(),
+                "Unexpected value for byte config");
     }
 
     @SafeVarargs
