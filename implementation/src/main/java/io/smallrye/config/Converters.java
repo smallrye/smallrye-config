@@ -24,8 +24,10 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -128,6 +130,20 @@ public final class Converters {
                 }
             })));
 
+    static final Converter<Currency> CURRENCY_CONVERTER = BuiltInConverter.of(15,
+            newTrimmingConverter(newEmptyValueConverter((s) -> Currency.getInstance(s))));
+
+    static final Converter<BitSet> BITSET_CONVERTER = BuiltInConverter.of(16,
+            newTrimmingConverter(newTrimmingConverter((s) -> {
+                int len = s.length();
+                byte[] data = new byte[len / 2];
+                for (int i = 0; i < len; i += 2) {
+                    data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                            + Character.digit(s.charAt(i + 1), 16));
+                }
+                return BitSet.valueOf(data);
+            })));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -159,6 +175,10 @@ public final class Converters {
         ALL_CONVERTERS.put(Byte.class, BYTE_CONVERTER);
 
         ALL_CONVERTERS.put(UUID.class, UUID_CONVERTER);
+
+        ALL_CONVERTERS.put(Currency.class, CURRENCY_CONVERTER);
+
+        ALL_CONVERTERS.put(BitSet.class, BITSET_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
@@ -874,6 +894,10 @@ public final class Converters {
                     return BYTE_CONVERTER;
                 case 14:
                     return UUID_CONVERTER;
+                case 15:
+                    return CURRENCY_CONVERTER;
+                case 16:
+                    return BITSET_CONVERTER;
                 default:
                     throw ConfigMessages.msg.unknownConverterId(id);
             }
