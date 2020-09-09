@@ -23,6 +23,7 @@ public class ConfigValueTest {
         final ConfigValue configValue = config.getConfigValue("my.prop");
         assertEquals("my.prop", configValue.getName());
         assertEquals("1234", configValue.getValue());
+        assertEquals("1234", configValue.getRawValue());
         assertEquals("ConfigValueConfigSource", configValue.getSourceName());
         assertEquals(1000, configValue.getSourceOrdinal());
     }

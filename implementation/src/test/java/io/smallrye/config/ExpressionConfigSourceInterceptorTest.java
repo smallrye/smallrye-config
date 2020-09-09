@@ -1,9 +1,13 @@
 package io.smallrye.config;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +17,8 @@ public class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
         assertEquals("1234", config.getValue("expression", String.class));
+        assertEquals("1234", config.getConfigValue("expression").getValue());
+        assertEquals("${my.prop}", config.getConfigValue("expression").getRawValue());
     }
 
     @Test
@@ -111,10 +117,16 @@ public class ExpressionConfigSourceInterceptorTest {
     @Test
     public void escape() {
         assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getRawValue("expression"));
+        assertEquals("${my.prop}", buildConfig("expression", "\\${my.prop}").getRawValue("expression"));
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
+                                .getRawValue("camel.expression"));
+
+        assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
+                buildConfig("camel.expression",
+                        "file:target/prices/?fileName=\\${date:now:yyyyMMddssSS}.txt&charset=utf-8")
                                 .getRawValue("camel.expression"));
     }
 
@@ -124,6 +136,26 @@ public class ExpressionConfigSourceInterceptorTest {
 
         assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
         assertThrows(Exception.class, () -> config.getValue("my.prop.partial", String.class));
+    }
+
+    @Test
+    void arrayEscapes() {
+        final SmallRyeConfig config = buildConfig("list", "cat,dog,${mouse},sea\\,turtle", "mouse", "mouse");
+        final List<String> list = config.getValues("list", String.class, ArrayList::new);
+        assertEquals(4, list.size());
+        assertEquals(list, Stream.of("cat", "dog", "mouse", "sea,turtle").collect(toList()));
+    }
+
+    @Test
+    void escapeDollar() {
+        final SmallRyeConfig config = buildConfig("my.prop", "\\${value:value}");
+        assertEquals("${value:value}", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void escapeBraces() {
+        final SmallRyeConfig config = buildConfig("my.prop", "${value:111{111}");
+        assertEquals("111{111", config.getRawValue("my.prop"));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {

@@ -22,6 +22,7 @@ final class ConfigValueConfigSourceWrapper implements ConfigValueConfigSource, S
             return ConfigValue.builder()
                     .withName(propertyName)
                     .withValue(value)
+                    .withRawValue(value)
                     .withConfigSourceName(getName())
                     .withConfigSourceOrdinal(getOrdinal())
                     .build();

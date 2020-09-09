@@ -20,6 +20,7 @@ import io.smallrye.common.annotation.Experimental;
 public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue {
     private final String name;
     private final String value;
+    private final String rawValue;
     private final String configSourceName;
     private final int configSourceOrdinal;
 
@@ -28,6 +29,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private ConfigValue(final ConfigValueBuilder builder) {
         this.name = builder.name;
         this.value = builder.value;
+        this.rawValue = builder.rawValue;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.lineNumber = builder.lineNumber;
@@ -45,7 +47,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     @Override
     public String getRawValue() {
-        return null;
+        return rawValue;
     }
 
     @Override
@@ -105,6 +107,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         final ConfigValue that = (ConfigValue) o;
         return name.equals(that.name) &&
                 value.equals(that.value) &&
+                rawValue.equals(that.rawValue) &&
                 configSourceName.equals(that.configSourceName);
     }
 
@@ -117,6 +120,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return new ConfigValueBuilder()
                 .withName(name)
                 .withValue(value)
+                .withRawValue(rawValue)
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .withLineNumber(lineNumber);
@@ -129,6 +133,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     public static class ConfigValueBuilder {
         private String name;
         private String value;
+        private String rawValue;
         private String configSourceName;
         private int configSourceOrdinal;
         private int lineNumber = -1;
@@ -140,6 +145,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
         public ConfigValueBuilder withValue(final String value) {
             this.value = value;
+            return this;
+        }
+
+        public ConfigValueBuilder withRawValue(final String rawValue) {
+            this.rawValue = rawValue;
             return this;
         }
 
