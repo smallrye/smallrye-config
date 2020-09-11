@@ -126,6 +126,16 @@ public class YamlConfigSourceTest {
         assertEquals("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", values[0]);
     }
 
+    @Test
+    void intKeys() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(
+                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-int-keys.yml")))
+                .withConverter(Users.class, 100, new UserConverter())
+                .build();
+
+    }
+
     public static class Users {
         List<User> users;
 
