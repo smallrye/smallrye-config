@@ -155,30 +155,6 @@
         <artifactId>smallrye-config</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <!-- Converters -->
-      <dependency>
-        <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-converter-json</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <!-- Config Sources -->
-      <dependency>
-        <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-source-file-system</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-source-hocon</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.config</groupId>
-        <artifactId>smallrye-config-source-zookeeper</artifactId>
-        <version>${project.version}</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
