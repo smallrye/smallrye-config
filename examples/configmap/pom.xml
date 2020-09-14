@@ -13,6 +13,10 @@
 
   <name>SmallRye Config Examples: ConfigMap</name>
 
+  <properties>
+    <sonar.skip>true</sonar.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>jakarta.annotation</groupId>

@@ -30,6 +30,7 @@
   <name>SmallRye Config Examples: Config Mapping</name>
 
   <properties>
+    <sonar.skip>true</sonar.skip>
     <version.weld.junit>2.0.1.Final</version.weld.junit>
   </properties>
 
