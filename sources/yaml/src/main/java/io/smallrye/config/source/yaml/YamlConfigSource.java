@@ -66,7 +66,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
             final Iterable<Object> objects = new Yaml().loadAll(inputStream);
             for (Object object : objects) {
                 if (object instanceof Map) {
-                    yamlInput.putAll(yamlInputToMap((Map<String, Object>) object));
+                    yamlInput.putAll(yamlInputToMap((Map<Object, Object>) object));
                 }
             }
             inputStream.close();
@@ -83,11 +83,11 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     @SuppressWarnings("unchecked")
     private static Map<String, String> stringToMap(String str) {
-        final Map<String, Object> yamlInput = new Yaml().loadAs(str, HashMap.class);
+        final Map<Object, Object> yamlInput = new Yaml().loadAs(str, HashMap.class);
         return yamlInputToMap(yamlInput);
     }
 
-    private static Map<String, String> yamlInputToMap(final Map<String, Object> yamlInput) {
+    private static Map<String, String> yamlInputToMap(final Map<Object, Object> yamlInput) {
         final Map<String, String> properties = new TreeMap<>();
         if (yamlInput != null) {
             flattenYaml("", yamlInput, properties);
@@ -96,24 +96,29 @@ public class YamlConfigSource extends MapBackedConfigSource {
     }
 
     @SuppressWarnings("unchecked")
-    private static void flattenYaml(String path, Map<String, Object> source, Map<String, String> target) {
-        source.forEach((key, value) -> {
-            if (key != null && key.indexOf('.') != -1) {
+    private static void flattenYaml(String path, Map<Object, Object> source, Map<String, String> target) {
+        source.forEach((originalKey, value) -> {
+            String key;
+            if (originalKey == null) {
+                key = "";
+            } else {
+                key = originalKey.toString();
+            }
+
+            if (key.contains(".")) {
                 key = "\"" + key + "\"";
             }
 
-            if (key != null && !key.isEmpty() && path != null && !path.isEmpty()) {
+            if (!key.isEmpty() && path != null && !path.isEmpty()) {
                 key = path + "." + key;
             } else if (path != null && !path.isEmpty()) {
                 key = path;
-            } else if (key == null || key.isEmpty()) {
-                key = "";
             }
 
             if (value instanceof String) {
                 target.put(key, (String) value);
             } else if (value instanceof Map) {
-                flattenYaml(key, (Map<String, Object>) value, target);
+                flattenYaml(key, (Map<Object, Object>) value, target);
             } else if (value instanceof List) {
                 final List<Object> list = (List<Object>) value;
                 flattenList(key, list, target);

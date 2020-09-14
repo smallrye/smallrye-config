@@ -1,0 +1,8 @@
+storefront:
+  path:
+    appConfig:
+      1: /storefront/appConfig/*
+      2: /storefront/storefront/appConfig/*
+    training:
+      1: /storefront/training/*
+      2: /storefront/storefront/training/*
