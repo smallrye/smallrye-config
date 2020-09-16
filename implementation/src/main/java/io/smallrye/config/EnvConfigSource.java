@@ -20,6 +20,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
@@ -28,6 +29,8 @@ import io.smallrye.config.common.AbstractConfigSource;
  */
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
+
+    private final Map<String, String> cache = new ConcurrentHashMap<>(); //the regex match is expensive
 
     EnvConfigSource() {
         super("EnvConfigSource", 300);
@@ -45,11 +48,17 @@ public class EnvConfigSource extends AbstractConfigSource {
             return null;
         }
 
+        String cachedValue = cache.get(name);
+        if (cachedValue != null) {
+            return cachedValue;
+        }
+
         final Map<String, String> properties = getProperties();
 
         // exact match
         String value = properties.get(name);
         if (value != null) {
+            cache.put(name, value);
             return value;
         }
 
@@ -58,11 +67,18 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         value = properties.get(sanitizedName);
         if (value != null) {
+            cache.put(name, value);
             return value;
         }
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
-        return properties.get(sanitizedName.toUpperCase());
+        value = properties.get(sanitizedName.toUpperCase());
+        if (value != null) {
+            cache.put(name, value);
+            return value;
+        }
+
+        return null;
     }
 
     private static String replaceNonAlphanumericByUnderscores(String name) {
