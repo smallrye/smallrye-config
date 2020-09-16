@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 
@@ -31,7 +30,7 @@ import io.smallrye.common.annotation.Experimental;
  * {@link SmallRyeConfigBuilder#withMapping(java.lang.Class, java.lang.String)}.
  */
 @Documented
-@Target({ METHOD, FIELD, PARAMETER, TYPE })
+@Target({ FIELD, PARAMETER, TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Experimental("ConfigMapping API to group configuration properties")
 public @interface ConfigMapping {

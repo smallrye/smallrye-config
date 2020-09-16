@@ -19,7 +19,7 @@ import io.smallrye.config.WithDefault;
 public class ConfigMappingInjectionTest extends InjectionTest {
     @WeldSetup
     public WeldInitiator weld = WeldInitiator
-            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class)
+            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class, ConfigMappingBean.class)
             .inject(this)
             .build();
 
@@ -41,8 +41,8 @@ public class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void discoveredMapping() {
         assertNotNull(client);
-        assertEquals("localhost", client.host());
-        assertEquals(8080, client.port());
+        assertEquals("client", client.host());
+        assertEquals(80, client.port());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ConfigMappingInjectionTest extends InjectionTest {
         assertEquals(8080, server.port());
     }
 
-    @ConfigMapping(prefix = "client")
+    @ConfigMapping(prefix = "server")
     public interface Server {
         String host();
 
@@ -69,10 +69,47 @@ public class ConfigMappingInjectionTest extends InjectionTest {
 
     @ConfigMapping(prefix = "client")
     public interface Client {
-        @WithDefault("localhost")
+        @WithDefault("client")
         String host();
 
-        @WithDefault("8080")
+        @WithDefault("80")
         int port();
+    }
+
+    @Inject
+    ConfigMappingBean configMappingBean;
+
+    @Test
+    void overridePrefixBean() {
+        Server cloud = configMappingBean.getCloud();
+        assertEquals("cloud", cloud.host());
+        assertEquals(9090, cloud.port());
+
+        Server client = configMappingBean.getClient();
+        assertEquals("client", client.host());
+        assertEquals(80, client.port());
+    }
+
+    public static class ConfigMappingBean {
+        private final Server cloud;
+        private Server client;
+
+        @Inject
+        public ConfigMappingBean(@ConfigMapping(prefix = "cloud") Server cloud) {
+            this.cloud = cloud;
+        }
+
+        public Server getCloud() {
+            return cloud;
+        }
+
+        public Server getClient() {
+            return client;
+        }
+
+        @Inject
+        public void setClient(@ConfigMapping(prefix = "client") final Server client) {
+            this.client = client;
+        }
     }
 }
