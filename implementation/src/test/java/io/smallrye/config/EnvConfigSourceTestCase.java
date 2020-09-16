@@ -15,10 +15,16 @@
  */
 package io.smallrye.config;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.NoSuchElementException;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -52,6 +58,9 @@ public class EnvConfigSourceTestCase {
 
         assertEquals(envProp, cs.getValue("SMALLRYE-MP-CONFIG-PROP"));
         assertFalse(cs.getPropertyNames().contains("SMALLRYE-MP-CONFIG-PROP"));
+
+        assertEquals("1234", cs.getValue("smallrye_mp_config_prop_lower"));
+        assertTrue(cs.getPropertyNames().contains("smallrye_mp_config_prop_lower"));
     }
 
     @Test
@@ -62,5 +71,20 @@ public class EnvConfigSourceTestCase {
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().withProfile("env").build();
 
         assertEquals("5678", config.getRawValue("smallrye.mp.config.prop"));
+    }
+
+    @Test
+    void empty() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().build();
+        assertThrows(NoSuchElementException.class, () -> config.getValue("SMALLRYE_MP_CONFIG_EMPTY", String.class));
+        assertTrue(
+                stream(config.getPropertyNames().spliterator(), false).collect(toList()).contains("SMALLRYE_MP_CONFIG_EMPTY"));
+
+        ConfigSource envConfigSource = StreamSupport.stream(config.getConfigSources().spliterator(), false)
+                .filter(configSource -> configSource.getName().equals("EnvConfigSource"))
+                .findFirst()
+                .get();
+
+        assertEquals("", envConfigSource.getValue("SMALLRYE_MP_CONFIG_EMPTY"));
     }
 }
