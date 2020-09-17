@@ -429,6 +429,19 @@ public class ConfigMappingProviderTest {
         assertEquals(8080, server.port());
     }
 
+    @Test
+    void configValue() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerConfigValue.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .build();
+
+        final ServerConfigValue server = config.getConfigMapping(ServerConfigValue.class, "server");
+        assertNotNull(server);
+        assertEquals("localhost", server.host().getValue());
+        assertEquals(8080, Integer.valueOf(server.port().getValue()));
+    }
+
     interface Server {
         String host();
 
@@ -574,5 +587,12 @@ public class ConfigMappingProviderTest {
 
     public interface ServerChild extends ServerParent {
         int port();
+    }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerConfigValue {
+        ConfigValue host();
+
+        ConfigValue port();
     }
 }

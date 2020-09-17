@@ -14,7 +14,7 @@ public abstract class AbstractDelegatingConverter<I, O> extends AbstractConverte
         this.delegate = delegate;
     }
 
-    protected Converter<? extends I> getDelegate() {
+    public Converter<? extends I> getDelegate() {
         return delegate;
     }
 }

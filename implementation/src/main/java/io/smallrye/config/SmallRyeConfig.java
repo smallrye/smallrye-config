@@ -121,6 +121,7 @@ public class SmallRyeConfig implements Config, Serializable {
         final ConcurrentHashMap<Type, Converter<?>> converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
         convertersToBuild.forEach(
                 (type, converterWithPriority) -> converters.put(type, converterWithPriority.getConverter()));
+        converters.put(ConfigValue.class, ConfigValueConverter.CONFIG_VALUE_CONVERTER);
 
         return converters;
     }
@@ -139,8 +140,21 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, getConverter(aClass));
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
-        String value = getRawValue(name);
+        ConfigValue configValue = getConfigValue(name);
+        if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(converter)) {
+            return (T) configValue;
+        }
+
+        if (converter instanceof Converters.OptionalConverter<?>) {
+            if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(
+                    ((Converters.OptionalConverter<?>) converter).getDelegate())) {
+                return (T) Optional.of(configValue);
+            }
+        }
+
+        String value = configValue.getValue();
         final T converted;
         if (value != null) {
             converted = converter.convert(value);
