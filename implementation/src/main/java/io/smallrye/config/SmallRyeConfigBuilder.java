@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -170,7 +171,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
                 final Map<String, String> relocations = new HashMap<>();
-                relocations.put(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE, "mp.config.profile");
+                relocations.put(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE, Config.PROFILE);
                 return new RelocateConfigSourceInterceptor(relocations);
             }
 

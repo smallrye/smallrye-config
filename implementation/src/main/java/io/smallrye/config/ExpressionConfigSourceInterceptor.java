@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import javax.annotation.Priority;
 
+import org.eclipse.microprofile.config.Config;
+
 import io.smallrye.common.expression.Expression;
 
 @Priority(Priorities.LIBRARY + 800)
@@ -24,7 +26,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
     }
 
     public ExpressionConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
-        this.enabled = Optional.ofNullable(context.proceed("mp.config.property.expressions"))
+        this.enabled = Optional.ofNullable(context.proceed(Config.PROPERTY_EXPRESSIONS_ENABLED))
                 .map(ConfigValue::getValue)
                 .map(Boolean::valueOf)
                 .orElse(Boolean.TRUE);
