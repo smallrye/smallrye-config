@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
-    <version>1.9.0-SNAPSHOT</version>
+    <version>1.9.0</version>
   </parent>
 
   <artifactId>smallrye-config</artifactId>
@@ -112,7 +112,7 @@
             <_ENV_SMALLRYE_MP_CONFIG_PROP>5678</_ENV_SMALLRYE_MP_CONFIG_PROP>
             <SMALLRYE_MP_CONFIG_PROP>1234</SMALLRYE_MP_CONFIG_PROP>
             <smallrye_mp_config_prop_lower>1234</smallrye_mp_config_prop_lower>
-            <SMALLRYE_MP_CONFIG_EMPTY/>
+            <SMALLRYE_MP_CONFIG_EMPTY />
           </environmentVariables>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>
