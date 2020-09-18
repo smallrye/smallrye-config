@@ -691,7 +691,7 @@ public final class Converters {
             for (String itemString : itemStrings) {
                 if (!itemString.isEmpty()) {
                     final T item = getDelegate().convert(itemString);
-                    if (item != null) {
+                    if (item != null && !item.equals(",")) {
                         Array.set(array, size++, item);
                     }
                 }
