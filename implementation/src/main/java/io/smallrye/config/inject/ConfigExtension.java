@@ -48,13 +48,11 @@ import javax.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappings;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
 
 /**
@@ -150,11 +148,8 @@ public class ConfigExtension implements Extension {
             }
 
             try {
-                // Check if there is a Converter registed for the injected type
-                Converter<?> resolvedConverter = ConfigProducerUtil.resolveConverter(injectionPoint, (SmallRyeConfig) config);
-
-                // Check if the value can be converted. This may cause duplicated config reads (to validate and to inject).
-                SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getOptionalValue(name, resolvedConverter));
+                // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
+                ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (IllegalArgumentException e) {
                 adv.addDeploymentProblem(e);
             }
