@@ -32,7 +32,7 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     private final Map<String, String> cache = new ConcurrentHashMap<>(); //the regex match is expensive
 
-    EnvConfigSource() {
+    protected EnvConfigSource() {
         super("EnvConfigSource", 300);
     }
 
