@@ -48,7 +48,8 @@
           </environmentVariables>
           <systemProperties>
             <mp.tck.prop.dummy>dummy</mp.tck.prop.dummy>
-          </systemProperties>        </configuration>
+          </systemProperties>
+        </configuration>
       </plugin>
     </plugins>
   </build>
