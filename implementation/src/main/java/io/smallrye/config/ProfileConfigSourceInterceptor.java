@@ -1,8 +1,14 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.getImplicitConverter;
+import static io.smallrye.config.Converters.newCollectionConverter;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -27,10 +33,17 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         }
     };
 
-    private final String profile;
+    private final String[] profiles;
 
     public ProfileConfigSourceInterceptor(final String profile) {
-        this.profile = profile;
+        if (profile != null) {
+            List<String> convertedProfiles = newCollectionConverter(getImplicitConverter(String.class), ArrayList::new)
+                    .convert(profile);
+            Collections.reverse(convertedProfiles);
+            this.profiles = convertedProfiles.toArray(new String[0]);
+        } else {
+            this.profiles = new String[0];
+        }
     }
 
     public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
@@ -40,14 +53,14 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public ProfileConfigSourceInterceptor(
             final ConfigSourceInterceptorContext context,
             final String profileConfigName) {
-        this.profile = Optional.ofNullable(context.proceed(profileConfigName)).map(ConfigValue::getValue).orElse(null);
+        this(Optional.ofNullable(context.proceed(profileConfigName)).map(ConfigValue::getValue).orElse(null));
     }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        if (profile != null) {
+        if (profiles.length > 0) {
             final String normalizeName = normalizeName(name);
-            final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
+            final ConfigValue profileValue = getProfileValue(context, normalizeName);
             if (profileValue != null) {
                 try {
                     final ConfigValue originalValue = context.proceed(normalizeName);
@@ -62,6 +75,17 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         }
 
         return context.proceed(name);
+    }
+
+    public ConfigValue getProfileValue(final ConfigSourceInterceptorContext context, final String normalizeName) {
+        for (String profile : profiles) {
+            final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
+            if (profileValue != null) {
+                return profileValue;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -79,6 +103,12 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     private String normalizeName(final String name) {
-        return name.startsWith("%" + profile + ".") ? name.substring(profile.length() + 2) : name;
+        for (String profile : profiles) {
+            if (name.startsWith("%" + profile + ".")) {
+                return name.substring(profile.length() + 2);
+            }
+        }
+
+        return name;
     }
 }
