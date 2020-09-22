@@ -14,7 +14,7 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
             // Unlocked keys will run here.
             ConfigValue configValue = doLocked(() -> context.proceed(name));
             if (configValue != null)
-                ConfigLogging.log.lookup(configValue.getName(), getLocation(configValue), configValue.getValue());
+                ConfigLogging.log.lookup(configValue.getName(), configValue.getLocation(), configValue.getValue());
             else
                 ConfigLogging.log.notFound(name);
             return configValue;
@@ -29,10 +29,5 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         else
             ConfigLogging.log.notFound(name);
         return secret;
-    }
-
-    private String getLocation(final ConfigValue configValue) {
-        return configValue.getLineNumber() != -1 ? configValue.getConfigSourceName() + ":" + configValue.getLineNumber()
-                : configValue.getConfigSourceName();
     }
 }
