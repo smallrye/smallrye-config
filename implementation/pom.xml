@@ -99,6 +99,10 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>io.smallrye.testing</groupId>
+      <artifactId>smallrye-testing-utilities</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

@@ -39,6 +39,7 @@
     <version.smallrye.common>1.4.0</version.smallrye.common>
 
     <version.weld.junit>2.0.1.Final</version.weld.junit>
+    <version.smallrye.testing.utilities>0.1.0</version.smallrye.testing.utilities>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
@@ -114,6 +115,12 @@
             <artifactId>junit</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-utilities</artifactId>
+        <version>${version.smallrye.testing.utilities}</version>
+        <scope>test</scope>
       </dependency>
 
       <dependency>

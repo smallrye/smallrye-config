@@ -53,6 +53,10 @@ public class ConfigValue {
         return lineNumber;
     }
 
+    public String getLocation() {
+        return lineNumber != -1 ? configSourceName + ":" + lineNumber : configSourceName;
+    }
+
     public ConfigValue withName(final String name) {
         return from().withName(name).build();
     }
