@@ -10,10 +10,10 @@ import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-class ConfigurableConfigSource implements ConfigSource {
-    final ConfigSourceFactory factory;
+public class ConfigurableConfigSource implements ConfigSource {
+    private final ConfigSourceFactory factory;
 
-    ConfigurableConfigSource(ConfigSourceFactory factory) {
+    public ConfigurableConfigSource(ConfigSourceFactory factory) {
         this.factory = factory;
     }
 
