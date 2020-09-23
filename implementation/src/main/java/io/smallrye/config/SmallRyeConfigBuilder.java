@@ -151,7 +151,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return profile != null ? new ProfileConfigSourceInterceptor(profile)
+                return profile != null && !profile.isEmpty() ? new ProfileConfigSourceInterceptor(profile)
                         : new ProfileConfigSourceInterceptor(context);
             }
 
