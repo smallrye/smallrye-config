@@ -20,13 +20,11 @@ public class ProfilePropertiesConfigSourceProvider implements ConfigSourceProvid
 
                     @Override
                     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-                        final ConfigValue value = context.getValue("smallrye.config.profile");
+                        final ConfigValue value = context.getValue(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE);
                         if (value != null) {
                             final String profileName = value.getValue();
-                            final String profileFileName = propertyFileName.replaceAll("microprofile-config",
-                                    "microprofile-config-" + profileName);
                             final PropertiesConfigSourceProvider propertiesConfigSourceProvider = new PropertiesConfigSourceProvider(
-                                    profileFileName, optional, classLoader);
+                                    addProfileToPropertyFileName(propertyFileName, profileName), optional, classLoader);
                             return propertiesConfigSourceProvider.getConfigSources(classLoader);
                         }
 
@@ -45,5 +43,14 @@ public class ProfilePropertiesConfigSourceProvider implements ConfigSourceProvid
     @Override
     public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         return configSources;
+    }
+
+    private static String addProfileToPropertyFileName(final String propertyFileName, final String profile) {
+        final int dot = propertyFileName.lastIndexOf(".");
+        if (dot != -1) {
+            return propertyFileName.substring(0, dot) + "-" + profile + propertyFileName.substring(dot);
+        } else {
+            return propertyFileName + "-" + profile;
+        }
     }
 }
