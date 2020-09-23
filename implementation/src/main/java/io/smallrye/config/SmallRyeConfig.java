@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -329,7 +330,18 @@ public class SmallRyeConfig implements Config, Serializable {
                     .collect(toList());
 
             final List<ConfigSourceInterceptorWithPriority> lateInterceptors = lateInitSources.stream()
-                    .flatMap(configurableConfigSource -> configurableConfigSource.getConfigSources(initChain::proceed).stream())
+                    .flatMap(configurableConfigSource -> configurableConfigSource.getConfigSources(
+                            new ConfigSourceContext() {
+                                @Override
+                                public ConfigValue getValue(final String name) {
+                                    return initChain.proceed(name);
+                                }
+
+                                @Override
+                                public Iterator<String> iterateNames() {
+                                    return initChain.iterateNames();
+                                }
+                            }).stream())
                     .map(ConfigSourceInterceptorWithPriority::new)
                     .collect(toList());
 

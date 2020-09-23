@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import java.util.Iterator;
+
 import io.smallrye.common.annotation.Experimental;
 
 /**
@@ -8,4 +10,6 @@ import io.smallrye.common.annotation.Experimental;
 @Experimental("ConfigSource API Enhancements")
 public interface ConfigSourceContext {
     ConfigValue getValue(String name);
+
+    Iterator<String> iterateNames();
 }
