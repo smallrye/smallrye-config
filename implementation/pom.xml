@@ -117,6 +117,7 @@
             <SMALLRYE_MP_CONFIG_PROP>1234</SMALLRYE_MP_CONFIG_PROP>
             <smallrye_mp_config_prop_lower>1234</smallrye_mp_config_prop_lower>
             <SMALLRYE_MP_CONFIG_EMPTY />
+            <CONFIG_ORDINAL>301</CONFIG_ORDINAL>
           </environmentVariables>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>

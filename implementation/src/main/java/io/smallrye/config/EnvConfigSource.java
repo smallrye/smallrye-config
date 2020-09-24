@@ -16,9 +16,11 @@
 
 package io.smallrye.config;
 
-import java.security.AccessController;
+import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+import static java.security.AccessController.doPrivileged;
+import static java.util.Collections.unmodifiableMap;
+
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,17 +31,17 @@ import io.smallrye.config.common.AbstractConfigSource;
  */
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
+    private static final int DEFAULT_ORDINAL = 300;
 
     private final Map<String, String> cache = new ConcurrentHashMap<>(); //the regex match is expensive
 
     protected EnvConfigSource() {
-        super("EnvConfigSource", 300);
+        super("EnvConfigSource", getEnvOrdinal());
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return Collections
-                .unmodifiableMap(AccessController.doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
+        return getEnvProperties();
     }
 
     @Override
@@ -95,5 +97,40 @@ public class EnvConfigSource extends AbstractConfigSource {
             }
         }
         return sb.toString();
+    }
+
+    private static Map<String, String> getEnvProperties() {
+        return unmodifiableMap(doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
+    }
+
+    /**
+     * TODO
+     * Ideally, this should use {@link EnvConfigSource#getValue(String)} directly, so we don't duplicate the property
+     * names logic, but we need this method to be static.
+     *
+     * We do require a bigger change to rewrite {@link EnvConfigSource#getValue(String)} as static and still cache
+     * values in each separate instance.
+     *
+     * @return the {@link EnvConfigSource} ordinal.
+     */
+    private static int getEnvOrdinal() {
+        Map<String, String> envProperties = getEnvProperties();
+        String ordStr = envProperties.get(CONFIG_ORDINAL_KEY);
+        if (ordStr != null) {
+            return Converters.INTEGER_CONVERTER.convert(ordStr);
+        }
+
+        String sanitazedOrdinalKey = replaceNonAlphanumericByUnderscores(CONFIG_ORDINAL_KEY);
+        ordStr = envProperties.get(sanitazedOrdinalKey);
+        if (ordStr != null) {
+            return Converters.INTEGER_CONVERTER.convert(ordStr);
+        }
+
+        ordStr = envProperties.get(sanitazedOrdinalKey.toUpperCase());
+        if (ordStr != null) {
+            return Converters.INTEGER_CONVERTER.convert(ordStr);
+        }
+
+        return DEFAULT_ORDINAL;
     }
 }
