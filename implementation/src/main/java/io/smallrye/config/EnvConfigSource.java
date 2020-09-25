@@ -19,6 +19,7 @@ package io.smallrye.config;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     @Override
     public Set<String> getPropertyNames() {
-        return Collections.unmodifiableSet(getProperties().keySet());
+        return unmodifiableSet(getProperties().keySet());
     }
 
     @Override
