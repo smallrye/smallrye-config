@@ -87,4 +87,13 @@ public class EnvConfigSourceTestCase {
 
         assertEquals("", envConfigSource.getValue("SMALLRYE_MP_CONFIG_EMPTY"));
     }
+
+    @Test
+    void ordinal() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(new EnvConfigSource()).build();
+        ConfigSource configSource = config.getConfigSources().iterator().next();
+
+        assertTrue(configSource instanceof EnvConfigSource);
+        assertEquals(configSource.getOrdinal(), 301);
+    }
 }

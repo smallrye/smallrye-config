@@ -13,37 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
+import static java.security.AccessController.doPrivileged;
+import static java.util.Collections.unmodifiableMap;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
 import io.smallrye.config.common.AbstractConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 class SysPropConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 9167738611308785403L;
+    private static final int DEFAULT_ORDINAL = 400;
 
     SysPropConfigSource() {
-        super("SysPropConfigSource", 400);
+        super("SysPropConfigSource", ConfigSourceUtil.getOrdinalFromMap(getSystemProperties(), DEFAULT_ORDINAL));
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(
-                propertiesToMap(AccessController.doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
+        return getSystemProperties();
     }
 
     @Override
     public String getValue(String s) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(s));
+        return doPrivileged((PrivilegedAction<String>) () -> System.getProperty(s));
+    }
+
+    private static Map<String, String> getSystemProperties() {
+        return unmodifiableMap(propertiesToMap(doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
     }
 }
