@@ -22,15 +22,15 @@ interface Server {
 }
 ----
 
-The `Server` interface is able to map configurations with the name `server.host` into the `Server.host()` method and the
-configuration with the name `server.port` into `Server.port()` method. The configuration property name to lookup
-is built from the prefix, and the method name with `,` (dot) as the separator.
+The `Server` interface is able to map configurations with the name `server.host` into the `Server.host()` method and
+`server.port` into `Server.port()` method. The configuration property name to lookup is built from the prefix, and the
+method name with `.` (dot) as the separator.
 
 === Registration
 
-Registration of Config Mapping aware interface happens automatically in CDI aware environment with the `@ConfigMapping`
-annotation. In non-CDI environments, the Config Mapping may be registed via `SmallRyeConfigBuilder#withMapping`. In this
-case, the `@ConfigMapping` is completely optional.
+Registration of Config Mapping aware interface happens automatically in CDI aware environments with the `@ConfigMapping`
+annotation. In non-CDI environments, the Config Mapping may be registered via `SmallRyeConfigBuilder#withMapping`. In
+this case, the `@ConfigMapping` is completely optional.
 
 === Retrieval
 
