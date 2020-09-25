@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -90,5 +91,34 @@ public class ConfigConfigSourceTest {
         assertEquals("KeyValuesConfigSource", config.getConfigValue("my.prop").getConfigSourceName());
         assertEquals("1234", config.getRawValue("any"));
         assertEquals("test", config.getConfigValue("any").getConfigSourceName());
+    }
+
+    @Test
+    void iterate() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(KeyValuesConfigSource.config("smallrye.prop", "1", "smallrye.another", "2", "mp.prop", "1"))
+                .withSources(new ConfigurableConfigSource(new ConfigSourceFactory() {
+                    @Override
+                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
+                        Map<String, String> properties = new HashMap<>();
+                        context.iterateNames().forEachRemaining(s -> {
+                            if (s.startsWith("smallrye")) {
+                                properties.put(s, "1234");
+                            }
+                        });
+                        return KeyValuesConfigSource.config(properties);
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(1000);
+                    }
+                })).build();
+
+        assertEquals("1234", config.getRawValue("smallrye.prop"));
+        assertEquals("1234", config.getRawValue("smallrye.another"));
+        assertEquals("1", config.getRawValue("mp.prop"));
     }
 }
