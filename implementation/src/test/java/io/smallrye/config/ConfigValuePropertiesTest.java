@@ -38,7 +38,7 @@ public class ConfigValuePropertiesTest {
                         "\n" +
                         "\n" +
                         "\n" +
-                        "key20=value"));
+                        "key20=value\n"));
 
         assertEquals(1, map.get("key").getLineNumber());
         assertEquals(2, map.get("key2").getLineNumber());
@@ -55,7 +55,7 @@ public class ConfigValuePropertiesTest {
                         "#comment\n" +
                         "#comment\n" +
                         "#comment\n" +
-                        "key3=value"));
+                        "key3=value\n"));
 
         assertEquals(1, map.get("key").getLineNumber());
         assertEquals(2, map.get("key2").getLineNumber());
@@ -67,14 +67,14 @@ public class ConfigValuePropertiesTest {
         final ConfigValueProperties map = new ConfigValueProperties("config", 1);
         map.load(new StringReader(
                 "key=value\\wrap\n" +
-                        "key2=value\\\rwrap\n" +
+                        "key2=value\\\nwrap\n" +
                         "#comment\f\t\n" +
-                        "#comment\r\n" +
-                        "\\key3=value"));
+                        "#comment\n" +
+                        "\\key3=value\n"));
 
         assertEquals(1, map.get("key").getLineNumber());
-        assertEquals(2, map.get("key2").getLineNumber());
         assertEquals("valuewrap", map.get("key2").getValue());
-        assertEquals(7, map.get("key3").getLineNumber());
+        assertEquals(2, map.get("key2").getLineNumber());
+        assertEquals(6, map.get("key3").getLineNumber());
     }
 }

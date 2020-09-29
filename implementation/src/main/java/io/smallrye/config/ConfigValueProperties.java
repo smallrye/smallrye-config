@@ -146,7 +146,6 @@ class ConfigValueProperties extends HashMap<String, ConfigValue> {
                 if (skipLF) {
                     skipLF = false;
                     if (c == '\n') {
-                        lineNumber++;
                         continue;
                     }
                 }
@@ -155,7 +154,9 @@ class ConfigValueProperties extends HashMap<String, ConfigValue> {
                         continue;
                     }
                     if (!appendedLineBegin && (c == '\r' || c == '\n')) {
-                        lineNumber++;
+                        if (c == '\n') {
+                            lineNumber++;
+                        }
                         continue;
                     }
                     skipWhiteSpace = false;
@@ -219,6 +220,10 @@ class ConfigValueProperties extends HashMap<String, ConfigValue> {
                             skipLF = true;
                         }
                     } else {
+                        if (c == '\r') {
+                            inOff++;
+                        }
+
                         return len;
                     }
                 }
