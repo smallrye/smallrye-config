@@ -6,7 +6,7 @@ import static io.smallrye.config.ConfigMappingInterface.MapProperty;
 import static io.smallrye.config.ConfigMappingInterface.MayBeOptionalProperty;
 import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
-import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -43,16 +43,16 @@ final class ConfigMappingProvider implements Serializable {
         IGNORE_EVERYTHING = map;
     }
 
-    private final Map<String, List<ConfigMappingInterface>> roots;
+    private final Map<String, List<Class<?>>> roots;
     private final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions;
     private final KeyMap<String> defaultValues;
 
     ConfigMappingProvider(final Builder builder) {
-        roots = new HashMap<>(builder.roots);
+        this.roots = new HashMap<>(builder.roots);
         final ArrayDeque<String> currentPath = new ArrayDeque<>();
         KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions = new KeyMap<>();
         KeyMap<String> defaultValues = new KeyMap<>();
-        for (Map.Entry<String, List<ConfigMappingInterface>> entry : roots.entrySet()) {
+        for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             NameIterator rootNi = new NameIterator(entry.getKey());
             while (rootNi.hasNext()) {
                 final String nextSegment = rootNi.getNextSegment();
@@ -61,11 +61,12 @@ final class ConfigMappingProvider implements Serializable {
                 }
                 rootNi.next();
             }
-            List<ConfigMappingInterface> roots = entry.getValue();
-            for (ConfigMappingInterface root : roots) {
+            List<Class<?>> roots = entry.getValue();
+            for (Class<?> root : roots) {
                 // construct the lazy match actions for each group
-                BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> ef = new GetRootAction(root, entry);
-                processEagerGroup(currentPath, matchActions, defaultValues, root, ef);
+                BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> ef = new GetRootAction(root,
+                        entry.getKey());
+                processEagerGroup(currentPath, matchActions, defaultValues, getConfigMappingInterface(root), ef);
             }
             currentPath.clear();
         }
@@ -235,7 +236,6 @@ final class ConfigMappingProvider implements Serializable {
                         matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
                     }
                 } else if (property.isGroup()) {
-
                     processEagerGroup(currentPath, matchActions, defaultValues, property.asGroup().getGroupType(),
                             new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup()));
                 } else if (property.isPrimitive()) {
@@ -427,17 +427,16 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     static class GetRootAction implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> {
-        private final ConfigMappingInterface root;
-        private final Map.Entry<String, List<ConfigMappingInterface>> entry;
+        private final Class<?> root;
+        private final String rootPath;
 
-        GetRootAction(final ConfigMappingInterface root, final Map.Entry<String, List<ConfigMappingInterface>> entry) {
+        GetRootAction(final Class<?> root, final String rootPath) {
             this.root = root;
-            this.entry = entry;
+            this.rootPath = rootPath;
         }
 
         public ConfigMappingObject apply(final ConfigMappingContext mc, final NameIterator ni) {
-            return mc
-                    .getRoot(root.getInterfaceType(), entry.getKey());
+            return mc.getRoot(root, rootPath);
         }
     }
 
@@ -611,15 +610,14 @@ final class ConfigMappingProvider implements Serializable {
         Assert.checkNotNullParam("config", config);
         final ConfigMappingContext context = new ConfigMappingContext(config);
         // eagerly populate roots
-        for (Map.Entry<String, List<ConfigMappingInterface>> entry : roots.entrySet()) {
+        for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             String path = entry.getKey();
-            List<ConfigMappingInterface> roots = entry.getValue();
-            for (ConfigMappingInterface root : roots) {
+            List<Class<?>> roots = entry.getValue();
+            for (Class<?> root : roots) {
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), path);
-                Class<?> type = root.getInterfaceType();
-                ConfigMappingObject group = (ConfigMappingObject) context.constructGroup(type);
-                context.registerRoot(type, path, group);
+                ConfigMappingObject group = (ConfigMappingObject) context.constructGroup(root);
+                context.registerRoot(root, path, group);
             }
         }
         // lazily sweep
@@ -659,21 +657,16 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     public static final class Builder {
-        final Map<String, List<ConfigMappingInterface>> roots = new HashMap<>();
+        final Map<String, List<Class<?>>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
 
         Builder() {
         }
 
         public Builder addRoot(String path, Class<?> type) {
-            Assert.checkNotNullParam("type", type);
-            return addRoot(path, getConfigurationInterface(type));
-        }
-
-        public Builder addRoot(String path, ConfigMappingInterface info) {
             Assert.checkNotNullParam("path", path);
-            Assert.checkNotNullParam("info", info);
-            roots.computeIfAbsent(path, k -> new ArrayList<>(4)).add(info);
+            Assert.checkNotNullParam("type", type);
+            roots.computeIfAbsent(path, k -> new ArrayList<>(4)).add(type);
             return this;
         }
 

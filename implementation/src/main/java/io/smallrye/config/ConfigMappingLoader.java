@@ -4,10 +4,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.smallrye.common.classloader.ClassDefiner;
 
-public final class ConfigMappingObjectLoader {
+public final class ConfigMappingLoader {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static final ClassValue<ConfigMappingObjectHolder> CACHE = new ClassValue<ConfigMappingObjectHolder>() {
@@ -17,8 +19,16 @@ public final class ConfigMappingObjectLoader {
         }
     };
 
-    public static ConfigMappingMetadata getConfigMappingMetadata(Class<?> interfaceType) {
-        return ConfigMappingInterface.getConfigurationInterface(interfaceType);
+    public static List<ConfigMappingMetadata> getConfigMappingsMetadata(Class<?> type) {
+        final List<ConfigMappingMetadata> mappings = new ArrayList<>();
+        final ConfigMappingInterface configurationInterface = ConfigMappingInterface.getConfigurationInterface(type);
+        mappings.add(configurationInterface);
+        mappings.addAll(configurationInterface.getNested());
+        return mappings;
+    }
+
+    static ConfigMappingInterface getConfigMappingInterface(final Class<?> type) {
+        return ConfigMappingInterface.getConfigurationInterface(type);
     }
 
     static <T> T configMappingObject(Class<T> interfaceType, ConfigMappingContext configMappingContext) {
@@ -46,26 +56,24 @@ public final class ConfigMappingObjectLoader {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> interfaceType) {
-        final ConfigMappingMetadata mappingMetadata = getConfigMappingMetadata(interfaceType);
-
-        // Check if the interface implementation was already loaded. If not we will load it.
-        try {
-            return (Class<? extends ConfigMappingObject>) interfaceType.getClassLoader()
-                    .loadClass(mappingMetadata.getClassName());
-        } catch (ClassNotFoundException e) {
-            // Ignore
-        }
-
-        return createMappingObjectClass(mappingMetadata.getClassName(),
+    static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
+        final ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
+        return (Class<? extends ConfigMappingObject>) loadClass(type.getClassLoader(),
+                mappingMetadata.getClassName(),
                 mappingMetadata.getClassBytes());
     }
 
-    @SuppressWarnings("unchecked")
-    static Class<? extends ConfigMappingObject> createMappingObjectClass(final String className,
-            final byte[] classBytes) {
-        return (Class<? extends ConfigMappingObject>) ClassDefiner.defineClass(LOOKUP, ConfigMappingObjectLoader.class,
-                className, classBytes);
+    static Class<?> loadClass(final ClassLoader classLoader, final String className, final byte[] classBytes) {
+        // Check if the interface implementation was already loaded. If not we will load it.
+        try {
+            return classLoader.loadClass(className);
+        } catch (ClassNotFoundException e) {
+            return loadClass(className, classBytes);
+        }
+    }
+
+    private static Class<?> loadClass(final String className, final byte[] classBytes) {
+        return ClassDefiner.defineClass(LOOKUP, ConfigMappingLoader.class, className, classBytes);
     }
 
     private static final class ConfigMappingObjectHolder {
