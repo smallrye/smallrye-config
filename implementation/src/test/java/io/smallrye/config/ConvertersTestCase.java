@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
@@ -338,7 +340,7 @@ public class ConvertersTestCase {
         final Currency expected = Currency.getInstance("GBP");
         assertEquals(expected.getCurrencyCode(),
                 ((Currency) config.getValue("simple.currency", Currency.class)).getCurrencyCode(),
-                "Unexpected value for byte config");
+                "Unexpected value for currency config");
     }
 
     @Test
@@ -350,7 +352,25 @@ public class ConvertersTestCase {
         expected.set(5);
         expected.set(7);
         assertEquals(expected.toString(), (config.getValue("simple.bitset", BitSet.class)).toString(),
-                "Unexpected value for byte config");
+                "Unexpected value for BitSet config");
+    }
+
+    @Test
+    public void testAutomicInteger() {
+        final SmallRyeConfig config = buildConfig("simple.atomic.integer", "1");
+        final int expected = 1;
+        assertEquals(expected,
+                ((AtomicInteger) config.getValue("simple.atomic.integer", AtomicInteger.class)).get(),
+                "Unexpected value for AtomicInteger config");
+    }
+
+    @Test
+    public void testAtomicLong() {
+        final SmallRyeConfig config = buildConfig("simple.atomic.long", "1");
+        final long expected = 1;
+        assertEquals(expected,
+                ((AtomicLong) config.getValue("simple.atomic.long", AtomicLong.class)).get(),
+                "Unexpected value for AtomicLong config");
     }
 
     @SafeVarargs
