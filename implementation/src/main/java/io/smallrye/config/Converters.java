@@ -35,6 +35,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -143,6 +145,11 @@ public final class Converters {
                 }
                 return BitSet.valueOf(data);
             })));
+    static final Converter<AtomicInteger> ATOMIC_INTEGER_CONVERTER = BuiltInConverter.of(17,
+            newTrimmingConverter(newEmptyValueConverter((s) -> new AtomicInteger(Integer.valueOf(s)))));
+
+    static final Converter<AtomicLong> ATOMIC_LONG_CONVERTER = BuiltInConverter.of(18,
+            newTrimmingConverter(newEmptyValueConverter((s) -> new AtomicLong(Long.valueOf(s)))));
 
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
@@ -179,6 +186,10 @@ public final class Converters {
         ALL_CONVERTERS.put(Currency.class, CURRENCY_CONVERTER);
 
         ALL_CONVERTERS.put(BitSet.class, BITSET_CONVERTER);
+
+        ALL_CONVERTERS.put(AtomicInteger.class, ATOMIC_INTEGER_CONVERTER);
+
+        ALL_CONVERTERS.put(AtomicLong.class, ATOMIC_LONG_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
@@ -898,6 +909,10 @@ public final class Converters {
                     return CURRENCY_CONVERTER;
                 case 16:
                     return BITSET_CONVERTER;
+                case 17:
+                    return ATOMIC_INTEGER_CONVERTER;
+                case 18:
+                    return ATOMIC_LONG_CONVERTER;
                 default:
                     throw ConfigMessages.msg.unknownConverterId(id);
             }
