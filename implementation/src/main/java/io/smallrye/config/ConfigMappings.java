@@ -32,8 +32,12 @@ public final class ConfigMappings implements Serializable {
         for (ConfigMappingWithPrefix mapping : mappings) {
             builder.addRoot(mapping.getPrefix(), mapping.getKlass());
         }
-        final ConfigMappingProvider mappingProvider = builder.build();
 
+        registerConfigMappings(config, builder.build());
+    }
+
+    public void registerConfigMappings(final SmallRyeConfig config, final ConfigMappingProvider mappingProvider)
+            throws ConfigValidationException {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource instanceof DefaultValuesConfigSource) {
                 final DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;

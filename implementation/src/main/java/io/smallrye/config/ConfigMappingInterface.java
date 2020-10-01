@@ -17,9 +17,11 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -144,6 +146,33 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     public String getClassName() {
         return className;
+    }
+
+    List<ConfigMappingInterface> getNested() {
+        ArrayList<ConfigMappingInterface> nested = new ArrayList<>();
+        getNested(properties, nested);
+        return nested;
+    }
+
+    static void getNested(final Property[] properties, final List<ConfigMappingInterface> nested) {
+        for (Property property : properties) {
+            if (property instanceof GroupProperty) {
+                GroupProperty groupProperty = (GroupProperty) property;
+                ConfigMappingInterface group = groupProperty.getGroupType();
+                nested.add(group);
+                getNested(group.properties, nested);
+            }
+
+            if (property instanceof OptionalProperty) {
+                OptionalProperty optionalProperty = (OptionalProperty) property;
+                if (optionalProperty.getNestedProperty() instanceof GroupProperty) {
+                    GroupProperty groupProperty = (GroupProperty) optionalProperty.getNestedProperty();
+                    ConfigMappingInterface group = groupProperty.getGroupType();
+                    nested.add(group);
+                    getNested(group.properties, nested);
+                }
+            }
+        }
     }
 
     public static abstract class Property {

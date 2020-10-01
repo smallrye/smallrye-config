@@ -28,7 +28,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  * mapping has completed.
  */
 public final class ConfigMappingContext {
-
     private final Map<Class<?>, Map<String, Map<Object, Object>>> enclosedThings = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, Converter<?>>> convertersByTypeAndField = new IdentityHashMap<>();
@@ -66,7 +65,7 @@ public final class ConfigMappingContext {
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
-        final T mappingObject = ConfigMappingObjectLoader.configMappingObject(interfaceType, this);
+        final T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
         allInstances.add((ConfigMappingObject) mappingObject);
         return mappingObject;
     }

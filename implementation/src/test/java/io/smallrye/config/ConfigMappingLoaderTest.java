@@ -2,13 +2,15 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
-class ConfigMappingObjectLoaderTest {
+class ConfigMappingLoaderTest {
     @Test
     void multipleLoads() {
-        ConfigMappingObjectLoader.getImplementationClass(Server.class);
-        ConfigMappingObjectLoader.getImplementationClass(Server.class);
+        ConfigMappingLoader.getImplementationClass(Server.class);
+        ConfigMappingLoader.getImplementationClass(Server.class);
 
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080"))
@@ -22,10 +24,12 @@ class ConfigMappingObjectLoaderTest {
 
     @Test
     void loadManually() {
-        ConfigMappingMetadata mappingMetadata = ConfigMappingObjectLoader.getConfigMappingMetadata(ServerManual.class);
-        ConfigMappingObjectLoader.createMappingObjectClass(mappingMetadata.getClassName(), mappingMetadata.getClassBytes());
-        ConfigMappingObjectLoader.getImplementationClass(ServerManual.class);
-        ConfigMappingObjectLoader.getImplementationClass(ServerManual.class);
+        List<ConfigMappingMetadata> configMappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerManual.class);
+        configMappingsMetadata.forEach(
+                mappingMetadata -> ConfigMappingLoader.loadClass(ServerManual.class.getClassLoader(),
+                        mappingMetadata.getClassName(), mappingMetadata.getClassBytes()));
+        ConfigMappingLoader.getImplementationClass(ServerManual.class);
+        ConfigMappingLoader.getImplementationClass(ServerManual.class);
     }
 
     @ConfigMapping(prefix = "server")
