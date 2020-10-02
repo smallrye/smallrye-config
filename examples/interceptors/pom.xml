@@ -25,7 +25,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>interceptors</artifactId>
-  <version>1.9.1</version>
+  <version>1.9.2-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: Interceptors</name>
 
@@ -54,8 +54,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>1.9.1</tag>
-  </scm>
 </project>
