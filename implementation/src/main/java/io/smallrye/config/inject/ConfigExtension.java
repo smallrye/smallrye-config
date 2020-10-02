@@ -122,7 +122,7 @@ public class ConfigExtension implements Extension {
     protected void validate(@Observes AfterDeploymentValidation adv) {
         Config config = ConfigProvider.getConfig(getContextClassLoader());
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        for (InjectionPoint injectionPoint : configPropertyInjectionPoints) {
+        for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();
 
             // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
@@ -134,7 +134,7 @@ public class ConfigExtension implements Extension {
                             && (Optional.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
                                     || Provider.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
                                     || Supplier.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))) {
-                return;
+                continue;
             }
 
             ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
@@ -144,6 +144,7 @@ public class ConfigExtension implements Extension {
             if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, (SmallRyeConfig) config) == null) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
+                    continue;
                 }
             }
 
@@ -151,7 +152,7 @@ public class ConfigExtension implements Extension {
                 // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
                 ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (IllegalArgumentException e) {
-                adv.addDeploymentProblem(e);
+                adv.addDeploymentProblem(InjectionMessages.msg.illegalConversion(name, type));
             }
         }
 
@@ -167,8 +168,7 @@ public class ConfigExtension implements Extension {
         }
 
         try {
-            ((SmallRyeConfig) config).getConfigMappings().registerConfigMappings((SmallRyeConfig) config,
-                    configMappingsWithPrefix);
+            ConfigMappings.registerConfigMappings((SmallRyeConfig) config, configMappingsWithPrefix);
         } catch (ConfigValidationException e) {
             adv.addDeploymentProblem(e);
         }

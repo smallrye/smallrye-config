@@ -38,6 +38,7 @@
     <version.eclipse.microprofile.config>1.4</version.eclipse.microprofile.config>
     <version.smallrye.common>1.4.0</version.smallrye.common>
 
+    <version.junit.platform>1.6.2</version.junit.platform>
     <version.weld.junit>2.0.1.Final</version.weld.junit>
     <version.smallrye.testing.utilities>0.1.0</version.smallrye.testing.utilities>
 
@@ -92,6 +93,25 @@
         <version>${version.eclipse.microprofile.config}</version>
       </dependency>
 
+      <!-- TODO - Move to Parent POM -->
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-commons</artifactId>
+        <version>${version.junit.platform}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${version.junit.platform}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-testkit</artifactId>
+        <version>${version.junit.platform}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.jboss.weld</groupId>
         <artifactId>weld-junit5</artifactId>
