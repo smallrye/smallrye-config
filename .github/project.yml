@@ -1,4 +1,4 @@
 name: SmallRye Config
 release:
-  current-version: 1.9.0
-  next-version: 1.9.1-SNAPSHOT
+  current-version: 1.9.1
+  next-version: 1.9.2-SNAPSHOT
