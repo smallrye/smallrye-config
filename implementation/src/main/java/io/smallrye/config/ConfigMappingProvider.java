@@ -598,13 +598,13 @@ final class ConfigMappingProvider implements Serializable {
         return defaultValues;
     }
 
-    ConfigMappings mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
-        return mapConfiguration(config, new ConfigMappings());
+    void mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+        mapConfiguration(config, config.getConfigMappings());
     }
 
-    ConfigMappings mapConfiguration(SmallRyeConfig config, ConfigMappings mappings) throws ConfigValidationException {
+    private void mapConfiguration(SmallRyeConfig config, ConfigMappings mappings) throws ConfigValidationException {
         if (roots.isEmpty()) {
-            return new ConfigMappings(new HashMap<>());
+            return;
         }
 
         Assert.checkNotNullParam("config", config);
@@ -637,13 +637,11 @@ final class ConfigMappingProvider implements Serializable {
         }
         ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
         if (!problems.isEmpty()) {
-            throw new ConfigValidationException(
-                    problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
+            throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
 
         mappings.registerConfigMappings(context.getRootsMap());
-        return mappings;
     }
 
     private boolean isPropertyInRoot(String propertyName) {

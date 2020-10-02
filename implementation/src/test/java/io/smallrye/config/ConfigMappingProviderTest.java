@@ -38,16 +38,29 @@ public class ConfigMappingProviderTest {
     void noConfigMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
-        assertThrows(NoSuchElementException.class, () -> config.getConfigMapping(Server.class, "server"),
-                "Could not find a mapping for " + Server.class.getName() + " with prefix server");
+        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> config.getConfigMapping(Server.class, "server"));
+        assertEquals("SRCFG00027: Could not find a mapping for " + Server.class.getName(), exception.getMessage());
     }
 
     @Test
     void unregisteredConfigMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("host", "localhost", "port", "8080")).build();
-        assertThrows(NoSuchElementException.class, () -> config.getConfigMapping(Server.class),
-                "Could not find a mapping for " + Server.class.getName() + "with prefix");
+        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> config.getConfigMapping(Server.class));
+        assertEquals("SRCFG00027: Could not find a mapping for " + Server.class.getName(), exception.getMessage());
+    }
+
+    @Test
+    void unregistedPrefix() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Server.class)
+                .withSources(config("host", "localhost", "port", "8080")).build();
+        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> config.getConfigMapping(Server.class, "server"));
+        assertEquals("SRCFG00028: Could not find a mapping for " + Server.class.getName() + " with prefix server",
+                exception.getMessage());
     }
 
     @Test
@@ -67,7 +80,8 @@ public class ConfigMappingProviderTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
 
-        final Server server = configMappingProvider.mapConfiguration(config).getConfigMapping(Server.class, "server");
+        configMappingProvider.mapConfiguration(config);
+        final Server server = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
     }
@@ -130,12 +144,13 @@ public class ConfigMappingProviderTest {
                 .addRoot("server", SplitRootServerName.class)
                 .build();
 
-        final ConfigMappings result = configMappingProvider.mapConfiguration(config);
-        final SplitRootServerHostAndPort server = result.getConfigMapping(SplitRootServerHostAndPort.class, "server");
+        configMappingProvider.mapConfiguration(config);
+
+        final SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
 
-        final SplitRootServerName name = result.getConfigMapping(SplitRootServerName.class, "server");
+        final SplitRootServerName name = config.getConfigMapping(SplitRootServerName.class, "server");
         assertEquals("konoha", name.name());
     }
 
