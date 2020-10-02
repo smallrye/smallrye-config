@@ -1,32 +1,28 @@
 package io.smallrye.config;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public final class ConfigMappings implements Serializable {
     private static final long serialVersionUID = -7790784345796818526L;
 
-    private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings;
+    private final ConcurrentMap<Class<?>, Map<String, ConfigMappingObject>> mappings;
 
     ConfigMappings() {
-        this(new HashMap<>());
+        this.mappings = new ConcurrentHashMap<>();
     }
 
-    ConfigMappings(final Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
-        this.mappings = mappings;
-    }
-
-    void registerConfigMappings(Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
+    void registerConfigMappings(final Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
         this.mappings.putAll(mappings);
     }
 
-    public void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
+    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
             throws ConfigValidationException {
         final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder();
         for (ConfigMappingWithPrefix mapping : mappings) {
@@ -36,7 +32,7 @@ public final class ConfigMappings implements Serializable {
         registerConfigMappings(config, builder.build());
     }
 
-    public void registerConfigMappings(final SmallRyeConfig config, final ConfigMappingProvider mappingProvider)
+    public static void registerConfigMappings(final SmallRyeConfig config, final ConfigMappingProvider mappingProvider)
             throws ConfigValidationException {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource instanceof DefaultValuesConfigSource) {
@@ -45,7 +41,7 @@ public final class ConfigMappings implements Serializable {
             }
         }
 
-        mappingProvider.mapConfiguration(config, this);
+        mappingProvider.mapConfiguration(config);
     }
 
     <T> T getConfigMapping(Class<T> type) {
@@ -57,10 +53,16 @@ public final class ConfigMappings implements Serializable {
             return getConfigMapping(type);
         }
 
-        final ConfigMappingObject configMappingObject = mappings.getOrDefault(type, Collections.emptyMap()).get(prefix);
-        if (configMappingObject == null) {
-            throw ConfigMessages.msg.mappingNotFound(type.getName(), prefix);
+        final Map<String, ConfigMappingObject> mappingsForType = mappings.get(type);
+        if (mappingsForType == null) {
+            throw ConfigMessages.msg.mappingNotFound(type.getName());
         }
+
+        final ConfigMappingObject configMappingObject = mappingsForType.get(prefix);
+        if (configMappingObject == null) {
+            throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
+        }
+
         return type.cast(configMappingObject);
     }
 

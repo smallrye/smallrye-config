@@ -335,7 +335,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         try {
             ConfigMappings configMappings = new ConfigMappings();
             SmallRyeConfig config = new SmallRyeConfig(this, configMappings);
-            mappingProvider.mapConfiguration(config, configMappings);
+            mappingProvider.mapConfiguration(config);
             return config;
         } catch (ConfigValidationException e) {
             throw new IllegalStateException(e);
