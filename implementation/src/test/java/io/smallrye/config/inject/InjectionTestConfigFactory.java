@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
@@ -43,6 +44,29 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                 .withDefaultValue("cloud.host", "cloud")
                 .withDefaultValue("server.port", "8080")
                 .withDefaultValue("cloud.port", "9090")
+                .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())
                 .build();
+    }
+
+    public static class ConvertedValue {
+        private final String value;
+
+        public ConvertedValue(final String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public static class ConvertedValueConverter implements Converter<ConvertedValue> {
+        @Override
+        public ConvertedValue convert(final String value) {
+            if (value == null || value.isEmpty()) {
+                return null;
+            }
+            return new ConvertedValue("out");
+        }
     }
 }

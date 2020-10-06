@@ -1,9 +1,12 @@
 package io.smallrye.config.inject;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Optional;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.inject.InjectionTestConfigFactory.ConvertedValue;
 
 @ExtendWith(WeldJunit5Extension.class)
 public class ConfigInjectionTest extends InjectionTest {
@@ -55,6 +59,17 @@ public class ConfigInjectionTest extends InjectionTest {
         assertNull(configValueMissing.getConfigSourceName());
     }
 
+    @Test
+    void optionals() {
+        assertFalse(configBean.getUnknown().isPresent());
+    }
+
+    @Test
+    void converters() {
+        assertEquals("out", configBean.getConvertedValue().getValue());
+        assertFalse(configBean.getConvertedValueOptional().isPresent());
+    }
+
     @ApplicationScoped
     public static class ConfigBean {
         @Inject
@@ -74,6 +89,15 @@ public class ConfigInjectionTest extends InjectionTest {
         @Inject
         @ConfigProperty(name = "my.prop.missing", defaultValue = "default")
         private ConfigValue configValueMissing;
+        @Inject
+        @ConfigProperty(name = "unknown")
+        private Optional<String> unknown;
+        @Inject
+        @ConfigProperty(name = "converted")
+        private ConvertedValue convertedValue;
+        @Inject
+        @ConfigProperty(name = "converted")
+        private Optional<ConvertedValue> convertedValueOptional;
 
         String getMyProp() {
             return myProp;
@@ -97,6 +121,18 @@ public class ConfigInjectionTest extends InjectionTest {
 
         ConfigValue getConfigValueMissing() {
             return configValueMissing;
+        }
+
+        Optional<String> getUnknown() {
+            return unknown;
+        }
+
+        ConvertedValue getConvertedValue() {
+            return convertedValue;
+        }
+
+        Optional<ConvertedValue> getConvertedValueOptional() {
+            return convertedValueOptional;
         }
     }
 }
