@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import java.io.Serializable;
+
 import io.smallrye.common.constraint.Assert;
 
 /**
@@ -41,8 +43,9 @@ public class ConfigValidationException extends Exception {
         return problems[index];
     }
 
-    public static final class Problem {
+    public static final class Problem implements Serializable {
         public static final Problem[] NO_PROBLEMS = new Problem[0];
+        private static final long serialVersionUID = 5984436393578154541L;
 
         private final String message;
 
