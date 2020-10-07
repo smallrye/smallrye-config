@@ -66,7 +66,6 @@ public class ConfigInjectionTest extends InjectionTest {
 
     @Test
     void converters() {
-        assertEquals("out", configBean.getConvertedValue().getValue());
         assertFalse(configBean.getConvertedValueOptional().isPresent());
     }
 
@@ -92,9 +91,6 @@ public class ConfigInjectionTest extends InjectionTest {
         @Inject
         @ConfigProperty(name = "unknown")
         private Optional<String> unknown;
-        @Inject
-        @ConfigProperty(name = "converted")
-        private ConvertedValue convertedValue;
         @Inject
         @ConfigProperty(name = "converted")
         private Optional<ConvertedValue> convertedValueOptional;
@@ -125,10 +121,6 @@ public class ConfigInjectionTest extends InjectionTest {
 
         Optional<String> getUnknown() {
             return unknown;
-        }
-
-        ConvertedValue getConvertedValue() {
-            return convertedValue;
         }
 
         Optional<ConvertedValue> getConvertedValueOptional() {
