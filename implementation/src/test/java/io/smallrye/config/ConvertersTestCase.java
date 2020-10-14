@@ -33,6 +33,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -353,15 +355,38 @@ public class ConvertersTestCase {
                 "Unexpected value for byte config");
     }
 
+    @Test
+    public void nulls() {
+        final Config config = ConfigProvider.getConfig();
+        assertThrows(NullPointerException.class, () -> convertNull(config, Boolean.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Byte.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Short.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Integer.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Long.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Float.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Double.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, Character.class));
+
+        assertThrows(NullPointerException.class, () -> convertNull(config, OptionalInt.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, OptionalLong.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, OptionalDouble.class));
+    }
+
     @SafeVarargs
     private static <T> T[] array(T... items) {
         return items;
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
-        return (SmallRyeConfig) new SmallRyeConfigBuilder()
+        return new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();
+    }
+
+    private static <T> void convertNull(Config config, Class<T> converterType) {
+        config.getConverter(converterType)
+                .map(converter -> converter.convert(null))
+                .orElseThrow(NoSuchElementException::new);
     }
 }
