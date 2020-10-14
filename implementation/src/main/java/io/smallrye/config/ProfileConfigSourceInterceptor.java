@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.Converters.getImplicitConverter;
+import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 
 import java.util.ArrayList;
@@ -37,8 +37,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     public ProfileConfigSourceInterceptor(final String profile) {
         if (profile != null) {
-            List<String> convertedProfiles = newCollectionConverter(getImplicitConverter(String.class), ArrayList::new)
-                    .convert(profile);
+            List<String> convertedProfiles = newCollectionConverter(STRING_CONVERTER, ArrayList::new).convert(profile);
             Collections.reverse(convertedProfiles);
             this.profiles = convertedProfiles.toArray(new String[0]);
         } else {
