@@ -919,7 +919,7 @@ public final class Converters {
         }
 
         public T convert(final String value) {
-            return value == null ? null : getDelegate().convert(value.trim());
+            return getDelegate().convert(value.trim());
         }
     }
 }
