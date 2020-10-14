@@ -26,7 +26,7 @@ class ConfigMappingLoaderTest {
     void loadManually() {
         List<ConfigMappingMetadata> configMappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerManual.class);
         configMappingsMetadata.forEach(
-                mappingMetadata -> ConfigMappingLoader.loadClass(ServerManual.class.getClassLoader(),
+                mappingMetadata -> ConfigMappingLoader.loadClass(ServerManual.class,
                         mappingMetadata.getClassName(), mappingMetadata.getClassBytes()));
         ConfigMappingLoader.getImplementationClass(ServerManual.class);
         ConfigMappingLoader.getImplementationClass(ServerManual.class);
