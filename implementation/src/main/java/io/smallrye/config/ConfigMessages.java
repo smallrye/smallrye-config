@@ -124,4 +124,7 @@ interface ConfigMessages {
 
     @Message(id = 36, value = "Type %s not supported for unwrapping.")
     IllegalArgumentException getTypeNotSupportedForUnwrapping(Class<?> type);
+
+    @Message(id = 37, value = "The Converter API cannot convert a null value")
+    NullPointerException converterNullValue();
 }
