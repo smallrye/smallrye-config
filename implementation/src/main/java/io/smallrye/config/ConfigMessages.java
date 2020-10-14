@@ -113,6 +113,9 @@ interface ConfigMessages {
     @Message(id = 32, value = "Expected a float value, got \"%s\"")
     NumberFormatException floatExpected(String value);
 
-    @Message(id = 33, value = "Type %s not supported for unwrapping.")
+    @Message(id = 33, value = "Type %s not supported for unwrapping")
     IllegalArgumentException getTypeNotSupportedForUnwrapping(Class<?> type);
+
+    @Message(id = 34, value = "The Converter API cannot convert a null value")
+    NullPointerException converterNullValue();
 }
