@@ -138,7 +138,13 @@ public class ConfigExtension implements Extension {
             }
 
             ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
-            String name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
+            String name;
+            try {
+                name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
+            } catch (IllegalStateException e) {
+                adv.addDeploymentProblem(e);
+                continue;
+            }
 
             // Check if the name is part of the properties first. Since properties can be a subset, then search for the actual property for a value.
             if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, (SmallRyeConfig) config) == null) {

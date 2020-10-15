@@ -71,6 +71,23 @@ public class ValidateInjectionTest {
                         "")));
     }
 
+    @Test
+    void methodUnnamedProperties() {
+        JupiterTestEngine engine = new JupiterTestEngine();
+        LauncherDiscoveryRequest request = request().selectors(selectClass(MethodUnnamedPropertiesTest.class)).build();
+        EngineExecutionResults results = EngineTestKit.execute(engine, request);
+        results.testEvents().failed()
+                .assertEventsMatchExactly(
+                        finishedWithFailure(instanceOf(DeploymentException.class), new Condition<>(
+                                throwable ->
+                                // Ensure both invalid methods are included in the error message
+                                throwable.getMessage()
+                                        .contains("SRCFG02002: Could not find default name for @ConfigProperty InjectionPoint")
+                                        && throwable.getMessage().contains("setUnnamedA")
+                                        && throwable.getMessage().contains("setUnnamedB"),
+                                "")));
+    }
+
     @ExtendWith(WeldJunit5Extension.class)
     static class MissingPropertyTest {
         @WeldSetup
@@ -186,6 +203,36 @@ public class ValidateInjectionTest {
             @Inject
             public ConstructorUnnamedPropertiesBean(@ConfigProperty final String unnamed) {
                 this.unnamed = unnamed;
+            }
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class MethodUnnamedPropertiesTest {
+        @WeldSetup
+        public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MethodUnnamedPropertiesBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        MethodUnnamedPropertiesBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        public static class MethodUnnamedPropertiesBean {
+
+            @Inject
+            private void setUnnamedA(@ConfigProperty String unnamedA) {
+            }
+
+            @Inject
+            private void setUnnamedB(@ConfigProperty String unnamedB) {
             }
         }
     }
