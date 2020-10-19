@@ -5,6 +5,9 @@ include::../attributes.adoc[]
 
 = Config
 
+* <<profiles>>
 * <<secret-keys>>
+
+include::profiles.adoc[]
 
 include::secret-keys.adoc[]
