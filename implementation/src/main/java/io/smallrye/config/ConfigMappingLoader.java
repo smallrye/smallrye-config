@@ -72,6 +72,13 @@ public final class ConfigMappingLoader {
         }
     }
 
+    /**
+     * Do not remove this method or inline it. It is keep separate on purpose, so it is easier to substitute it with
+     * the GraalVM API for native image compilation.
+     *
+     * We cannot keep dynamic references to LOOKUP, so this method may be replaced. This is not a problem, since for
+     * native image we can generate the mapping class bytes in the binary so we don't need to dynamically load them.
+     */
     private static Class<?> defineClass(final Class<?> parent, final String className, final byte[] classBytes) {
         return ClassDefiner.defineClass(LOOKUP, parent, className, classBytes);
     }
