@@ -68,16 +68,40 @@ public final class Converters {
                             || "OUI".equalsIgnoreCase(value)))));
 
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
-            newTrimmingConverter(newEmptyValueConverter(Double::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(value -> {
+                try {
+                    return Double.valueOf(value);
+                } catch (NumberFormatException nfe) {
+                    throw ConfigMessages.msg.doubleExpected(value);
+                }
+            })));
 
     static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
-            newTrimmingConverter(newEmptyValueConverter(Float::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(value -> {
+                try {
+                    return Float.valueOf(value);
+                } catch (NumberFormatException nfe) {
+                    throw ConfigMessages.msg.floatExpected(value);
+                }
+            })));
 
     static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
-            newTrimmingConverter(newEmptyValueConverter(Long::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(value -> {
+                try {
+                    return Long.valueOf(value);
+                } catch (NumberFormatException nfe) {
+                    throw ConfigMessages.msg.longExpected(value);
+                }
+            })));
 
     static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
-            newTrimmingConverter(newEmptyValueConverter(Integer::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(value -> {
+                try {
+                    return Integer.valueOf(value);
+                } catch (NumberFormatException nfe) {
+                    throw ConfigMessages.msg.integerExpected(value);
+                }
+            })));
 
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6,
             newTrimmingConverter(newEmptyValueConverter(value -> {
@@ -108,7 +132,7 @@ public final class Converters {
 
     static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, newEmptyValueConverter(value -> {
         if (value.length() == 1) {
-            return Character.valueOf(value.charAt(0));
+            return value.charAt(0);
         }
         throw ConfigMessages.msg.failedCharacterConversion(value);
     }));

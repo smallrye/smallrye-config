@@ -100,4 +100,16 @@ interface ConfigMessages {
 
     @Message(id = 28, value = "Could not find a mapping for %s with prefix %s")
     NoSuchElementException mappingPrefixNotFound(String className, String prefix);
+
+    @Message(id = 29, value = "Expected an integer value, got \"%s\"")
+    NumberFormatException integerExpected(String value);
+
+    @Message(id = 30, value = "Expected a long value, got \"%s\"")
+    NumberFormatException longExpected(String value);
+
+    @Message(id = 31, value = "Expected a double value, got \"%s\"")
+    NumberFormatException doubleExpected(String value);
+
+    @Message(id = 32, value = "Expected a float value, got \"%s\"")
+    NumberFormatException floatExpected(String value);
 }
