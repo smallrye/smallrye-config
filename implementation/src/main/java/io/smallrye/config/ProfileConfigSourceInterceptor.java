@@ -36,17 +36,17 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     private final String[] profiles;
 
     public ProfileConfigSourceInterceptor(final String profile) {
-        if (profile != null) {
-            List<String> convertedProfiles = newCollectionConverter(STRING_CONVERTER, ArrayList::new).convert(profile);
-            Collections.reverse(convertedProfiles);
-            this.profiles = convertedProfiles.toArray(new String[0]);
-        } else {
-            this.profiles = new String[0];
-        }
+        this(profile != null ? convertProfile(profile) : new ArrayList<>());
     }
 
     public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
         this(context, SMALLRYE_PROFILE);
+    }
+
+    public ProfileConfigSourceInterceptor(final List<String> profiles) {
+        List<String> reverseProfiles = new ArrayList<>(profiles);
+        Collections.reverse(reverseProfiles);
+        this.profiles = reverseProfiles.toArray(new String[0]);
     }
 
     public ProfileConfigSourceInterceptor(
@@ -109,5 +109,9 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         }
 
         return name;
+    }
+
+    public static List<String> convertProfile(final String profile) {
+        return newCollectionConverter(STRING_CONVERTER, ArrayList::new).convert(profile);
     }
 }

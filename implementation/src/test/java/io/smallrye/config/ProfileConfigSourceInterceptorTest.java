@@ -222,9 +222,10 @@ public class ProfileConfigSourceInterceptorTest {
     @Test
     void multipleProfilesSamePriority() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(SMALLRYE_PROFILE, "foo,bar", "config_ordinal", "1000"))
                 .withSources(config("%foo.common.prop", "1234", "%bar.common.prop", "5678"))
                 .addDefaultInterceptors()
+                .withProfile("foo")
+                .withProfile("bar")
                 .build();
 
         assertEquals("5678", config.getRawValue("common.prop"));
@@ -253,6 +254,19 @@ public class ProfileConfigSourceInterceptorTest {
                 .build();
 
         assertEquals("9", config.getRawValue("common.prop"));
+    }
+
+    @Test
+    void builderProfiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("%common.common.prop", "1234", "%prof.my.prop", "5678"))
+                .addDefaultInterceptors()
+                .withProfile("common")
+                .withProfile("prof")
+                .build();
+
+        assertEquals("1234", config.getRawValue("common.prop"));
+        assertEquals("5678", config.getRawValue("my.prop"));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
