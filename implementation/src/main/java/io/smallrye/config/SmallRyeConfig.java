@@ -309,19 +309,23 @@ public class SmallRyeConfig implements Config, Serializable {
          */
         ConfigSources(final List<ConfigSource> sources, final List<InterceptorWithPriority> interceptors) {
             final List<ConfigSourceInterceptorWithPriority> sortInterceptors = new ArrayList<>();
+            // Add all sources except for ConfigurableConfigSource types. These are initialized later
+            // Sources are converted to the interceptor API
             sortInterceptors.addAll(sources.stream()
                     .filter(configSource -> !(configSource instanceof ConfigurableConfigSource))
                     .map(ConfigSourceInterceptorWithPriority::new)
                     .collect(toList()));
+            // Add all interceptors
             sortInterceptors.addAll(interceptors.stream().map(ConfigSourceInterceptorWithPriority::new).collect(toList()));
             sortInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
 
+            // Create the initial chain and init each element with the current context
             SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             for (ConfigSourceInterceptorWithPriority configSourceInterceptor : sortInterceptors) {
-                final ConfigSourceInterceptorWithPriority initInterceptor = configSourceInterceptor.getInterceptor(current);
-                current = new SmallRyeConfigSourceInterceptorContext(initInterceptor.getInterceptor(), current);
+                current = new SmallRyeConfigSourceInterceptorContext(configSourceInterceptor.getInterceptor(current), current);
             }
 
+            // Retrieve all sources that must be initialized with the current chain
             final SmallRyeConfigSourceInterceptorContext initChain = current;
             final List<ConfigurableConfigSource> lateInitSources = sources.stream()
                     .filter(ConfigurableConfigSource.class::isInstance)
@@ -329,12 +333,14 @@ public class SmallRyeConfig implements Config, Serializable {
                     .sorted(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal))
                     .collect(toList());
 
+            // Init all late sources
             final List<ConfigSourceInterceptorWithPriority> lateInterceptors = lateInitSources.stream()
                     .flatMap(configurableConfigSource -> configurableConfigSource.getConfigSources(
                             new ConfigSourceContext() {
                                 @Override
                                 public ConfigValue getValue(final String name) {
-                                    return initChain.proceed(name);
+                                    ConfigValue value = initChain.proceed(name);
+                                    return value != null ? value : ConfigValue.builder().withName(name).build();
                                 }
 
                                 @Override
@@ -345,13 +351,17 @@ public class SmallRyeConfig implements Config, Serializable {
                     .map(ConfigSourceInterceptorWithPriority::new)
                     .collect(toList());
 
+            // Late sources are converted to the interceptor API and sorted again
             sortInterceptors.addAll(lateInterceptors);
             sortInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
 
+            // Rebuild the chain with the late sources and collect new instances of the interceptors
+            // The new instance will ensure that we get rid of references to factories and other stuff and keep only
+            // the resolved final source or interceptor to use.
             final List<ConfigSourceInterceptorWithPriority> initInterceptors = new ArrayList<>();
             current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             for (ConfigSourceInterceptorWithPriority configSourceInterceptor : sortInterceptors) {
-                final ConfigSourceInterceptorWithPriority initInterceptor = configSourceInterceptor.getInterceptor(current);
+                ConfigSourceInterceptorWithPriority initInterceptor = configSourceInterceptor.initialized(current);
                 current = new SmallRyeConfigSourceInterceptorContext(initInterceptor.getInterceptor(), current);
                 initInterceptors.add(initInterceptor);
             }
@@ -378,8 +388,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             for (ConfigSourceInterceptorWithPriority configSourceInterceptor : newInterceptors) {
-                final ConfigSourceInterceptor interceptor = configSourceInterceptor.getInterceptor();
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
+                current = new SmallRyeConfigSourceInterceptorContext(configSourceInterceptor.getInterceptor(current), current);
             }
 
             this.sources = Collections.unmodifiableList(getSources(newInterceptors));
@@ -414,39 +423,50 @@ public class SmallRyeConfig implements Config, Serializable {
     static class ConfigSourceInterceptorWithPriority implements Comparable<ConfigSourceInterceptorWithPriority>, Serializable {
         private static final long serialVersionUID = 1637460029437579033L;
 
-        final Function<ConfigSourceInterceptorContext, ConfigSourceInterceptor> interceptor;
-        final int priority;
-        final String name;
+        private final Function<ConfigSourceInterceptorContext, ConfigSourceInterceptor> init;
+        private final int priority;
+        private final String name;
 
-        public ConfigSourceInterceptorWithPriority(final InterceptorWithPriority interceptor) {
-            this.interceptor = interceptor::getInterceptor;
+        private ConfigSourceInterceptor interceptor;
+
+        ConfigSourceInterceptorWithPriority(final InterceptorWithPriority interceptor) {
+            this.init = interceptor::getInterceptor;
             this.priority = interceptor.getPriority();
             this.name = "undefined";
         }
 
-        public ConfigSourceInterceptorWithPriority(final ConfigSource configSource) {
-            this.interceptor = context -> configSourceInterceptor(configSource);
+        ConfigSourceInterceptorWithPriority(final ConfigSource configSource) {
+            this.init = context -> configSourceInterceptor(configSource);
             this.priority = configSource.getOrdinal();
             this.name = configSource.getName();
         }
 
-        public ConfigSourceInterceptorWithPriority(final ConfigSourceInterceptor interceptor, final int priority,
+        private ConfigSourceInterceptorWithPriority(final ConfigSourceInterceptor interceptor, final int priority,
                 final String name) {
-            this.interceptor = (Serializable & Function) context -> interceptor;
+            this.init = null;
             this.priority = priority;
             this.name = name;
+            this.interceptor = interceptor;
         }
 
-        public ConfigSourceInterceptor getInterceptor() {
-            return interceptor.apply(null);
+        ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+            if (this.interceptor == null) {
+                this.interceptor = init.apply(context);
+            }
+
+            return this.interceptor;
         }
 
-        public ConfigSourceInterceptorWithPriority getInterceptor(final ConfigSourceInterceptorContext context) {
-            return new ConfigSourceInterceptorWithPriority(interceptor.apply(context), priority, name);
+        ConfigSourceInterceptor getInterceptor() {
+            return Optional.ofNullable(this.interceptor).orElseThrow(IllegalStateException::new);
         }
 
-        public int getPriority() {
-            return priority;
+        ConfigSourceInterceptorWithPriority initialized(final ConfigSourceInterceptorContext context) {
+            return new ConfigSourceInterceptorWithPriority(this.getInterceptor(context), this.priority, this.name);
+        }
+
+        int getPriority() {
+            return this.priority;
         }
 
         @Override

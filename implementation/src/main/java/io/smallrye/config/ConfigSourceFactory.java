@@ -1,6 +1,5 @@
 package io.smallrye.config;
 
-import java.util.Collections;
 import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -8,13 +7,14 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import io.smallrye.common.annotation.Experimental;
 
 /**
- * This ConfigSourceFactory allows to initialize a {@link ConfigSource}, with access to the current
+ * This {@code ConfigSourceFactory} allows to initialize a {@link ConfigSource}, with access to the current
  * {@link ConfigSourceContext}.
  * <p>
  *
  * The provided {@link ConfigSource} is initialized in priority order and the current {@link ConfigSourceContext} has
  * access to all previous initialized {@code ConfigSources}. This allows the factory to configure the
- * {@link ConfigSource} with configurations read from higher priority {@code ConfigSources}.
+ * {@link ConfigSource} with all other {@code ConfigSources} available, except for {@code ConfigSources} initialized by
+ * another {@code ConfigSourceFactory}.
  * <p>
  *
  * Instances of this interface will be discovered by {@link SmallRyeConfigBuilder#withSources(ConfigSourceFactory...)}
@@ -24,12 +24,15 @@ import io.smallrye.common.annotation.Experimental;
  */
 @Experimental("ConfigSource API Enhancements")
 public interface ConfigSourceFactory {
-    ConfigSource getConfigSource(ConfigSourceContext context);
+    Iterable<ConfigSource> getConfigSources(ConfigSourceContext context);
 
-    default Iterable<ConfigSource> getConfigSources(ConfigSourceContext context) {
-        return Collections.singletonList(getConfigSource(context));
-    }
-
+    /**
+     * Returns the factory priority. This is required, because the factory needs to be sorted before doing
+     * initialization. Once the factory is initialized, each a {@link ConfigSource} will use its own ordinal to
+     * determine the config lookup order.
+     *
+     * @return the priority value.
+     */
     default OptionalInt getPriority() {
         return OptionalInt.empty();
     }
