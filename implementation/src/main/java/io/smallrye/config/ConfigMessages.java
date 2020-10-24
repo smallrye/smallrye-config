@@ -112,4 +112,13 @@ interface ConfigMessages {
 
     @Message(id = 32, value = "Expected a float value, got \"%s\"")
     NumberFormatException floatExpected(String value);
+
+    @Message(id = 33, value = "Scheme %s not supported")
+    IllegalArgumentException schemeNotSupported(String scheme);
+
+    @Message(id = 34, value = "URI Syntax invalid %s")
+    IllegalArgumentException uriSyntaxInvalid(@Cause Throwable cause, String uri);
+
+    @Message(id = 35, value = "Failed to load resource")
+    IllegalStateException failedToLoadResource(@Cause Throwable cause);
 }

@@ -42,6 +42,10 @@ public class PropertiesConfigSource extends MapBackedConfigSource {
         super(NAME_PREFIX + url.toString() + "]", ConfigSourceUtil.urlToMap(url));
     }
 
+    public PropertiesConfigSource(URL url, int ordinal) throws IOException {
+        super(NAME_PREFIX + url.toString() + "]", ConfigSourceUtil.urlToMap(url), ordinal);
+    }
+
     public PropertiesConfigSource(Properties properties, String source) {
         super(NAME_PREFIX + source + "]", ConfigSourceUtil.propertiesToMap(properties));
     }

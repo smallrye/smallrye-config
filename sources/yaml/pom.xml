@@ -29,6 +29,10 @@
             <artifactId>smallrye-config-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.smallrye.common</groupId>
             <artifactId>smallrye-common-constraint</artifactId>
         </dependency>
@@ -39,13 +43,13 @@
             <artifactId>junit-jupiter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.smallrye.config</groupId>
-            <artifactId>smallrye-config</artifactId>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
+            <groupId>org.jboss.shrinkwrap</groupId>
+            <artifactId>shrinkwrap-impl-base</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

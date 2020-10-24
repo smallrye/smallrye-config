@@ -2,6 +2,7 @@ package io.smallrye.config.source.yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,10 +26,10 @@ import io.smallrye.config.common.MapBackedConfigSource;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public class YamlConfigSource extends MapBackedConfigSource {
-
-    static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
-
     private static final long serialVersionUID = -418186029484956531L;
+
+    private static final String NAME_PREFIX = "YamlConfigSource[source=";
+    static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
 
     private final Set<String> propertyNames;
 
@@ -39,6 +40,14 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     public YamlConfigSource(String name, InputStream stream) throws IOException {
         this(name, stream, ORDINAL);
+    }
+
+    public YamlConfigSource(URL url) throws IOException {
+        this(NAME_PREFIX + url.toString() + "]", url.openStream());
+    }
+
+    public YamlConfigSource(URL url, int ordinal) throws IOException {
+        this(NAME_PREFIX + url.toString() + "]", url.openStream(), ordinal);
     }
 
     public YamlConfigSource(String name, InputStream stream, int defaultOrdinal) throws IOException {

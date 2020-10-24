@@ -1,12 +1,11 @@
 package io.smallrye.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -42,7 +41,18 @@ public class ConfigurableConfigSource implements ConfigSource {
         return factory.getPriority().orElse(DEFAULT_ORDINAL);
     }
 
-    List<ConfigSource> getConfigSources(ConfigSourceContext context) {
-        return StreamSupport.stream(factory.getConfigSources(context).spliterator(), false).collect(Collectors.toList());
+    List<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+        return unwrap(context, new ArrayList<>());
+    }
+
+    private List<ConfigSource> unwrap(final ConfigSourceContext context, final List<ConfigSource> configSources) {
+        for (final ConfigSource configSource : factory.getConfigSources(context)) {
+            if (configSource instanceof ConfigurableConfigSource) {
+                configSources.addAll(((ConfigurableConfigSource) configSource).getConfigSources(context));
+            } else {
+                configSources.add(configSource);
+            }
+        }
+        return configSources;
     }
 }
