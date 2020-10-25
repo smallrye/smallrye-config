@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -14,17 +17,17 @@ import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
-public class ConfigConfigSourceTest {
+class ConfigConfigSourceTest {
     @Test
-    public void configure() {
+    void configure() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
+                .withSources(config("my.prop", "1234"))
                 .withSources(new ConfigSourceFactory() {
                     @Override
-                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
-                        return new AbstractConfigSource("test", 1000) {
+                    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+                        return singletonList(new AbstractConfigSource("test", 1000) {
                             final String value = context.getValue("my.prop").getValue();
 
                             @Override
@@ -36,7 +39,7 @@ public class ConfigConfigSourceTest {
                             public String getValue(final String propertyName) {
                                 return value;
                             }
-                        };
+                        });
                     }
 
                     @Override
@@ -57,15 +60,15 @@ public class ConfigConfigSourceTest {
     }
 
     @Test
-    public void lowerPriority() {
+    void lowerPriority() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
+                .withSources(config("my.prop", "1234"))
                 .withSources(new ConfigSourceFactory() {
                     @Override
-                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
-                        return new AbstractConfigSource("test", 0) {
+                    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+                        return singletonList(new AbstractConfigSource("test", 0) {
                             final ConfigValue value = context.getValue("my.prop");
 
                             @Override
@@ -77,7 +80,7 @@ public class ConfigConfigSourceTest {
                             public String getValue(final String propertyName) {
                                 return value != null ? value.getValue() : null;
                             }
-                        };
+                        });
                     }
 
                     @Override
@@ -98,17 +101,17 @@ public class ConfigConfigSourceTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("smallrye.prop", "1", "smallrye.another", "2", "mp.prop", "1"))
+                .withSources(config("smallrye.prop", "1", "smallrye.another", "2", "mp.prop", "1"))
                 .withSources(new ConfigurableConfigSource(new ConfigSourceFactory() {
                     @Override
-                    public ConfigSource getConfigSource(final ConfigSourceContext context) {
+                    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
                         Map<String, String> properties = new HashMap<>();
                         context.iterateNames().forEachRemaining(s -> {
                             if (s.startsWith("smallrye")) {
                                 properties.put(s, "1234");
                             }
                         });
-                        return KeyValuesConfigSource.config(properties);
+                        return singletonList(config(properties));
                     }
 
                     @Override
@@ -120,5 +123,30 @@ public class ConfigConfigSourceTest {
         assertEquals("1234", config.getRawValue("smallrye.prop"));
         assertEquals("1234", config.getRawValue("smallrye.another"));
         assertEquals("1", config.getRawValue("mp.prop"));
+    }
+
+    @Test
+    void doNotOverrideInitialChain() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_PROFILE, "foo", "%foo.my.prop", "1234", "%bar.my.prop", "5678"))
+                .withSources(new ConfigurableConfigSource(context -> singletonList(config(SMALLRYE_PROFILE, "bar"))))
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void configOrdinal() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(config("config_ordinal", "200", "my.prop", "1234"))
+                .withSources(new ConfigurableConfigSource(
+                        context -> singletonList(config("config_ordinal", "400", "my.prop", "5678"))))
+                .build();
+
+        assertEquals("5678", config.getRawValue("my.prop"));
     }
 }
