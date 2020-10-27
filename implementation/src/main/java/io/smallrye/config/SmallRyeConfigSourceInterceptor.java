@@ -30,7 +30,10 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
         final Set<String> names = new HashSet<>();
-        context.iterateNames().forEachRemaining(names::add);
+        final Iterator<String> namesIterator = context.iterateNames();
+        while (namesIterator.hasNext()) {
+            names.add(namesIterator.next());
+        }
         names.addAll(configSource.getPropertyNames());
         return names.iterator();
     }
@@ -38,7 +41,10 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
         final Set<ConfigValue> values = new HashSet<>();
-        context.iterateValues().forEachRemaining(values::add);
+        final Iterator<ConfigValue> valuesIterator = context.iterateValues();
+        while (valuesIterator.hasNext()) {
+            values.add(valuesIterator.next());
+        }
         values.addAll(configSource.getConfigValueProperties().values());
         return values.iterator();
     }

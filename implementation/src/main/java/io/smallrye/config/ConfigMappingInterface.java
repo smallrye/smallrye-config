@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingProvider.skewer;
-import static java.util.stream.Collectors.toMap;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getType;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.objectweb.asm.ClassVisitor;
@@ -68,7 +66,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         this.className = interfaceType.getName() + interfaceType.getName().hashCode() + "Impl";
         this.superTypes = superTypes;
         this.properties = properties;
-        this.propertiesByName = Stream.of(properties).collect(toMap(p -> p.getMethod().getName(), p -> p));
+        this.propertiesByName = toPropertiesMap(properties);
     }
 
     /**
@@ -151,6 +149,14 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         ArrayList<ConfigMappingInterface> nested = new ArrayList<>();
         getNested(properties, nested);
         return nested;
+    }
+
+    private static Map<String, Property> toPropertiesMap(final Property[] properties) {
+        Map<String, Property> map = new HashMap<>();
+        for (Property p : properties) {
+            map.put(p.getMethod().getName(), p);
+        }
+        return map;
     }
 
     static void getNested(final Property[] properties, final List<ConfigMappingInterface> nested) {

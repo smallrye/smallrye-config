@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -45,8 +45,11 @@ public class ConfigSourceUtil {
      * @return {@link Map} object
      */
     public static Map<String, String> propertiesToMap(Properties properties) {
-        return properties.entrySet().stream().collect(Collectors.toMap(e -> String.valueOf(e.getKey()),
-                e -> String.valueOf(e.getValue())));
+        Map<String, String> map = new HashMap<>();
+        for (Map.Entry<Object, Object> e : properties.entrySet()) {
+            map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+        }
+        return map;
     }
 
     public static Map<String, String> urlToMap(URL locationOfProperties) throws IOException {
