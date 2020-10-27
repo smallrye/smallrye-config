@@ -58,17 +58,15 @@ public final class ConfigMappingLoader {
     @SuppressWarnings("unchecked")
     static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
         final ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-        return (Class<? extends ConfigMappingObject>) loadClass(type,
-                mappingMetadata.getClassName(),
-                mappingMetadata.getClassBytes());
+        return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
     }
 
-    static Class<?> loadClass(final Class<?> parent, final String className, final byte[] classBytes) {
+    static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
         // Check if the interface implementation was already loaded. If not we will load it.
         try {
-            return parent.getClassLoader().loadClass(className);
+            return parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
         } catch (ClassNotFoundException e) {
-            return defineClass(parent, className, classBytes);
+            return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
         }
     }
 
