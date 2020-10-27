@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Priority;
@@ -52,7 +51,11 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public ProfileConfigSourceInterceptor(
             final ConfigSourceInterceptorContext context,
             final String profileConfigName) {
-        this(Optional.ofNullable(context.proceed(profileConfigName)).map(ConfigValue::getValue).orElse(null));
+        this(context.proceed(profileConfigName));
+    }
+
+    private ProfileConfigSourceInterceptor(final ConfigValue configValue) {
+        this(configValue != null ? configValue.getValue() : null);
     }
 
     @Override
@@ -90,14 +93,21 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
         final Set<String> names = new HashSet<>();
-        context.iterateNames().forEachRemaining(name -> names.add(normalizeName(name)));
+        final Iterator<String> namesIterator = context.iterateNames();
+        while (namesIterator.hasNext()) {
+            names.add(normalizeName(namesIterator.next()));
+        }
         return names.iterator();
     }
 
     @Override
     public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
         final Set<ConfigValue> values = new HashSet<>();
-        context.iterateValues().forEachRemaining(value -> values.add(value.withName(normalizeName(value.getName()))));
+        final Iterator<ConfigValue> valuesIterator = context.iterateValues();
+        while (valuesIterator.hasNext()) {
+            final ConfigValue value = valuesIterator.next();
+            values.add(value.withName(normalizeName(value.getName())));
+        }
         return values.iterator();
     }
 

@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -87,24 +86,33 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     List<ConfigSource> discoverSources() {
         List<ConfigSource> discoveredSources = new ArrayList<>();
         ServiceLoader<ConfigSource> configSourceLoader = ServiceLoader.load(ConfigSource.class, classLoader);
-        configSourceLoader.forEach(discoveredSources::add);
+        for (ConfigSource source : configSourceLoader) {
+            discoveredSources.add(source);
+        }
 
         // load all ConfigSources from ConfigSourceProviders
         ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class,
                 classLoader);
-        configSourceProviderLoader.forEach(configSourceProvider -> configSourceProvider.getConfigSources(classLoader)
-                .forEach(discoveredSources::add));
+        for (ConfigSourceProvider configSourceProvider : configSourceProviderLoader) {
+            for (ConfigSource configSource : configSourceProvider.getConfigSources(classLoader)) {
+                discoveredSources.add(configSource);
+            }
+        }
 
         ServiceLoader<ConfigSourceFactory> configSourceFactoryLoader = ServiceLoader.load(ConfigSourceFactory.class,
                 classLoader);
-        configSourceFactoryLoader.forEach(factory -> discoveredSources.add(new ConfigurableConfigSource(factory)));
+        for (ConfigSourceFactory factory : configSourceFactoryLoader) {
+            discoveredSources.add(new ConfigurableConfigSource(factory));
+        }
 
         return discoveredSources;
     }
 
     List<Converter<?>> discoverConverters() {
         List<Converter<?>> discoveredConverters = new ArrayList<>();
-        ServiceLoader.load(Converter.class, classLoader).forEach(discoveredConverters::add);
+        for (Converter<?> converter : ServiceLoader.load(Converter.class, classLoader)) {
+            discoveredConverters.add(converter);
+        }
         return discoveredConverters;
     }
 
@@ -112,11 +120,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         List<InterceptorWithPriority> interceptors = new ArrayList<>();
         ServiceLoader<ConfigSourceInterceptor> interceptorLoader = ServiceLoader.load(ConfigSourceInterceptor.class,
                 classLoader);
-        interceptorLoader.forEach(interceptor -> interceptors.add(new InterceptorWithPriority(interceptor)));
+        for (ConfigSourceInterceptor configSourceInterceptor : interceptorLoader) {
+            interceptors.add(new InterceptorWithPriority(configSourceInterceptor));
+        }
 
         ServiceLoader<ConfigSourceInterceptorFactory> interceptorFactoryLoader = ServiceLoader
                 .load(ConfigSourceInterceptorFactory.class, classLoader);
-        interceptorFactoryLoader.forEach(interceptor -> interceptors.add(new InterceptorWithPriority(interceptor)));
+        for (ConfigSourceInterceptorFactory interceptor : interceptorFactoryLoader) {
+            interceptors.add(new InterceptorWithPriority(interceptor));
+        }
 
         return interceptors;
     }
@@ -184,23 +196,23 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
-        Stream.of(configSourceFactories).forEach(configSourceFactory -> {
+        for (ConfigSourceFactory configSourceFactory : configSourceFactories) {
             sources.add(new ConfigurableConfigSource(configSourceFactory));
-        });
+        }
         return this;
     }
 
     public SmallRyeConfigBuilder withInterceptors(ConfigSourceInterceptor... interceptors) {
-        this.interceptors.addAll(Stream.of(interceptors)
-                .map(InterceptorWithPriority::new)
-                .collect(Collectors.toList()));
+        for (ConfigSourceInterceptor interceptor : interceptors) {
+            this.interceptors.add(new InterceptorWithPriority(interceptor));
+        }
         return this;
     }
 
     public SmallRyeConfigBuilder withInterceptorFactories(ConfigSourceInterceptorFactory... interceptorFactories) {
-        this.interceptors.addAll(Stream.of(interceptorFactories)
-                .map(InterceptorWithPriority::new)
-                .collect(Collectors.toList()));
+        for (ConfigSourceInterceptorFactory interceptorFactory : interceptorFactories) {
+            this.interceptors.add(new InterceptorWithPriority(interceptorFactory));
+        }
         return this;
     }
 
@@ -227,7 +239,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
-        defaultValues.forEach((key, value) -> this.defaultValues.findOrAdd(key).putRootValue(value));
+        for (Map.Entry<String, String> entry : defaultValues.entrySet()) {
+            this.defaultValues.findOrAdd(entry.getKey()).putRootValue(entry.getValue());
+        }
         return this;
     }
 
@@ -336,7 +350,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     public SmallRyeConfig build() {
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
         KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
-        mappingProviderDefaultValues.forEach(defaultValues::putIfAbsent);
+        for (Map.Entry<String, KeyMap<String>> entry : mappingProviderDefaultValues.entrySet()) {
+            defaultValues.putIfAbsent(entry.getKey(), entry.getValue());
+        }
 
         try {
             ConfigMappings configMappings = new ConfigMappings();
@@ -383,9 +399,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                         return priority;
                     }
 
-                    return Optional.ofNullable(interceptor.getClass().getAnnotation(Priority.class))
-                            .map(priority1 -> OptionalInt.of(priority1.value()))
-                            .orElse(OPTIONAL_DEFAULT_PRIORITY);
+                    final Priority priorityAnnotation = interceptor.getClass().getAnnotation(Priority.class);
+                    return priorityAnnotation != null ? OptionalInt.of(priorityAnnotation.value()) : OPTIONAL_DEFAULT_PRIORITY;
                 }
             });
         }

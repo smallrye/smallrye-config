@@ -2,7 +2,6 @@ package io.smallrye.config;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -67,7 +66,8 @@ public final class ConfigMappings implements Serializable {
     }
 
     static String getPrefix(Class<?> type) {
-        return Optional.ofNullable(type.getAnnotation(ConfigMapping.class)).map(ConfigMapping::prefix).orElse("");
+        final ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
+        return configMapping != null ? configMapping.prefix() : "";
     }
 
     public static final class ConfigMappingWithPrefix {
