@@ -1,9 +1,15 @@
 package io.smallrye.config;
 
+import static io.smallrye.common.expression.Expression.Flag.ESCAPES;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
+import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 
+import java.util.Optional;
+
 import javax.annotation.Priority;
+
+import org.eclipse.microprofile.config.Config;
 
 import io.smallrye.common.expression.Expression;
 
@@ -12,6 +18,19 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
     private static final long serialVersionUID = -539336551011916218L;
 
     private static final int MAX_DEPTH = 32;
+
+    private final boolean enabled;
+
+    public ExpressionConfigSourceInterceptor() {
+        this.enabled = true;
+    }
+
+    public ExpressionConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
+        this.enabled = Optional.ofNullable(context.proceed(Config.PROPERTY_EXPRESSIONS_ENABLED))
+                .map(ConfigValue::getValue)
+                .map(Boolean::valueOf)
+                .orElse(Boolean.TRUE);
+    }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
@@ -25,7 +44,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
         final ConfigValue configValue = context.proceed(name);
 
-        if (!Expressions.isEnabled()) {
+        if (!Expressions.isEnabled() || !enabled) {
             return configValue;
         }
 
@@ -33,7 +52,9 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return null;
         }
 
-        final Expression expression = Expression.compile(configValue.getValue(), LENIENT_SYNTAX, NO_TRIM);
+        final Expression expression = Expression.compile(configValue.getValue().replaceAll("\\\\,", "\\\\\\\\,"),
+                LENIENT_SYNTAX, NO_TRIM, ESCAPES,
+                NO_SMART_BRACES);
         final String expanded = expression.evaluate((resolveContext, stringBuilder) -> {
             final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
             if (resolve != null) {
