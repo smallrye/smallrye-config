@@ -112,7 +112,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public SmallRyeConfigBuilder getBuilder() {
-        return new SmallRyeConfigBuilder();
+        return new SmallRyeConfigBuilder().addDefaultInterceptors();
     }
 
     @Override
