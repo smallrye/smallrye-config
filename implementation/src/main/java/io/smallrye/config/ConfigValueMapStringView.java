@@ -60,8 +60,8 @@ final class ConfigValueMapStringView extends AbstractMap<String, ConfigValue> {
         return delegate.keySet();
     }
 
-    private transient Set<Map.Entry<String, ConfigValue>> entrySet;
-    private transient Collection<ConfigValue> values;
+    private Set<Map.Entry<String, ConfigValue>> entrySet;
+    private Collection<ConfigValue> values;
 
     @Override
     public Set<Map.Entry<String, ConfigValue>> entrySet() {
@@ -134,6 +134,7 @@ final class ConfigValueMapStringView extends AbstractMap<String, ConfigValue> {
         return ConfigValue.builder()
                 .withName(name)
                 .withValue(value)
+                .withRawValue(value)
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .build();

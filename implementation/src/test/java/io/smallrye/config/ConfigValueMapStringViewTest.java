@@ -109,6 +109,7 @@ public class ConfigValueMapStringViewTest {
         return ConfigValue.builder()
                 .withName(name)
                 .withValue(value)
+                .withRawValue(value)
                 .withConfigSourceName("test")
                 .withConfigSourceOrdinal(1)
                 .build();
