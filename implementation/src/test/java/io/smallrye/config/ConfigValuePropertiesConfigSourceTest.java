@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ConfigValuePropertiesConfigSourceTest {
@@ -16,8 +15,11 @@ public class ConfigValuePropertiesConfigSourceTest {
     public void interceptor() throws Exception {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig();
 
-        Assertions.assertEquals("1", config.getValue("my.prop", String.class));
-        Assertions.assertEquals("20", config.getValue("my.prop.20", String.class));
+        assertEquals("1", config.getValue("my.prop", String.class));
+        assertEquals("20", config.getValue("my.prop.20", String.class));
+        assertEquals("1", config.getConfigValue("my.prop").getValue());
+        assertEquals("1", config.getConfigValue("my.prop").getValue());
+        assertEquals("abc", config.getConfigValue("my.prop").getRawValue());
     }
 
     @Test
