@@ -17,9 +17,10 @@ import io.smallrye.common.annotation.Experimental;
  * Configuration lookup metadata.
  */
 @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
-public class ConfigValue {
+public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue {
     private final String name;
     private final String value;
+    private final String rawValue;
     private final String configSourceName;
     private final int configSourceOrdinal;
 
@@ -28,17 +29,35 @@ public class ConfigValue {
     private ConfigValue(final ConfigValueBuilder builder) {
         this.name = builder.name;
         this.value = builder.value;
+        this.rawValue = builder.rawValue;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.lineNumber = builder.lineNumber;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public String getRawValue() {
+        return rawValue;
+    }
+
+    @Override
+    public String getSourceName() {
+        return getConfigSourceName();
+    }
+
+    @Override
+    public int getSourceOrdinal() {
+        return getConfigSourceOrdinal();
     }
 
     public String getConfigSourceName() {
@@ -88,6 +107,7 @@ public class ConfigValue {
         final ConfigValue that = (ConfigValue) o;
         return name.equals(that.name) &&
                 value.equals(that.value) &&
+                rawValue.equals(that.rawValue) &&
                 configSourceName.equals(that.configSourceName);
     }
 
@@ -100,6 +120,7 @@ public class ConfigValue {
         return new ConfigValueBuilder()
                 .withName(name)
                 .withValue(value)
+                .withRawValue(rawValue)
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .withLineNumber(lineNumber);
@@ -112,6 +133,7 @@ public class ConfigValue {
     public static class ConfigValueBuilder {
         private String name;
         private String value;
+        private String rawValue;
         private String configSourceName;
         private int configSourceOrdinal;
         private int lineNumber = -1;
@@ -123,6 +145,11 @@ public class ConfigValue {
 
         public ConfigValueBuilder withValue(final String value) {
             this.value = value;
+            return this;
+        }
+
+        public ConfigValueBuilder withRawValue(final String rawValue) {
+            this.rawValue = rawValue;
             return this;
         }
 

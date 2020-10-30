@@ -13,6 +13,7 @@ public class ConfigValueConfigSourceWrapperTest {
         ConfigValue configValue = config().getConfigValue("my.prop");
         assertNotNull(configValue);
         assertEquals("1234", configValue.getValue());
+        assertEquals("1234", configValue.getRawValue());
     }
 
     @Test
