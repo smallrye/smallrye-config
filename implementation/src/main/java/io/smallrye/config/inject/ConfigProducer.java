@@ -185,6 +185,7 @@ public class ConfigProducer {
                 || requiredType == OptionalLong.class
                 || requiredType == OptionalDouble.class
                 || requiredType == Supplier.class
-                || requiredType == ConfigValue.class;
+                || requiredType == ConfigValue.class
+                || requiredType == org.eclipse.microprofile.config.ConfigValue.class;
     }
 }

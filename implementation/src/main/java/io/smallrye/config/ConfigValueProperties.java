@@ -80,6 +80,7 @@ class ConfigValueProperties extends HashMap<String, ConfigValue> {
             put(key, ConfigValue.builder()
                     .withName(key)
                     .withValue(value)
+                    .withRawValue(value)
                     .withConfigSourceName(configSourceName)
                     .withConfigSourceOrdinal(configSourceOrdinal)
                     .withLineNumber(lr.lineNumber)
