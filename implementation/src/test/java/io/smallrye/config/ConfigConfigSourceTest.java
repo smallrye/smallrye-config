@@ -149,4 +149,18 @@ class ConfigConfigSourceTest {
 
         assertEquals("5678", config.getRawValue("my.prop"));
     }
+
+    @Test
+    void profiles() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withProfile("foo,bar")
+                .withSources(new ConfigurableConfigSource(
+                        context -> singletonList(config("profiles", String.join(",", context.getProfiles())))))
+                .build();
+
+        // Profiles come in priority order
+        assertEquals("bar,foo", config.getRawValue("profiles"));
+    }
 }
