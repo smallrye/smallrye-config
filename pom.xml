@@ -35,7 +35,7 @@
 
   <properties>
     <version.asm>8.0.1</version.asm>
-    <version.eclipse.microprofile.config>2.0-SNAPSHOT</version.eclipse.microprofile.config>
+    <version.eclipse.microprofile.config>2.0</version.eclipse.microprofile.config>
     <version.smallrye.common>1.5.0</version.smallrye.common>
 
     <version.junit.platform>1.6.2</version.junit.platform>
@@ -46,6 +46,13 @@
     <sonar.projectName>SmallRye Config</sonar.projectName>
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>microprofile-config-staging</id>
+      <url>https://oss.sonatype.org/content/repositories/orgeclipsemicroprofile-1375/</url>
+    </repository>
+  </repositories>
 
   <licenses>
     <license>
