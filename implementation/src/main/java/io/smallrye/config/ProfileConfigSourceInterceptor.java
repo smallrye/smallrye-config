@@ -111,6 +111,10 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         return values.iterator();
     }
 
+    public String[] getProfiles() {
+        return profiles;
+    }
+
     private String normalizeName(final String name) {
         for (String profile : profiles) {
             if (name.startsWith("%" + profile + ".")) {

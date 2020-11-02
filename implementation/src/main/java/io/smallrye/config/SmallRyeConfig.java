@@ -292,6 +292,11 @@ public class SmallRyeConfig implements Config, Serializable {
         });
     }
 
+    @Experimental("To retrive active profiles")
+    public List<String> getProfiles() {
+        return configSources.get().getProfiles();
+    }
+
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
@@ -326,7 +331,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
 
             // Init all late sources. Late sources are converted to the interceptor API and sorted again
-            sortInterceptors.addAll(mapLateSources(current, sources));
+            sortInterceptors.addAll(mapLateSources(current, sources, getProfiles(sortInterceptors)));
             sortInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
 
             // Rebuild the chain with the late sources and collect new instances of the interceptors
@@ -389,9 +394,19 @@ public class SmallRyeConfig implements Config, Serializable {
             return sourcesWithPriority;
         }
 
+        private static List<String> getProfiles(final List<ConfigSourceInterceptorWithPriority> interceptors) {
+            for (final ConfigSourceInterceptorWithPriority interceptor : interceptors) {
+                if (interceptor.getInterceptor() instanceof ProfileConfigSourceInterceptor) {
+                    return Arrays.asList(((ProfileConfigSourceInterceptor) interceptor.getInterceptor()).getProfiles());
+                }
+            }
+            return Collections.emptyList();
+        }
+
         private static List<ConfigSourceInterceptorWithPriority> mapLateSources(
                 final SmallRyeConfigSourceInterceptorContext initChain,
-                final List<ConfigSource> sources) {
+                final List<ConfigSource> sources,
+                final List<String> profiles) {
 
             final List<ConfigurableConfigSource> lateSources = new ArrayList<>();
             for (ConfigSource source : sources) {
@@ -408,6 +423,11 @@ public class SmallRyeConfig implements Config, Serializable {
                     public ConfigValue getValue(final String name) {
                         ConfigValue value = initChain.proceed(name);
                         return value != null ? value : ConfigValue.builder().withName(name).build();
+                    }
+
+                    @Override
+                    public List<String> getProfiles() {
+                        return profiles;
                     }
 
                     @Override
@@ -445,6 +465,15 @@ public class SmallRyeConfig implements Config, Serializable {
 
         ConfigSourceInterceptorContext getInterceptorChain() {
             return interceptorChain;
+        }
+
+        List<String> getProfiles() {
+            for (final ConfigSourceInterceptorWithPriority interceptor : getInterceptors()) {
+                if (interceptor.getInterceptor() instanceof ProfileConfigSourceInterceptor) {
+                    return Arrays.asList(((ProfileConfigSourceInterceptor) interceptor.getInterceptor()).getProfiles());
+                }
+            }
+            return Collections.emptyList();
         }
     }
 

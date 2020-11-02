@@ -102,4 +102,10 @@ class SmallRyeConfigTest {
         assertEquals("1234", config.getValue("my.prop", ConfigValue.class).getValue());
         assertEquals("1234", config.getOptionalValue("my.prop", ConfigValue.class).get().getValue());
     }
+
+    @Test
+    void profiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withProfile("profile").build();
+        assertEquals("profile", config.getProfiles().get(0));
+    }
 }
