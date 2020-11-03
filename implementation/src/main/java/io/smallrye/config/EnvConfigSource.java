@@ -141,14 +141,14 @@ public class EnvConfigSource extends AbstractConfigSource {
         return DEFAULT_ORDINAL;
     }
 
-    protected Object writeReplace() {
+    Object writeReplace() {
         return new Ser();
     }
 
     static final class Ser implements Serializable {
         private static final long serialVersionUID = 6812312718645271331L;
 
-        protected Object readResolve() {
+        Object readResolve() {
             return new EnvConfigSource();
         }
     }
