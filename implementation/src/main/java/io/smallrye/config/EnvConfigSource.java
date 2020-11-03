@@ -20,6 +20,7 @@ import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KE
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
 
+import java.io.Serializable;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,9 +32,11 @@ import io.smallrye.config.common.AbstractConfigSource;
  */
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
-    private static final int DEFAULT_ORDINAL = 300;
 
-    private final Map<String, String> cache = new ConcurrentHashMap<>(); //the regex match is expensive
+    private static final int DEFAULT_ORDINAL = 300;
+    private static final Object NULL_VALUE = new Object();
+
+    private final Map<String, Object> cache = new ConcurrentHashMap<>();
 
     protected EnvConfigSource() {
         super("EnvConfigSource", getEnvOrdinal());
@@ -50,9 +53,12 @@ public class EnvConfigSource extends AbstractConfigSource {
             return null;
         }
 
-        String cachedValue = cache.get(name);
+        Object cachedValue = cache.get(name);
         if (cachedValue != null) {
-            return cachedValue;
+            if (cachedValue == NULL_VALUE) {
+                return null;
+            }
+            return (String) cachedValue;
         }
 
         final Map<String, String> properties = getProperties();
@@ -80,6 +86,7 @@ public class EnvConfigSource extends AbstractConfigSource {
             return value;
         }
 
+        cache.put(name, NULL_VALUE);
         return null;
     }
 
@@ -132,5 +139,17 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
 
         return DEFAULT_ORDINAL;
+    }
+
+    Object writeReplace() {
+        return new Ser();
+    }
+
+    static final class Ser implements Serializable {
+        private static final long serialVersionUID = 6812312718645271331L;
+
+        Object readResolve() {
+            return new EnvConfigSource();
+        }
     }
 }
