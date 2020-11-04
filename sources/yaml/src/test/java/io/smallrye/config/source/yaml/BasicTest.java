@@ -45,9 +45,24 @@ class BasicTest {
     }
 
     @Test
-    void EmptyFile() {
+    void emptyFile() {
         String yaml = "";
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
         assertNotNull(src, "Should create config source for empty file correctly");
+    }
+
+    @Test
+    void compound() {
+        ConfigSource src = new YamlConfigSource("Yaml",
+                "foo:\n" +
+                        "  bar:\n" +
+                        "    val: foobar");
+        assertEquals("foobar", src.getValue("foo.bar.val"));
+
+        ConfigSource compact = new YamlConfigSource("Yaml",
+                "foo.bar:\n" +
+                        "  val: foobar");
+        assertEquals("foobar", compact.getValue("foo.bar.val"));
+        assertEquals("foobar", compact.getValue("\"foo.bar\".val"));
     }
 }

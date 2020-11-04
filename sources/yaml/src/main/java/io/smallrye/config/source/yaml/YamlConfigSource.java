@@ -117,6 +117,9 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
             if (value instanceof String) {
                 target.put(key, (String) value);
+                if (key.contains("\"")) {
+                    target.put(key.replaceAll("\"", ""), (String) value);
+                }
             } else if (value instanceof Map) {
                 flattenYaml(key, (Map<Object, Object>) value, target);
             } else if (value instanceof List) {
@@ -127,6 +130,9 @@ public class YamlConfigSource extends MapBackedConfigSource {
                 }
             } else {
                 target.put(key, (value != null ? value.toString() : ""));
+                if (key.contains("\"")) {
+                    target.put(key.replaceAll("\"", ""), (value != null ? value.toString() : ""));
+                }
             }
         });
     }
