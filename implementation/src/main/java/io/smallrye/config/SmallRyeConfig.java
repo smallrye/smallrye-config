@@ -18,6 +18,7 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.SmallRyeConfigSourceInterceptor.configSourceInterceptor;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -536,4 +538,21 @@ public class SmallRyeConfig implements Config, Serializable {
             return res != 0 ? res : this.name.compareTo(other.name);
         }
     }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return RegisteredConfig.instance;
+    }
+
+    /**
+     * Serialization placeholder which deserializes to the current registered config
+     */
+    private static class RegisteredConfig implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private static RegisteredConfig instance = new RegisteredConfig();
+
+        private Object readResolve() throws ObjectStreamException {
+            return ConfigProvider.getConfig();
+        }
+    }
+
 }
