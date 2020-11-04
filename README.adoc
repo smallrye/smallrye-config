@@ -38,7 +38,7 @@ antora generate antora-playbook.yml
 
 === Contributing
 
-Please refer to our Wiki for the https://github.com/smallrye/smallrye-parent/wiki[Contribution Guidelines].
+Please refer to our Wiki for the https://github.com/smallrye/smallrye/[Contribution Guidelines].
 
 === Links
 
