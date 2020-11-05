@@ -38,6 +38,12 @@ jobs:
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml
 
+      - uses: actions/upload-artifact@v2
+        name: tck-report
+        with:
+          name: tck-report
+          path: testsuite/tck/target/surefire-reports
+
   quality:
     needs: [build]
     if: github.event_name == 'push' && github.repository_owner == 'smallrye'
