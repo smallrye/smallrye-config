@@ -46,8 +46,10 @@ public class ConfigSourceUtil {
      */
     public static Map<String, String> propertiesToMap(Properties properties) {
         Map<String, String> map = new HashMap<>();
-        for (Map.Entry<Object, Object> e : properties.entrySet()) {
-            map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+        synchronized (properties) {
+            for (Map.Entry<Object, Object> e : properties.entrySet()) {
+                map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+            }
         }
         return map;
     }
