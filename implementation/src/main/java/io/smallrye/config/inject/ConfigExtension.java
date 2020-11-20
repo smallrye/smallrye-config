@@ -152,7 +152,7 @@ public class ConfigExtension implements Extension {
             }
 
             // Check if the name is part of the properties first. Since properties can be a subset, then search for the actual property for a value.
-            if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, (SmallRyeConfig) config) == null) {
+            if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
                     continue;
