@@ -101,7 +101,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         return false;
     }
 
-    static String getPrefixFromType(final Annotated annotated) {
+    public static String getPrefixFromType(final Annotated annotated) {
         final Optional<String> prefixFromConfigMappingClass = ofNullable(annotated.getBaseType()).map(type -> (Class<?>) type)
                 .map(c -> c.getAnnotation(ConfigMapping.class))
                 .map(ConfigMapping::prefix);
@@ -118,7 +118,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
                 .orElse("");
     }
 
-    static Optional<String> getPrefixFromInjectionPoint(final InjectionPoint injectionPoint) {
+    public static Optional<String> getPrefixFromInjectionPoint(final InjectionPoint injectionPoint) {
         final Optional<String> prefixFromConfigMapping = Optional.ofNullable(injectionPoint.getAnnotated())
                 .map(a -> a.getAnnotation(ConfigMapping.class))
                 .map(ConfigMapping::prefix)

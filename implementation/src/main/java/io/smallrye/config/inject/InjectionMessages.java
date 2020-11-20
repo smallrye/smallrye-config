@@ -39,4 +39,7 @@ public interface InjectionMessages {
 
     @Message(id = 2006, value = "The property %s cannot be converted to %s")
     IllegalArgumentException illegalConversion(String name, Type type);
+
+    @Message(id = 2007, value = "No Converter registered for %s")
+    IllegalArgumentException noRegisteredConverter(Class<?> type);
 }
