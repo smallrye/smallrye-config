@@ -160,7 +160,7 @@ public class ConfigProducer {
     @Produces
     @ConfigProperty
     protected ConfigValue produceConfigValue(InjectionPoint ip) {
-        return ConfigProducerUtil.getConfigValue(ip, getConfig(ip));
+        return (ConfigValue) ConfigProducerUtil.getConfigValue(ip, getConfig(ip));
     }
 
     public static boolean isClassHandledByConfigProducer(Type requiredType) {
