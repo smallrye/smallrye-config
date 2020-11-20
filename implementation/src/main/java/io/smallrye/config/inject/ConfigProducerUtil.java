@@ -41,12 +41,22 @@ public final class ConfigProducerUtil {
         if (name == null) {
             return null;
         }
-        final SmallRyeConfig src = (SmallRyeConfig) config;
-        Converter<T> converter = resolveConverter(injectionPoint, src);
-        String rawValue = getRawValue(name, src);
-        if (rawValue == null) {
-            rawValue = getDefaultValue(injectionPoint);
+        return convertValue(name, resolveConverter(injectionPoint, config), getDefaultValue(injectionPoint), config);
+    }
+
+    public static <T> T getValue(String name, Type type, String defaultValue, Config config) {
+        if (name == null) {
+            return null;
         }
+        return convertValue(name, resolveConverter(type, config), defaultValue, config);
+    }
+
+    public static <T> T convertValue(String name, Converter<T> converter, String defaultValue, Config config) {
+        String rawValue = getRawValue(name, config);
+        if (rawValue == null) {
+            rawValue = defaultValue;
+        }
+
         T converted;
         if (rawValue == null) {
             // convert an empty value
@@ -78,16 +88,16 @@ public final class ConfigProducerUtil {
         return configValue;
     }
 
-    public static String getRawValue(String name, SmallRyeConfig config) {
-        return SecretKeys.doUnlocked(() -> config.getRawValue(name));
+    public static String getRawValue(String name, Config config) {
+        return SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getConfigValue(name).getValue());
     }
 
-    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final SmallRyeConfig src) {
+    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config src) {
         return resolveConverter(injectionPoint.getType(), src);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverter(final Type type, final SmallRyeConfig src) {
+    private static <T> Converter<T> resolveConverter(final Type type, final Config src) {
         Class<T> rawType = rawTypeOf(type);
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
@@ -103,7 +113,7 @@ public final class ConfigProducerUtil {
             }
         }
         // just try the raw type
-        return src.getConverter(rawType);
+        return ((SmallRyeConfig) src).getConverter(rawType);
     }
 
     @SuppressWarnings("unchecked")
