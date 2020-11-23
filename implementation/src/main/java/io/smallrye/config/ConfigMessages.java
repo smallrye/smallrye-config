@@ -57,7 +57,7 @@ interface ConfigMessages {
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
     @Message(id = 14, value = "Property %s not found")
-    NoSuchElementException propertyNotFound(String name);
+    String propertyNotFound(String name);
 
     @Message(id = 15, value = "No configuration is available for this class loader")
     IllegalStateException noConfigForClassloader();

@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -165,11 +166,11 @@ public class SmallRyeConfig implements Config, Serializable {
             try {
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw ConfigMessages.msg.propertyNotFound(name);
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
             }
         }
         if (converted == null) {
-            throw ConfigMessages.msg.propertyNotFound(name);
+            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
         }
         return converted;
     }
