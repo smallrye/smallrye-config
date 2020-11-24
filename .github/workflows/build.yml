@@ -44,13 +44,6 @@ jobs:
           name: tck-report
           path: testsuite/tck/target/surefire-reports
 
-      - name: deploy to github
-        if: ${{matrix.java == '11'}}
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          GITHUB_REPO: https://maven.pkg.github.com/${{github.repository}}
-        run: mvn deploy -DaltDeploymentRepository=github::default::$GITHUB_REPO
-
   quality:
     needs: [build]
     if: github.event_name == 'push' && github.repository_owner == 'smallrye'
