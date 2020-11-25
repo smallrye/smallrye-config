@@ -325,7 +325,7 @@ public class SmallRyeConfig implements Config, Serializable {
             sortInterceptors.addAll(mapSources(sources));
             // Add all interceptors
             sortInterceptors.addAll(mapInterceptors(interceptors));
-            sortInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
+            sortInterceptors.sort(null);
 
             // Create the initial chain and init each element with the current context
             SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
@@ -335,7 +335,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Init all late sources. Late sources are converted to the interceptor API and sorted again
             sortInterceptors.addAll(mapLateSources(current, sources, getProfiles(sortInterceptors)));
-            sortInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
+            sortInterceptors.sort(null);
 
             // Rebuild the chain with the late sources and collect new instances of the interceptors
             // The new instance will ensure that we get rid of references to factories and other stuff and keep only
@@ -366,7 +366,7 @@ public class SmallRyeConfig implements Config, Serializable {
             final List<ConfigSourceInterceptorWithPriority> newInterceptors = Arrays
                     .asList(sources.getInterceptors().toArray(new ConfigSourceInterceptorWithPriority[oldSize + 1]));
             newInterceptors.set(oldSize, new ConfigSourceInterceptorWithPriority(configSource));
-            newInterceptors.sort(Comparator.comparingInt(ConfigSourceInterceptorWithPriority::getPriority));
+            newInterceptors.sort(null);
 
             SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             for (ConfigSourceInterceptorWithPriority configSourceInterceptor : newInterceptors) {
@@ -379,6 +379,7 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         private static List<ConfigSourceInterceptorWithPriority> mapSources(final List<ConfigSource> sources) {
+            ConfigSourceInterceptorWithPriority.raiseLoadPriority();
             final List<ConfigSourceInterceptorWithPriority> sourcesWithPriority = new ArrayList<>();
             for (ConfigSource source : sources) {
                 if (!(source instanceof ConfigurableConfigSource)) {
@@ -419,6 +420,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             lateSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal));
 
+            ConfigSourceInterceptorWithPriority.raiseLoadPriority();
             final List<ConfigSourceInterceptorWithPriority> sourcesWithPriority = new ArrayList<>();
             for (ConfigurableConfigSource configurableSource : lateSources) {
                 final List<ConfigSource> configSources = configurableSource.getConfigSources(new ConfigSourceContext() {
@@ -485,6 +487,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
         private final Function<ConfigSourceInterceptorContext, ConfigSourceInterceptor> init;
         private final int priority;
+        private final int loadPriority = loadPrioritySequence--;
         private final String name;
 
         private ConfigSourceInterceptor interceptor;
@@ -529,14 +532,18 @@ public class SmallRyeConfig implements Config, Serializable {
             return new ConfigSourceInterceptorWithPriority(this.getInterceptor(context), this.priority, this.name);
         }
 
-        int getPriority() {
-            return this.priority;
+        private static int loadPrioritySequence = 0;
+        private static int loadPrioritySequenceNumber = 1;
+
+        static void raiseLoadPriority() {
+            loadPrioritySequenceNumber++;
+            loadPrioritySequence = 1000 * loadPrioritySequenceNumber;
         }
 
         @Override
         public int compareTo(final ConfigSourceInterceptorWithPriority other) {
             int res = Integer.compare(this.priority, other.priority);
-            return res != 0 ? res : this.name.compareTo(other.name);
+            return res != 0 ? res : Integer.compare(this.loadPriority, other.loadPriority);
         }
     }
 
