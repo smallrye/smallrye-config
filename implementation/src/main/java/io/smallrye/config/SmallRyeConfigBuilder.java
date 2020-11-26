@@ -43,9 +43,8 @@ import org.eclipse.microprofile.config.spi.Converter;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SmallRyeConfigBuilder implements ConfigBuilder {
-
-    private static final String META_INF_MICROPROFILE_CONFIG_PROPERTIES = "META-INF/microprofile-config.properties";
-    private static final String WEB_INF_MICROPROFILE_CONFIG_PROPERTIES = "WEB-INF/classes/META-INF/microprofile-config.properties";
+    public static final String META_INF_MICROPROFILE_CONFIG_PROPERTIES = "META-INF/microprofile-config.properties";
+    public static final String WEB_INF_MICROPROFILE_CONFIG_PROPERTIES = "WEB-INF/classes/META-INF/microprofile-config.properties";
 
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
@@ -144,9 +143,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         defaultSources.add(new EnvConfigSource());
         defaultSources.add(new SysPropConfigSource());
-        defaultSources.addAll(new PropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+        defaultSources.addAll(new PropertiesConfigSourceProvider(META_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader)
                 .getConfigSources(classLoader));
-        defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, true, classLoader)
+        defaultSources.addAll(new PropertiesConfigSourceProvider(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader)
                 .getConfigSources(classLoader));
 
         return defaultSources;
