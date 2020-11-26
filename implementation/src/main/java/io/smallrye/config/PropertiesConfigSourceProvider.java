@@ -19,7 +19,6 @@ package io.smallrye.config;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -28,30 +27,33 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class PropertiesConfigSourceProvider implements ConfigSourceProvider {
+public class PropertiesConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
+    private final List<ConfigSource> configSources = new ArrayList<>();
 
-    private List<ConfigSource> configSources = new ArrayList<>();
+    public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader) {
+        this.configSources.addAll(loadConfigSources(location, classLoader));
+    }
 
-    public PropertiesConfigSourceProvider(String propertyFileName, boolean optional, ClassLoader classLoader) {
-        try {
-            Enumeration<URL> propertyFileUrls = classLoader.getResources(propertyFileName);
-
-            if (!optional && !propertyFileUrls.hasMoreElements()) {
-                throw ConfigMessages.msg.fileNotFound(propertyFileName);
-            }
-
-            while (propertyFileUrls.hasMoreElements()) {
-                URL propertyFileUrl = propertyFileUrls.nextElement();
-                configSources.add(new PropertiesConfigSource(propertyFileUrl));
-            }
-        } catch (IOException ioe) {
-            throw ConfigMessages.msg.failedToLoadConfig(ioe);
+    @Deprecated
+    public PropertiesConfigSourceProvider(String location, boolean optional, ClassLoader classLoader) {
+        this(location, classLoader);
+        if (!optional && this.configSources.isEmpty()) {
+            throw ConfigMessages.msg.fileNotFound(location);
         }
-
     }
 
     @Override
     public List<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
         return configSources;
+    }
+
+    @Override
+    protected String[] getFileExtensions() {
+        return new String[] { "properties" };
+    }
+
+    @Override
+    protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
+        return new PropertiesConfigSource(url, ordinal);
     }
 }

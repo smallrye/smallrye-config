@@ -49,13 +49,13 @@ public class LoggingConfigSourceInterceptorTest {
         // First element is the profile lookup
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         // my.prop lookup
-        assertTrue(logs.get(7).startsWith("SRCFG01001"));
-        assertTrue(logs.get(7).contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource"));
-        assertTrue(logs.get(7).contains(":1 with the value abc"));
+        assertTrue(logs.get(3).startsWith("SRCFG01001"));
+        assertTrue(logs.get(3).contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource"));
+        assertTrue(logs.get(3).contains(":1 with the value abc"));
         // not.found lookup
-        assertEquals("SRCFG01002: The config not.found was not found", logs.get(8));
+        assertEquals("SRCFG01002: The config not.found was not found", logs.get(4));
         // secret lookup, shows the key but hides the source and value
-        assertEquals("SRCFG01001: The config secret was loaded from secret with the value secret", logs.get(9));
+        assertEquals("SRCFG01001: The config secret was loaded from secret with the value secret", logs.get(5));
     }
 
     @Test
