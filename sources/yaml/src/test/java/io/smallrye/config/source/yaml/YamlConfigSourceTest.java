@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +16,11 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
-public class YamlConfigSourceTest {
+class YamlConfigSourceTest {
     @Test
     void flatten() throws Exception {
         YamlConfigSource yaml = new YamlConfigSource("yaml",
@@ -82,7 +84,6 @@ public class YamlConfigSourceTest {
     void propertyNames() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example.yml")))
-                .withConverter(Users.class, 100, new UserConverter())
                 .build();
 
         final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
@@ -102,7 +103,6 @@ public class YamlConfigSourceTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(
                         new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-quotes.yml")))
-                .withConverter(Users.class, 100, new UserConverter())
                 .build();
 
         final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
@@ -127,13 +127,29 @@ public class YamlConfigSourceTest {
     }
 
     @Test
-    void intKeys() throws Exception {
+    void intKeys() {
+        try {
+            new SmallRyeConfigBuilder()
+                    .withSources(new YamlConfigSource("yaml",
+                            YamlConfigSourceTest.class.getResourceAsStream("/example-int-keys.yml")))
+                    .build();
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void configMapping() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(
-                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-int-keys.yml")))
+                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml")))
                 .withConverter(Users.class, 100, new UserConverter())
+                .withMapping(UsersMapping.class, "admin")
                 .build();
 
+        UsersMapping usersMapping = config.getConfigMapping(UsersMapping.class);
+        assertEquals(2, usersMapping.users().getUsers().size());
+        assertEquals(usersMapping.users().users.get(0).getEmail(), "joe@gmail.com");
+        assertEquals(usersMapping.users().users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
     }
 
     public static class Users {
@@ -192,5 +208,10 @@ public class YamlConfigSourceTest {
         public Users convert(final String value) {
             return new Yaml().loadAs(value, Users.class);
         }
+    }
+
+    @ConfigMapping(prefix = "admin")
+    interface UsersMapping {
+        Users users();
     }
 }

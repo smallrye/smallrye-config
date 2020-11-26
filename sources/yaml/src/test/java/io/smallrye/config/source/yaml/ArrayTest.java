@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-public class ArrayTest {
-
+class ArrayTest {
     @Test
-    public void array() {
+    void array() {
         String yaml = "de:\n" +
                 "  javahippie:\n" +
                 "    mpadmin:\n" +
