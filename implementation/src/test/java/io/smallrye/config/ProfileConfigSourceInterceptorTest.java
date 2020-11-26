@@ -8,13 +8,21 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.Config;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -267,6 +275,62 @@ public class ProfileConfigSourceInterceptorTest {
 
         assertEquals("1234", config.getRawValue("common.prop"));
         assertEquals("5678", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void profilesClasspath(@TempDir Path tempDir) throws Exception {
+        JavaArchive jarOne = ShrinkWrap
+                .create(JavaArchive.class, "resources-one.jar")
+                .addAsResource(new StringAsset(
+                        "config_ordinal=150\n" +
+                                "my.prop.main=main\n" +
+                                "my.prop.common=main\n" +
+                                "my.prop.profile=main\n"),
+                        "META-INF/microprofile-config.properties")
+                .addAsResource(new StringAsset(
+                        "my.prop.common=common\n" +
+                                "my.prop.profile=common\n"),
+                        "META-INF/microprofile-config-common.properties")
+                .addAsResource(new StringAsset(
+                        "my.prop.dev=dev\n" +
+                                "my.prop.profile=dev\n"),
+                        "META-INF/microprofile-config-dev.properties");
+
+        Path filePathOne = tempDir.resolve("resources-one.jar");
+        jarOne.as(ZipExporter.class).exportTo(filePathOne.toFile());
+
+        JavaArchive jarTwo = ShrinkWrap
+                .create(JavaArchive.class, "resources-two.jar")
+                .addAsResource(new StringAsset(
+                        "config_ordinal=150\n" +
+                                "my.prop.main=main\n" +
+                                "my.prop.common=main\n" +
+                                "my.prop.profile=main\n"),
+                        "META-INF/microprofile-config.properties");
+
+        Path filePathTwo = tempDir.resolve("resources-two.jar");
+        jarTwo.as(ZipExporter.class).exportTo(filePathTwo.toFile());
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
+                new URL("jar:" + filePathOne.toUri() + "!/"),
+                new URL("jar:" + filePathTwo.toUri() + "!/"),
+        }, contextClassLoader);
+        Thread.currentThread().setContextClassLoader(urlClassLoader);
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDiscoveredSources()
+                .addDefaultInterceptors()
+                .withProfile("common,dev")
+                .build();
+
+        assertEquals("main", config.getRawValue("my.prop.main"));
+        assertEquals("common", config.getRawValue("my.prop.common"));
+        assertEquals("dev", config.getRawValue("my.prop.profile"));
+
+        urlClassLoader.close();
+        Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
     @Test
