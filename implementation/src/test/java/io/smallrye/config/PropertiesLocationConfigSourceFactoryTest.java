@@ -371,7 +371,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
     @Test
     void profilesHttp() throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/config.properties", exchange -> {
             Properties mainProperties = new Properties();
             mainProperties.setProperty("config_ordinal", "150");
@@ -420,7 +420,8 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev,unknown")
-                .withDefaultValue(SMALLRYE_LOCATIONS, "http://localhost:8080/config.properties")
+                .withDefaultValue(SMALLRYE_LOCATIONS,
+                        "http://localhost:" + server.getAddress().getPort() + "/config.properties")
                 .build();
 
         assertEquals("main", config.getRawValue("my.prop.main"));
