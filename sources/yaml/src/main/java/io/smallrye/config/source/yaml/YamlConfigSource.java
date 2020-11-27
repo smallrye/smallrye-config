@@ -1,9 +1,10 @@
 package io.smallrye.config.source.yaml;
 
+import static java.util.Collections.singletonMap;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,15 @@ public class YamlConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -418186029484956531L;
 
     private static final String NAME_PREFIX = "YamlConfigSource[source=";
+    private static final Yaml DUMPER;
+
+    static {
+        final DumperOptions dumperOptions = new DumperOptions();
+        dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.FLOW);
+        dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
+        DUMPER = new Yaml(dumperOptions);
+    }
+
     static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
 
     private final Set<String> propertyNames;
@@ -127,12 +137,13 @@ public class YamlConfigSource extends MapBackedConfigSource {
             if (value instanceof String) {
                 target.put(key, (String) value);
             } else if (value instanceof Map) {
+                flattenMap(key, (Map<Object, Object>) value, target);
                 flattenYaml(key, (Map<Object, Object>) value, target);
             } else if (value instanceof List) {
                 final List<Object> list = (List<Object>) value;
                 flattenList(key, list, target);
                 for (int i = 0; i < list.size(); i++) {
-                    flattenYaml(key, Collections.singletonMap("[" + i + "]", list.get(i)), target);
+                    flattenYaml(key, singletonMap("[" + i + "]", list.get(i)), target);
                 }
             } else {
                 target.put(key, (value != null ? value.toString() : ""));
@@ -148,12 +159,14 @@ public class YamlConfigSource extends MapBackedConfigSource {
                 return sb.toString();
             }).collect(Collectors.joining(",")));
         } else {
-            final DumperOptions dumperOptions = new DumperOptions();
-            dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.FLOW);
-            dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
-            target.put(key,
-                    new Yaml(dumperOptions).dump(Collections.singletonMap(key.substring(key.lastIndexOf(".") + 1), source)));
+            target.put(key, DUMPER.dump(singletonMap(key.substring(key.lastIndexOf(".") + 1), source)));
         }
+    }
+
+    private static void flattenMap(String key, Map<Object, Object> source, Map<String, String> target) {
+        String lastKey = key.substring(key.lastIndexOf(".") + 1);
+        target.put(key, lastKey.contains("[") && lastKey.contains("]") ? DUMPER.dump(source)
+                : DUMPER.dump(singletonMap(lastKey, source)));
     }
 
     private static void escapeCommas(StringBuilder b, String src, int escapeLevel) {

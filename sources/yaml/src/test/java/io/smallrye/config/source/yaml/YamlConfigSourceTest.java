@@ -144,12 +144,28 @@ class YamlConfigSourceTest {
                 .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml")))
                 .withConverter(Users.class, 100, new UserConverter())
                 .withMapping(UsersMapping.class, "admin")
+                .withMappingIgnore("admin")
                 .build();
 
         UsersMapping usersMapping = config.getConfigMapping(UsersMapping.class);
         assertEquals(2, usersMapping.users().getUsers().size());
         assertEquals(usersMapping.users().users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(usersMapping.users().users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
+    }
+
+    @Test
+    void mapParentKey() {
+        YamlConfigSource parentLists = new YamlConfigSource("yaml", "users:\n" +
+                "  - name: bob\n" +
+                "  - name: joe\n" +
+                "    age: 45");
+        assertNotNull(parentLists.getValue("users"));
+
+        YamlConfigSource parentObjects = new YamlConfigSource("yaml", "users:\n" +
+                "  bob:\n" +
+                "  joe:\n" +
+                "    age: 45");
+        assertNotNull(parentObjects.getValue("users"));
     }
 
     public static class Users {
