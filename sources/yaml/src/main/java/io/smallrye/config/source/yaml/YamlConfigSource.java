@@ -2,6 +2,7 @@ package io.smallrye.config.source.yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -16,6 +18,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import io.smallrye.common.classloader.ClassPathUtils;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -38,18 +41,27 @@ public class YamlConfigSource extends MapBackedConfigSource {
         this.propertyNames = filterIndexedNames(source.keySet());
     }
 
+    @Deprecated
     public YamlConfigSource(String name, InputStream stream) throws IOException {
         this(name, stream, ORDINAL);
     }
 
     public YamlConfigSource(URL url) throws IOException {
-        this(NAME_PREFIX + url.toString() + "]", url.openStream());
+        this(url, ORDINAL);
     }
 
     public YamlConfigSource(URL url, int ordinal) throws IOException {
-        this(NAME_PREFIX + url.toString() + "]", url.openStream(), ordinal);
+        this(NAME_PREFIX + url.toString() + "]",
+                ClassPathUtils.readStream(url, (Function<InputStream, Map<String, String>>) inputStream -> {
+                    try {
+                        return streamToMap(inputStream);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }), ordinal);
     }
 
+    @Deprecated
     public YamlConfigSource(String name, InputStream stream, int defaultOrdinal) throws IOException {
         this(name, streamToMap(stream), defaultOrdinal);
     }

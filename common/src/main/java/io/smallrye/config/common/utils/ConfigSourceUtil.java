@@ -16,15 +16,20 @@
 
 package io.smallrye.config.common.utils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import io.smallrye.common.classloader.ClassPathUtils;
 
 /**
  * utilities and constants for {@link ConfigSource} implementations
@@ -55,11 +60,15 @@ public class ConfigSourceUtil {
     }
 
     public static Map<String, String> urlToMap(URL locationOfProperties) throws IOException {
-        try (InputStreamReader reader = new InputStreamReader(locationOfProperties.openStream(), StandardCharsets.UTF_8)) {
-            Properties p = new Properties();
-            p.load(reader);
-            return ConfigSourceUtil.propertiesToMap(p);
-        }
+        final Properties properties = new Properties();
+        ClassPathUtils.consumeStream(locationOfProperties, inputStream -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8))) {
+                properties.load(reader);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        return propertiesToMap(properties);
     }
 
     /**
