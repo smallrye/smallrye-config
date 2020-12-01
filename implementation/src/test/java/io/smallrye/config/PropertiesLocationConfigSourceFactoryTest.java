@@ -112,8 +112,8 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/"),
-                new URL("jar:file:" + filePathTwo.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/"),
+                new URL("jar:" + filePathTwo.toUri() + "!/"),
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -123,6 +123,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("5678", config.getRawValue("my.prop.two"));
         assertEquals(2, countSources(config));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -137,15 +138,16 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/")
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-        SmallRyeConfig config = buildConfig("jar:file:" + filePathOne.toString() + "!/resources.properties");
+        SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.properties");
 
         assertEquals("1234", config.getRawValue("my.prop.one"));
         assertEquals(1, countSources(config));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -178,8 +180,8 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/"),
-                new URL("jar:file:" + filePathTwo.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/"),
+                new URL("jar:" + filePathTwo.toUri() + "!/"),
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -188,20 +190,24 @@ class PropertiesLocationConfigSourceFactoryTest {
         mainProperties.setProperty("my.prop.main", "main");
         mainProperties.setProperty("my.prop.common", "main");
         File mainFile = tempDir.resolve("microprofile-config.properties").toFile();
-        mainProperties.store(new FileOutputStream(mainFile), null);
+        try (FileOutputStream out = new FileOutputStream(mainFile)) {
+            mainProperties.store(out, null);
+        }
 
         Properties fallbackProperties = new Properties();
         fallbackProperties.setProperty("config_ordinal", "100");
         fallbackProperties.setProperty("my.prop.fallback", "fallback");
         fallbackProperties.setProperty("my.prop.common", "fallback");
         File fallbackFile = tempDir.resolve("fallback.properties").toFile();
-        fallbackProperties.store(new FileOutputStream(fallbackFile), null);
+        try (FileOutputStream out = new FileOutputStream(fallbackFile)) {
+            fallbackProperties.store(out, null);
+        }
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
-                .withDefaultValue(SMALLRYE_LOCATIONS, mainFile.toString() + "," + fallbackFile)
+                .withDefaultValue(SMALLRYE_LOCATIONS, mainFile.toURI() + "," + fallbackFile.toURI())
                 .build();
 
         // Check if all sources are up
@@ -218,6 +224,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .filter(PropertiesConfigSource.class::isInstance)
                 .allMatch(configSource -> configSource.getOrdinal() == 100));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -228,24 +235,30 @@ class PropertiesLocationConfigSourceFactoryTest {
         mainProperties.setProperty("my.prop.main", "main");
         mainProperties.setProperty("my.prop.common", "main");
         mainProperties.setProperty("my.prop.profile", "main");
-        mainProperties.store(new FileOutputStream(tempDir.resolve("config.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config.properties").toFile())) {
+            mainProperties.store(out, null);
+        }
 
         Properties commonProperties = new Properties();
         commonProperties.setProperty("my.prop.common", "common");
         commonProperties.setProperty("my.prop.profile", "common");
-        commonProperties.store(new FileOutputStream(tempDir.resolve("config-common.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-common.properties").toFile())) {
+            commonProperties.store(out, null);
+        }
 
         Properties devProperties = new Properties();
         devProperties.setProperty("my.prop.dev", "dev");
         devProperties.setProperty("my.prop.profile", "dev");
-        devProperties.store(new FileOutputStream(tempDir.resolve("config-dev.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-dev.properties").toFile())) {
+            devProperties.store(out, null);
+        }
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toFile().toString())
+                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
                 .build();
 
         assertEquals("main", config.getRawValue("my.prop.main"));
@@ -258,13 +271,15 @@ class PropertiesLocationConfigSourceFactoryTest {
         Properties devProperties = new Properties();
         devProperties.setProperty("my.prop.dev", "dev");
         devProperties.setProperty("my.prop.profile", "dev");
-        devProperties.store(new FileOutputStream(tempDir.resolve("config-dev.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-dev.properties").toFile())) {
+            devProperties.store(out, null);
+        }
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toFile().toString())
+                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
                 .build();
 
         assertNull(config.getRawValue("my.prop.profile"));
@@ -306,8 +321,8 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/"),
-                new URL("jar:file:" + filePathTwo.toString() + "!/"),
+                new URL("jar:" + filePathOne.toUri() + "!/"),
+                new URL("jar:" + filePathTwo.toUri() + "!/"),
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -323,6 +338,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("common", config.getRawValue("my.prop.common"));
         assertEquals("dev", config.getRawValue("my.prop.profile"));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -350,7 +366,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/")
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -359,13 +375,14 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, "jar:file:" + filePathOne.toString() + "!/META-INF/config.properties")
+                .withDefaultValue(SMALLRYE_LOCATIONS, "jar:" + filePathOne.toUri() + "!/META-INF/config.properties")
                 .build();
 
         assertEquals("main", config.getRawValue("my.prop.main"));
         assertEquals("common", config.getRawValue("my.prop.common"));
         assertEquals("dev", config.getRawValue("my.prop.profile"));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -440,19 +457,25 @@ class PropertiesLocationConfigSourceFactoryTest {
         mainProperties.setProperty("my.prop.common", "main-file");
         mainProperties.setProperty("my.prop.profile", "main-file");
         mainProperties.setProperty("order", "5");
-        mainProperties.store(new FileOutputStream(tempDir.resolve("config.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config.properties").toFile())) {
+            mainProperties.store(out, null);
+        }
 
         Properties commonProperties = new Properties();
         commonProperties.setProperty("my.prop.common", "common-file");
         commonProperties.setProperty("my.prop.profile", "common-file");
         commonProperties.setProperty("order", "3");
-        commonProperties.store(new FileOutputStream(tempDir.resolve("config-common.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-common.properties").toFile())) {
+            commonProperties.store(out, null);
+        }
 
         Properties devProperties = new Properties();
         devProperties.setProperty("my.prop.dev", "dev-file");
         devProperties.setProperty("my.prop.profile", "dev-file");
         devProperties.setProperty("order", "1");
-        devProperties.store(new FileOutputStream(tempDir.resolve("config-dev.properties").toFile()), null);
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-dev.properties").toFile())) {
+            devProperties.store(out, null);
+        }
 
         JavaArchive jarOne = ShrinkWrap
                 .create(JavaArchive.class, "resources-one.jar")
@@ -480,7 +503,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/"),
+                new URL("jar:" + filePathOne.toUri() + "!/")
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -489,8 +512,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS,
-                        tempDir.resolve("config.properties").toFile().toString() + "," + "config.properties")
+                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toUri() + "," + "config.properties")
                 .build();
 
         assertEquals("main-file", config.getRawValue("my.prop.main.file"));
@@ -509,6 +531,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("5", sources.get(4).getValue("order"));
         assertEquals("6", sources.get(5).getValue("order"));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 

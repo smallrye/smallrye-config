@@ -93,7 +93,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     protected List<ConfigSource> tryFileSystem(final URI uri) {
         final List<ConfigSource> configSources = new ArrayList<>();
-        final Path urlPath = Paths.get(uri.getPath());
+        final Path urlPath = uri.getScheme() != null ? Paths.get(uri) : Paths.get(uri.getPath());
         if (Files.isRegularFile(urlPath)) {
             consumeAsPath(toURL(urlPath.toUri()), new ConfigSourcePathConsumer(configSources));
         } else if (Files.isDirectory(urlPath)) {
