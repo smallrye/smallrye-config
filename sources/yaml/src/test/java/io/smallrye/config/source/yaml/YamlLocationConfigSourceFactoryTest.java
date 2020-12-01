@@ -103,8 +103,8 @@ class YamlLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/"),
-                new URL("jar:file:" + filePathTwo.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/"),
+                new URL("jar:" + filePathTwo.toUri() + "!/"),
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -114,6 +114,7 @@ class YamlLocationConfigSourceFactoryTest {
         assertEquals("5678", config.getRawValue("my.prop.two"));
         assertEquals(2, countSources(config));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
@@ -130,15 +131,16 @@ class YamlLocationConfigSourceFactoryTest {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:file:" + filePathOne.toString() + "!/")
+                new URL("jar:" + filePathOne.toUri() + "!/")
         }, contextClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-        SmallRyeConfig config = buildConfig("jar:file:" + filePathOne.toString() + "!/resources.yml");
+        SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.yml");
 
         assertEquals("1234", config.getRawValue("my.prop.one"));
         assertEquals(1, countSources(config));
 
+        urlClassLoader.close();
         Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 

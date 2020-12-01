@@ -44,6 +44,25 @@ jobs:
           name: tck-report
           path: testsuite/tck/target/surefire-reports
 
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        java: [11]
+    name: build with jdk ${{matrix.java}} windows
+
+    steps:
+      - uses: actions/checkout@v2
+        name: checkout
+
+      - uses: actions/setup-java@v1
+        name: set up jdk ${{matrix.java}}
+        with:
+          java-version: ${{matrix.java}}
+
+      - name: build with maven
+        run: mvn -B formatter:validate verify --file pom.xml
+
   quality:
     needs: [build]
     if: github.event_name == 'push' && github.repository_owner == 'smallrye'
