@@ -148,14 +148,20 @@ public class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void escapeDollar() {
-        final SmallRyeConfig config = buildConfig("my.prop", "\\${value:value}");
-        assertEquals("${value:value}", config.getRawValue("my.prop"));
+        final SmallRyeConfig config = buildConfig("my.prop", "\\${value\\${another}end:value}");
+        assertEquals("${value${another}end:value}", config.getRawValue("my.prop"));
     }
 
     @Test
     void escapeBraces() {
         final SmallRyeConfig config = buildConfig("my.prop", "${value:111{111}");
         assertEquals("111{111", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void windowPath() {
+        final SmallRyeConfig config = buildConfig("window.path", "C:\\Some\\Path");
+        assertEquals("C:\\Some\\Path", config.getRawValue("window.path"));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
