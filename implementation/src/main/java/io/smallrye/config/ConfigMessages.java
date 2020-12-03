@@ -56,7 +56,7 @@ interface ConfigMessages {
     @Message(id = 13, value = "No Converter registered for %s")
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
-    @Message(id = 14, value = "Property %s not found")
+    @Message(id = 14, value = "Property %s is required but the value was not found or is empty")
     String propertyNotFound(String name);
 
     @Message(id = 15, value = "No configuration is available for this class loader")
