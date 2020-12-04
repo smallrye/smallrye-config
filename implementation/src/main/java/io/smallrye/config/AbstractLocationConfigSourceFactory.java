@@ -13,7 +13,7 @@ import io.smallrye.common.annotation.Experimental;
 /**
  * This {@code AbstractLocationConfigSourceFactory} allows to initialize additional config locations with the
  * configuration {@link AbstractLocationConfigSourceFactory#SMALLRYE_LOCATIONS}. The configuration support multiple
- * locations separated by a comma and each much represent a valid {@link URI}.
+ * locations separated by a comma and each must represent a valid {@link URI}.
  */
 @Experimental("Loads additional config locations")
 public abstract class AbstractLocationConfigSourceFactory extends AbstractLocationConfigSourceLoader

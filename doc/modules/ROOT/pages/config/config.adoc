@@ -6,8 +6,11 @@ include::../attributes.adoc[]
 = Config
 
 * <<profiles>>
+* <<locations>>
 * <<secret-keys>>
 
 include::profiles.adoc[]
+
+include::locations.adoc[]
 
 include::secret-keys.adoc[]

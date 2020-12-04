@@ -42,7 +42,7 @@ import io.smallrye.common.annotation.Experimental;
  * <p>
  *
  * If a profile is active, the profile resource is only loaded if the unprofiled resource is available in the same
- * location. This is to keep a consistent loading order and matching with the unprofiled resource. Profiles are not
+ * location. This is to keep a consistent loading order and match with the unprofiled resource. Profiles are not
  * taken into account if the location is a directory.
  */
 @Experimental("Loads sources by location")
