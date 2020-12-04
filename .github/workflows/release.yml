@@ -46,6 +46,12 @@ jobs:
           git push
           git push --tags
 
+      - uses: actions/upload-artifact@v2
+        name: tck-report
+        with:
+          name: tck-report
+          path: testsuite/tck/target/surefire-reports
+
       - uses: radcortez/milestone-release-action@master
         name: milestone release
         with:
