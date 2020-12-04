@@ -23,8 +23,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 class YamlConfigSourceTest {
     @Test
     void flatten() throws Exception {
-        YamlConfigSource yaml = new YamlConfigSource("yaml",
-                YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml"));
+        YamlConfigSource yaml = new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml"));
         String value = yaml.getValue("admin.users");
         Users users = new UserConverter().convert(value);
         assertEquals(2, users.getUsers().size());
@@ -36,8 +35,7 @@ class YamlConfigSourceTest {
 
     @Test
     void profiles() throws Exception {
-        YamlConfigSource yaml = new YamlConfigSource("yaml",
-                YamlConfigSourceTest.class.getResourceAsStream("/example-profiles.yml"));
+        YamlConfigSource yaml = new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-profiles.yml"));
 
         assertEquals("default", yaml.getValue("foo.bar"));
         assertEquals("dev", yaml.getValue("%dev.foo.bar"));
@@ -68,7 +66,7 @@ class YamlConfigSourceTest {
     @Test
     void config() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml")))
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
                 .withConverter(Users.class, 100, new UserConverter())
                 .build();
 
@@ -83,7 +81,7 @@ class YamlConfigSourceTest {
     @Test
     void propertyNames() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example.yml")))
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
                 .build();
 
         final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
@@ -102,7 +100,7 @@ class YamlConfigSourceTest {
     void quotedProperties() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(
-                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-quotes.yml")))
+                        new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-quotes.yml")))
                 .build();
 
         final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
@@ -117,7 +115,7 @@ class YamlConfigSourceTest {
     void commas() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(
-                        new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example.yml")))
+                        new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
                 .withConverter(Users.class, 100, new UserConverter())
                 .build();
 
@@ -130,8 +128,7 @@ class YamlConfigSourceTest {
     void intKeys() {
         try {
             new SmallRyeConfigBuilder()
-                    .withSources(new YamlConfigSource("yaml",
-                            YamlConfigSourceTest.class.getResourceAsStream("/example-int-keys.yml")))
+                    .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-int-keys.yml")))
                     .build();
         } catch (Exception e) {
             fail(e);
@@ -141,7 +138,7 @@ class YamlConfigSourceTest {
     @Test
     void configMapping() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml", YamlConfigSourceTest.class.getResourceAsStream("/example-216.yml")))
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
                 .withConverter(Users.class, 100, new UserConverter())
                 .withMapping(UsersMapping.class, "admin")
                 .build();
