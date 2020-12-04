@@ -32,7 +32,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -418186029484956531L;
 
     private static final String NAME_PREFIX = "YamlConfigSource[source=";
-    static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
+    private static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
 
     private final Set<String> propertyNames;
 
