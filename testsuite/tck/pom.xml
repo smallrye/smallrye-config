@@ -36,7 +36,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <suiteXmlFiles>
-            <suiteXmlFile>tck-suite.xml</suiteXmlFile>
+            <suiteXmlFile>src/test/resources/tck-suite.xml</suiteXmlFile>
           </suiteXmlFiles>
           <environmentVariables>
             <MP_TCK_ENV_DUMMY>dummy</MP_TCK_ENV_DUMMY>

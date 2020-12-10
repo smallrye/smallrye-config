@@ -46,14 +46,7 @@
     <sonar.projectName>SmallRye Config</sonar.projectName>
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>microprofile-config-staging</id>
-      <url>https://oss.sonatype.org/content/repositories/orgeclipsemicroprofile-1375/</url>
-    </repository>
-  </repositories>
-
+  
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
