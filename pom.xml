@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>23</version>
+    <version>25</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
@@ -34,12 +34,10 @@
   <url>http://smallrye.io</url>
 
   <properties>
-    <version.asm>9.0</version.asm>
     <version.eclipse.microprofile.config>2.0</version.eclipse.microprofile.config>
     <version.smallrye.common>1.5.0</version.smallrye.common>
+    <version.asm>9.0</version.asm>
 
-    <version.junit.platform>1.6.2</version.junit.platform>
-    <version.weld.junit>2.0.1.Final</version.weld.junit>
     <version.smallrye.testing.utilities>0.1.0</version.smallrye.testing.utilities>
 
     <!-- Sonar settings -->
@@ -87,35 +85,32 @@
         <artifactId>microprofile-config-api</artifactId>
         <version>${version.eclipse.microprofile.config}</version>
       </dependency>
+
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${version.asm}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.smallrye.common</groupId>
+        <artifactId>smallrye-common-bom</artifactId>
+        <version>${version.smallrye.common}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+
+      <!-- Test Dependencies -->
+      <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-utilities</artifactId>
+        <version>${version.smallrye.testing.utilities}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.eclipse.microprofile.config</groupId>
         <artifactId>microprofile-config-tck</artifactId>
         <version>${version.eclipse.microprofile.config}</version>
-      </dependency>
-
-      <!-- TODO - Move to Parent POM -->
-      <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-commons</artifactId>
-        <version>${version.junit.platform}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-launcher</artifactId>
-        <version>${version.junit.platform}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-testkit</artifactId>
-        <version>${version.junit.platform}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.weld</groupId>
-        <artifactId>weld-junit5</artifactId>
-        <version>${version.weld.junit}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -124,54 +119,8 @@
         <version>${version.org.jboss.arquillian}</version>
         <scope>test</scope>
       </dependency>
-      <dependency>
-        <groupId>org.testng</groupId>
-        <artifactId>testng</artifactId>
-        <version>${version.testng}</version>
-        <scope>compile</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.testing</groupId>
-        <artifactId>smallrye-testing-utilities</artifactId>
-        <version>${version.smallrye.testing.utilities}</version>
-        <scope>test</scope>
-      </dependency>
 
-      <dependency>
-        <groupId>org.ow2.asm</groupId>
-        <artifactId>asm</artifactId>
-        <version>${version.asm}</version>
-      </dependency>
-
-      <!-- External SmallRye Dependencies -->
-      <dependency>
-        <groupId>io.smallrye.common</groupId>
-        <artifactId>smallrye-common-annotation</artifactId>
-        <version>${version.smallrye.common}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.common</groupId>
-        <artifactId>smallrye-common-expression</artifactId>
-        <version>${version.smallrye.common}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.common</groupId>
-        <artifactId>smallrye-common-constraint</artifactId>
-        <version>${version.smallrye.common}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.smallrye.common</groupId>
-        <artifactId>smallrye-common-classloader</artifactId>
-        <version>${version.smallrye.common}</version>
-      </dependency>
-
-      <!-- Dependencies provided by the project -->
+      <!-- Internal Dependencies -->
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-common</artifactId>
@@ -184,58 +133,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.asciidoctor</groupId>
-          <artifactId>asciidoctor-maven-plugin</artifactId>
-          <configuration>
-            <sourceHighlighter>coderay</sourceHighlighter>
-            <attributes>
-              <icons>font</icons>
-              <pagenums />
-              <version>${project.version}</version>
-              <idprefix />
-              <idseparator>-</idseparator>
-              <allow-uri-read>true</allow-uri-read>
-              <revnumber>${project.version}</revnumber>
-              <revdate>${maven.build.timestamp}</revdate>
-              <organization>${project.organization.name}</organization>
-            </attributes>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>${version.release.plugin}</version>
-        <configuration>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <tagNameFormat>@{project.version}</tagNameFormat>
-          <preparationGoals>verify</preparationGoals>
-          <pushChanges>false</pushChanges>
-          <localCheckout>true</localCheckout>
-          <remoteTagging>false</remoteTagging>
-          <arguments>-DskipTests ${release.arguments}</arguments>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.6</version>
-        <configuration>
-          <gpgArguments>
-            <arg>--pinentry-mode</arg>
-            <arg>loopback</arg>
-          </gpgArguments>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 
   <profiles>
     <profile>

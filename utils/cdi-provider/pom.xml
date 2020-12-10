@@ -11,9 +11,7 @@
     
     <artifactId>smallrye-config-source-injection</artifactId>
         
-    <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Source Injection</name>
-    <description>Inject config sources by name</description>
 
     <properties>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
