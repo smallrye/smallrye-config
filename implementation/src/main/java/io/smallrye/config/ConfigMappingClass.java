@@ -74,8 +74,7 @@ final class ConfigMappingClass implements ConfigMappingMetadata {
         try {
             classInstance = classType.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
-            classInstance = null;
+            throw new IllegalStateException(e);
         }
 
         Field[] declaredFields = classType.getDeclaredFields();
@@ -124,7 +123,7 @@ final class ConfigMappingClass implements ConfigMappingMetadata {
                 }
             }
 
-            if (!hasDefault && classInstance != null) {
+            if (!hasDefault) {
                 try {
                     declaredField.setAccessible(true);
                     Object defaultValue = declaredField.get(classInstance);
@@ -244,11 +243,7 @@ final class ConfigMappingClass implements ConfigMappingMetadata {
             return false;
         }
 
-        if (klass.isPrimitive() && value instanceof Character && value.equals(0)) {
-            return false;
-        }
-
-        return true;
+        return !klass.isPrimitive() || !(value instanceof Character) || !value.equals(0);
     }
 
     private final Class<?> classType;
