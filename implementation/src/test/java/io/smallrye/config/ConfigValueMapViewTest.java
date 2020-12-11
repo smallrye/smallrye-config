@@ -14,19 +14,19 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-public class ConfigValueMapViewTest {
+class ConfigValueMapViewTest {
     @Test
-    public void size() {
+    void size() {
         assertEquals(3, sampleMap().size());
     }
 
     @Test
-    public void isEmpty() {
+    void isEmpty() {
         assertTrue(new ConfigValueMapView(new HashMap<>()).isEmpty());
     }
 
     @Test
-    public void containsKey() {
+    void containsKey() {
         final Map<String, String> map = sampleMap();
         assertTrue(map.containsKey("my.prop"));
         assertTrue(map.containsKey("my.null.value"));
@@ -34,13 +34,13 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void containsValue() {
+    void containsValue() {
         final Map<String, String> map = sampleMap();
         assertTrue(map.containsValue("1234"));
     }
 
     @Test
-    public void get() {
+    void get() {
         final Map<String, String> map = sampleMap();
         assertEquals("1234", map.get("my.prop"));
         assertNull(map.get("my.null.value"));
@@ -48,17 +48,17 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void put() {
+    void put() {
         assertThrows(UnsupportedOperationException.class, () -> sampleMap().put("x", "x"));
     }
 
     @Test
-    public void remove() {
+    void remove() {
         assertThrows(UnsupportedOperationException.class, () -> sampleMap().remove("my.prop"));
     }
 
     @Test
-    public void putAll() {
+    void putAll() {
         assertThrows(UnsupportedOperationException.class, () -> {
             final HashMap<String, String> newMap = new HashMap<>();
             newMap.put("key", "value");
@@ -67,12 +67,12 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void clear() {
+    void clear() {
         assertThrows(UnsupportedOperationException.class, () -> sampleMap().clear());
     }
 
     @Test
-    public void keySet() {
+    void keySet() {
         final Set<String> keys = sampleMap().keySet();
         assertEquals(3, keys.size());
         assertTrue(keys.contains("my.prop"));
@@ -82,7 +82,7 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void entrySet() {
+    void entrySet() {
         final Set<Map.Entry<String, String>> entries = sampleMap().entrySet();
         assertEquals(3, entries.size());
         assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("my.prop", "1234")));
@@ -93,7 +93,7 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void values() {
+    void values() {
         final Collection<String> values = sampleMap().values();
         assertEquals(3, values.size());
         assertTrue(values.contains(null));
@@ -102,7 +102,7 @@ public class ConfigValueMapViewTest {
     }
 
     @Test
-    public void configSourceMap() throws IOException {
+    void configSourceMap() throws IOException {
         final ConfigValuePropertiesConfigSource configSource = new ConfigValuePropertiesConfigSource(
                 ConfigValueMapViewTest.class.getResource("/config-values.properties"));
         final Map<String, String> properties = configSource.getProperties();

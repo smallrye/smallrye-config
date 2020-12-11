@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.test.provider;
 
 import static org.testng.Assert.assertEquals;
@@ -39,7 +38,6 @@ import org.testng.annotations.Test;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
 public class ProviderWithListTest extends Arquillian {
-
     @Deployment
     public static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
@@ -49,14 +47,13 @@ public class ProviderWithListTest extends Arquillian {
                 .addAsManifestResource(new StringAsset(
                         "objectIds=a,b,c\nnumbers=4,5,6"), "microprofile-config.properties")
                 .as(JavaArchive.class);
-        WebArchive war = ShrinkWrap
+        return ShrinkWrap
                 .create(WebArchive.class, "ProviderTest.war")
                 .addAsLibrary(testJar);
-        return war;
     }
 
     @Inject
-    private ProviderBeanWithList bean;
+    ProviderBeanWithList bean;
 
     @Test
     public void testProvider() {
@@ -75,6 +72,5 @@ public class ProviderWithListTest extends Arquillian {
         assertNotNull(numbers);
         assertEquals(numbers.size(), 3);
         assertEquals((int) numbers.get(0), 4);
-
     }
 }

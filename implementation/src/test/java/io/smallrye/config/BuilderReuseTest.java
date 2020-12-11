@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,12 +30,9 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-/**
- */
-public class BuilderReuseTestCase {
-
+class BuilderReuseTest {
     @Test
-    public void testBuilderReuse() {
+    void builderReuse() {
         final SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
         builder.addDefaultSources();
         final Config config1 = builder.build();
@@ -55,7 +51,7 @@ public class BuilderReuseTestCase {
     }
 
     @Test
-    public void testConverterPriority() {
+    void converterPriority() {
         final SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
         builder.addDefaultSources();
 
@@ -79,8 +75,7 @@ public class BuilderReuseTestCase {
 
     @Priority(2500)
     private static class IntConverter implements Converter<Integer> {
-
-        private String name;
+        private final String name;
 
         public IntConverter(String name) {
             this.name = name;

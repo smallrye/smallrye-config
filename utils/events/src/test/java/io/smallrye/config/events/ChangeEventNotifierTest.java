@@ -21,53 +21,53 @@ import io.smallrye.config.inject.ConfigExtension;
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @ExtendWith(WeldJunit5Extension.class)
-public class ChangeEventNotifierTest {
+class ChangeEventNotifierTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ChangeEventNotifier.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ChangeEventNotifier.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
             .build();
 
     @Test
-    public void testNewType() {
+    void testNewType() {
         ChangeEvent changeEvent = new ChangeEvent(Type.NEW, "test.key", Optional.empty(), "test value", "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testUpdateType() {
+    void testUpdateType() {
         ChangeEvent changeEvent = new ChangeEvent(Type.UPDATE, "test.key", Optional.of("old value"), "test value", "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testRemoveType() {
+    void testRemoveType() {
         ChangeEvent changeEvent = new ChangeEvent(Type.REMOVE, "test.key", Optional.of("old value"), null, "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testCertainKey() {
+    void testCertainKey() {
         ChangeEvent changeEvent = new ChangeEvent(Type.UPDATE, "some.key", Optional.of("old value"), "test value", "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testCertainKeyAndUpdate() {
+    void testCertainKeyAndUpdate() {
         ChangeEvent changeEvent = new ChangeEvent(Type.UPDATE, "some.key", Optional.of("old value"), "test value", "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testCertainSource() {
+    void testCertainSource() {
         ChangeEvent changeEvent = new ChangeEvent(Type.UPDATE, "some.key", Optional.of("old value"), "test value",
                 "SomeConfigSource");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }
 
     @Test
-    public void testRegex() {
+    void testRegex() {
         ChangeEvent changeEvent = new ChangeEvent(Type.NEW, "testcase.key", Optional.empty(), "test value", "TestCase");
         ChangeEventNotifier.getInstance().fire(changeEvent);
     }

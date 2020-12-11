@@ -15,12 +15,12 @@ import java.util.TreeSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class MultiValueTestCase {
+class MultiValueTest {
 
     SmallRyeConfig config;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Properties properties = new Properties();
         properties.put("my.pets", "snake,dog,cat,cat");
 
@@ -30,7 +30,7 @@ public class MultiValueTestCase {
     }
 
     @Test
-    public void testGetValuesAsList() {
+    void getValuesAsList() {
         List<String> pets = config.getValues("my.pets", String.class, ArrayList::new);
         assertNotNull(pets);
         assertEquals(4, pets.size());
@@ -38,7 +38,7 @@ public class MultiValueTestCase {
     }
 
     @Test
-    public void testGetValuesAsSet() {
+    void getValuesAsSet() {
         Set<String> pets = config.getValues("my.pets", String.class, HashSet::new);
         assertNotNull(pets);
         assertEquals(3, pets.size());
@@ -48,7 +48,7 @@ public class MultiValueTestCase {
     }
 
     @Test
-    public void testGetValuesAsSortedSet() {
+    void getValuesAsSortedSet() {
         Set<String> pets = config.getValues("my.pets", String.class, s -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER));
         assertNotNull(pets);
         assertEquals(3, pets.size());

@@ -23,16 +23,16 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.inject.InjectionTestConfigFactory.ConvertedValue;
 
 @ExtendWith(WeldJunit5Extension.class)
-public class ConfigInjectionTest extends InjectionTest {
+class ConfigInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigBean.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigBean.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
             .build();
 
     @Inject
-    private ConfigBean configBean;
+    ConfigBean configBean;
 
     @Test
     void inject() {
@@ -71,33 +71,33 @@ public class ConfigInjectionTest extends InjectionTest {
     }
 
     @ApplicationScoped
-    public static class ConfigBean {
+    static class ConfigBean {
         @Inject
         @ConfigProperty(name = "my.prop")
-        private String myProp;
+        String myProp;
         @Inject
         @ConfigProperty(name = "expansion")
-        private String expansion;
+        String expansion;
         @Inject
         @ConfigProperty(name = "secret")
-        private String secret;
+        String secret;
         @Inject
         @ConfigProperty(name = "my.prop.profile")
-        private String myPropProfile;
+        String myPropProfile;
         @Inject
-        private Config config;
+        Config config;
         @Inject
         @ConfigProperty(name = "my.prop")
-        private ConfigValue configValue;
+        ConfigValue configValue;
         @Inject
         @ConfigProperty(name = "my.prop.missing", defaultValue = "default")
-        private ConfigValue configValueMissing;
+        ConfigValue configValueMissing;
         @Inject
         @ConfigProperty(name = "unknown")
-        private Optional<String> unknown;
+        Optional<String> unknown;
         @Inject
         @ConfigProperty(name = "converted")
-        private Optional<ConvertedValue> convertedValueOptional;
+        Optional<ConvertedValue> convertedValueOptional;
 
         String getMyProp() {
             return myProp;

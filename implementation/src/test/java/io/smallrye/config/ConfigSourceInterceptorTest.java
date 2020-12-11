@@ -17,9 +17,9 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ConfigSourceInterceptorTest {
+class ConfigSourceInterceptorTest {
     @Test
-    public void interceptor() {
+    void interceptor() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop", "1234", "override", "4567"))
@@ -32,7 +32,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void priority() {
+    void priority() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
@@ -45,7 +45,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void serviceLoader() {
+    void serviceLoader() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
@@ -57,7 +57,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void serviceLoaderAndPriorities() {
+    void serviceLoaderAndPriorities() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
@@ -71,7 +71,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void defaultInterceptors() {
+    void defaultInterceptors() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop", "1",
@@ -85,7 +85,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void notFailExpansionInactive() {
+    void notFailExpansionInactive() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("my.prop", "${expansion}",
@@ -99,7 +99,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void names() {
+    void names() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
@@ -117,7 +117,7 @@ public class ConfigSourceInterceptorTest {
     }
 
     @Test
-    public void replaceNames() {
+    void replaceNames() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()

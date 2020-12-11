@@ -4,9 +4,9 @@ import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ConfigSourcePropertySubstitutionTest {
+class ConfigSourcePropertySubstitutionTest {
     @Test
-    public void interceptor() {
+    void interceptor() {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "${prop.replace}", "prop.replace", "1234");
 
         final String value = config.getValue("my.prop", String.class);
@@ -63,7 +63,7 @@ public class ConfigSourcePropertySubstitutionTest {
 
                 // Open bracket immediately after dollar
                 else if (c == '{' && state == SEEN_DOLLAR) {
-                    buffer.append(string.substring(start, i - 1));
+                    buffer.append(string, start, i - 1);
                     state = IN_BRACKET;
                     start = i - 1;
                 }
@@ -107,7 +107,7 @@ public class ConfigSourcePropertySubstitutionTest {
 
             // Collect the trailing characters
             if (start != chars.length) {
-                buffer.append(string.substring(start, chars.length));
+                buffer.append(string, start, chars.length);
             }
 
             // Done

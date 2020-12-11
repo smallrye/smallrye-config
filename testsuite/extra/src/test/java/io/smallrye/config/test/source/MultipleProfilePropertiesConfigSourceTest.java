@@ -27,11 +27,9 @@ public class MultipleProfilePropertiesConfigSourceTest extends Arquillian {
                 .addAsManifestResource(new StringAsset("my.prop.two=1234"), "microprofile-config-prod.properties")
                 .as(JavaArchive.class);
 
-        WebArchive webArchive = ShrinkWrap
+        return ShrinkWrap
                 .create(WebArchive.class, "sources.war")
                 .addAsLibraries(sourceOne, sourceTwo);
-        System.out.println(webArchive.toString(true));
-        return webArchive;
     }
 
     @Inject
