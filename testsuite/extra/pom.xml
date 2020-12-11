@@ -49,16 +49,8 @@
       <artifactId>smallrye-config-source-yaml</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-spi</artifactId>
-      <scope>test</scope>
-    </dependency>
+
+    <!-- Test Dependencies -->
     <dependency>
       <groupId>org.jboss.weld</groupId>
       <artifactId>weld-core-impl</artifactId>
@@ -72,7 +64,6 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.arquillian.testng</groupId>
@@ -80,23 +71,12 @@
     </dependency>
   </dependencies>
 
-  <build>
-  <plugins>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-surefire-plugin</artifactId>
-    </plugin>
-  </plugins>
-
-  </build>
-
   <profiles>
     <profile>
       <id>coverage</id>
       <properties>
         <argLine>@{jacocoArgLine}</argLine>
       </properties>
-
       <build>
         <plugins>
           <plugin>

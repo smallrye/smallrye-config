@@ -11,7 +11,6 @@
     <artifactId>smallrye-config-source-yaml</artifactId>
 
     <name>SmallRye: MicroProfile Config Source - Yaml</name>
-    <description>A config that gets its values from a yaml file(s) at a URL</description>
 
     <properties>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
