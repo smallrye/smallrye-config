@@ -10,42 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.common.MapBackedConfigSource;
-
 class SmallRyeConfigTest {
-    @Test
-    void addConfigSource() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().addDefaultInterceptors().build();
-        assertNull(config.getConfigValue("my.prop").getValue());
-
-        config.addConfigSource(config("my.prop", "1"));
-        assertEquals("1", config.getRawValue("my.prop"));
-    }
-
-    @Test
-    void addMultiple() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().addDefaultInterceptors().build();
-        assertNull(config.getConfigValue("my.prop").getValue());
-
-        config.addConfigSource(config("my.prop", "1"));
-        assertEquals("1", config.getRawValue("my.prop"));
-
-        config.addConfigSource(new MapBackedConfigSource("higher", new HashMap<String, String>() {
-            {
-                put("my.prop", "2");
-            }
-        }, 200) {
-        });
-        assertEquals("2", config.getRawValue("my.prop"));
-    }
-
     @Test
     void getValues() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(config("my.list", "1,2,3,4")).build();
