@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
  ~  Copyright 2017 Red Hat, Inc.
  ~
@@ -15,7 +14,6 @@
  ~  See the License for the specific language governing permissions and
  ~  limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -56,15 +54,11 @@
       </plugin>
     </plugins>
   </build>
+
   <dependencies>
     <dependency>
       <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-tck</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>jakarta.enterprise</groupId>
@@ -76,16 +70,8 @@
       <artifactId>jakarta.annotation-api</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-spi</artifactId>
-      <scope>test</scope>
-    </dependency>
+
+    <!-- Test Dependencies -->
     <dependency>
       <groupId>org.jboss.weld</groupId>
       <artifactId>weld-core-impl</artifactId>
@@ -96,6 +82,11 @@
       <artifactId>arquillian-weld-embedded</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.config</groupId>
+      <artifactId>microprofile-config-tck</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <profiles>
@@ -104,7 +95,6 @@
       <properties>
         <argLine>@{jacocoArgLine}</argLine>
       </properties>
-
       <build>
         <plugins>
           <plugin>
