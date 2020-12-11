@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.test.collections;
 
 import static org.testng.Assert.assertEquals;
@@ -50,14 +49,13 @@ public class CollectionWithDefaultValueTest extends Arquillian {
                 .addClasses(CollectionWithDefaultValueTest.class, CollectionBean.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .as(JavaArchive.class);
-        WebArchive war = ShrinkWrap
+        return ShrinkWrap
                 .create(WebArchive.class, "CollectionWithDefaultValueTest.war")
                 .addAsLibrary(testJar);
-        return war;
     }
 
     @Inject
-    private CollectionBean bean;
+    CollectionBean bean;
 
     @Test
     public void testCollectionWithDefaultValues() {

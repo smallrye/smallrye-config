@@ -25,27 +25,27 @@ import io.smallrye.config.inject.ConfigExtension;
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @ExtendWith(WeldJunit5Extension.class)
-public class ConfigSourceProviderTest extends InjectionTest {
+class ConfigSourceProviderTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigSourceProvider.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConfigSourceProvider.class)
             .addBeans()
             .inject(this)
             .build();
 
     @Inject
     @Name("SysPropConfigSource")
-    private ConfigSource systemPropertiesConfigSource;
+    ConfigSource systemPropertiesConfigSource;
 
     @Inject
     @Name("PropertiesConfigSource[source=memory]")
-    private ConfigSource propertiesConfigSource;
+    ConfigSource propertiesConfigSource;
 
     @Inject
     @ConfigSourceMap
-    private Map<String, ConfigSource> configSourceMap;
+    Map<String, ConfigSource> configSourceMap;
 
     @Inject
-    private Config config;
+    Config config;
 
     @Test
     void injectionByName() {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.smallrye.testing.logging.LogCapture;
 
-public class LoggingConfigSourceInterceptorTest {
+class LoggingConfigSourceInterceptorTest {
     @RegisterExtension
     static LogCapture logCapture = LogCapture.with(logRecord -> logRecord.getMessage().startsWith("SRCFG"), Level.ALL);
 
@@ -28,7 +28,7 @@ public class LoggingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void interceptor() throws Exception {
+    void interceptor() throws Exception {
         Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()

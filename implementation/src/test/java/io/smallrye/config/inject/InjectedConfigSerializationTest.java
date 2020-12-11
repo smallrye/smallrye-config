@@ -23,22 +23,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import io.smallrye.config.KeyValuesConfigSource;
 
 @ExtendWith(WeldJunit5Extension.class)
-public class InjectedConfigSerializationTest extends InjectionTest {
+class InjectedConfigSerializationTest extends InjectionTest {
 
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, Config.class)
-            .build();
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, Config.class).build();
 
     @Inject
-    private Config injectedConfig;
+    Config injectedConfig;
 
     /**
      * Test that when a {@link Config} is serialized and then deserialized, it's replaced with the registered {@code Config} for
      * the current config classloader.
      */
     @Test
-    public void injectableConfigIsSerializable() throws IOException, ClassNotFoundException {
-
+    void injectableConfigIsSerializable() {
         Config defaultConfig = ConfigProvider.getConfig();
 
         Config customConfig = ConfigProviderResolver.instance().getBuilder()

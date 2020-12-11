@@ -10,9 +10,9 @@ import java.util.Map;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-public class ConfigValuePropertiesConfigSourceTest {
+class ConfigValuePropertiesConfigSourceTest {
     @Test
-    public void interceptor() throws Exception {
+    void interceptor() throws Exception {
         SmallRyeConfig config = (SmallRyeConfig) buildConfig();
 
         assertEquals("1", config.getValue("my.prop", String.class));
@@ -23,7 +23,7 @@ public class ConfigValuePropertiesConfigSourceTest {
     }
 
     @Test
-    public void configSourceMap() throws IOException {
+    void configSourceMap() throws IOException {
         final ConfigValuePropertiesConfigSource configSource = new ConfigValuePropertiesConfigSource(
                 ConfigValuePropertiesConfigSourceTest.class.getResource("/config-values.properties"));
         final Map<String, String> properties = configSource.getProperties();

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
-public class ExampleInterceptorTest {
+class ExampleInterceptorTest {
     @Test
-    public void getValue() {
+    void getValue() {
         final String myProp = ConfigProvider.getConfig().getValue("my.prop", String.class);
         assertEquals("intercepted 1", myProp);
     }

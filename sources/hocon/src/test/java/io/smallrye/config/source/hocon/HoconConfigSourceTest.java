@@ -6,10 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-public class HoconConfigSourceTest {
-
+class HoconConfigSourceTest {
     @Test
-    public void testHocon() {
+    void testHocon() {
         final ConfigSource configSource = HoconConfigSourceProvider.getConfigSource(
                 Thread.currentThread().getContextClassLoader(), "hocon/microprofile-config.conf", 100);
         assertEquals(HoconConfigSource.DEFAULT_ORDINAL, configSource.getOrdinal());

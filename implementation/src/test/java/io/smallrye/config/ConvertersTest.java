@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,13 +37,9 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-/**
- *
- */
-public class ConvertersTestCase {
-
+class ConvertersTest {
     @Test
-    public void testCollection() {
+    void collectionConverters() {
         SmallRyeConfig config = buildConfig("empty.collection", "", "one.collection", ",foo", "two.collection", "foo,,bar,,");
         final Converter<Collection<String>> conv = Converters
                 .newCollectionConverter(Converters.getImplicitConverter(String.class), ArrayList::new);
@@ -73,7 +68,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testArray() {
+    void arrayConverters() {
         SmallRyeConfig config = buildConfig("empty.collection", "", "one.collection", ",foo", "two.collection", "foo,,bar,,");
         final Converter<String[]> conv = Converters
                 .newArrayConverter(Converters.getImplicitConverter(String.class), String[].class);
@@ -102,7 +97,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testMinimumValue() {
+    void minimumValue() {
         SmallRyeConfig config = buildConfig("one.plus.one", "2", "animal", "anteater", "when", "1950-01-01");
         final Converter<Integer> intConv = Converters.getImplicitConverter(Integer.class);
         final Converter<Integer> intMin2Conv = Converters.minimumValueConverter(intConv, Integer.valueOf(2), true);
@@ -159,7 +154,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testMaximumValue() {
+    void maximumValue() {
         SmallRyeConfig config = buildConfig("one.plus.one", "2", "animal", "anteater", "when", "1950-01-01");
         final Converter<Integer> intConv = Converters.getImplicitConverter(Integer.class);
         final Converter<Integer> intMax2Conv = Converters.maximumValueConverter(intConv, Integer.valueOf(2), true);
@@ -212,7 +207,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testEmpty() {
+    void empty() {
         SmallRyeConfig config = buildConfig("int.key", "1234", "boolean.key", "true", "empty.key", "");
         assertTrue(config.getOptionalValue("int.key", Integer.class).isPresent());
         assertEquals(1234, config.getOptionalValue("int.key", Integer.class).get().intValue());
@@ -309,7 +304,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testShortValue() {
+    void shortValue() {
         final SmallRyeConfig config = buildConfig("simple.short", "2");
         final short expected = 2;
         assertEquals(expected, (short) config.getValue("simple.short", Short.class), "Unexpected value for short config");
@@ -317,7 +312,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testByte() {
+    void byteValue() {
         final SmallRyeConfig config = buildConfig("simple.byte", "2");
         final byte expected = 2;
         assertEquals(expected, (byte) config.getValue("simple.byte", Byte.class), "Unexpected value for byte config");
@@ -335,16 +330,16 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void testCurrency() {
+    void currency() {
         final SmallRyeConfig config = buildConfig("simple.currency", "GBP");
         final Currency expected = Currency.getInstance("GBP");
         assertEquals(expected.getCurrencyCode(),
-                ((Currency) config.getValue("simple.currency", Currency.class)).getCurrencyCode(),
+                config.getValue("simple.currency", Currency.class).getCurrencyCode(),
                 "Unexpected value for byte config");
     }
 
     @Test
-    public void testBitSet() {
+    void bitSet() {
         final SmallRyeConfig config = buildConfig("simple.bitset", "AA");
         BitSet expected = new BitSet(8);
         expected.set(1);
@@ -356,7 +351,7 @@ public class ConvertersTestCase {
     }
 
     @Test
-    public void nulls() {
+    void nulls() {
         final Config config = ConfigProvider.getConfig();
         assertThrows(NullPointerException.class, () -> convertNull(config, Boolean.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, Byte.class));

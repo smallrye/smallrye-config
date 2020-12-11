@@ -22,12 +22,9 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
-/**
- */
-public class ConfigSourceUtilTest {
-
+class ConfigSourceUtilTest {
     @Test
-    public void propertiesToMap() {
+    void propertiesToMap() {
         Properties properties = new Properties();
         properties.put("my.key1", "my.value1");
         properties.put("my.key2", "my.value2");

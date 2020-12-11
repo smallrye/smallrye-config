@@ -11,7 +11,7 @@ import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-public class ConfigValueTest {
+class ConfigValueTest {
     @Test
     void configValue() {
         final Config config = new SmallRyeConfigBuilder().addDefaultSources()
@@ -29,7 +29,7 @@ public class ConfigValueTest {
     }
 
     public static class ConfigValueConfigSource implements ConfigSource {
-        private Map<String, String> properties;
+        private final Map<String, String> properties;
 
         public ConfigValueConfigSource() {
             properties = new HashMap<>();
@@ -58,7 +58,7 @@ public class ConfigValueTest {
     }
 
     public static class ConfigValueLowerConfigSource implements ConfigSource {
-        private Map<String, String> properties;
+        private final Map<String, String> properties;
 
         public ConfigValueLowerConfigSource() {
             properties = new HashMap<>();

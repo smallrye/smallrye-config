@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-public class ServerMappingTest {
+class ServerMappingTest {
     @Test
     void mapping() {
         final Server server = ServerMapping.getServer();

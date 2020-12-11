@@ -32,10 +32,9 @@ import org.junit.jupiter.api.Test;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
-public class EnvConfigSourceTestCase {
-
+class EnvConfigSourceTest {
     @Test
-    public void testConversionOfEnvVariableNames() {
+    void conversionOfEnvVariableNames() {
         String envProp = System.getenv("SMALLRYE_MP_CONFIG_PROP");
         assertNotNull(envProp);
 

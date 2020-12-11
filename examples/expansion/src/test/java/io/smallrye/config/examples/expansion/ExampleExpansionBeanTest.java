@@ -14,19 +14,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import io.smallrye.config.inject.ConfigExtension;
 
 @ExtendWith(WeldJunit5Extension.class)
-public class ExampleExpansionBeanTest {
+class ExampleExpansionBeanTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ExampleExpansionBean.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ExampleExpansionBean.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
             .build();
 
     @Inject
-    private ExampleExpansionBean bean;
+    ExampleExpansionBean bean;
 
     @Test
-    public void expand() {
+    void expand() {
         assertEquals("expanded", bean.getMyProperty());
     }
 }
