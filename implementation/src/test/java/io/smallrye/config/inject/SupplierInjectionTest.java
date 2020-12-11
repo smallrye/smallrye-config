@@ -16,10 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(WeldJunit5Extension.class)
-
-public class SupplierInjectionTest extends InjectionTest {
+class SupplierInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, SupplierBean.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, SupplierBean.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
@@ -29,7 +28,7 @@ public class SupplierInjectionTest extends InjectionTest {
     SupplierBean supplierBean;
 
     @Test
-    public void supplier() {
+    void supplier() {
         assertEquals("1234", supplierBean.getMyProp());
         assertEquals("1234", supplierBean.getSupplierMyProp().get());
         assertEquals(1234, supplierBean.getSupplierInteger().get().intValue());
@@ -37,29 +36,29 @@ public class SupplierInjectionTest extends InjectionTest {
     }
 
     @Test
-    public void dynamicSupplier() {
+    void dynamicSupplier() {
         assertEquals(1, supplierBean.getSupplierDynamic().get().intValue());
         assertEquals(2, supplierBean.getSupplierDynamic().get().intValue());
         assertEquals(3, supplierBean.getSupplierDynamic().get().intValue());
     }
 
     @ApplicationScoped
-    public static class SupplierBean {
+    static class SupplierBean {
         @Inject
         @ConfigProperty(name = "my.prop")
-        private String myProp;
+        String myProp;
         @Inject
         @ConfigProperty(name = "my.prop")
-        private Supplier<String> supplierMyProp;
+        Supplier<String> supplierMyProp;
         @Inject
         @ConfigProperty(name = "my.prop")
-        private Supplier<Integer> supplierInteger;
+        Supplier<Integer> supplierInteger;
         @Inject
         @ConfigProperty(name = "my.prop")
-        private Supplier<Optional<Integer>> supplierOptionalInteger;
+        Supplier<Optional<Integer>> supplierOptionalInteger;
         @Inject
         @ConfigProperty(name = "my.counter")
-        private Supplier<Integer> supplierDynamic;
+        Supplier<Integer> supplierDynamic;
 
         String getMyProp() {
             return myProp;

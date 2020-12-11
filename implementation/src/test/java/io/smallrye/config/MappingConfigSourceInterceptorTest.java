@@ -10,9 +10,9 @@ import java.util.Set;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-public class MappingConfigSourceInterceptorTest {
+class MappingConfigSourceInterceptorTest {
     @Test
-    public void relocateAndFallback() {
+    void relocateAndFallback() {
         final Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "mp.jwt.token.cookie", "Bearer");
@@ -22,7 +22,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void relocate() {
+    void relocate() {
         final Config config = buildConfig(
                 "smallrye.jwt.token.header", "Cookie",
                 "mp.jwt.token.header", "Authorization");
@@ -31,7 +31,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void fallback() {
+    void fallback() {
         final Config config = buildConfig(
                 "smallrye.jwt.token.cookie", "jwt",
                 "mp.jwt.token.cookie", "Bearer");
@@ -40,7 +40,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void relocateWithProfile() {
+    void relocateWithProfile() {
         final Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "Cookie",
@@ -50,7 +50,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void relocateWithProfileAndExpression() {
+    void relocateWithProfileAndExpression() {
         final Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
@@ -61,7 +61,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void relocateWithProfileExpressionAndFallback() {
+    void relocateWithProfileExpressionAndFallback() {
         final Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
@@ -74,7 +74,7 @@ public class MappingConfigSourceInterceptorTest {
     }
 
     @Test
-    public void relocateIsSecret() {
+    void relocateIsSecret() {
         final Config config = buildConfig(
                 Collections.singleton("mp.jwt.token.header"),
                 "mp.jwt.token.header", "Authorization",

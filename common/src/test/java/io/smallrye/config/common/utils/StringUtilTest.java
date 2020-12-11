@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class StringUtilTest {
+class StringUtilTest {
     @Test
-    public void testSplit() {
+    void split() {
         String text = "large:cheese\\,mushroom,medium:chicken,small:pepperoni";
 
         String[] split = StringUtil.split(text);
@@ -35,7 +35,7 @@ public class StringUtilTest {
     }
 
     @Test
-    public void testTrailingSegmentsIgnored() {
+    void trailingSegmentsIgnored() {
         String text = "foo,bar,baz,,,,,";
         final String[] split = StringUtil.split(text);
         assertEquals(3, split.length);
@@ -45,7 +45,7 @@ public class StringUtilTest {
     }
 
     @Test
-    public void testLeadingSegmentsIgnored() {
+    void leadingSegmentsIgnored() {
         String text = ",,,,,,,,foo,bar,baz";
         final String[] split = StringUtil.split(text);
         assertEquals(3, split.length);
@@ -55,7 +55,7 @@ public class StringUtilTest {
     }
 
     @Test
-    public void testMidSegmentsIgnored() {
+    void midSegmentsIgnored() {
         String text = "foo,,,,bar,,,baz";
         final String[] split = StringUtil.split(text);
         assertEquals(3, split.length);
@@ -65,26 +65,26 @@ public class StringUtilTest {
     }
 
     @Test
-    public void testAllEmptySegments() {
+    void allEmptySegments() {
         String text = ",,,,,";
         final String[] split = StringUtil.split(text);
         assertEquals(0, split.length);
     }
 
     @Test
-    public void testTwoEmptySegments() {
+    void twoEmptySegments() {
         String text = ",";
         final String[] split = StringUtil.split(text);
         assertEquals(0, split.length);
     }
 
     @Test
-    public void testEmptyString() {
+    void emptyString() {
         assertEquals(0, StringUtil.split("").length);
     }
 
     @Test
-    public void testIffyEscapingSituations() {
+    void escapingSituations() {
         String text = "foo\\\\,bar\\x,,,baz";
         final String[] split = StringUtil.split(text);
         assertEquals(3, split.length);

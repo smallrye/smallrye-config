@@ -26,9 +26,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
-public class ProfileConfigSourceInterceptorTest {
+class ProfileConfigSourceInterceptorTest {
     @Test
-    public void profile() {
+    void profile() {
         final SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
@@ -39,28 +39,28 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void profileOnly() {
+    void profileOnly() {
         final Config config = buildConfig("%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
     }
 
     @Test
-    public void fallback() {
+    void fallback() {
         final Config config = buildConfig("my.prop", "1", SMALLRYE_PROFILE, "prof");
 
         assertEquals("1", config.getValue("my.prop", String.class));
     }
 
     @Test
-    public void expressions() {
+    void expressions() {
         final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_PROFILE, "prof");
 
         assertThrows(IllegalArgumentException.class, () -> config.getValue("my.prop", String.class));
     }
 
     @Test
-    public void profileExpressions() {
+    void profileExpressions() {
         final Config config = buildConfig("my.prop", "1",
                 "%prof.my.prop", "${%prof.my.prop.profile}",
                 "%prof.my.prop.profile", "2",
@@ -81,7 +81,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void customConfigProfile() {
+    void customConfigProfile() {
         final String[] configs = { "my.prop", "1", "%prof.my.prop", "2", "config.profile", "prof" };
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
@@ -93,7 +93,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void noConfigProfile() {
+    void noConfigProfile() {
         final String[] configs = { "my.prop", "1", "%prof.my.prop", "2" };
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
@@ -104,7 +104,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void priorityProfile() {
+    void priorityProfile() {
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(
@@ -130,7 +130,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void priorityOverrideProfile() {
+    void priorityOverrideProfile() {
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(
@@ -156,7 +156,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void priorityProfileOverOriginal() {
+    void priorityProfileOverOriginal() {
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withSources(
@@ -183,7 +183,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void propertyNames() {
+    void propertyNames() {
         final SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
                 SMALLRYE_PROFILE, "prof");
 
@@ -206,7 +206,7 @@ public class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
-    public void profileName() {
+    void profileName() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("my.prop", "1", "%prof.my.prop", "2"))
                 .withProfile("prof")

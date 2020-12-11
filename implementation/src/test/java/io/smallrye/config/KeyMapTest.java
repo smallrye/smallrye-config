@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-public class KeyMapTest {
+class KeyMapTest {
     @Test
     void find() {
         KeyMap<String> root = new KeyMap<>();

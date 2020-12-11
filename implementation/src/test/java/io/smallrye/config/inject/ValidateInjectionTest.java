@@ -91,7 +91,7 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class MissingPropertyTest {
         @WeldSetup
-        public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MissingPropertyBean.class)
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MissingPropertyBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -116,7 +116,7 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class ConverterMissingPropertyTest {
         @WeldSetup
-        public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConverterMissingPropertyBean.class)
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConverterMissingPropertyBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -141,7 +141,7 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class SkipPropertiesTest {
         @WeldSetup
-        public WeldInitiator weld = WeldInitiator.from(SortInjectionPointsExtension.class, SkipPropertiesBean.class)
+        WeldInitiator weld = WeldInitiator.from(SortInjectionPointsExtension.class, SkipPropertiesBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -182,7 +182,7 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class ConstructorUnnamedPropertiesTest {
         @WeldSetup
-        public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConstructorUnnamedPropertiesBean.class)
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ConstructorUnnamedPropertiesBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -197,8 +197,8 @@ public class ValidateInjectionTest {
         }
 
         @ApplicationScoped
-        public static class ConstructorUnnamedPropertiesBean {
-            private String unnamed;
+        static class ConstructorUnnamedPropertiesBean {
+            private final String unnamed;
 
             @Inject
             public ConstructorUnnamedPropertiesBean(@ConfigProperty final String unnamed) {
@@ -210,7 +210,7 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class MethodUnnamedPropertiesTest {
         @WeldSetup
-        public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MethodUnnamedPropertiesBean.class)
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MethodUnnamedPropertiesBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -225,7 +225,7 @@ public class ValidateInjectionTest {
         }
 
         @ApplicationScoped
-        public static class MethodUnnamedPropertiesBean {
+        static class MethodUnnamedPropertiesBean {
 
             @Inject
             private void setUnnamedA(@ConfigProperty String unnamedA) {

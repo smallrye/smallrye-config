@@ -7,23 +7,23 @@ import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
-public class ExpressionConfigSourceInterceptorTest {
+class ExpressionConfigSourceInterceptorTest {
     @Test
-    public void simpleExpression() {
+    void simpleExpression() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void multipleExpressions() {
+    void multipleExpressions() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${my.prop}${my.prop}");
 
         assertEquals("12341234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void composedExpressions() {
+    void composedExpressions() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${${compose}}", "compose",
                 "my.prop");
 
@@ -31,35 +31,35 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void defaultExpression() {
+    void defaultExpression() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop:1234}");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void defaultExpressionEmpty() {
+    void defaultExpressionEmpty() {
         SmallRyeConfig config = buildConfig("expression", "12${my.prop:}34");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void defaultExpressionComposed() {
+    void defaultExpressionComposed() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop:${compose}}", "compose", "1234");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void defaultExpressionComposedEmpty() {
+    void defaultExpressionComposedEmpty() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop:${compose:}}", "my.prop", "1234");
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
 
     @Test
-    public void noExpression() {
+    void noExpression() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop}");
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
@@ -68,7 +68,7 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void noExpressionComposed() {
+    void noExpressionComposed() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop${compose}}");
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
@@ -77,7 +77,7 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void multipleExpansions() {
+    void multipleExpansions() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "my.prop.two", "${my.prop}", "my.prop.three",
                 "${my.prop.two}", "my.prop.four", "${my.prop.three}");
 
@@ -88,7 +88,7 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void infiniteExpansion() {
+    void infiniteExpansion() {
         SmallRyeConfig config = buildConfig("my.prop", "${my.prop}");
 
         assertThrows(IllegalArgumentException.class, () -> config.getRawValue("my.prop"),
@@ -96,7 +96,7 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void withoutExpansion() {
+    void withoutExpansion() {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "expression", "${my.prop}");
 
         assertEquals("1234", config.getValue("expression", String.class));
@@ -109,7 +109,7 @@ public class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
-    public void escape() {
+    void escape() {
         assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getRawValue("expression"));
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",

@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-public class SecretKeysTest {
+class SecretKeysTest {
     @Test
-    public void lock() {
+    void lock() {
         final Config config = buildConfig("secret", "12345678", "not.secret", "value");
 
         assertThrows(SecurityException.class, () -> config.getValue("secret", String.class),
@@ -17,7 +17,7 @@ public class SecretKeysTest {
     }
 
     @Test
-    public void unlock() {
+    void unlock() {
         final Config config = buildConfig("secret", "12345678", "not.secret", "value");
 
         SecretKeys.doUnlocked(() -> assertEquals("12345678", config.getValue("secret", String.class)));
@@ -28,7 +28,7 @@ public class SecretKeysTest {
     }
 
     @Test
-    public void unlockAndLock() {
+    void unlockAndLock() {
         final Config config = buildConfig("secret", "12345678", "not.secret", "value");
 
         SecretKeys.doUnlocked(() -> {
@@ -44,7 +44,7 @@ public class SecretKeysTest {
     }
 
     @Test
-    public void lockAndUnlock() {
+    void lockAndUnlock() {
         final Config config = buildConfig("secret", "12345678", "not.secret", "value");
 
         SecretKeys.doLocked(() -> {

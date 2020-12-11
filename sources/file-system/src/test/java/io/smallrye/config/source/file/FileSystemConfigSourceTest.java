@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.source.file;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,9 +28,9 @@ import org.junit.jupiter.api.Test;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class FileSystemConfigSourceTestCase {
+class FileSystemConfigSourceTest {
     @Test
-    public void testConfigSourceFromDir() throws URISyntaxException {
+    void testConfigSourceFromDir() throws URISyntaxException {
         URL configDirURL = this.getClass().getResource("configDir");
         File dir = new File(configDirURL.toURI());
 
@@ -44,7 +43,7 @@ public class FileSystemConfigSourceTestCase {
     }
 
     @Test
-    public void testCharacterReplacement() throws URISyntaxException {
+    void testCharacterReplacement() throws URISyntaxException {
         URL configDirURL = this.getClass().getResource("configDir");
         File dir = new File(configDirURL.toURI());
 

@@ -20,14 +20,14 @@ import io.smallrye.config.inject.ConfigExtension;
 @ExtendWith(WeldJunit5Extension.class)
 class ServerMappingBeanTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerMappingBean.class, Server.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerMappingBean.class, Server.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
             .build();
 
     @Inject
-    private ServerMappingBean bean;
+    ServerMappingBean bean;
 
     @Test
     void mapping() {

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,12 +27,9 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-/**
- */
-public class ConfigSourceWrapperTestCase {
-
+class ConfigSourceWrapperTest {
     @Test
-    public void testUndecorated() {
+    void undecorated() {
         final Config config = new SmallRyeConfigBuilder().addDefaultSources().build();
         final Iterator<ConfigSource> iterator = config.getConfigSources().iterator();
         ConfigSource source;
@@ -47,7 +43,7 @@ public class ConfigSourceWrapperTestCase {
     }
 
     @Test
-    public void testDecoratedOnce() {
+    void decoratedOnce() {
         final Config config = new SmallRyeConfigBuilder().withWrapper(WrappedSource::new).addDefaultSources().build();
         final Iterator<ConfigSource> iterator = config.getConfigSources().iterator();
         ConfigSource source;
@@ -61,7 +57,7 @@ public class ConfigSourceWrapperTestCase {
     }
 
     @Test
-    public void testDecoratedTwice() {
+    void decoratedTwice() {
         final Config config = new SmallRyeConfigBuilder().withWrapper(WrappedSource::new).withWrapper(WrappedSource::new)
                 .addDefaultSources().build();
         final Iterator<ConfigSource> iterator = config.getConfigSources().iterator();

@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
 
-public class DefaultValuesTest {
+class DefaultValuesTest {
     @Test
     void defaultValue() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()

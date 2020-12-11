@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.test.provider;
 
 import static org.testng.Assert.assertEquals;
@@ -35,7 +34,6 @@ import org.testng.annotations.Test;
  * Test that configuration is injected into Instance.
  */
 public class InstanceAloneTest extends Arquillian {
-
     @Deployment
     public static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
@@ -45,10 +43,9 @@ public class InstanceAloneTest extends Arquillian {
                 .addAsManifestResource(new StringAsset(
                         "myEmail=example@smallrye.io"), "microprofile-config.properties")
                 .as(JavaArchive.class);
-        WebArchive war = ShrinkWrap
+        return ShrinkWrap
                 .create(WebArchive.class, "ProviderTest.war")
                 .addAsLibrary(testJar);
-        return war;
     }
 
     @Inject

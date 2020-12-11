@@ -6,9 +6,9 @@ import java.io.StringReader;
 
 import org.junit.jupiter.api.Test;
 
-public class ConfigValuePropertiesTest {
+class ConfigValuePropertiesTest {
     @Test
-    public void singleLine() throws Exception {
+    void singleLine() throws Exception {
         final ConfigValueProperties map = new ConfigValueProperties("config", 1);
         map.load(new StringReader("key=value"));
 
@@ -16,7 +16,7 @@ public class ConfigValuePropertiesTest {
     }
 
     @Test
-    public void multipleLines() throws Exception {
+    void multipleLines() throws Exception {
         final ConfigValueProperties map = new ConfigValueProperties("config", 1);
         map.load(new StringReader(
                 "key=value\n" +
@@ -47,7 +47,7 @@ public class ConfigValuePropertiesTest {
     }
 
     @Test
-    public void comments() throws Exception {
+    void comments() throws Exception {
         final ConfigValueProperties map = new ConfigValueProperties("config", 1);
         map.load(new StringReader(
                 "key=value\n" +
@@ -63,7 +63,7 @@ public class ConfigValuePropertiesTest {
     }
 
     @Test
-    public void wrapValue() throws Exception {
+    void wrapValue() throws Exception {
         final ConfigValueProperties map = new ConfigValueProperties("config", 1);
         map.load(new StringReader(
                 "key=value\\wrap\n" +

@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class ExampleExpansionTest {
+class ExampleExpansionTest {
     @Test
-    public void expand() {
+    void expand() {
         final String myProp = ExampleExpansion.getMyProp();
         assertEquals("expanded", myProp);
     }
