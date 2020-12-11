@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +47,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
-    private Function<ConfigSource, ConfigSource> sourceWrappers = UnaryOperator.identity();
     private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private final List<String> profiles = new ArrayList<>();
     private final Set<String> secretKeys = new HashSet<>();
@@ -305,12 +302,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    @Deprecated
-    public SmallRyeConfigBuilder withWrapper(UnaryOperator<ConfigSource> wrapper) {
-        sourceWrappers = sourceWrappers.andThen(wrapper);
-        return this;
-    }
-
     static void addConverter(Type type, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
         addConverter(type, getPriority(converter), converter, converters);
     }
@@ -335,11 +326,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     protected List<ConfigSource> getSources() {
         return sources;
-    }
-
-    @Deprecated
-    Function<ConfigSource, ConfigSource> getSourceWrappers() {
-        return sourceWrappers;
     }
 
     protected Map<Type, ConverterWithPriority> getConverters() {

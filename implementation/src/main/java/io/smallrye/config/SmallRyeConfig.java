@@ -30,16 +30,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.UnaryOperator;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -55,25 +52,16 @@ import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
 public class SmallRyeConfig implements Config, Serializable {
     private static final long serialVersionUID = 8138651532357898263L;
 
-    private final AtomicReference<ConfigSources> configSources;
+    private final ConfigSources configSources;
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
     private final ConfigMappings mappings;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder, ConfigMappings mappings) {
-        this.configSources = new AtomicReference<>(new ConfigSources(buildConfigSources(builder), buildInterceptors(builder)));
+        this.configSources = new ConfigSources(buildConfigSources(builder), buildInterceptors(builder));
         this.converters = buildConverters(builder);
         this.mappings = mappings;
-    }
-
-    @Deprecated
-    protected SmallRyeConfig(List<ConfigSource> configSources, Map<Type, Converter<?>> converters) {
-        this.configSources = new AtomicReference<>(
-                new ConfigSources(configSources, buildInterceptors(new SmallRyeConfigBuilder())));
-        this.converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        this.converters.putAll(converters);
-        this.mappings = new ConfigMappings();
     }
 
     private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
@@ -85,13 +73,6 @@ public class SmallRyeConfig implements Config, Serializable {
             sourcesToBuild.addAll(builder.getDefaultSources());
         }
         sourcesToBuild.add(new DefaultValuesConfigSource(builder.getDefaultValues()));
-
-        // wrap all
-        final Function<ConfigSource, ConfigSource> sourceWrappersToBuild = builder.getSourceWrappers();
-        final ListIterator<ConfigSource> it = sourcesToBuild.listIterator();
-        while (it.hasNext()) {
-            it.set(sourceWrappersToBuild.apply(it.next()));
-        }
 
         return sourcesToBuild;
     }
@@ -189,7 +170,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
     public ConfigValue getConfigValue(String name) {
-        final ConfigValue configValue = configSources.get().getInterceptorChain().proceed(name);
+        final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
         return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
     }
 
@@ -240,7 +221,7 @@ public class SmallRyeConfig implements Config, Serializable {
     @Override
     public Iterable<String> getPropertyNames() {
         final HashSet<String> names = new HashSet<>();
-        final Iterator<String> namesIterator = configSources.get().getInterceptorChain().iterateNames();
+        final Iterator<String> namesIterator = configSources.getInterceptorChain().iterateNames();
         while (namesIterator.hasNext()) {
             names.add(namesIterator.next());
         }
@@ -249,19 +230,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public Iterable<ConfigSource> getConfigSources() {
-        return configSources.get().getSources();
-    }
-
-    /**
-     * Add a configuration source to the configuration object. The list of configuration sources is re-sorted
-     * to insert the new source into the correct position. Configuration source wrappers configured with
-     * {@link SmallRyeConfigBuilder#withWrapper(UnaryOperator)} will not be applied.
-     *
-     * @param configSource the new config source (must not be {@code null})
-     */
-    @Deprecated
-    public void addConfigSource(ConfigSource configSource) {
-        configSources.updateAndGet(configSources -> new ConfigSources(configSources, configSource));
+        return configSources.getSources();
     }
 
     public <T> T convert(String value, Class<T> asType) {
@@ -319,7 +288,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Experimental("To retrive active profiles")
     public List<String> getProfiles() {
-        return configSources.get().getProfiles();
+        return configSources.getProfiles();
     }
 
     private static class ConfigSources implements Serializable {
@@ -373,31 +342,6 @@ public class SmallRyeConfig implements Config, Serializable {
             this.interceptorChain = current;
             this.sources = Collections.unmodifiableList(getSources(initInterceptors));
             this.interceptors = Collections.unmodifiableList(initInterceptors);
-        }
-
-        /**
-         * Builds a representation of Config Sources, Interceptors and the Interceptor chain to be used in Config. Note
-         * that this constructor is used in an already existent Config instance to reconstruct the chain if additional
-         * Config Sources are added to the Config.
-         *
-         * @param sources the Config Sources to be part of Config.
-         * @param configSource the new ConfigSource to add into the interceptor the chain.
-         */
-        ConfigSources(final ConfigSources sources, final ConfigSource configSource) {
-            final int oldSize = sources.getInterceptors().size();
-            final List<ConfigSourceInterceptorWithPriority> newInterceptors = Arrays
-                    .asList(sources.getInterceptors().toArray(new ConfigSourceInterceptorWithPriority[oldSize + 1]));
-            newInterceptors.set(oldSize, new ConfigSourceInterceptorWithPriority(configSource));
-            newInterceptors.sort(null);
-
-            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
-            for (ConfigSourceInterceptorWithPriority configSourceInterceptor : newInterceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(configSourceInterceptor.getInterceptor(current), current);
-            }
-
-            this.sources = Collections.unmodifiableList(getSources(newInterceptors));
-            this.interceptors = Collections.unmodifiableList(newInterceptors);
-            this.interceptorChain = current;
         }
 
         private static List<ConfigSourceInterceptorWithPriority> mapSources(final List<ConfigSource> sources) {
@@ -578,7 +522,7 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     private static class RegisteredConfig implements Serializable {
         private static final long serialVersionUID = 1L;
-        private static RegisteredConfig instance = new RegisteredConfig();
+        private static final RegisteredConfig instance = new RegisteredConfig();
 
         private Object readResolve() throws ObjectStreamException {
             return ConfigProvider.getConfig();
