@@ -11,9 +11,7 @@
     
     <artifactId>smallrye-config-events</artifactId>
         
-    <packaging>jar</packaging>
     <name>SmallRye: MicroProfile Config Events</name>
-    <description>A library to make it easy to add config events to config sources</description>
 
     <properties>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
