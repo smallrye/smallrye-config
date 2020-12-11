@@ -40,7 +40,7 @@ import io.smallrye.config.inject.ConfigExtension;
  * Test the ConfigSource
  */
 @ExtendWith(WeldJunit5Extension.class)
-public class ZooKeeperConfigSourceTest {
+class ZooKeeperConfigSourceTest {
     private static final Logger logger = Logger.getLogger(ZooKeeperConfigSourceTest.class.getName());
 
     private static TestingServer testServer;
@@ -52,7 +52,7 @@ public class ZooKeeperConfigSourceTest {
     private final String PROPERTY_VALUE = "some.value";
 
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ZooKeeperConfigSourceTest.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ZooKeeperConfigSourceTest.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
@@ -60,11 +60,11 @@ public class ZooKeeperConfigSourceTest {
 
     @Inject
     @ConfigProperty(name = "injected.property", defaultValue = "injected.property.default")
-    private String injectedProperty;
+    String injectedProperty;
 
     @Inject
     @ConfigProperty(name = "injected.int.property", defaultValue = "13")
-    private int injectedIntProperty;
+    int injectedIntProperty;
 
     @BeforeAll
     static void setUpClass() throws Exception {
@@ -89,7 +89,7 @@ public class ZooKeeperConfigSourceTest {
     }
 
     @Test
-    public void testGettingProperty() {
+    void testGettingProperty() {
         logger.info("ZooKeeperConfigSourceTest.testGettingProperty");
 
         Config cfg = ConfigProvider.getConfig();
@@ -123,7 +123,7 @@ public class ZooKeeperConfigSourceTest {
     }
 
     @Test
-    public void testInjection() {
+    void testInjection() {
         assertEquals("injected.property.value", injectedProperty);
         assertEquals(17, injectedIntProperty);
     }

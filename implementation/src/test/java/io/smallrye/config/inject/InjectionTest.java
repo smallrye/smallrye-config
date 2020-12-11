@@ -1,7 +1,6 @@
 package io.smallrye.config.inject;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -13,7 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 
 public abstract class InjectionTest {
     @BeforeAll
-    public static void beforeClass() throws Exception {
+    protected static void beforeClass() throws Exception {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         final URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
                 new URL("memory", null, 0, "/",
@@ -24,7 +23,7 @@ public abstract class InjectionTest {
     }
 
     @AfterAll
-    public static void afterClass() {
+    protected static void afterClass() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(contextClassLoader.getParent());
     }
@@ -37,18 +36,18 @@ public abstract class InjectionTest {
         }
 
         @Override
-        protected URLConnection openConnection(final URL u) throws IOException {
+        protected URLConnection openConnection(final URL u) {
             if (!u.getFile().endsWith("SmallRyeConfigFactory")) {
                 return null;
             }
 
             return new URLConnection(u) {
                 @Override
-                public void connect() throws IOException {
+                public void connect() {
                 }
 
                 @Override
-                public InputStream getInputStream() throws IOException {
+                public InputStream getInputStream() {
                     return new ByteArrayInputStream(contents);
                 }
             };

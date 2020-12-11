@@ -17,10 +17,9 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-public class ImplicitConverterTestCase {
-
+class ImplicitConverterTest {
     @Test
-    public void testImplicitURLConverter() {
+    void implicitURLConverter() {
         Config config = buildConfig(
                 "my.url", "https://github.com/smallrye/smallrye-config/");
         URL url = config.getValue("my.url", URL.class);
@@ -31,7 +30,7 @@ public class ImplicitConverterTestCase {
     }
 
     @Test
-    public void testImplicitLocalDateConverter() {
+    void implicitLocalDateConverter() {
         Config config = buildConfig(
                 "my.date", "2019-04-01");
         LocalDate date = config.getValue("my.date", LocalDate.class);
@@ -41,15 +40,8 @@ public class ImplicitConverterTestCase {
         assertEquals(1, date.getDayOfMonth());
     }
 
-    private static Config buildConfig(String... keyValues) {
-        return new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config(keyValues))
-                .build();
-    }
-
     @Test
-    public void testSerializationOfConstructorConverter() {
+    void serializationOfConstructorConverter() {
         Converter<File> converter = ImplicitConverters.getConverter(File.class);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -68,5 +60,12 @@ public class ImplicitConverterTestCase {
         assertEquals(converter.convert("/bad/path").getPath(),
                 ((File) ((Converter) readObject).convert("/bad/path")).getPath(),
                 "Converted values to have same file path");
+    }
+
+    private static Config buildConfig(String... keyValues) {
+        return new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config(keyValues))
+                .build();
     }
 }

@@ -17,27 +17,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(WeldJunit5Extension.class)
-public class OptionalInjectionTest extends InjectionTest {
+class OptionalInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, OptionalInjectionTest.class)
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, OptionalInjectionTest.class)
             .addBeans()
             .inject(this)
             .build();
 
     @Inject
     @ConfigProperty(name = "optional.int.value")
-    private OptionalInt optionalInt;
-
+    OptionalInt optionalInt;
     @Inject
     @ConfigProperty(name = "optional.long.value")
-    private OptionalLong optionalLong;
-
+    OptionalLong optionalLong;
     @Inject
     @ConfigProperty(name = "optional.double.value")
-    private OptionalDouble optionalDouble;
+    OptionalDouble optionalDouble;
 
     @Test
-    public void optionalIntInjection() {
+    void optionalIntInjection() {
         assertTrue(optionalInt.isPresent());
         assertEquals(1, optionalInt.getAsInt());
 

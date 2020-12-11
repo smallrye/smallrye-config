@@ -34,7 +34,6 @@ import org.testng.annotations.Test;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2020 Red Hat inc.
  */
 public class ConverterTest extends Arquillian {
-
     @Deployment
     public static WebArchive deploy() {
         return ShrinkWrap
@@ -46,7 +45,7 @@ public class ConverterTest extends Arquillian {
     }
 
     @Inject
-    private ConverterBean bean;
+    ConverterBean bean;
 
     @Test
     public void testHighPriorityConverterforInt() {

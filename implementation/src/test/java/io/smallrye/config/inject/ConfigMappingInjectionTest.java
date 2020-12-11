@@ -16,9 +16,9 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
 @ExtendWith(WeldJunit5Extension.class)
-public class ConfigMappingInjectionTest extends InjectionTest {
+class ConfigMappingInjectionTest extends InjectionTest {
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator
+    WeldInitiator weld = WeldInitiator
             .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class, ConfigMappingBean.class)
             .inject(this)
             .build();
@@ -61,14 +61,14 @@ public class ConfigMappingInjectionTest extends InjectionTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface Server {
+    interface Server {
         String host();
 
         int port();
     }
 
     @ConfigMapping(prefix = "client")
-    public interface Client {
+    interface Client {
         @WithDefault("client")
         String host();
 

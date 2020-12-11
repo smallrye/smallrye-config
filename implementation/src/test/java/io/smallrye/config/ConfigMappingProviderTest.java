@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
-public class ConfigMappingProviderTest {
+class ConfigMappingProviderTest {
     @Test
     void configMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()

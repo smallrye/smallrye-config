@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,8 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ConvertersStringCleanupTestCase<T> {
-    public static Stream<Arguments> data() {
+class ConvertersStringCleanupTest<T> {
+    static Stream<Arguments> data() {
         return Stream.of(
                 Arguments.of(Boolean.class, true, "true"),
                 Arguments.of(Boolean.class, false, "NO"),
@@ -54,7 +53,7 @@ public class ConvertersStringCleanupTestCase<T> {
 
     @ParameterizedTest(name = "{0} - {2}")
     @MethodSource("data")
-    public void testSimple(Class<T> type, T expected, String string) {
+    void simple(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(string));
@@ -62,7 +61,7 @@ public class ConvertersStringCleanupTestCase<T> {
 
     @ParameterizedTest(name = "{0} - {2}")
     @MethodSource("data")
-    public void testTrailingSpace(Class<T> type, T expected, String string) {
+    void trailingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(string + " "));
@@ -70,7 +69,7 @@ public class ConvertersStringCleanupTestCase<T> {
 
     @ParameterizedTest(name = "{0} - {2}")
     @MethodSource("data")
-    public void testLeadingSpace(Class<T> type, T expected, String string) {
+    void leadingSpace(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(" " + string));
@@ -78,7 +77,7 @@ public class ConvertersStringCleanupTestCase<T> {
 
     @ParameterizedTest(name = "{0} - {2}")
     @MethodSource("data")
-    public void testLeadingAndTrailingWhitespaces(Class<T> type, T expected, String string) {
+    void leadingAndTrailingWhitespaces(Class<T> type, T expected, String string) {
         SmallRyeConfig config = buildConfig();
         final Converter<T> converter = config.getConverter(type);
         assertEquals(expected, converter.convert(" \t " + string + "\t\t "));

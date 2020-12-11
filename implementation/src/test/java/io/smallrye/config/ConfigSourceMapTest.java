@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,11 +32,8 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-/**
- */
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-public class ConfigSourceMapTest {
-    @SuppressWarnings("serial")
+class ConfigSourceMapTest {
     private static final Map<String, String> MANY_MAP = new HashMap<String, String>() {
         {
             put("key-one", "12345");
@@ -51,7 +47,7 @@ public class ConfigSourceMapTest {
     private static final ConfigSource ONE_CONF_SRC = new PropertiesConfigSource(ONE_MAP, "test", 100);
 
     @Test
-    public void testClear() {
+    void clear() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).clear();
             fail("Expected exception");
@@ -60,7 +56,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testCompute() {
+    void compute() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).compute("piano", (k, v) -> "player");
             fail("Expected exception");
@@ -69,7 +65,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testComputeIfAbsent() {
+    void computeIfAbsent() {
         try {
             //noinspection ExcessiveLambdaUsage
             new ConfigSourceMap(ONE_CONF_SRC).computeIfAbsent("piano", k -> "player");
@@ -79,7 +75,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testComputeIfPresent() {
+    void computeIfPresent() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).computeIfPresent("test", (k, v) -> "bar");
             fail("Expected exception");
@@ -88,7 +84,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testContainsKey() {
+    void containsKey() {
         final ConfigSourceMap csm = new ConfigSourceMap(MANY_CONF_SRC);
         assertTrue(csm.containsKey("test"));
         assertTrue(csm.containsKey("null-valued-key"));
@@ -96,7 +92,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testContainsValue() {
+    void containsValue() {
         final ConfigSourceMap csm = new ConfigSourceMap(MANY_CONF_SRC);
         assertTrue(csm.containsValue("12345"));
         assertFalse(csm.containsValue("apple"));
@@ -104,12 +100,12 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testEquals() {
+    void equals() {
         assertEquals(MANY_MAP, new ConfigSourceMap(MANY_CONF_SRC));
     }
 
     @Test
-    public void testForEach() {
+    void forEach() {
         final Set<String> need = new HashSet<>(MANY_MAP.keySet());
         final ConfigSourceMap csm = new ConfigSourceMap(MANY_CONF_SRC);
         csm.forEach((k, v) -> {
@@ -120,7 +116,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testGet() {
+    void get() {
         final ConfigSourceMap csm = new ConfigSourceMap(MANY_CONF_SRC);
         assertEquals("bar", csm.get("test"));
         assertNull(csm.get("null-valued-key"));
@@ -128,7 +124,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testGetOrDefault() {
+    void getOrDefault() {
         final ConfigSourceMap csm = new ConfigSourceMap(MANY_CONF_SRC);
         assertEquals("bar", csm.getOrDefault("test", "foo"));
         assertNull(csm.getOrDefault("null-valued-key", "oops"));
@@ -136,25 +132,25 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testHashCode() {
+    void hashCodeSource() {
         assertEquals(MANY_MAP.hashCode(), new ConfigSourceMap(MANY_CONF_SRC).hashCode());
     }
 
     @Test
-    public void testIsEmpty() {
+    void isEmpty() {
         assertTrue(new ConfigSourceMap(new PropertiesConfigSource(Collections.emptyMap(), "test", 100)).isEmpty());
         assertFalse(new ConfigSourceMap(ONE_CONF_SRC).isEmpty());
         assertFalse(new ConfigSourceMap(MANY_CONF_SRC).isEmpty());
     }
 
     @Test
-    public void testKeySet() {
+    void keySet() {
         assertEquals(ONE_CONF_SRC.getPropertyNames(), new ConfigSourceMap(ONE_CONF_SRC).keySet());
         assertEquals(MANY_CONF_SRC.getPropertyNames(), new ConfigSourceMap(MANY_CONF_SRC).keySet());
     }
 
     @Test
-    public void testMerge() {
+    void merge() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).merge("test", "bar", (k, v) -> "oops");
             fail("Expected exception");
@@ -163,7 +159,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testPut() {
+    void put() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).put("bees", "bzzzz");
             fail("Expected exception");
@@ -172,7 +168,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testPutAll() {
+    void putAll() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).putAll(Collections.singletonMap("bees", "bzzzz"));
             fail("Expected exception");
@@ -181,7 +177,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testPutIfAbsent() {
+    void putIfAbsent() {
         try {
             new ConfigSourceMap(ONE_CONF_SRC).putIfAbsent("bees", "bzzzz");
             fail("Expected exception");
@@ -191,7 +187,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testRemove1() {
+    void remove1() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).remove("test");
             fail("Expected exception");
@@ -200,7 +196,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testRemove2() {
+    void remove2() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).remove("test");
             fail("Expected exception");
@@ -209,7 +205,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testReplace2() {
+    void replace2() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replace("test", "oops");
             fail("Expected exception");
@@ -218,7 +214,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testReplace3() {
+    void replace3() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replace("test", "bar", "oops");
             fail("Expected exception");
@@ -232,7 +228,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testReplaceAll() {
+    void replaceAll() {
         try {
             new ConfigSourceMap(MANY_CONF_SRC).replaceAll((k, v) -> "oops");
             fail("Expected exception");
@@ -241,7 +237,7 @@ public class ConfigSourceMapTest {
     }
 
     @Test
-    public void testSize() {
+    void size() {
         assertEquals(MANY_MAP.size(), new ConfigSourceMap(MANY_CONF_SRC).size());
         assertEquals(ONE_MAP.size(), new ConfigSourceMap(ONE_CONF_SRC).size());
     }

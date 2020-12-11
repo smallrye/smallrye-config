@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-public class InterceptorChainTest {
+class InterceptorChainTest {
     @Test
-    public void chain() {
+    void chain() {
         final Config config = buildConfig(
                 "my.prop", "1", // original property
                 "%my.prop.profile", "2", // profile property with expansion

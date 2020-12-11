@@ -2,8 +2,8 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -16,12 +16,12 @@ import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class OptionalNumericalTypesTestCase {
+class OptionalNumericalTypesTest {
 
     Config config;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Properties properties = new Properties();
         properties.put("my.int", "123");
         properties.put("my.long", "456");
@@ -34,7 +34,7 @@ public class OptionalNumericalTypesTestCase {
     }
 
     @Test
-    public void testOptionalIntWithExistingProperty() {
+    void optionalIntWithExistingProperty() {
         assertEquals(123, config.getValue("my.int", Integer.class).intValue());
 
         OptionalInt optionalInt = config.getValue("my.int", OptionalInt.class);
@@ -48,22 +48,15 @@ public class OptionalNumericalTypesTestCase {
     }
 
     @Test
-    public void testOptionalIntWithAbsentProperty() {
-        try {
-            config.getValue("my.int.not.found", Integer.class);
-            fail("must throw a NoSuchMethodException");
-        } catch (NoSuchElementException e) {
-        }
-
+    void optionalIntWithAbsentProperty() {
+        assertThrows(NoSuchElementException.class, () -> config.getValue("my.int.not.found", Integer.class));
         assertFalse(config.getOptionalValue("my.int.not.found", Integer.class).isPresent());
-
         assertFalse(config.getValue("my.int.not.found", OptionalInt.class).isPresent());
-
         assertTrue(config.getOptionalValue("my.int.not.found", OptionalInt.class).isPresent());
     }
 
     @Test
-    public void testOptionalLongWithExistingProperty() {
+    void optionalLongWithExistingProperty() {
         assertEquals(456, config.getValue("my.long", Long.class).longValue());
 
         OptionalLong optionalLong = config.getValue("my.long", OptionalLong.class);
@@ -77,22 +70,15 @@ public class OptionalNumericalTypesTestCase {
     }
 
     @Test
-    public void testOptionalLongWithAbsentProperty() {
-        try {
-            config.getValue("my.long.not.found", Long.class);
-            fail("must throw a NoSuchMethodException");
-        } catch (NoSuchElementException e) {
-        }
-
+    void optionalLongWithAbsentProperty() {
+        assertThrows(NoSuchElementException.class, () -> config.getValue("my.long.not.found", Integer.class));
         assertFalse(config.getOptionalValue("my.long.not.found", Long.class).isPresent());
-
         assertFalse(config.getValue("my.long.not.found", OptionalLong.class).isPresent());
-
         assertTrue(config.getOptionalValue("my.long.not.found", OptionalLong.class).isPresent());
     }
 
     @Test
-    public void testOptionalDoubleWithExistingProperty() {
+    void optionalDoubleWithExistingProperty() {
         assertEquals(789.0, config.getValue("my.double", Double.class).doubleValue(), 0.0);
 
         OptionalDouble optionalDouble = config.getValue("my.double", OptionalDouble.class);
@@ -106,23 +92,15 @@ public class OptionalNumericalTypesTestCase {
     }
 
     @Test
-    public void testOptionalDoubleWithAbsentProperty() {
-        try {
-            config.getValue("my.double.not.found", Double.class);
-            fail("must throw a NoSuchMethodException");
-        } catch (NoSuchElementException e) {
-
-        }
-
+    void optionalDoubleWithAbsentProperty() {
+        assertThrows(NoSuchElementException.class, () -> config.getValue("my.double.not.found", Integer.class));
         assertFalse(config.getOptionalValue("my.double.not.found", Double.class).isPresent());
-
         assertFalse(config.getValue("my.double.not.found", OptionalDouble.class).isPresent());
-
         assertTrue(config.getOptionalValue("my.double.not.found", OptionalDouble.class).isPresent());
     }
 
     @Test
-    public void testEmptyPropertyIsConsideredOptionalEmpty() {
+    void emptyPropertyIsConsideredOptionalEmpty() {
         OptionalInt optionalInt = config.getValue("my.empty.prop", OptionalInt.class);
         assertFalse(optionalInt.isPresent());
 
@@ -143,6 +121,5 @@ public class OptionalNumericalTypesTestCase {
         Optional<OptionalDouble> optionalOptionalDouble = config.getOptionalValue("my.empty.prop", OptionalDouble.class);
         assertTrue(optionalOptionalDouble.isPresent());
         assertFalse(optionalOptionalDouble.get().isPresent());
-
     }
 }

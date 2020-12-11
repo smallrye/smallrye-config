@@ -26,9 +26,10 @@ import io.smallrye.config.inject.ConfigProducer;
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @ExtendWith(WeldJunit5Extension.class)
-public class JsonArrayConverterTest {
+class JsonArrayConverterTest {
+    @SuppressWarnings("unchecked")
     @WeldSetup
-    public WeldInitiator weld = WeldInitiator.from(WeldInitiator.createWeld()
+    WeldInitiator weld = WeldInitiator.from(WeldInitiator.createWeld()
             .addExtensions(ConfigExtension.class)
             .addBeanClass(ConfigProducer.class)
             .addBeanClass(JsonArrayConverterTest.class))
@@ -39,10 +40,10 @@ public class JsonArrayConverterTest {
 
     @Inject
     @ConfigProperty(name = "someJsonArray")
-    private JsonArray someValue;
+    JsonArray someValue;
 
     @Test
-    public void testInjection() {
+    void testInjection() {
         try (JsonReader jsonReader = Json.createReader(new StringReader("[\"value1\",\"value2\",\"value3\"]"))) {
             JsonArray jsonArray = jsonReader.readArray();
             assertEquals(jsonArray, someValue);

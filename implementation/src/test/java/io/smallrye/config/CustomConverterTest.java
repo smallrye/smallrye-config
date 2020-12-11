@@ -18,10 +18,9 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-public class CustomConverterTestCase {
-
+class CustomConverterTest {
     @Test
-    public void testCustomInetAddressConverter() {
+    void customInetAddressConverter() {
         Config config = buildConfig(
                 "my.address", "10.0.0.1");
         InetAddress inetaddress = config.getValue("my.address", InetAddress.class);
@@ -30,22 +29,15 @@ public class CustomConverterTestCase {
     }
 
     @Test
-    public void testCharacterConverter() {
+    void characterConverter() {
         Config config = buildConfig(
                 "my.char", "a");
         char c = config.getValue("my.char", Character.class);
         assertEquals('a', c);
     }
 
-    private static Config buildConfig(String... keyValues) {
-        return new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config(keyValues))
-                .build();
-    }
-
     @Test
-    public void testExplicitConverter() {
+    void explicitConverter() {
         // setup
         SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234");// sanity check
         final Converter<Integer> customConverter = new Converter<Integer>() {
@@ -94,7 +86,7 @@ public class CustomConverterTestCase {
     }
 
     @Test
-    public void testUUID() {
+    void UUID() {
         String uuidStringTruth = "e4b3d0cf-55a2-4c01-a5d0-fe016fdc9195";
         String secondUuidStringTruth = "c2d88ee5-e981-4de2-ac54-8b887cc2acbc";
         UUID uuidUUIDTruth = UUID.fromString(uuidStringTruth);
@@ -123,7 +115,7 @@ public class CustomConverterTestCase {
     }
 
     @Test
-    public void testMalformedUUID() {
+    void malformedUUID() {
         final Config config = buildConfig(
                 "uuid.invalid", "notauuid");
 
@@ -135,4 +127,10 @@ public class CustomConverterTestCase {
 
     }
 
+    private static Config buildConfig(String... keyValues) {
+        return new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .withSources(KeyValuesConfigSource.config(keyValues))
+                .build();
+    }
 }
