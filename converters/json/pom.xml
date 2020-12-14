@@ -13,10 +13,6 @@
     
     <name>SmallRye: MicroProfile Config Converter - Json</name>
 
-    <properties>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -50,20 +46,4 @@
         </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>coverage</id>
-            <properties>
-                <argLine>@{jacocoArgLine}</argLine>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

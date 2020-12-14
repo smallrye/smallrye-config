@@ -42,7 +42,6 @@
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
-    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
   
   <licenses>
@@ -150,7 +149,19 @@
       <id>coverage</id>
       <properties>
         <argLine>@{jacocoArgLine}</argLine>
+        <!--suppress UnresolvedMavenProperty -->
+        <sonar.coverage.jacoco.xmlReportPaths>
+          ${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
       </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
       <modules>
         <module>coverage</module>
       </modules>
