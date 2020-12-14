@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import java.io.InvalidObjectException;
+import java.lang.reflect.Type;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
@@ -127,4 +128,7 @@ interface ConfigMessages {
 
     @Message(id = 37, value = "The Converter API cannot convert a null value")
     NullPointerException converterNullValue();
+
+    @Message(id = 38, value = "Type has no raw type class: %s")
+    IllegalArgumentException noRawType(Type type);
 }

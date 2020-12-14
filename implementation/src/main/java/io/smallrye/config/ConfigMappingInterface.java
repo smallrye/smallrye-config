@@ -18,7 +18,6 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
-import io.smallrye.config.inject.InjectionMessages;
 
 /**
  * Information about a configuration interface.
@@ -695,7 +694,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
                 return Object.class;
             }
         } else {
-            throw InjectionMessages.msg.noRawType(type);
+            throw ConfigMessages.msg.noRawType(type);
         }
     }
 }

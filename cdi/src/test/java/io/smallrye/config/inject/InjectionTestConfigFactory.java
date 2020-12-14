@@ -1,6 +1,6 @@
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 
 import java.util.HashMap;
 import java.util.HashSet;
