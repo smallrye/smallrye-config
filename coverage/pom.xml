@@ -20,6 +20,10 @@
     </dependency>
     <dependency>
       <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config</artifactId>
     </dependency>
 
@@ -63,6 +67,18 @@
       <artifactId>smallrye-config-source-injection</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <!-- TCKs -->
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-test-extra</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-tck</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -86,13 +102,6 @@
                 </fileSet>
               </fileSets>
             </configuration>
-          </execution>
-          <execution>
-            <id>prepare-agent</id>
-            <phase>none</phase>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
           </execution>
           <execution>
             <id>aggregate-report</id>

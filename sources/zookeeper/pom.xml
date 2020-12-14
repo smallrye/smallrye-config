@@ -29,7 +29,6 @@
     <name>SmallRye: ZooKeeper ConfigSource</name>
 
     <properties>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <version.curator>5.1.0</version.curator>
     </properties>
 
@@ -84,22 +83,5 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>coverage</id>
-            <properties>
-                <argLine>@{jacocoArgLine}</argLine>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>
