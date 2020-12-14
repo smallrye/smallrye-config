@@ -111,7 +111,8 @@ public abstract class AbstractLocationConfigSourceLoader {
     protected List<ConfigSource> tryClassPath(final URI uri, final ClassLoader classLoader) {
         final List<ConfigSource> configSources = new ArrayList<>();
         try {
-            consumeAsPaths(uri.getPath(), new ConfigSourcePathConsumer(configSources));
+            ClassLoader useCl = classLoader != null ? classLoader : SecuritySupport.getContextClassLoader();
+            consumeAsPaths(useCl, uri.getPath(), new ConfigSourcePathConsumer(configSources));
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         } catch (IllegalArgumentException e) {
