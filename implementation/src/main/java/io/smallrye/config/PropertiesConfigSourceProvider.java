@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +29,15 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
  */
 public class PropertiesConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
     private final List<ConfigSource> configSources = new ArrayList<>();
+    private final boolean includeFileSystem;
 
     public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader) {
+        this(location, classLoader, true);
+    }
+
+    public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader,
+            final boolean includeFileSystem) {
+        this.includeFileSystem = includeFileSystem;
         this.configSources.addAll(loadConfigSources(location, classLoader));
     }
 
@@ -55,5 +62,22 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
     @Override
     protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
         return new PropertiesConfigSource(url, ordinal);
+    }
+
+    @Override
+    protected List<ConfigSource> tryFileSystem(final URI uri) {
+        if (includeFileSystem) {
+            return super.tryFileSystem(uri);
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    public static PropertiesConfigSourceProvider resource(final String location, final ClassLoader classLoader) {
+        return new PropertiesConfigSourceProvider(location, classLoader);
+    }
+
+    public static PropertiesConfigSourceProvider classPathResource(final String location, final ClassLoader classLoader) {
+        return new PropertiesConfigSourceProvider(location, classLoader, false);
     }
 }

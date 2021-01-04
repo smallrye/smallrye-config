@@ -77,9 +77,11 @@ public abstract class AbstractLocationConfigSourceLoader {
         final List<ConfigSource> configSources = new ArrayList<>();
         for (String location : locations) {
             final URI uri = URI_CONVERTER.convert(location);
-            if (uri.getScheme() == null || uri.getScheme().equals("file")) {
+            if (uri.getScheme() == null) {
                 configSources.addAll(tryFileSystem(uri));
                 configSources.addAll(tryClassPath(uri, classLoader));
+            } else if (uri.getScheme().equals("file")) {
+                configSources.addAll(tryFileSystem(uri));
             } else if (uri.getScheme().equals("jar")) {
                 configSources.addAll(tryJar(uri));
             } else if (uri.getScheme().startsWith("http")) {
