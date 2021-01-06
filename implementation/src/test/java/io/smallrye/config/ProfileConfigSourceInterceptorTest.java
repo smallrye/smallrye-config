@@ -312,25 +312,25 @@ class ProfileConfigSourceInterceptorTest {
         jarTwo.as(ZipExporter.class).exportTo(filePathTwo.toFile());
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
                 new URL("jar:" + filePathOne.toUri() + "!/"),
                 new URL("jar:" + filePathTwo.toUri() + "!/"),
-        }, contextClassLoader);
-        Thread.currentThread().setContextClassLoader(urlClassLoader);
+        }, contextClassLoader)) {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .addDiscoveredSources()
-                .addDefaultInterceptors()
-                .withProfile("common,dev")
-                .build();
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .addDefaultSources()
+                    .addDiscoveredSources()
+                    .addDefaultInterceptors()
+                    .withProfile("common,dev")
+                    .build();
 
-        assertEquals("main", config.getRawValue("my.prop.main"));
-        assertEquals("common", config.getRawValue("my.prop.common"));
-        assertEquals("dev", config.getRawValue("my.prop.profile"));
-
-        urlClassLoader.close();
-        Thread.currentThread().setContextClassLoader(contextClassLoader);
+            assertEquals("main", config.getRawValue("my.prop.main"));
+            assertEquals("common", config.getRawValue("my.prop.common"));
+            assertEquals("dev", config.getRawValue("my.prop.profile"));
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
