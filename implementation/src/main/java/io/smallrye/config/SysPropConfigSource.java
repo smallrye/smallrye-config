@@ -30,11 +30,11 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-class SysPropConfigSource extends AbstractConfigSource {
+public class SysPropConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 9167738611308785403L;
     private static final int DEFAULT_ORDINAL = 400;
 
-    SysPropConfigSource() {
+    public SysPropConfigSource() {
         super("SysPropConfigSource", ConfigSourceUtil.getOrdinalFromMap(getSystemProperties(), DEFAULT_ORDINAL));
     }
 

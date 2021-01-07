@@ -16,6 +16,8 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -141,10 +143,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         defaultSources.add(new EnvConfigSource());
         defaultSources.add(new SysPropConfigSource());
-        defaultSources.addAll(PropertiesConfigSourceProvider
-                .classPathResource(META_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader).getConfigSources(classLoader));
-        defaultSources.addAll(PropertiesConfigSourceProvider
-                .classPathResource(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader).getConfigSources(classLoader));
+        defaultSources.addAll(classPathSources(META_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader));
+        defaultSources.addAll(classPathSources(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader));
 
         return defaultSources;
     }

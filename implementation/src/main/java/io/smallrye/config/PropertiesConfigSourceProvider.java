@@ -31,10 +31,6 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
     private final List<ConfigSource> configSources = new ArrayList<>();
     private final boolean includeFileSystem;
 
-    public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader) {
-        this(location, classLoader, true);
-    }
-
     public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader,
             final boolean includeFileSystem) {
         this.includeFileSystem = includeFileSystem;
@@ -43,7 +39,7 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
 
     @Deprecated
     public PropertiesConfigSourceProvider(String location, boolean optional, ClassLoader classLoader) {
-        this(location, classLoader);
+        this(location, classLoader, false);
         if (!optional && this.configSources.isEmpty()) {
             throw ConfigMessages.msg.fileNotFound(location);
         }
@@ -74,10 +70,18 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
     }
 
     public static PropertiesConfigSourceProvider resource(final String location, final ClassLoader classLoader) {
-        return new PropertiesConfigSourceProvider(location, classLoader);
+        return new PropertiesConfigSourceProvider(location, classLoader, true);
     }
 
     public static PropertiesConfigSourceProvider classPathResource(final String location, final ClassLoader classLoader) {
         return new PropertiesConfigSourceProvider(location, classLoader, false);
+    }
+
+    public static List<ConfigSource> propertiesSources(final String location, final ClassLoader classLoader) {
+        return resource(location, classLoader).getConfigSources(classLoader);
+    }
+
+    public static List<ConfigSource> classPathSources(final String location, final ClassLoader classLoader) {
+        return classPathResource(location, classLoader).getConfigSources(classLoader);
     }
 }
