@@ -1,12 +1,13 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.KeyValuesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigFactory;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
@@ -18,7 +19,7 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
         return configProviderResolver.getBuilder().forClassLoader(classLoader)
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678"))
+                .withSources(config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678"))
                 .withSources(new ConfigSource() {
                     int counter = 1;
 
@@ -37,11 +38,11 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                         return this.getClass().getName();
                     }
                 })
-                .withSources(KeyValuesConfigSource.config("optional.int.value", "1", "optional.long.value", "2",
-                        "optional.double.value", "3.3"))
+                .withSources(config("optional.int.value", "1", "optional.long.value", "2", "optional.double.value", "3.3"))
+                .withSources(config("client.the-host", "client"))
                 .withSecretKeys("secret")
-                .withDefaultValue("server.host", "localhost")
-                .withDefaultValue("cloud.host", "cloud")
+                .withDefaultValue("server.the-host", "localhost")
+                .withDefaultValue("cloud.the-host", "cloud")
                 .withDefaultValue("server.port", "8080")
                 .withDefaultValue("cloud.port", "9090")
                 .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())

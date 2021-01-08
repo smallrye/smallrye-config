@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -37,6 +38,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
     private final Map<String, Property> propertiesByName;
+    private final NamingStrategy namingStrategy;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
@@ -45,6 +47,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         this.superTypes = superTypes;
         this.properties = properties;
         this.propertiesByName = toPropertiesMap(properties);
+        this.namingStrategy = getNamingStrategy(interfaceType);
     }
 
     /**
@@ -127,6 +130,10 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         return propertiesByName.get(name);
     }
 
+    NamingStrategy getNamingStrategy() {
+        return namingStrategy;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -159,7 +166,11 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getPropertyName() {
-            return Assert.checkNotEmptyParam("propertyName", Assert.checkNotNullParam("propertyName", propertyName));
+            return getPropertyName(KEBAB_CASE_NAMING_STRATEGY);
+        }
+
+        public String getPropertyName(final NamingStrategy namingStrategy) {
+            return hasPropertyName() && !propertyName.isEmpty() ? propertyName : namingStrategy.apply(method.getName());
         }
 
         public boolean hasPropertyName() {
@@ -695,6 +706,41 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         } else {
             throw InjectionMessages.msg.noRawType(type);
+        }
+    }
+
+    private static NamingStrategy getNamingStrategy(final Class<?> interfaceType) {
+        final ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
+        if (configMapping != null) {
+            switch (configMapping.namingStrategy()) {
+                case VERBATIM:
+                    return VERBATIM_NAMING_STRATEGY;
+                case KEBAB_CASE:
+                    return KEBAB_CASE_NAMING_STRATEGY;
+            }
+        }
+
+        return KEBAB_CASE_NAMING_STRATEGY;
+    }
+
+    private static final NamingStrategy VERBATIM_NAMING_STRATEGY = new VerbatimNamingStrategy();
+    private static final NamingStrategy KEBAB_CASE_NAMING_STRATEGY = new KebabNamingStrategy();
+
+    interface NamingStrategy extends Function<String, String> {
+
+    }
+
+    static class VerbatimNamingStrategy implements NamingStrategy {
+        @Override
+        public String apply(final String s) {
+            return s;
+        }
+    }
+
+    static class KebabNamingStrategy implements NamingStrategy {
+        @Override
+        public String apply(final String s) {
+            return ConfigMappingProvider.skewer(s);
         }
     }
 }
