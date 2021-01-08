@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -20,8 +19,7 @@ import io.smallrye.config.WithDefault;
 class ConfigMappingInjectionTest extends InjectionTest {
     @WeldSetup
     WeldInitiator weld = WeldInitiator
-            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class, ConfigMappingBean.class,
-                    ServerConfigProperties.class)
+            .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class, ConfigMappingBean.class)
             .inject(this)
             .build();
 
@@ -32,14 +30,6 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Inject
     @ConfigMapping(prefix = "cloud")
     Server cloud;
-    @Inject
-    ServerConfigProperties serverConfigProperties;
-    @Inject
-    @ConfigProperties
-    ServerConfigProperties serverConfigPropertiesQualifier;
-    @Inject
-    @ConfigProperties(prefix = "cloud")
-    ServerConfigProperties serverConfigPropertiesCloud;
 
     @Test
     void configMapping() {
@@ -63,37 +53,11 @@ class ConfigMappingInjectionTest extends InjectionTest {
     }
 
     @Test
-    void configProperties() {
-        assertNotNull(serverConfigProperties);
-        assertEquals("localhost", serverConfigProperties.theHost);
-        assertEquals(8080, serverConfigProperties.port);
-
-        assertNotNull(serverConfigPropertiesQualifier);
-        assertEquals("localhost", serverConfigPropertiesQualifier.theHost);
-        assertEquals(8080, serverConfigPropertiesQualifier.port);
-
-        assertNotNull(serverConfigPropertiesCloud);
-        assertEquals("cloud", serverConfigPropertiesCloud.theHost);
-        assertEquals(9090, serverConfigPropertiesCloud.port);
-    }
-
-    @Test
     void select() {
         Server server = CDI.current().select(Server.class).get();
         assertNotNull(server);
         assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
-
-        ServerConfigProperties serverConfigProperties = CDI.current().select(ServerConfigProperties.class).get();
-        assertNotNull(serverConfigProperties);
-        assertEquals("localhost", serverConfigProperties.theHost);
-        assertEquals(8080, serverConfigProperties.port);
-
-        ServerConfigProperties cloudConfigProperties = CDI.current()
-                .select(ServerConfigProperties.class, ConfigProperties.Literal.of("cloud")).get();
-        assertNotNull(cloudConfigProperties);
-        assertEquals("cloud", cloudConfigProperties.theHost);
-        assertEquals(9090, cloudConfigProperties.port);
     }
 
     @ConfigMapping(prefix = "server")
@@ -147,11 +111,5 @@ class ConfigMappingInjectionTest extends InjectionTest {
         public void setClient(@ConfigMapping(prefix = "client") final Server client) {
             this.client = client;
         }
-    }
-
-    @ConfigProperties(prefix = "server")
-    public static class ServerConfigProperties {
-        public String theHost;
-        public int port;
     }
 }
