@@ -511,13 +511,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         // now find any properties
         Property[] properties = getProperties(interfaceType.getDeclaredMethods(), 0, 0);
         // is it anything?
-        if (superTypes.length == 0 && properties.length == 0) {
-            // no
-            return null;
-        } else {
-            // it is a proper configuration interface
-            return new ConfigMappingInterface(interfaceType, superTypes, properties);
-        }
+        return new ConfigMappingInterface(interfaceType, superTypes, properties);
     }
 
     private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
