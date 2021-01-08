@@ -19,11 +19,12 @@ import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
-class ConfigMappingProviderTest {
+class ConfigMappingInterfaceTest {
     @Test
     void configMapping() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -498,6 +499,15 @@ class ConfigMappingProviderTest {
         assertEquals(8080, Integer.valueOf(server.port().getValue()));
     }
 
+    @Test
+    void empty() {
+        try {
+            new SmallRyeConfigBuilder().withMapping(Empty.class, "empty").build();
+        } catch (Exception e) {
+            Assertions.fail(e);
+        }
+    }
+
     interface Server {
         String host();
 
@@ -650,5 +660,10 @@ class ConfigMappingProviderTest {
         ConfigValue host();
 
         ConfigValue port();
+    }
+
+    @ConfigMapping(prefix = "empty")
+    public interface Empty {
+
     }
 }

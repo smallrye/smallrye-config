@@ -9,6 +9,7 @@ import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ConfigMappingClassTest {
@@ -101,6 +102,15 @@ class ConfigMappingClassTest {
         final ServerMPConfig20 server = config.getConfigMapping(ServerMPConfig20.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
+    }
+
+    @Test
+    void empty() {
+        try {
+            new SmallRyeConfigBuilder().withMapping(Empty.class).build();
+        } catch (Exception e) {
+            Assertions.fail(e);
+        }
     }
 
     static class ServerClass {
@@ -241,5 +251,9 @@ class ConfigMappingClassTest {
         public int getPort() {
             return port;
         }
+    }
+
+    static class Empty {
+
     }
 }
