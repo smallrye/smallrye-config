@@ -34,7 +34,7 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void configMapping() {
         assertNotNull(server);
-        assertEquals("localhost", server.host());
+        assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
     }
 
@@ -48,7 +48,7 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void overridePrefix() {
         assertNotNull(cloud);
-        assertEquals("cloud", cloud.host());
+        assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
     }
 
@@ -56,13 +56,13 @@ class ConfigMappingInjectionTest extends InjectionTest {
     void select() {
         Server server = CDI.current().select(Server.class).get();
         assertNotNull(server);
-        assertEquals("localhost", server.host());
+        assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
     }
 
     @ConfigMapping(prefix = "server")
     interface Server {
-        String host();
+        String theHost();
 
         int port();
     }
@@ -82,11 +82,11 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void overridePrefixBean() {
         Server cloud = configMappingBean.getCloud();
-        assertEquals("cloud", cloud.host());
+        assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
 
         Server client = configMappingBean.getClient();
-        assertEquals("client", client.host());
+        assertEquals("client", client.theHost());
         assertEquals(80, client.port());
     }
 

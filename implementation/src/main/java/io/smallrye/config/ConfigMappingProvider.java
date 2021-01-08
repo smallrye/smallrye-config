@@ -9,7 +9,6 @@ import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
 
 import java.io.Serializable;
-import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,10 +83,6 @@ final class ConfigMappingProvider implements Serializable {
         }
         this.matchActions = matchActions;
         this.defaultValues = defaultValues;
-    }
-
-    static String skewer(Method method) {
-        return skewer(method.getName());
     }
 
     static String skewer(String camelHumps) {
@@ -206,9 +201,7 @@ final class ConfigMappingProvider implements Serializable {
             if (usedProperties.add(memberName)) {
                 // process by property type
                 if (!property.isParentPropertyName()) {
-                    String propertyName = property.hasPropertyName() ? property.getPropertyName()
-                            : skewer(property.getMethod());
-                    NameIterator ni = new NameIterator(propertyName);
+                    NameIterator ni = new NameIterator(property.getPropertyName(group.getNamingStrategy()));
                     while (ni.hasNext()) {
                         currentPath.add(ni.getNextSegment());
                         ni.next();
@@ -281,9 +274,7 @@ final class ConfigMappingProvider implements Serializable {
         for (int i = 0; i < pc; i++) {
             Property property = group.getProperty(i);
             if (!property.isParentPropertyName()) {
-                String propertyName = property.hasPropertyName() ? property.getPropertyName()
-                        : skewer(property.getMethod());
-                NameIterator ni = new NameIterator(propertyName);
+                NameIterator ni = new NameIterator(property.getPropertyName(group.getNamingStrategy()));
                 while (ni.hasNext()) {
                     currentPath.add(ni.getNextSegment());
                     ni.next();

@@ -40,4 +40,23 @@ public @interface ConfigMapping {
      * @return the configuration property prefix
      */
     String prefix() default "";
+
+    /**
+     * The naming strategy to use for the config mapping. This only matters for method names that contain both
+     * lower case and upper case characters.
+     *
+     * @return the config mapping naming strategy.
+     */
+    NamingStrategy namingStrategy() default NamingStrategy.KEBAB_CASE;
+
+    enum NamingStrategy {
+        /**
+         * The method name is used as is to map the configuration property.
+         */
+        VERBATIM,
+        /**
+         * The method name is derived by replacing case changes with a dash to map the configuration property.
+         */
+        KEBAB_CASE;
+    }
 }
