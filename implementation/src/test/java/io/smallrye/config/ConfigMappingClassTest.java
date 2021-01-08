@@ -113,6 +113,18 @@ class ConfigMappingClassTest {
         }
     }
 
+    @Test
+    void camelCase() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerCamelCase.class)
+                .withDefaultValue("theHost", "localhost")
+                .withDefaultValue("thePort", "8080")
+                .build();
+
+        final ServerCamelCase server = config.getConfigMapping(ServerCamelCase.class);
+        assertEquals("localhost", server.getTheHost());
+        assertEquals(8080, server.getThePort());
+    }
+
     static class ServerClass {
         String host;
         int port;
@@ -255,5 +267,18 @@ class ConfigMappingClassTest {
 
     static class Empty {
 
+    }
+
+    static class ServerCamelCase {
+        private String theHost;
+        private int thePort;
+
+        public String getTheHost() {
+            return theHost;
+        }
+
+        public int getThePort() {
+            return thePort;
+        }
     }
 }
