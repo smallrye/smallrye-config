@@ -12,7 +12,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
-interface ConfigMessages {
+public interface ConfigMessages {
     ConfigMessages msg = Messages.getBundle(ConfigMessages.class);
 
     @Message(id = 0, value = "The file %s was not found")
