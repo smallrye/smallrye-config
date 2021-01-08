@@ -41,10 +41,9 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                 .withSources(config("optional.int.value", "1", "optional.long.value", "2", "optional.double.value", "3.3"))
                 .withSources(config("client.the-host", "client"))
                 .withSecretKeys("secret")
-                .withDefaultValue("server.the-host", "localhost")
-                .withDefaultValue("cloud.the-host", "cloud")
-                .withDefaultValue("server.port", "8080")
-                .withDefaultValue("cloud.port", "9090")
+                .withSources(config("server.the-host", "localhost"))
+                .withSources(config("cloud.the-host", "cloud"))
+                .withSources(config("server.port", "8080", "cloud.port", "9090"))
                 .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())
                 .build();
     }
