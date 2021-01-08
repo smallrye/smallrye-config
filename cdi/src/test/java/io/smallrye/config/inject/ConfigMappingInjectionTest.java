@@ -44,7 +44,7 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void configMapping() {
         assertNotNull(server);
-        assertEquals("localhost", server.host());
+        assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
     }
 
@@ -58,22 +58,22 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void overridePrefix() {
         assertNotNull(cloud);
-        assertEquals("cloud", cloud.host());
+        assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
     }
 
     @Test
     void configProperties() {
         assertNotNull(serverConfigProperties);
-        assertEquals("localhost", serverConfigProperties.host);
+        assertEquals("localhost", serverConfigProperties.theHost);
         assertEquals(8080, serverConfigProperties.port);
 
         assertNotNull(serverConfigPropertiesQualifier);
-        assertEquals("localhost", serverConfigPropertiesQualifier.host);
+        assertEquals("localhost", serverConfigPropertiesQualifier.theHost);
         assertEquals(8080, serverConfigPropertiesQualifier.port);
 
         assertNotNull(serverConfigPropertiesCloud);
-        assertEquals("cloud", serverConfigPropertiesCloud.host);
+        assertEquals("cloud", serverConfigPropertiesCloud.theHost);
         assertEquals(9090, serverConfigPropertiesCloud.port);
     }
 
@@ -81,24 +81,24 @@ class ConfigMappingInjectionTest extends InjectionTest {
     void select() {
         Server server = CDI.current().select(Server.class).get();
         assertNotNull(server);
-        assertEquals("localhost", server.host());
+        assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
 
         ServerConfigProperties serverConfigProperties = CDI.current().select(ServerConfigProperties.class).get();
         assertNotNull(serverConfigProperties);
-        assertEquals("localhost", serverConfigProperties.host);
+        assertEquals("localhost", serverConfigProperties.theHost);
         assertEquals(8080, serverConfigProperties.port);
 
         ServerConfigProperties cloudConfigProperties = CDI.current()
                 .select(ServerConfigProperties.class, ConfigProperties.Literal.of("cloud")).get();
         assertNotNull(cloudConfigProperties);
-        assertEquals("cloud", cloudConfigProperties.host);
+        assertEquals("cloud", cloudConfigProperties.theHost);
         assertEquals(9090, cloudConfigProperties.port);
     }
 
     @ConfigMapping(prefix = "server")
     interface Server {
-        String host();
+        String theHost();
 
         int port();
     }
@@ -118,11 +118,11 @@ class ConfigMappingInjectionTest extends InjectionTest {
     @Test
     void overridePrefixBean() {
         Server cloud = configMappingBean.getCloud();
-        assertEquals("cloud", cloud.host());
+        assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
 
         Server client = configMappingBean.getClient();
-        assertEquals("client", client.host());
+        assertEquals("client", client.theHost());
         assertEquals(80, client.port());
     }
 
@@ -151,7 +151,7 @@ class ConfigMappingInjectionTest extends InjectionTest {
 
     @ConfigProperties(prefix = "server")
     public static class ServerConfigProperties {
-        public String host;
+        public String theHost;
         public int port;
     }
 }

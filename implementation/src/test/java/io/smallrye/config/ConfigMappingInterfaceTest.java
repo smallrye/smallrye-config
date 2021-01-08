@@ -508,6 +508,20 @@ class ConfigMappingInterfaceTest {
         }
     }
 
+    @Test
+    void namingStrategy() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerNamingStrategy.class, "server")
+                .withSources(config("server.theHost", "localhost", "server.thePort", "8080", "server.log.enabled", "true"))
+                .build();
+
+        final ServerNamingStrategy server = config.getConfigMapping(ServerNamingStrategy.class, "server");
+        assertNotNull(server);
+        assertEquals("localhost", server.theHost());
+        assertEquals(8080, Integer.valueOf(server.thePort()));
+        assertTrue(server.log().enabled());
+    }
+
     interface Server {
         String host();
 
@@ -665,5 +679,18 @@ class ConfigMappingInterfaceTest {
     @ConfigMapping(prefix = "empty")
     public interface Empty {
 
+    }
+
+    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
+    public interface ServerNamingStrategy {
+        String theHost();
+
+        int thePort();
+
+        Log log();
+
+        interface Log {
+            boolean enabled();
+        }
     }
 }

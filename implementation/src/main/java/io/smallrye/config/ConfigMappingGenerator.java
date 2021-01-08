@@ -1,6 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingProvider.skewer;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.objectweb.asm.AnnotationVisitor;
@@ -44,6 +44,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
+import io.smallrye.config.ConfigMappingInterface.Property;
 
 public class ConfigMappingGenerator {
     static final boolean usefulDebugInfo;
@@ -175,6 +176,18 @@ public class ConfigMappingGenerator {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
                 new String[] { getInternalName(ConfigMappingClassMapper.class) });
+
+        {
+            AnnotationVisitor av = writer.visitAnnotation("L" + getInternalName(ConfigMapping.class) + ";", true);
+            av.visitEnum("namingStrategy", "L" + getInternalName(ConfigMapping.NamingStrategy.class) + ";",
+                    ConfigMapping.NamingStrategy.VERBATIM.toString());
+
+            if (classType.isAnnotationPresent(ConfigProperties.class)) {
+                av.visit("prefix", classType.getAnnotation(ConfigProperties.class).prefix());
+            }
+
+            av.visitEnd();
+        }
 
         Object classInstance;
         try {
@@ -346,7 +359,7 @@ public class ConfigMappingGenerator {
             final ConfigMappingInterface mapping,
             final String className) {
 
-        for (ConfigMappingInterface.Property property : mapping.getProperties()) {
+        for (Property property : mapping.getProperties()) {
             Method method = property.getMethod();
             String memberName = method.getName();
             if (!visited.add(memberName)) {
@@ -359,7 +372,7 @@ public class ConfigMappingGenerator {
             cv.visitField(Opcodes.ACC_PRIVATE, memberName, fieldDesc, null, null);
 
             // now process the property
-            final ConfigMappingInterface.Property realProperty;
+            final Property realProperty;
             final boolean optional = property.isOptional();
             if (optional) {
                 realProperty = property.asOptional().getNestedProperty();
@@ -413,7 +426,7 @@ public class ConfigMappingGenerator {
                 fio.visitLabel(_done);
             } else if (property.isGroup()) {
                 // stack: -
-                boolean restoreLength = appendPropertyName(ctor, property, memberName);
+                boolean restoreLength = appendPropertyName(ctor, mapping, property);
                 // stack: -
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 // stack: ctxt
@@ -435,7 +448,7 @@ public class ConfigMappingGenerator {
                 // stack: -
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 // stack: this
-                boolean restoreLength = appendPropertyName(ctor, property, memberName);
+                boolean restoreLength = appendPropertyName(ctor, mapping, property);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';',
                         false);
@@ -562,8 +575,8 @@ public class ConfigMappingGenerator {
         }
     }
 
-    private static boolean appendPropertyName(final MethodVisitor ctor, final ConfigMappingInterface.Property property,
-            final String memberName) {
+    private static boolean appendPropertyName(final MethodVisitor ctor, final ConfigMappingInterface mapping,
+            final Property property) {
         if (property.isParentPropertyName()) {
             return false;
         }
@@ -591,11 +604,13 @@ public class ConfigMappingGenerator {
         ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
 
         // stack: sb
-        if (property.hasPropertyName()) {
-            ctor.visitLdcInsn(property.getPropertyName());
-        } else {
-            ctor.visitLdcInsn(skewer(memberName));
-        }
+        // TODO - NammingStrategy
+        // The NamingStrategy comes from the current mapping interface. We don't support setting a NamingStrategy in
+        // the top of the config root for all the configs in that root to inherit the same NamingStrategy. This needs
+        // to be handled per instance (since groups may belong to different roots), so the NamingStrategy should be
+        // retrieved from the Context. This is just a first implementation that could move into that direction, which
+        // needs more work.
+        ctor.visitLdcInsn(property.getPropertyName(mapping.getNamingStrategy()));
         // stack: sb name
         ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "append",
                 "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ';', false);
