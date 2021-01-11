@@ -36,10 +36,8 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         this.bm = bm;
         this.klass = type.getJavaClass();
         this.prefix = getPrefixFromType(type);
-        this.qualifiers.add(Default.Literal.INSTANCE);
-        if (type.isAnnotationPresent(ConfigProperties.class)) {
-            this.qualifiers.add(ConfigProperties.Literal.of(prefix));
-        }
+        this.qualifiers.add(type.isAnnotationPresent(ConfigProperties.class) ? ConfigProperties.Literal.of(prefix)
+                : Default.Literal.INSTANCE);
     }
 
     @Override

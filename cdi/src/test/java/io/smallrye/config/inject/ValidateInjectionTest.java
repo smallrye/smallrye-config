@@ -11,10 +11,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
 
 import org.assertj.core.api.Condition;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.weld.exceptions.DeploymentException;
 import org.jboss.weld.junit5.WeldInitiator;
@@ -86,6 +88,16 @@ public class ValidateInjectionTest {
                                         && throwable.getMessage().contains("setUnnamedA")
                                         && throwable.getMessage().contains("setUnnamedB"),
                                 "")));
+    }
+
+    @Test
+    void unqualifiedConfigPropertiesInjection() {
+        JupiterTestEngine engine = new JupiterTestEngine();
+        LauncherDiscoveryRequest request = request().selectors(selectClass(UnqualifiedConfigPropertiesInjectionTest.class))
+                .build();
+        EngineExecutionResults results = EngineTestKit.execute(engine, request);
+        results.testEvents().failed()
+                .assertEventsMatchExactly(finishedWithFailure(instanceOf(IllegalArgumentException.class)));
     }
 
     @ExtendWith(WeldJunit5Extension.class)
@@ -234,6 +246,31 @@ public class ValidateInjectionTest {
             @Inject
             private void setUnnamedB(@ConfigProperty String unnamedB) {
             }
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class UnqualifiedConfigPropertiesInjectionTest extends InjectionTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, Server.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        Server server;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @Dependent
+        @ConfigProperties(prefix = "server")
+        public static class Server {
+            public String host;
+            public int port;
         }
     }
 }
