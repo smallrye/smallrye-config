@@ -1,5 +1,6 @@
 package io.smallrye.config.inject;
 
+import static org.eclipse.microprofile.config.inject.ConfigProperties.UNCONFIGURED_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,10 +31,8 @@ public class ConfigPropertiesInjectionTest extends InjectionTest {
             .build();
 
     @Inject
-    Server server;
-    @Inject
     @ConfigProperties
-    Server serverQualifier;
+    Server server;
     @Inject
     @ConfigProperties(prefix = "cloud")
     Server serverCloud;
@@ -47,10 +46,6 @@ public class ConfigPropertiesInjectionTest extends InjectionTest {
         assertEquals("localhost", server.theHost);
         assertEquals(8080, server.port);
 
-        assertNotNull(serverQualifier);
-        assertEquals("localhost", serverQualifier.theHost);
-        assertEquals(8080, serverQualifier.port);
-
         assertNotNull(serverCloud);
         assertEquals("cloud", serverCloud.theHost);
         assertEquals(9090, serverCloud.port);
@@ -58,7 +53,7 @@ public class ConfigPropertiesInjectionTest extends InjectionTest {
 
     @Test
     void select() {
-        Server server = CDI.current().select(Server.class).get();
+        Server server = CDI.current().select(Server.class, ConfigProperties.Literal.of(UNCONFIGURED_PREFIX)).get();
         assertNotNull(server);
         assertEquals("localhost", server.theHost);
         assertEquals(8080, server.port);
