@@ -67,6 +67,7 @@ public class ConfigPropertiesInjectionTest extends InjectionTest {
     @Test
     void empty() {
         assertNull(config.getConfigValue("host").getValue());
+        assertNull(config.getConfigValue("theHost").getValue());
         assertNull(config.getConfigValue("port").getValue());
 
         assertThrows(NoSuchElementException.class,
