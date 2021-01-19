@@ -1,8 +1,12 @@
 package io.smallrye.config;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +35,17 @@ class ConfigMappingLoaderTest {
         ConfigMappingLoader.getImplementationClass(ServerManual.class);
     }
 
+    @Test
+    void discoverNested() {
+        ConfigMappingInterface mapping = ConfigMappingLoader.getConfigMappingInterface(ServerNested.class);
+        List<ConfigMappingInterface> nested = mapping.getNested();
+        assertEquals(3, nested.size());
+        List<Class<?>> types = nested.stream().map(ConfigMappingInterface::getInterfaceType).collect(toList());
+        assertTrue(types.contains(ServerNested.Environment.class));
+        assertTrue(types.contains(ServerNested.Log.class));
+        assertTrue(types.contains(ServerNested.Ssl.class));
+    }
+
     @ConfigMapping(prefix = "server")
     public interface Server {
         String host();
@@ -42,5 +57,33 @@ class ConfigMappingLoaderTest {
         String host();
 
         int port();
+    }
+
+    public interface ServerNested {
+        Map<String, Environment> environments();
+
+        Log log();
+
+        Optional<Ssl> ssl();
+
+        List<App> apps();
+
+        interface Environment {
+            String host();
+
+            int port();
+        }
+
+        interface Log {
+            boolean enabled();
+        }
+
+        interface Ssl {
+            String certificate();
+        }
+
+        interface App {
+            String name();
+        }
     }
 }
