@@ -6,13 +6,21 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.V1_8;
 import static org.objectweb.asm.Type.getDescriptor;
@@ -25,11 +33,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -59,12 +70,16 @@ public class ConfigMappingGenerator {
     private static final String I_CONFIGURATION_OBJECT = getInternalName(ConfigMappingObject.class);
     private static final String I_CONVERTER = getInternalName(Converter.class);
     private static final String I_MAP = getInternalName(Map.class);
+    private static final String I_COLLECTION = getInternalName(Collection.class);
+    private static final String I_LIST = getInternalName(List.class);
+    private static final String I_INT_FUNCTION = getInternalName(IntFunction.class);
     private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_OPTIONAL = getInternalName(Optional.class);
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
     private static final String I_SMALLRYE_CONFIG = getInternalName(SmallRyeConfig.class);
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
+    private static final String I_INTEGER = getInternalName(Integer.class);
     private static final String I_STRING = getInternalName(String.class);
     private static final String I_FIELD = getInternalName(Field.class);
 
@@ -381,7 +396,161 @@ public class ConfigMappingGenerator {
             }
 
             // now handle each possible type
-            if (property.isMap()) {
+            if (property.isCollection() || realProperty.isCollection() && optional) {
+                ctor.visitVarInsn(ALOAD, V_THIS);
+                // append property name
+                boolean restoreLength = appendPropertyName(ctor, mapping, property);
+
+                ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';', false);
+                ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
+
+                // For Both Group and Optional Group
+                if (realProperty.asCollection().getElement().isGroup()) {
+                    // get properties indexes
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getIndexedPropertiesIndexes",
+                            "(L" + I_STRING + ";)L" + I_LIST + ';', false);
+                    ctor.visitVarInsn(ASTORE, 4);
+
+                    // Retrieve Collection to init.
+                    ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
+                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                            "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ';', false);
+                    ctor.visitVarInsn(ALOAD, 4);
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_LIST, "size", "()I", true);
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_INT_FUNCTION, "apply", "(I)L" + I_OBJECT + ";", true);
+                    // We do it in a separate var so we can either PUT directly or wrap it in Optional
+                    ctor.visitVarInsn(ASTORE, 5);
+
+                    // TODO - Try to optimize loads / stores / debug
+                    // Iterate
+                    // i = 0
+                    ctor.visitInsn(ICONST_0);
+                    ctor.visitVarInsn(ISTORE, 6);
+                    // list size
+                    ctor.visitVarInsn(ALOAD, 4);
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_LIST, "size", "()I", true);
+                    ctor.visitVarInsn(ISTORE, 7);
+
+                    Label iter = new Label();
+                    ctor.visitLabel(iter);
+                    // i
+                    ctor.visitVarInsn(ILOAD, 6);
+                    // size
+                    ctor.visitVarInsn(ILOAD, 7);
+                    Label each = new Label();
+                    ctor.visitJumpInsn(IF_ICMPGE, each);
+
+                    // list to iterate
+                    ctor.visitVarInsn(ALOAD, 4);
+                    // i
+                    ctor.visitVarInsn(ILOAD, 6);
+                    // get property index
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_LIST, "get", "(I)L" + I_OBJECT + ";", true);
+                    ctor.visitTypeInsn(CHECKCAST, I_INTEGER);
+                    ctor.visitVarInsn(ASTORE, 8);
+
+                    // current sb length
+                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
+                    ctor.visitVarInsn(ISTORE, 9);
+
+                    // append collection index
+                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                    ctor.visitLdcInsn('[');
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';',
+                            false);
+                    ctor.visitVarInsn(ALOAD, 8);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_OBJECT + ";)L" + I_STRING_BUILDER + ';', false);
+                    ctor.visitLdcInsn(']');
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';',
+                            false);
+                    ctor.visitInsn(POP);
+
+                    // add Group with indexed properties as a Collection element
+                    ctor.visitVarInsn(ALOAD, 5);
+                    ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitLdcInsn(
+                            getType(realProperty.asCollection().getElement().asGroup().getGroupType().getInterfaceType()));
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "constructGroup",
+                            "(L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_COLLECTION, "add", "(L" + I_OBJECT + ";)Z", true);
+                    ctor.visitInsn(POP);
+
+                    // reset sb without index
+                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                    ctor.visitVarInsn(ILOAD, 9);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "setLength", "(I)V", false);
+
+                    // i ++
+                    ctor.visitIincInsn(6, 1);
+                    ctor.visitJumpInsn(GOTO, iter);
+                    ctor.visitLabel(each);
+
+                    // set field value
+                    if (optional) {
+                        ctor.visitVarInsn(ILOAD, 7);
+                        Label optionalEmpty = new Label();
+                        // If indexed properties are empty, then we couldn't find any element, so Optional.empty.
+                        ctor.visitJumpInsn(IFNE, optionalEmpty);
+                        ctor.visitVarInsn(ALOAD, V_THIS);
+                        ctor.visitMethodInsn(INVOKESTATIC, I_OPTIONAL, "empty", "()L" + I_OPTIONAL + ";", false);
+                        ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
+                        Label optionalOf = new Label();
+                        // Else wrap the Collection in Optional
+                        ctor.visitJumpInsn(GOTO, optionalOf);
+                        ctor.visitLabel(optionalEmpty);
+                        ctor.visitVarInsn(ALOAD, V_THIS);
+                        ctor.visitVarInsn(ALOAD, 5);
+
+                        ctor.visitMethodInsn(INVOKESTATIC, I_OPTIONAL, "of", "(L" + I_OBJECT + ";)L" + I_OPTIONAL + ';', false);
+                        ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
+                        ctor.visitLabel(optionalOf);
+                    } else {
+                        ctor.visitVarInsn(ALOAD, 5);
+                        ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
+                    }
+
+                } else if (optional) {
+                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
+                    ctor.visitLdcInsn(memberName);
+                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
+                            "(L" + I_CLASS + ";L" + I_STRING + ";)L" + I_CONVERTER + ';', false);
+
+                    ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
+                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                            "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValues",
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_OPTIONAL + ';', false);
+                    ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+
+                    if (restoreLength) {
+                        restoreLength(ctor);
+                    }
+                } else {
+                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
+                    ctor.visitLdcInsn(memberName);
+                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
+                            "(L" + I_CLASS + ";L" + I_STRING + ";)L" + I_CONVERTER + ';', false);
+
+                    ctor.visitLdcInsn(getType(fieldDesc));
+                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                            "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValues",
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_COLLECTION + ';', false);
+                    ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+                }
+
+                // reset stringbuilder
+                if (restoreLength) {
+                    restoreLength(ctor);
+                }
+
+            } else if (property.isMap()) {
                 // stack: -
                 ctor.visitMethodInsn(Opcodes.INVOKESTATIC, I_COLLECTIONS, "emptyMap", "()L" + I_MAP + ';', false);
                 // stack: map

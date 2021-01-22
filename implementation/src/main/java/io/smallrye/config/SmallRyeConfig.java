@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -111,13 +112,73 @@ public class SmallRyeConfig implements Config, Serializable {
         return converters;
     }
 
-    // no @Override
+    public <T> List<T> getValues(final String propertyName, final Class<T> propertyType) {
+        return getValues(propertyName, propertyType, ArrayList::new);
+    }
+
     public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
         return getValues(name, requireConverter(itemClass), collectionFactory);
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        try {
+            return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        } catch (NoSuchElementException e) {
+            return getIndexedValues(name, converter, collectionFactory);
+        }
+    }
+
+    public <T, C extends Collection<T>> C getIndexedValues(String name, Converter<T> converter,
+            IntFunction<C> collectionFactory) {
+        List<String> indexedProperties = getIndexedProperties(name);
+        if (indexedProperties.isEmpty()) {
+            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+        }
+
+        final C collection = collectionFactory.apply(indexedProperties.size());
+        for (String indexedProperty : indexedProperties) {
+            collection.add(getValue(indexedProperty, converter));
+        }
+
+        return collection;
+    }
+
+    public List<String> getIndexedProperties(final String property) {
+        List<Integer> indexes = getIndexedPropertiesIndexes(property);
+        List<String> indexedProperties = new ArrayList<>();
+        for (Integer index : indexes) {
+            indexedProperties.add(property + "[" + index + "]");
+        }
+
+        return indexedProperties;
+    }
+
+    public List<Integer> getIndexedPropertiesIndexes(final String property) {
+        Set<Integer> indexes = new HashSet<>();
+        for (String propertyName : this.getPropertyNames()) {
+            if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
+                int index = property.length();
+                if (propertyName.charAt(index) == '[') {
+                    for (;;) {
+                        if (propertyName.charAt(index) == ']') {
+                            try {
+                                indexes.add(Integer.parseInt(propertyName.substring(property.length() + 1, index)));
+                            } catch (NumberFormatException e) {
+                                //NOOP
+                            }
+                            break;
+                        } else if (index < propertyName.length() - 1) {
+                            index++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        List<Integer> sortIndexes = new ArrayList<>(indexes);
+        Collections.sort(sortIndexes);
+        return sortIndexes;
     }
 
     @Override
@@ -194,6 +255,10 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, Converters.newOptionalConverter(converter));
     }
 
+    public <T> Optional<List<T>> getOptionalValues(final String propertyName, final Class<T> propertyType) {
+        return getOptionalValues(propertyName, propertyType, ArrayList::new);
+    }
+
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Class<T> itemClass,
             IntFunction<C> collectionFactory) {
         return getOptionalValues(name, requireConverter(itemClass), collectionFactory);
@@ -201,7 +266,33 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        return getOptionalValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+        final Optional<C> optionalValue = getOptionalValue(name,
+                Converters.newCollectionConverter(converter, collectionFactory));
+        if (optionalValue.isPresent()) {
+            return optionalValue;
+        } else {
+            return getIndexedOptionalValues(name, converter, collectionFactory);
+        }
+    }
+
+    public <T, C extends Collection<T>> Optional<C> getIndexedOptionalValues(String name, Converter<T> converter,
+            IntFunction<C> collectionFactory) {
+        List<String> indexedProperties = getIndexedProperties(name);
+        if (indexedProperties.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final C collection = collectionFactory.apply(indexedProperties.size());
+        for (String indexedProperty : indexedProperties) {
+            final Optional<T> optionalValue = getOptionalValue(indexedProperty, converter);
+            optionalValue.ifPresent(collection::add);
+        }
+
+        if (!collection.isEmpty()) {
+            return Optional.of(collection);
+        }
+
+        return Optional.empty();
     }
 
     public ConfigMappings getConfigMappings() {
