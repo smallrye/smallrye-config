@@ -100,6 +100,16 @@ public class ValidateInjectionTest {
                 .assertEventsMatchExactly(finishedWithFailure(instanceOf(IllegalArgumentException.class)));
     }
 
+    @Test
+    void missingPropertyExpressionInjection() {
+        JupiterTestEngine engine = new JupiterTestEngine();
+        LauncherDiscoveryRequest request = request().selectors(selectClass(MissingPropertyExpressionInjectionTest.class))
+                .build();
+        EngineExecutionResults results = EngineTestKit.execute(engine, request);
+        results.testEvents().failed().assertEventsMatchExactly(finishedWithFailure(instanceOf(DeploymentException.class),
+                message("SRCFG00011: Could not expand value missing.prop in property bad.property.expression.prop")));
+    }
+
     @ExtendWith(WeldJunit5Extension.class)
     static class MissingPropertyTest {
         @WeldSetup
@@ -271,6 +281,31 @@ public class ValidateInjectionTest {
         public static class Server {
             public String host;
             public int port;
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class MissingPropertyExpressionInjectionTest extends InjectionTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MissingPropertyExpressionBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        MissingPropertyExpressionBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        static class MissingPropertyExpressionBean {
+            @Inject
+            @ConfigProperty(name = "bad.property.expression.prop")
+            String missing;
         }
     }
 }
