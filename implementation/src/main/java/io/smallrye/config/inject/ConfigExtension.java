@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toSet;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashSet;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -159,6 +160,8 @@ public class ConfigExtension implements Extension {
                 ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (IllegalArgumentException e) {
                 adv.addDeploymentProblem(InjectionMessages.msg.illegalConversion(name, type));
+            } catch (NoSuchElementException e) {
+                adv.addDeploymentProblem(e);
             }
         }
 
