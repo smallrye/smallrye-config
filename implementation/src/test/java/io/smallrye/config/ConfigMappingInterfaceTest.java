@@ -240,6 +240,9 @@ class ConfigMappingInterfaceTest {
                 put("server.port", "8080");
                 put("optional", "optional");
                 put("optional.int", "9");
+                put("info.name", "server");
+                put("info.login", "login");
+                put("info.password", "password");
             }
         };
 
@@ -257,6 +260,13 @@ class ConfigMappingInterfaceTest {
         assertEquals("optional", optionals.optional().get());
         assertTrue(optionals.optionalInt().isPresent());
         assertEquals(9, optionals.optionalInt().getAsInt());
+
+        assertFalse(optionals.info().isEmpty());
+        assertEquals("server", optionals.info().get("info").name());
+        assertTrue(optionals.info().get("info").login().isPresent());
+        assertEquals("login", optionals.info().get("info").login().get());
+        assertTrue(optionals.info().get("info").password().isPresent());
+        assertEquals("password", optionals.info().get("info").password().get());
     }
 
     @Test
@@ -607,6 +617,17 @@ class ConfigMappingInterfaceTest {
 
         @WithName("optional.int")
         OptionalInt optionalInt();
+
+        @WithParentName
+        Map<String, Info> info();
+
+        interface Info {
+            String name();
+
+            Optional<String> login();
+
+            Optional<String> password();
+        }
     }
 
     public interface CollectionTypes {

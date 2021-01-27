@@ -320,13 +320,13 @@ final class ConfigMappingProvider implements Serializable {
                         if (primitiveProperty.hasDefaultValue()) {
                             defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
                         }
-                    } else if (property.isLeaf()) {
-                        LeafProperty leafProperty = property.asLeaf();
+                    } else if (property.isLeaf() && optional) {
+                        LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
                         if (leafProperty.hasDefaultValue()) {
                             defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
                         }
                     } else {
-                        LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
+                        LeafProperty leafProperty = property.asLeaf();
                         if (leafProperty.hasDefaultValue()) {
                             defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
                         }
