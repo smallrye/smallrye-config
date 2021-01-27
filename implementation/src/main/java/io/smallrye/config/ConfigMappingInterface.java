@@ -673,6 +673,11 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
                     getNested(group.properties, nested);
                 }
             }
+
+            if (property instanceof MapProperty) {
+                MapProperty mapProperty = (MapProperty) property;
+                getNested(new Property[] { mapProperty.valueProperty }, nested);
+            }
         }
     }
 
