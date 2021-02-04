@@ -17,6 +17,7 @@ import javax.annotation.Priority;
 @Priority(Priorities.LIBRARY + 600)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public static final String SMALLRYE_PROFILE = "smallrye.config.profile";
+    public static final String SMALLRYE_PROFILE_PARENT = "smallrye.config.profile.parent";
 
     private static final long serialVersionUID = -6305289277993917313L;
     private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (o1, o2) -> {
@@ -38,24 +39,14 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         this(profile != null ? convertProfile(profile) : new ArrayList<>());
     }
 
-    public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
-        this(context, SMALLRYE_PROFILE);
-    }
-
     public ProfileConfigSourceInterceptor(final List<String> profiles) {
         List<String> reverseProfiles = new ArrayList<>(profiles);
         Collections.reverse(reverseProfiles);
         this.profiles = reverseProfiles.toArray(new String[0]);
     }
 
-    public ProfileConfigSourceInterceptor(
-            final ConfigSourceInterceptorContext context,
-            final String profileConfigName) {
-        this(context.proceed(profileConfigName));
-    }
-
-    private ProfileConfigSourceInterceptor(final ConfigValue configValue) {
-        this(configValue != null ? configValue.getValue() : null);
+    public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
+        this(convertProfile(context));
     }
 
     @Override
@@ -127,5 +118,18 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     public static List<String> convertProfile(final String profile) {
         return newCollectionConverter(STRING_CONVERTER, ArrayList::new).convert(profile);
+    }
+
+    private static List<String> convertProfile(final ConfigSourceInterceptorContext context) {
+        final List<String> profiles = new ArrayList<>();
+        final ConfigValue profile = context.proceed(SMALLRYE_PROFILE);
+        if (profile != null) {
+            final ConfigValue parentProfile = context.proceed(SMALLRYE_PROFILE_PARENT);
+            if (parentProfile != null) {
+                profiles.add(parentProfile.getValue());
+            }
+            profiles.addAll(convertProfile(profile.getValue()));
+        }
+        return profiles;
     }
 }

@@ -3,6 +3,7 @@ package io.smallrye.config;
 public class ServiceLoaderConfigSourceInterceptorFactory implements ConfigSourceInterceptorFactory {
     @Override
     public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-        return new ProfileConfigSourceInterceptor(context, "config.profile");
+        final ConfigValue profile = context.proceed("config.profile");
+        return new ProfileConfigSourceInterceptor(profile != null ? profile.getValue() : null);
     }
 }
