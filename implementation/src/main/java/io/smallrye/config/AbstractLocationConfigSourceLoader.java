@@ -203,11 +203,8 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private ConfigSource addConfigSource(final URL url, final List<ConfigSource> configSources) {
         try {
-            final ConfigSource configSource = loadConfigSource(url);
-            if (!configSource.getPropertyNames().isEmpty()) {
-                configSources.add(configSource);
-            }
-            return configSource;
+            configSources.add(loadConfigSource(url));
+            return loadConfigSource(url);
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         }
@@ -216,10 +213,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     private void addProfileConfigSource(final URL profileToFileName, final int ordinal,
             final List<ConfigSource> profileSources) {
         try {
-            final ConfigSource configSource = loadConfigSource(profileToFileName, ordinal);
-            if (!configSource.getPropertyNames().isEmpty()) {
-                profileSources.add(configSource);
-            }
+            profileSources.add(loadConfigSource(profileToFileName, ordinal));
         } catch (FileNotFoundException | NoSuchFileException e) {
             // It is ok to not find the resource here, because it is an optional profile resource.
         } catch (IOException e) {
