@@ -72,3 +72,32 @@ Then
 * `dev.prop` value is `dev`
 * `my.prop` value is `0`
 * `test.prop` does not have a value
+
+=== Parent Profile
+
+A Parent Profile adds one level of hierarchy to the current profile. The configuration `smallrye.config.profile.parent`
+accepts a single profile name.
+
+When the Parent Profile is active, if a property cannot be found in the current active Profile, the config lookup
+fallbacks to the Parent Profile. Consider:
+
+[source,properties]
+----
+smallrye.config.profile=dev
+smallrye.config.profile.parent=common
+
+my.prop=1234
+%common.my.prop=0
+%dev.my.prop=5678
+
+%common.commom.prop=common
+%dev.dev.prop=dev
+%test.test.prop=test
+----
+
+Then
+
+* `common.prop` value is `common`
+* `dev.prop` value is `dev`
+* `my.prop` value is `0`
+* `test.prop` does not have a value
