@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Collections.unmodifiableSet;
 
 import java.io.Serializable;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.smallrye.config.common.AbstractConfigSource;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class EnvConfigSource extends AbstractConfigSource {
+public class EnvConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
 
     private static final int DEFAULT_ORDINAL = 300;
@@ -41,21 +39,23 @@ public class EnvConfigSource extends AbstractConfigSource {
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
 
     protected EnvConfigSource() {
-        super("EnvConfigSource", getEnvOrdinal());
+        this(DEFAULT_ORDINAL);
+    }
+
+    protected EnvConfigSource(final int ordinal) {
+        this(getEnvProperties(), ordinal);
+    }
+
+    public EnvConfigSource(final Map<String, String> propertyMap, final int ordinal) {
+        super("EnvConfigSource", propertyMap, getEnvOrdinal(propertyMap, ordinal));
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return getEnvProperties();
+    public String getValue(final String propertyName) {
+        return getValue(propertyName, getProperties(), cache);
     }
 
-    @Override
-    public Set<String> getPropertyNames() {
-        return unmodifiableSet(getProperties().keySet());
-    }
-
-    @Override
-    public String getValue(String name) {
+    private static String getValue(final String name, final Map<String, String> properties, final Map<String, Object> cache) {
         if (name == null) {
             return null;
         }
@@ -68,8 +68,6 @@ public class EnvConfigSource extends AbstractConfigSource {
             return (String) cachedValue;
         }
 
-        final Map<String, String> properties = getProperties();
-
         // exact match
         String value = properties.get(name);
         if (value != null) {
@@ -79,7 +77,6 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         // replace non-alphanumeric characters by underscores
         String sanitizedName = replaceNonAlphanumericByUnderscores(name);
-
         value = properties.get(sanitizedName);
         if (value != null) {
             cache.put(name, value);
@@ -117,35 +114,16 @@ public class EnvConfigSource extends AbstractConfigSource {
         return unmodifiableMap(doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
     }
 
-    /**
-     * TODO
-     * Ideally, this should use {@link EnvConfigSource#getValue(String)} directly, so we don't duplicate the property
-     * names logic, but we need this method to be static.
-     *
-     * We do require a bigger change to rewrite {@link EnvConfigSource#getValue(String)} as static and still cache
-     * values in each separate instance.
-     *
-     * @return the {@link EnvConfigSource} ordinal.
-     */
-    private static int getEnvOrdinal() {
-        Map<String, String> envProperties = getEnvProperties();
-        String ordStr = envProperties.get(CONFIG_ORDINAL_KEY);
-        if (ordStr != null) {
-            return Converters.INTEGER_CONVERTER.convert(ordStr);
-        }
+    private static String getEnvProperty(final String name) {
+        return doPrivileged((PrivilegedAction<String>) () -> System.getenv(name));
+    }
 
-        String sanitazedOrdinalKey = replaceNonAlphanumericByUnderscores(CONFIG_ORDINAL_KEY);
-        ordStr = envProperties.get(sanitazedOrdinalKey);
-        if (ordStr != null) {
-            return Converters.INTEGER_CONVERTER.convert(ordStr);
+    private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {
+        final String value = getValue(CONFIG_ORDINAL_KEY, properties, new HashMap<>());
+        if (value != null) {
+            return Converters.INTEGER_CONVERTER.convert(value);
         }
-
-        ordStr = envProperties.get(sanitazedOrdinalKey.toUpperCase());
-        if (ordStr != null) {
-            return Converters.INTEGER_CONVERTER.convert(ordStr);
-        }
-
-        return DEFAULT_ORDINAL;
+        return ordinal;
     }
 
     Object writeReplace() {
