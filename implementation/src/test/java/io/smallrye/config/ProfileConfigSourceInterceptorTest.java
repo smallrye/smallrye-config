@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE_PARENT;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -331,6 +332,19 @@ class ProfileConfigSourceInterceptorTest {
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
+    }
+
+    @Test
+    void parentProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_PROFILE, "prof"))
+                .withSources(config(SMALLRYE_PROFILE_PARENT, "common"))
+                .withSources(config("%common.common.prop", "1234", "%prof.my.prop", "5678"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("1234", config.getRawValue("common.prop"));
+        assertEquals("5678", config.getRawValue("my.prop"));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
