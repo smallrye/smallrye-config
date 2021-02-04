@@ -180,7 +180,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
             final List<ConfigSource> profileSources = new ArrayList<>();
             for (int i = profiles.size() - 1; i >= 0; i--) {
-                final int ordinal = mainSource.getOrdinal() + profiles.size() - i + 1;
+                final int ordinal = mainSource.getOrdinal() + profiles.size() - i;
                 final URI profileUri = addProfileName(uri, profiles.get(i));
                 addProfileConfigSource(toURL(profileUri), ordinal, profileSources);
             }
@@ -244,7 +244,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
         final int dot = fileName.lastIndexOf(".");
         final String fileNameProfile;
-        if (dot != -1) {
+        if (dot != -1 && dot != 0 && fileName.charAt(dot - 1) != '/') {
             fileNameProfile = fileName.substring(0, dot) + "-" + profile + fileName.substring(dot);
         } else {
             fileNameProfile = fileName + "-" + profile;
