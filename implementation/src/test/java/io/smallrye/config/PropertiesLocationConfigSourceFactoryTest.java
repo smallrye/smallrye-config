@@ -527,6 +527,37 @@ class PropertiesLocationConfigSourceFactoryTest {
         }
     }
 
+    @Test
+    void illegalChars(@TempDir Path tempDir) throws Exception {
+        JavaArchive jarOne = ShrinkWrap
+                .create(JavaArchive.class, "resources- space -one.jar")
+                .addAsResource(new StringAsset("my.prop.main=main"), "META-INF/config.properties")
+                .addAsResource(new StringAsset("my.prop.common=common"), "META-INF/config-common.properties")
+                .addAsResource(new StringAsset("my.prop.dev=dev"), "META-INF/config-dev.properties");
+
+        Path filePathOne = tempDir.resolve("resources- space -one.jar");
+        jarOne.as(ZipExporter.class).exportTo(filePathOne.toFile());
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader urlClassLoader = urlClassLoader(contextClassLoader, "jar:" + filePathOne.toUri() + "!/")) {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
+
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .addDefaultSources()
+                    .addDiscoveredSources()
+                    .addDefaultInterceptors()
+                    .withProfile("common,dev")
+                    .withDefaultValue(SMALLRYE_LOCATIONS, "META-INF/config.properties")
+                    .build();
+
+            assertEquals("main", config.getRawValue("my.prop.main"));
+            assertEquals("common", config.getRawValue("my.prop.common"));
+            assertEquals("dev", config.getRawValue("my.prop.dev"));
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
     private static SmallRyeConfig buildConfig(String... locations) {
         return new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
