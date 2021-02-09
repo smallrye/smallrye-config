@@ -236,7 +236,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private static URI addProfileName(final URI uri, final String profile) {
         if ("jar".equals(uri.getScheme())) {
-            return URI.create("jar:" + addProfileName(URI.create(uri.getSchemeSpecificPart()), profile));
+            return URI.create("jar:" + addProfileName(URI.create(decodeIfNeeded(uri).getRawSchemeSpecificPart()), profile));
         }
 
         final String fileName = uri.getPath();
@@ -287,9 +287,19 @@ public abstract class AbstractLocationConfigSourceLoader {
         public void accept(final Path path) {
             final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
-                final ConfigSource mainSource = loader.addConfigSource(path.toUri(), configSources);
+                final ConfigSource mainSource = loader.addConfigSource(decodeIfNeeded(path.toUri()), configSources);
                 configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
             }
+        }
+    }
+
+    // https://bugs.openjdk.java.net/browse/JDK-8131067 - For Java 8
+    @Deprecated
+    private static URI decodeIfNeeded(final URI uri) {
+        if (uri.getScheme().equals("jar")) {
+            return URI.create(uri.getScheme() + ":" + uri.getSchemeSpecificPart());
+        } else {
+            return uri;
         }
     }
 
