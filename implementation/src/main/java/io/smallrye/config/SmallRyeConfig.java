@@ -139,20 +139,44 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
 
-        String value = configValue.getValue();
+        /*
+         * Config.getValue should throw an Exception for the following:
+         * 
+         * 1. NoSuchElementException - if the property is not defined
+         * 2. NoSuchElementException - if the property is defined as an empty string
+         * 3. IllegalArgumentException - if the property cannot be converted to the specified type
+         * 4. NoSuchElementException - if converter returns null
+         */
+
+        String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
+
         final T converted;
+
         if (value != null) {
-            converted = converter.convert(value);
+            try {
+                converted = converter.convert(value);
+            } catch (IllegalArgumentException e) {
+                throw ConfigMessages.msg.converterException(e, name, value); // 3
+            }
         } else {
             try {
+                // See if the Converter is designed to handle a missing (null) value i.e. Optional Converters
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 1
             }
         }
+
         if (converted == null) {
-            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+            if (value == null) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 1
+            } else if (value.length() == 0) {
+                throw ConfigMessages.msg.propertyEmptyString(name, converter.getClass().getTypeName()); // 2
+            } else {
+                throw ConfigMessages.msg.converterReturnedNull(name, value, converter.getClass().getTypeName()); // 4
+            }
         }
+
         return converted;
     }
 
