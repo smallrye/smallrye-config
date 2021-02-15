@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -147,6 +151,20 @@ class YamlConfigSourceTest {
         assertEquals(2, usersMapping.users().getUsers().size());
         assertEquals(usersMapping.users().users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(usersMapping.users().users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
+    }
+
+    @Test
+    void timestampConverters() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource("yaml", "date: 2010-10-10\n" +
+                        "dateTime: 2010-10-10T10:10:10\n" +
+                        "zonedDateTime: 2020-10-10T10:10:10-05:00"))
+                .build();
+
+        assertEquals(LocalDate.of(2010, 10, 10), config.getValue("date", LocalDate.class));
+        assertEquals(LocalDateTime.of(2010, 10, 10, 10, 10, 10), config.getValue("dateTime", LocalDateTime.class));
+        assertEquals(ZonedDateTime.of(2020, 10, 10, 10, 10, 10, 0, ZoneId.of("-5")),
+                config.getValue("zonedDateTime", ZonedDateTime.class));
     }
 
     public static class Users {

@@ -45,9 +45,16 @@ class BasicTest {
     }
 
     @Test
-    void EmptyFile() {
+    void emptyFile() {
         String yaml = "";
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
         assertNotNull(src, "Should create config source for empty file correctly");
+    }
+
+    @Test
+    void preserveOriginal() {
+        String yaml = "date: 2010-10-10";
+        ConfigSource source = new YamlConfigSource("Yaml", yaml);
+        assertEquals("2010-10-10", source.getValue("date"));
     }
 }
