@@ -1,0 +1,14 @@
+application:
+  environments:
+    - name: dev
+      services:
+        - name: batch
+        - name: rest
+    - name: prod
+      services:
+        - name: web
+        - name: batch
+        - name: rest
+  images:
+    - base
+    - jdk

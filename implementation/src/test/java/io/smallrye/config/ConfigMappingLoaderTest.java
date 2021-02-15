@@ -39,11 +39,12 @@ class ConfigMappingLoaderTest {
     void discoverNested() {
         ConfigMappingInterface mapping = ConfigMappingLoader.getConfigMappingInterface(ServerNested.class);
         List<ConfigMappingInterface> nested = mapping.getNested();
-        assertEquals(3, nested.size());
+        assertEquals(4, nested.size());
         List<Class<?>> types = nested.stream().map(ConfigMappingInterface::getInterfaceType).collect(toList());
         assertTrue(types.contains(ServerNested.Environment.class));
         assertTrue(types.contains(ServerNested.Log.class));
         assertTrue(types.contains(ServerNested.Ssl.class));
+        assertTrue(types.contains(ServerNested.App.class));
     }
 
     @ConfigMapping(prefix = "server")

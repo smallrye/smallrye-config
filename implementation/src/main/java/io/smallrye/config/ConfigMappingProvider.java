@@ -3,7 +3,6 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigMappingInterface.GroupProperty;
 import static io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import static io.smallrye.config.ConfigMappingInterface.MapProperty;
-import static io.smallrye.config.ConfigMappingInterface.MayBeOptionalProperty;
 import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
@@ -23,6 +22,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
+import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 
 /**
  *
@@ -207,50 +207,8 @@ final class ConfigMappingProvider implements Serializable {
                         ni.next();
                     }
                 }
-                if (property.isOptional()) {
-                    // switch to lazy mode
-                    MayBeOptionalProperty nestedProperty = property.asOptional().getNestedProperty();
-                    if (nestedProperty.isGroup()) {
-                        GroupProperty nestedGroup = nestedProperty.asGroup();
-                        // on match, always create the outermost group, which recursively creates inner groups
-                        GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
-                                getEnclosingFunction, group, nestedGroup);
-                        GetFieldOfEnclosing ef = new GetFieldOfEnclosing(
-                                nestedGroup.isParentPropertyName() ? getEnclosingFunction
-                                        : new ConsumeOneAndThenFn<>(getEnclosingFunction),
-                                type, memberName);
-                        processLazyGroupInGroup(currentPath, matchActions, defaultValues, nestedGroup, ef, matchAction,
-                                new HashSet<>());
-                    } else if (nestedProperty.isLeaf()) {
-                        LeafProperty leafProperty = nestedProperty.asLeaf();
-                        if (leafProperty.hasDefaultValue()) {
-                            defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
-                        }
-                        matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
-                    }
-                } else if (property.isGroup()) {
-                    processEagerGroup(currentPath, matchActions, defaultValues, property.asGroup().getGroupType(),
-                            new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup()));
-                } else if (property.isPrimitive()) {
-                    // already processed eagerly
-                    PrimitiveProperty primitiveProperty = property.asPrimitive();
-                    if (primitiveProperty.hasDefaultValue()) {
-                        defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
-                    }
-                    matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
-                } else if (property.isLeaf()) {
-                    // already processed eagerly
-                    LeafProperty leafProperty = property.asLeaf();
-                    if (leafProperty.hasDefaultValue()) {
-                        defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
-                    }
-                    // ignore with no error message
-                    matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
-                } else if (property.isMap()) {
-                    // the enclosure of the map is this group
-                    processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
-                            group);
-                }
+                processProperty(currentPath, matchActions, defaultValues, group, getEnclosingFunction, type, memberName,
+                        property);
                 while (currentPath.size() > pathLen) {
                     currentPath.removeLast();
                 }
@@ -259,6 +217,82 @@ final class ConfigMappingProvider implements Serializable {
         int sc = group.getSuperTypeCount();
         for (int i = 0; i < sc; i++) {
             processEagerGroup(currentPath, matchActions, defaultValues, group.getSuperType(i), getEnclosingFunction);
+        }
+    }
+
+    private void processProperty(
+            final ArrayDeque<String> currentPath,
+            final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
+            final KeyMap<String> defaultValues,
+            final ConfigMappingInterface group,
+            final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
+            final Class<?> type,
+            final String memberName, final Property property) {
+
+        if (property.isOptional()) {
+            // switch to lazy mode
+            Property nestedProperty = property.asOptional().getNestedProperty();
+            processOptionalProperty(currentPath, matchActions, defaultValues, group, getEnclosingFunction, type, memberName,
+                    nestedProperty);
+        } else if (property.isGroup()) {
+            processEagerGroup(currentPath, matchActions, defaultValues, property.asGroup().getGroupType(),
+                    new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup()));
+        } else if (property.isPrimitive()) {
+            // already processed eagerly
+            PrimitiveProperty primitiveProperty = property.asPrimitive();
+            if (primitiveProperty.hasDefaultValue()) {
+                defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+            }
+            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+        } else if (property.isLeaf()) {
+            // already processed eagerly
+            LeafProperty leafProperty = property.asLeaf();
+            if (leafProperty.hasDefaultValue()) {
+                defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+            }
+            // ignore with no error message
+            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+        } else if (property.isMap()) {
+            // the enclosure of the map is this group
+            processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
+                    group);
+        } else if (property.isCollection()) {
+            CollectionProperty collectionProperty = property.asCollection();
+            currentPath.addLast(currentPath.removeLast() + "[*]");
+            processProperty(currentPath, matchActions, defaultValues, group, getEnclosingFunction, type, memberName,
+                    collectionProperty.getElement());
+        }
+    }
+
+    private void processOptionalProperty(
+            final ArrayDeque<String> currentPath,
+            final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
+            final KeyMap<String> defaultValues,
+            final ConfigMappingInterface group,
+            final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
+            final Class<?> type, final String memberName, final Property nestedProperty) {
+        if (nestedProperty.isGroup()) {
+            GroupProperty nestedGroup = nestedProperty.asGroup();
+            // on match, always create the outermost group, which recursively creates inner groups
+            GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
+                    getEnclosingFunction, group, nestedGroup);
+            GetFieldOfEnclosing ef = new GetFieldOfEnclosing(
+                    nestedGroup.isParentPropertyName() ? getEnclosingFunction
+                            : new ConsumeOneAndThenFn<>(getEnclosingFunction),
+                    type, memberName);
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, nestedGroup, ef, matchAction,
+                    new HashSet<>());
+        } else if (nestedProperty.isLeaf()) {
+            LeafProperty leafProperty = nestedProperty.asLeaf();
+            if (leafProperty.hasDefaultValue()) {
+                defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+            }
+            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+        } else if (nestedProperty.isCollection()) {
+            CollectionProperty collectionProperty = nestedProperty.asCollection();
+            currentPath.addLast(currentPath.removeLast() + "[*]");
+            processProperty(currentPath, matchActions, defaultValues, group, getEnclosingFunction, type, memberName,
+                    collectionProperty.getElement());
         }
     }
 
@@ -282,56 +316,8 @@ final class ConfigMappingProvider implements Serializable {
             }
             if (usedProperties.add(property.getMethod().getName())) {
                 boolean optional = property.isOptional();
-                if (optional && property.asOptional().getNestedProperty().isGroup()) {
-                    GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
-                    GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
-                            property.isParentPropertyName() ? getEnclosingFunction
-                                    : new ConsumeOneAndThenFn<>(getEnclosingFunction),
-                            group, nestedGroup);
-                    processLazyGroupInGroup(currentPath, matchActions, defaultValues, nestedGroup, nestedMatchAction,
-                            nestedMatchAction, new HashSet<>());
-                } else if (property.isGroup()) {
-                    GroupProperty asGroup = property.asGroup();
-                    GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
-                            property.isParentPropertyName() ? getEnclosingFunction
-                                    : new ConsumeOneAndThenFn<>(getEnclosingFunction),
-                            group, asGroup);
-                    BiConsumer<ConfigMappingContext, NameIterator> nestedMatchAction;
-                    nestedMatchAction = matchAction;
-                    if (!property.isParentPropertyName()) {
-                        nestedMatchAction = new ConsumeOneAndThen(nestedMatchAction);
-                    }
-                    processLazyGroupInGroup(currentPath, matchActions, defaultValues, asGroup, nestedEnclosingFunction,
-                            nestedMatchAction, usedProperties);
-                } else if (property.isLeaf() || property.isPrimitive()
-                        || optional && property.asOptional().getNestedProperty().isLeaf()) {
-                    BiConsumer<ConfigMappingContext, NameIterator> actualAction;
-                    if (!property.isParentPropertyName()) {
-                        actualAction = new ConsumeOneAndThen(matchAction);
-                    } else {
-                        actualAction = matchAction;
-                    }
-                    matchActions.findOrAdd(currentPath).putRootValue(actualAction);
-                    if (property.isPrimitive()) {
-                        PrimitiveProperty primitiveProperty = property.asPrimitive();
-                        if (primitiveProperty.hasDefaultValue()) {
-                            defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
-                        }
-                    } else if (property.isLeaf() && optional) {
-                        LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
-                        if (leafProperty.hasDefaultValue()) {
-                            defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
-                        }
-                    } else {
-                        LeafProperty leafProperty = property.asLeaf();
-                        if (leafProperty.hasDefaultValue()) {
-                            defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
-                        }
-                    }
-                } else if (property.isMap()) {
-                    processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
-                            group);
-                }
+                processLazyPropertyInGroup(currentPath, matchActions, defaultValues, getEnclosingFunction, matchAction,
+                        usedProperties, group, optional, property);
             }
             while (currentPath.size() > pathLen) {
                 currentPath.removeLast();
@@ -341,6 +327,75 @@ final class ConfigMappingProvider implements Serializable {
         for (int i = 0; i < sc; i++) {
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, groupProperty, getEnclosingFunction,
                     matchAction, usedProperties);
+        }
+    }
+
+    private void processLazyPropertyInGroup(
+            final ArrayDeque<String> currentPath,
+            final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
+            final KeyMap<String> defaultValues,
+            final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
+            final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
+            final HashSet<String> usedProperties,
+            final ConfigMappingInterface group,
+            final boolean optional,
+            final Property property) {
+
+        if (optional && property.asOptional().getNestedProperty().isGroup()) {
+            GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
+            GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
+                    property.isParentPropertyName() ? getEnclosingFunction
+                            : new ConsumeOneAndThenFn<>(getEnclosingFunction),
+                    group, nestedGroup);
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, nestedGroup, nestedMatchAction,
+                    nestedMatchAction, new HashSet<>());
+        } else if (property.isGroup()) {
+            GroupProperty asGroup = property.asGroup();
+            GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
+                    property.isParentPropertyName() ? getEnclosingFunction
+                            : new ConsumeOneAndThenFn<>(getEnclosingFunction),
+                    group, asGroup);
+            BiConsumer<ConfigMappingContext, NameIterator> nestedMatchAction;
+            nestedMatchAction = matchAction;
+            if (!property.isParentPropertyName()) {
+                nestedMatchAction = new ConsumeOneAndThen(nestedMatchAction);
+            }
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, asGroup, nestedEnclosingFunction,
+                    nestedMatchAction, usedProperties);
+        } else if (property.isLeaf() || property.isPrimitive()
+                || optional && property.asOptional().getNestedProperty().isLeaf()) {
+            BiConsumer<ConfigMappingContext, NameIterator> actualAction;
+            if (!property.isParentPropertyName()) {
+                actualAction = new ConsumeOneAndThen(matchAction);
+            } else {
+                actualAction = matchAction;
+            }
+            matchActions.findOrAdd(currentPath).putRootValue(actualAction);
+            if (property.isPrimitive()) {
+                PrimitiveProperty primitiveProperty = property.asPrimitive();
+                if (primitiveProperty.hasDefaultValue()) {
+                    defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+                }
+            } else if (property.isLeaf() && optional) {
+                LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
+                if (leafProperty.hasDefaultValue()) {
+                    defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                }
+            } else {
+                LeafProperty leafProperty = property.asLeaf();
+                if (leafProperty.hasDefaultValue()) {
+                    defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                }
+            }
+        } else if (property.isMap()) {
+            processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
+                    group);
+        } else if (property.isCollection() || optional && property.asOptional().getNestedProperty().isCollection()) {
+            CollectionProperty collectionProperty = optional ? property.asOptional().getNestedProperty().asCollection()
+                    : property.asCollection();
+            currentPath.addLast(currentPath.removeLast() + "[*]");
+            processLazyPropertyInGroup(currentPath, matchActions, defaultValues, getEnclosingFunction, matchAction,
+                    usedProperties, group, false, collectionProperty.getElement());
         }
     }
 
@@ -599,7 +654,7 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         Assert.checkNotNullParam("config", config);
-        final ConfigMappingContext context = new ConfigMappingContext(config);
+        ConfigMappingContext context = new ConfigMappingContext(config);
         // eagerly populate roots
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             String path = entry.getKey();
@@ -611,6 +666,7 @@ final class ConfigMappingProvider implements Serializable {
                 context.registerRoot(root, path, group);
             }
         }
+
         // lazily sweep
         for (String name : config.getPropertyNames()) {
             // filter properties in root
