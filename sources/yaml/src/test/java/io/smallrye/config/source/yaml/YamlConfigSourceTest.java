@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -13,6 +14,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -34,7 +36,7 @@ class YamlConfigSourceTest {
         assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
 
-        assertEquals("joe@gmail.com", yaml.getValue("admin.users.[0].email"));
+        assertEquals("joe@gmail.com", yaml.getValue("admin.users[0].email"));
     }
 
     @Test
@@ -79,7 +81,7 @@ class YamlConfigSourceTest {
         assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
 
-        assertEquals("joe@gmail.com", config.getRawValue("admin.users.[0].email"));
+        assertEquals("joe@gmail.com", config.getRawValue("admin.users[0].email"));
     }
 
     @Test
@@ -94,10 +96,8 @@ class YamlConfigSourceTest {
         assertTrue(propertyNames.contains("quarkus.http.port"));
         assertTrue(propertyNames.contains("quarkus.http.ssl-port"));
         assertTrue(propertyNames.contains("quarkus.http.ssl.protocols"));
-        assertFalse(propertyNames.contains("quarkus.http.ssl.protocols.[0]"));
-        assertEquals("TLSv1.2", config.getRawValue("quarkus.http.ssl.protocols.[0]"));
-        assertFalse(propertyNames.contains("quarkus.http.ssl.protocols.[1]"));
-        assertEquals("TLSv1.3", config.getRawValue("quarkus.http.ssl.protocols.[1]"));
+        assertFalse(propertyNames.contains("quarkus.http.ssl.protocols[0]"));
+        assertNull(config.getRawValue("quarkus.http.ssl.protocols[0]"));
     }
 
     @Test
@@ -118,9 +118,7 @@ class YamlConfigSourceTest {
     @Test
     void commas() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(
-                        new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
-                .withConverter(Users.class, 100, new UserConverter())
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
                 .build();
 
         String[] values = config.getValue("quarkus.jib.jvm-arguments", String[].class);
@@ -140,17 +138,69 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void configMapping() throws Exception {
+    void mapping() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
-                .withConverter(Users.class, 100, new UserConverter())
                 .withMapping(UsersMapping.class, "admin")
                 .build();
 
         UsersMapping usersMapping = config.getConfigMapping(UsersMapping.class);
-        assertEquals(2, usersMapping.users().getUsers().size());
-        assertEquals(usersMapping.users().users.get(0).getEmail(), "joe@gmail.com");
-        assertEquals(usersMapping.users().users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
+        assertEquals(2, usersMapping.users().size());
+        assertEquals(usersMapping.users().get(0).email(), "joe@gmail.com");
+        assertEquals(usersMapping.users().get(0).username(), "joe");
+        assertEquals(usersMapping.users().get(0).password(), "123456");
+        assertEquals(usersMapping.users().get(0).roles(), Stream.of("Moderator", "Admin").collect(toList()));
+    }
+
+    @Test
+    void mappingCollections() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-collections.yml")))
+                .withMapping(Application.class, "application")
+                .build();
+
+        Application application = config.getConfigMapping(Application.class);
+        assertEquals(2, application.environments().size());
+        assertEquals("dev", application.environments().get(0).name());
+        assertEquals(2, application.environments().get(0).services().size());
+        assertEquals("batch", application.environments().get(0).services().get(0).name());
+        assertEquals("rest", application.environments().get(0).services().get(1).name());
+        assertEquals(3, application.environments().get(1).services().size());
+        assertEquals("web", application.environments().get(1).services().get(0).name());
+        assertEquals("batch", application.environments().get(1).services().get(1).name());
+        assertEquals("rest", application.environments().get(1).services().get(2).name());
+        assertEquals(2, application.images().size());
+        assertEquals("base", application.images().get(0));
+        assertEquals("jdk", application.images().get(1));
+    }
+
+    @Test
+    void optional() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/optional.yml")))
+                .withMapping(Server.class, "server")
+                .withProfile("base")
+                .build();
+
+        Server server = config.getConfigMapping(Server.class);
+        assertEquals("localhost", server.name());
+        assertTrue(server.config().isPresent());
+        assertEquals("localhost", server.config().get().server());
+        assertEquals(1143, server.config().get().port());
+        assertEquals("user", server.config().get().user());
+        assertEquals("password", server.config().get().password());
+        assertEquals(16, server.config().get().version().major());
+        assertEquals(0, server.config().get().version().minor());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/optional.yml")))
+                .withMapping(Server.class, "server")
+                .withProfile("empty")
+                .build();
+
+        server = config.getConfigMapping(Server.class);
+        assertEquals("localhost", server.name());
+        assertFalse(server.config().isPresent());
     }
 
     @Test
@@ -227,6 +277,58 @@ class YamlConfigSourceTest {
 
     @ConfigMapping(prefix = "admin")
     interface UsersMapping {
-        Users users();
+        List<UserMapping> users();
+    }
+
+    public interface UserMapping {
+        String email();
+
+        String username();
+
+        String password();
+
+        List<String> roles();
+    }
+
+    @ConfigMapping(prefix = "application")
+    interface Application {
+        List<Environment> environments();
+
+        List<String> images();
+
+        interface Environment {
+            String name();
+
+            List<Service> services();
+
+            interface Service {
+                String name();
+            }
+        }
+    }
+
+    @ConfigMapping(prefix = "server")
+    interface Server {
+        String name();
+
+        Optional<ServerConfig> config();
+
+        interface ServerConfig {
+            String server();
+
+            int port();
+
+            String user();
+
+            String password();
+
+            Version version();
+
+            interface Version {
+                short major();
+
+                short minor();
+            }
+        }
     }
 }
