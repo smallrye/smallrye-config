@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.nodes.Tag;
 
 import io.smallrye.common.classloader.ClassPathUtils;
 import io.smallrye.common.constraint.Assert;
@@ -84,7 +86,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
         Assert.checkNotNullParam("inputStream", inputStream);
         final Map<String, String> yamlInput = new TreeMap<>();
         try {
-            final Iterable<Object> objects = new Yaml().loadAll(inputStream);
+            final Iterable<Object> objects = new Yaml(new StringConstructor()).loadAll(inputStream);
             for (Object object : objects) {
                 if (object instanceof Map) {
                     yamlInput.putAll(yamlInputToMap((Map<Object, Object>) object));
@@ -104,7 +106,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     @SuppressWarnings("unchecked")
     private static Map<String, String> stringToMap(String str) {
-        final Map<Object, Object> yamlInput = new Yaml().loadAs(str, HashMap.class);
+        final Map<Object, Object> yamlInput = new Yaml(new StringConstructor()).loadAs(str, HashMap.class);
         return yamlInputToMap(yamlInput);
     }
 
@@ -184,5 +186,16 @@ public class YamlConfigSource extends MapBackedConfigSource {
     private static Set<String> filterIndexedNames(Set<String> names) {
         final Pattern pattern = Pattern.compile(".*\\[[0-9]+].*");
         return names.stream().filter(s -> !pattern.matcher(s).find()).collect(Collectors.toSet());
+    }
+
+    /**
+     * Override some of the yaml constructors, so that the value written in the flatten result is more alike with the
+     * source. For instance, timestamps may be written in a completely different format which prevents converters to
+     * convert the correct value.
+     */
+    private static class StringConstructor extends Constructor {
+        public StringConstructor() {
+            this.yamlConstructors.put(Tag.TIMESTAMP, new ConstructYamlStr());
+        }
     }
 }
