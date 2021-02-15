@@ -4,12 +4,14 @@ import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -107,5 +109,143 @@ class SmallRyeConfigTest {
     void profiles() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withProfile("profile").build();
         assertEquals("profile", config.getProfiles().get(0));
+    }
+
+    @Test
+    void getIndexedValues() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments[0]", "dev",
+                        "server.environments[1]", "qa",
+                        "server.environments[2]", "prod"))
+                .build();
+
+        List<String> environments = config.getValues("server.environments", String.class);
+        assertEquals(3, environments.size());
+        assertEquals("dev", environments.get(0));
+        assertEquals("dev", config.getValue("server.environments[0]", String.class));
+        assertEquals("qa", environments.get(1));
+        assertEquals("qa", config.getValue("server.environments[1]", String.class));
+        assertEquals("prod", environments.get(2));
+        assertEquals("prod", config.getValue("server.environments[2]", String.class));
+    }
+
+    @Test
+    void getValuesNotIndexed() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.environments", "dev,qa",
+                        "server.environments[0]", "dev",
+                        "server.environments[1]", "qa",
+                        "server.environments[2]", "prod"))
+                .build();
+
+        List<String> environments = config.getValues("server.environments", String.class);
+        assertEquals(2, environments.size());
+        assertEquals("dev", environments.get(0));
+        assertEquals("qa", environments.get(1));
+    }
+
+    @Test
+    void getValuesNotFound() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments", ""))
+                .build();
+
+        assertThrows(NoSuchElementException.class, () -> config.getValues("server.environments", String.class));
+
+        SmallRyeConfig configIndexed = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments[0]", ""))
+                .build();
+
+        assertThrows(NoSuchElementException.class, () -> configIndexed.getValues("server.environments", String.class));
+    }
+
+    @Test
+    void getOptionalValuesIndexed() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments[0]", "dev",
+                        "server.environments[1]", "qa",
+                        "server.environments[2]", "prod"))
+                .build();
+
+        Optional<List<String>> environments = config.getOptionalValues("server.environments", String.class);
+        assertTrue(environments.isPresent());
+        assertEquals(3, environments.get().size());
+        assertEquals("dev", environments.get().get(0));
+        assertEquals("qa", environments.get().get(1));
+        assertEquals("prod", environments.get().get(2));
+    }
+
+    @Test
+    void getOptionalValuesNotIndexed() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.environments", "dev,qa",
+                        "server.environments[0]", "dev",
+                        "server.environments[1]", "qa",
+                        "server.environments[2]", "prod"))
+                .build();
+
+        Optional<List<String>> environments = config.getOptionalValues("server.environments", String.class);
+        assertTrue(environments.isPresent());
+        assertEquals(2, environments.get().size());
+        assertEquals("dev", environments.get().get(0));
+        assertEquals("qa", environments.get().get(1));
+    }
+
+    @Test
+    void getOptionalValuesEmpty() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments", ""))
+                .build();
+
+        assertFalse(config.getOptionalValues("server.environments", String.class).isPresent());
+
+        SmallRyeConfig configIndexed = new SmallRyeConfigBuilder()
+                .withSources(config("server.environments[0]", ""))
+                .build();
+
+        assertFalse(configIndexed.getOptionalValues("server.environments", String.class).isPresent());
+    }
+
+    @Test
+    void invalidIndexes() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "dev", "",
+                        "dev[x", "",
+                        "qa", "",
+                        "qa[[1]]", "",
+                        "prod", "",
+                        "prod[x]", "",
+                        "perf", "",
+                        "perf[]", ""))
+                .build();
+
+        assertTrue(config.getIndexedPropertiesIndexes("dev").isEmpty());
+        assertTrue(config.getIndexedPropertiesIndexes("qa").isEmpty());
+        assertTrue(config.getIndexedPropertiesIndexes("prod").isEmpty());
+        assertTrue(config.getIndexedPropertiesIndexes("perf").isEmpty());
+    }
+
+    @Test
+    void overrideIndexedValues() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "config_ordinal", "100",
+                        "server.environments[0]", "dev",
+                        "server.environments[1]", "qa",
+                        "server.environments[2]", "prod"))
+                .withSources(config(
+                        "config_ordinal", "1000",
+                        "server.environments[2]", "prd",
+                        "server.environments[3]", "perf"))
+                .build();
+
+        List<String> values = config.getValues("server.environments", String.class);
+        assertEquals("dev", values.get(0));
+        assertEquals("qa", values.get(1));
+        assertEquals("prd", values.get(2));
+        assertEquals("perf", values.get(3));
     }
 }

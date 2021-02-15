@@ -123,7 +123,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return this;
         }
         String seg = iter.next();
-        KeyMap<V> next = seg.equals("*") ? any : getOrDefault(seg, any);
+        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? any : getOrDefault(seg, any);
         return next == null ? null : next.find(iter);
     }
 
@@ -142,7 +142,8 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         String seg = ni.getNextSegment();
         ni.next();
         try {
-            KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+            KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny()
+                    : computeIfAbsent(seg, k -> new KeyMap<>());
             return next.findOrAdd(ni);
         } finally {
             ni.previous();
@@ -154,7 +155,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return this;
         }
         String seg = iter.next();
-        KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
         return next.findOrAdd(iter);
     }
 
@@ -168,7 +169,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
 
     public KeyMap<V> findOrAdd(final String[] keys, int off, int len) {
         String seg = keys[off];
-        KeyMap<V> next = seg.equals("*") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
         return off + 1 > len - 1 ? next : next.findOrAdd(keys, off + 1, len);
     }
 
