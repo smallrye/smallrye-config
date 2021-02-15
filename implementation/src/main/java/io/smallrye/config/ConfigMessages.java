@@ -58,7 +58,7 @@ public interface ConfigMessages {
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
     // Returns a String rather than a NoSuchElementException for a slight performance improvement as throwing this exception could be quite common.
-    @Message(id = 14, value = "The config property %s is required but it could not be found in any config sources")
+    @Message(id = 14, value = "The config property %s is required but it could not be found in any config source")
     String propertyNotFound(String name);
 
     @Message(id = 15, value = "No configuration is available for this class loader")

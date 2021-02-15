@@ -21,7 +21,7 @@ class ConfigValueConversionRulesExceptionsTest {
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("none.existing.prop", String.class));
         assertEquals(
-                "SRCFG00014: The config property none.existing.prop is required but it could not be found in any config sources",
+                "SRCFG00014: The config property none.existing.prop is required but it could not be found in any config source",
                 exception.getMessage());
     }
 
@@ -31,7 +31,7 @@ class ConfigValueConversionRulesExceptionsTest {
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("none.existing.array.prop", String[].class));
         assertEquals(
-                "SRCFG00014: The config property none.existing.array.prop is required but it could not be found in any config sources",
+                "SRCFG00014: The config property none.existing.array.prop is required but it could not be found in any config source",
                 exception.getMessage());
     }
 
