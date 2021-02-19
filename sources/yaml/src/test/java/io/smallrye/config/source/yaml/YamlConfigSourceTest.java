@@ -70,6 +70,57 @@ class YamlConfigSourceTest {
     }
 
     @Test
+    void indentSpaces() {
+        String yaml;
+        SmallRyeConfig config;
+
+        // 1
+        yaml = "greeting:\n" +
+                " message: hello\n" +
+                " name: smallrye";
+
+        config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        assertEquals("hello", config.getRawValue("greeting.message"));
+        assertEquals("smallrye", config.getRawValue("greeting.name"));
+
+        // 2
+        yaml = "greeting:\n" +
+                "  message: hello\n" +
+                "  name: smallrye";
+
+        config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        assertEquals("hello", config.getRawValue("greeting.message"));
+        assertEquals("smallrye", config.getRawValue("greeting.name"));
+
+        // 4
+        yaml = "greeting:\n" +
+                "    message: hello\n" +
+                "    name: smallrye";
+
+        config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        assertEquals("hello", config.getRawValue("greeting.message"));
+        assertEquals("smallrye", config.getRawValue("greeting.name"));
+
+        // 8
+        yaml = "greeting:\n" +
+                "        message: hello\n" +
+                "        name: smallrye";
+
+        config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        assertEquals("hello", config.getRawValue("greeting.message"));
+        assertEquals("smallrye", config.getRawValue("greeting.name"));
+
+        // 11
+        yaml = "greeting:\n" +
+                "           message: hello\n" +
+                "           name: smallrye";
+
+        config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
+        assertEquals("hello", config.getRawValue("greeting.message"));
+        assertEquals("smallrye", config.getRawValue("greeting.name"));
+    }
+
+    @Test
     void config() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
