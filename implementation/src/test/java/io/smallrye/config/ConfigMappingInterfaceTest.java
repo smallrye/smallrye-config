@@ -714,4 +714,43 @@ class ConfigMappingInterfaceTest {
             boolean enabled();
         }
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface MapsInGroup {
+        Info info();
+
+        interface Info {
+            String name();
+
+            Map<String, String> values();
+
+            Map<String, Data> data();
+        }
+
+        interface Data {
+            String name();
+        }
+    }
+
+    @Test
+    void mapsInGroup() throws Exception {
+        final Map<String, String> typesConfig = new HashMap<String, String>() {
+            {
+                put("server.info.name", "naruto");
+                put("server.info.values.name", "naruto");
+                put("server.info.data.first.name", "naruto");
+            }
+        };
+
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(typesConfig))
+                .withMapping(MapsInGroup.class)
+                .build();
+
+        final MapsInGroup mapping = config.getConfigMapping(MapsInGroup.class);
+        assertNotNull(mapping);
+        assertEquals("naruto", mapping.info().name());
+        assertEquals("naruto", mapping.info().values().get("name"));
+        assertEquals("naruto", mapping.info().data().get("first").name());
+    }
 }
