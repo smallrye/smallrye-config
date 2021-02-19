@@ -609,6 +609,16 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(Opcodes.SWAP);
                 // stack: this nested
                 ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+                // register the group
+                ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
+                ctor.visitLdcInsn(property.getPropertyName(mapping.getNamingStrategy()));
+                ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                ctor.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "registerEnclosedField",
+                        "(L" + I_CLASS + ";L" + I_STRING + ";L" + I_OBJECT + ";L" + I_OBJECT + ";)V",
+                        false);
                 // stack: -
                 if (restoreLength) {
                     restoreLength(ctor);
