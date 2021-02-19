@@ -37,6 +37,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
@@ -391,6 +392,16 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(Opcodes.SWAP);
                 // stack: this nested
                 ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+                // register the group
+                ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
+                ctor.visitLdcInsn(property.getPropertyName(mapping.getNamingStrategy()));
+                ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                ctor.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "registerEnclosedField",
+                        "(L" + I_CLASS + ";L" + I_STRING + ";L" + I_OBJECT + ";L" + I_OBJECT + ";)V",
+                        false);
                 // stack: -
                 if (restoreLength) {
                     restoreLength(ctor);
