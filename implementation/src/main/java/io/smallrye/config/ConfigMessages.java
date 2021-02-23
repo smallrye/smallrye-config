@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import java.io.InvalidObjectException;
+import java.lang.reflect.Type;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
@@ -56,7 +57,8 @@ interface ConfigMessages {
     @Message(id = 13, value = "No Converter registered for %s")
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
-    @Message(id = 14, value = "Property %s is required but the value was not found or is empty")
+    // Returns a String rather than a NoSuchElementException for a slight performance improvement as throwing this exception could be quite common.
+    @Message(id = 14, value = "The config property %s is required but it could not be found in any config source")
     String propertyNotFound(String name);
 
     @Message(id = 15, value = "No configuration is available for this class loader")
@@ -121,4 +123,23 @@ interface ConfigMessages {
 
     @Message(id = 35, value = "Failed to load resource")
     IllegalStateException failedToLoadResource(@Cause Throwable cause);
+
+    @Message(id = 36, value = "Type %s not supported for unwrapping.")
+    IllegalArgumentException getTypeNotSupportedForUnwrapping(Class<?> type);
+
+    @Message(id = 37, value = "The Converter API cannot convert a null value")
+    NullPointerException converterNullValue();
+
+    @Message(id = 38, value = "Type has no raw type class: %s")
+    IllegalArgumentException noRawType(Type type);
+
+    @Message(id = 39, value = "The config property %s with the config value \"%s\" threw an Exception whilst being converted")
+    IllegalArgumentException converterException(@Cause Throwable converterException, String configProperty, String configValue);
+
+    @Message(id = 40, value = "The config property %s is defined as the empty String (\"\") which the following Converter considered to be null: %s")
+    NoSuchElementException propertyEmptyString(String configPropertyName, String converter);
+
+    @Message(id = 41, value = "The config property %s with the config value \"%s\" was converted to null from the following Converter: %s")
+    NoSuchElementException converterReturnedNull(String configPropertyName, String configValue, String converter);
+
 }

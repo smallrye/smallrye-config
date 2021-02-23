@@ -205,6 +205,23 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, getConverter(aClass));
     }
 
+    /**
+     * 
+     * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
+     * <br>
+     * 
+     * Calls from {@link Config#getValue} should throw an {@link Exception} for each of the following:<br>
+     * 
+     * 1. {@link IllegalArgumentException} - if the property cannot be converted by the {@link Converter} to the specified type
+     * <br>
+     * 2. {@link NoSuchElementException} - if the property is not defined <br>
+     * 3. {@link NoSuchElementException} - if the property is defined as an empty string <br>
+     * 4. {@link NoSuchElementException} - if the {@link Converter} returns {@code null} <br>
+     * <br>
+     * 
+     * Calls from {@link Config#getOptionalValue} should only throw an {@link Exception} for #1
+     * ({@link IllegalArgumentException} when the property cannot be converted to the specified type).
+     */
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
         ConfigValue configValue = getConfigValue(name);
@@ -219,20 +236,35 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
 
-        String value = configValue.getValue();
+        String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
+
         final T converted;
+
         if (value != null) {
-            converted = converter.convert(value);
+            try {
+                converted = converter.convert(value);
+            } catch (IllegalArgumentException e) {
+                throw ConfigMessages.msg.converterException(e, name, value); // 1
+            }
         } else {
             try {
+                // See if the Converter is designed to handle a missing (null) value i.e. Optional Converters
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 2
             }
         }
+
         if (converted == null) {
-            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+            if (value == null) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 2
+            } else if (value.length() == 0) {
+                throw ConfigMessages.msg.propertyEmptyString(name, converter.getClass().getTypeName()); // 3
+            } else {
+                throw ConfigMessages.msg.converterReturnedNull(name, value, converter.getClass().getTypeName()); // 4
+            }
         }
+
         return converted;
     }
 
