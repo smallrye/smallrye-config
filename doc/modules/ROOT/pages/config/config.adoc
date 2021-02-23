@@ -5,9 +5,12 @@ include::../attributes.adoc[]
 
 = Config
 
+* <<indexed-properties>>
 * <<profiles>>
 * <<locations>>
 * <<secret-keys>>
+
+include::indexed-properties.adoc[]
 
 include::profiles.adoc[]
 

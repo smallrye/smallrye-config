@@ -117,4 +117,19 @@ class KeyMapTest {
                 "KeyMap(no value) {root=>KeyMap(no value) {foo=>KeyMap(value=bar) {bar=>KeyMap(value=baz) {(any)=>KeyMap(value=baz) {baz=>KeyMap(value=anything) {}}}}}}",
                 map.toString());
     }
+
+    @Test
+    void indexed() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("root.foo").putRootValue("bar");
+        map.findOrAdd("root.foo[*]").putRootValue("bar");
+        map.findOrAdd("root.foo[1]").putRootValue("baz");
+        map.findOrAdd("root.foo[*].name").putRootValue("baz");
+
+        assertEquals("bar", map.findRootValue("root.foo"));
+        assertEquals("bar", map.findRootValue("root.foo[*]"));
+        assertEquals("baz", map.findRootValue("root.foo[1]"));
+        assertEquals("bar", map.findRootValue("root.foo[2]"));
+        assertEquals("baz", map.findRootValue("root.foo[3].name"));
+    }
 }

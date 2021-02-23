@@ -180,7 +180,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
             final List<ConfigSource> profileSources = new ArrayList<>();
             for (int i = profiles.size() - 1; i >= 0; i--) {
-                final int ordinal = mainSource.getOrdinal() + profiles.size() - i + 1;
+                final int ordinal = mainSource.getOrdinal() + profiles.size() - i;
                 final URI profileUri = addProfileName(uri, profiles.get(i));
                 addProfileConfigSource(toURL(profileUri), ordinal, profileSources);
             }
@@ -203,11 +203,8 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private ConfigSource addConfigSource(final URL url, final List<ConfigSource> configSources) {
         try {
-            final ConfigSource configSource = loadConfigSource(url);
-            if (!configSource.getPropertyNames().isEmpty()) {
-                configSources.add(configSource);
-            }
-            return configSource;
+            configSources.add(loadConfigSource(url));
+            return loadConfigSource(url);
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         }
@@ -216,10 +213,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     private void addProfileConfigSource(final URL profileToFileName, final int ordinal,
             final List<ConfigSource> profileSources) {
         try {
-            final ConfigSource configSource = loadConfigSource(profileToFileName, ordinal);
-            if (!configSource.getPropertyNames().isEmpty()) {
-                profileSources.add(configSource);
-            }
+            profileSources.add(loadConfigSource(profileToFileName, ordinal));
         } catch (FileNotFoundException | NoSuchFileException e) {
             // It is ok to not find the resource here, because it is an optional profile resource.
         } catch (IOException e) {
@@ -242,7 +236,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private static URI addProfileName(final URI uri, final String profile) {
         if ("jar".equals(uri.getScheme())) {
-            return URI.create("jar:" + addProfileName(URI.create(uri.getSchemeSpecificPart()), profile));
+            return URI.create("jar:" + addProfileName(URI.create(decodeIfNeeded(uri).getRawSchemeSpecificPart()), profile));
         }
 
         final String fileName = uri.getPath();
@@ -250,7 +244,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
         final int dot = fileName.lastIndexOf(".");
         final String fileNameProfile;
-        if (dot != -1) {
+        if (dot != -1 && dot != 0 && fileName.charAt(dot - 1) != '/') {
             fileNameProfile = fileName.substring(0, dot) + "-" + profile + fileName.substring(dot);
         } else {
             fileNameProfile = fileName + "-" + profile;
@@ -293,9 +287,19 @@ public abstract class AbstractLocationConfigSourceLoader {
         public void accept(final Path path) {
             final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
-                final ConfigSource mainSource = loader.addConfigSource(path.toUri(), configSources);
+                final ConfigSource mainSource = loader.addConfigSource(decodeIfNeeded(path.toUri()), configSources);
                 configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
             }
+        }
+    }
+
+    // https://bugs.openjdk.java.net/browse/JDK-8131067 - For Java 8
+    @Deprecated
+    private static URI decodeIfNeeded(final URI uri) {
+        if (uri.getScheme().equals("jar")) {
+            return URI.create(uri.getScheme() + ":" + uri.getSchemeSpecificPart());
+        } else {
+            return uri;
         }
     }
 

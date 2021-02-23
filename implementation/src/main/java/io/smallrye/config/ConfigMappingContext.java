@@ -12,6 +12,7 @@ import static io.smallrye.config.ConfigValidationException.Problem;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,8 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
@@ -77,40 +81,44 @@ public final class ConfigMappingContext {
                 .computeIfAbsent(field, x -> {
                     ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
                     Property property = ci.getProperty(field);
-                    boolean optional = property.isOptional();
-                    if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()) {
-                        LeafProperty leafProperty = optional ? property.asOptional().getNestedProperty().asLeaf()
-                                : property.asLeaf();
-                        if (leafProperty.hasConvertWith()) {
-                            Class<? extends Converter<?>> convertWith = leafProperty.getConvertWith();
-                            // todo: generics
-                            return getConverterInstance(convertWith);
-                        } else {
-                            // todo: replace with generic converter lookup
-                            Class<?> valueRawType = leafProperty.getValueRawType();
-                            if (valueRawType == List.class) {
-                                return Converters.newCollectionConverter(
-                                        config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
-                                        ArrayList::new);
-                            } else if (valueRawType == Set.class) {
-                                return Converters.newCollectionConverter(
-                                        config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0))),
-                                        HashSet::new);
-                            } else {
-                                return config.requireConverter(valueRawType);
-                            }
-                        }
-                    } else if (property.isPrimitive()) {
-                        PrimitiveProperty primitiveProperty = property.asPrimitive();
-                        if (primitiveProperty.hasConvertWith()) {
-                            return getConverterInstance(primitiveProperty.getConvertWith());
-                        } else {
-                            return config.requireConverter(primitiveProperty.getBoxType());
-                        }
-                    } else {
-                        throw new IllegalStateException();
-                    }
+                    return getConverter(property);
                 });
+    }
+
+    private Converter<?> getConverter(final Property property) {
+        boolean optional = property.isOptional();
+        if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()) {
+            LeafProperty leafProperty = optional ? property.asOptional().getNestedProperty().asLeaf()
+                    : property.asLeaf();
+            if (leafProperty.hasConvertWith()) {
+                Class<? extends Converter<?>> convertWith = leafProperty.getConvertWith();
+                // todo: generics
+                return getConverterInstance(convertWith);
+            } else {
+                // todo: replace with generic converter lookup
+                Class<?> valueRawType = leafProperty.getValueRawType();
+                if (valueRawType == List.class) {
+                    return config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0)));
+                } else if (valueRawType == Set.class) {
+                    return config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0)));
+                } else {
+                    return config.requireConverter(valueRawType);
+                }
+            }
+        } else if (property.isPrimitive()) {
+            PrimitiveProperty primitiveProperty = property.asPrimitive();
+            if (primitiveProperty.hasConvertWith()) {
+                return getConverterInstance(primitiveProperty.getConvertWith());
+            } else {
+                return config.requireConverter(primitiveProperty.getBoxType());
+            }
+        } else if (property.isCollection() || optional && property.asOptional().getNestedProperty().isCollection()) {
+            CollectionProperty collectionProperty = optional ? property.asOptional().getNestedProperty().asCollection()
+                    : property.asCollection();
+            return getConverter(collectionProperty.getElement());
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -169,6 +177,18 @@ public final class ConfigMappingContext {
                 throw new NoSuchMethodError(e.getMessage());
             }
         });
+    }
+
+    public static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
+        if (type == List.class) {
+            return ArrayList::new;
+        }
+
+        if (type == Set.class) {
+            return HashSet::new;
+        }
+
+        throw new IllegalArgumentException();
     }
 
     public NoSuchElementException noSuchElement(Class<?> type) {

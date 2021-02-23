@@ -33,5 +33,13 @@ class ServerMappingTest {
         assertEquals(".log", server.log().suffix());
         assertTrue(server.log().rotate());
         assertEquals(Server.Log.Pattern.COMMON, server.log().pattern());
+
+        assertTrue(server.cors().isPresent());
+        assertEquals("some-server", server.cors().get().origins().get(0).host());
+        assertEquals(9000, server.cors().get().origins().get(0).port());
+        assertEquals("another-server", server.cors().get().origins().get(1).host());
+        assertEquals(8000, server.cors().get().origins().get(1).port());
+        assertEquals("GET", server.cors().get().methods().get(0));
+        assertEquals("POST", server.cors().get().methods().get(1));
     }
 }

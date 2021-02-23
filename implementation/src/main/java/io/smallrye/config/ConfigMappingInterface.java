@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -204,6 +205,10 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
             return false;
         }
 
+        public boolean isCollection() {
+            return false;
+        }
+
         public PrimitiveProperty asPrimitive() {
             throw new ClassCastException();
         }
@@ -225,6 +230,10 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public MayBeOptionalProperty asMayBeOptional() {
+            throw new ClassCastException();
+        }
+
+        public CollectionProperty asCollection() {
             throw new ClassCastException();
         }
     }
@@ -512,6 +521,36 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
+    public static final class CollectionProperty extends MayBeOptionalProperty {
+        private final Class<?> collectionRawType;
+        private final Property element;
+
+        CollectionProperty(final Class<?> collectionType, final Property element) {
+            // TODO - Naming Strategy
+            super(element.getMethod(), element.getPropertyName());
+            this.collectionRawType = collectionType;
+            this.element = element;
+        }
+
+        public Class<?> getCollectionRawType() {
+            return collectionRawType;
+        }
+
+        public Property getElement() {
+            return element;
+        }
+
+        @Override
+        public boolean isCollection() {
+            return true;
+        }
+
+        @Override
+        public CollectionProperty asCollection() {
+            return this;
+        }
+    }
+
     private static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
@@ -601,6 +640,17 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
                 Type valueType = typeOfParameter(type, 1);
                 return new MapProperty(method, propertyName, keyType, keyConvertWith, getPropertyDef(method, valueType));
             }
+            if (rawType == List.class || rawType == Set.class) {
+                Type elementType = typeOfParameter(type, 0);
+                ConfigMappingInterface configurationInterface = getConfigurationInterface((Class<?>) elementType);
+                if (configurationInterface != null) {
+                    return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
+                }
+
+                WithDefault annotation = method.getAnnotation(WithDefault.class);
+                return new CollectionProperty(rawType, new LeafProperty(method, propertyName, elementType, null,
+                        annotation == null ? null : annotation.value()));
+            }
             ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
             if (configurationInterface != null) {
                 // it's a group
@@ -608,6 +658,14 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
             // fall out (leaf)
         }
+
+        if (rawType == List.class || rawType == Set.class) {
+            Type elementType = typeOfParameter(type, 0);
+            WithDefault annotation = method.getAnnotation(WithDefault.class);
+            return new CollectionProperty(rawType,
+                    new LeafProperty(method, propertyName, elementType, null, annotation == null ? null : annotation.value()));
+        }
+
         // otherwise it's a leaf
         WithDefault annotation = method.getAnnotation(WithDefault.class);
         return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
@@ -671,12 +729,20 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
                     ConfigMappingInterface group = groupProperty.getGroupType();
                     nested.add(group);
                     getNested(group.properties, nested);
+                } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty) {
+                    CollectionProperty collectionProperty = (CollectionProperty) optionalProperty.getNestedProperty();
+                    getNested(new Property[] { collectionProperty.element }, nested);
                 }
             }
 
             if (property instanceof MapProperty) {
                 MapProperty mapProperty = (MapProperty) property;
                 getNested(new Property[] { mapProperty.valueProperty }, nested);
+            }
+
+            if (property instanceof CollectionProperty) {
+                CollectionProperty collectionProperty = (CollectionProperty) property;
+                getNested(new Property[] { collectionProperty.element }, nested);
             }
         }
     }

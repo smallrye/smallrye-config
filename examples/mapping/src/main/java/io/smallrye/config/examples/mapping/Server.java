@@ -28,6 +28,8 @@ public interface Server {
 
     Optional<Proxy> proxy();
 
+    Optional<Cors> cors();
+
     Log log();
 
     interface Ssl {
@@ -61,6 +63,18 @@ public interface Server {
             SHORT,
             COMBINED,
             LONG;
+        }
+    }
+
+    interface Cors {
+        List<Origin> origins();
+
+        List<String> methods();
+
+        interface Origin {
+            String host();
+
+            int port();
         }
     }
 }
