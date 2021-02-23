@@ -122,9 +122,10 @@ class CustomConverterTest {
         IllegalArgumentException thrownException = assertThrows(IllegalArgumentException.class, () -> {
             config.getValue("uuid.invalid", UUID.class);
         }, "Malformed UUID should throw exception");
-        assertEquals("SRCFG00026: notauuid cannot be converted into a UUID", thrownException.getMessage(),
-                "Exception message is incorrect");
-
+        assertEquals(
+                "SRCFG00039: The config property uuid.invalid with the config value \"notauuid\" threw an Exception whilst being converted",
+                thrownException.getMessage());
+        assertEquals("SRCFG00026: notauuid cannot be converted into a UUID", thrownException.getCause().getMessage());
     }
 
     private static Config buildConfig(String... keyValues) {
