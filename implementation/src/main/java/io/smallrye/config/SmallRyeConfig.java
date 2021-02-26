@@ -187,21 +187,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * 
      * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
-     * <br>
-     * 
-     * Calls from {@link Config#getValue} should throw an {@link Exception} for each of the following:<br>
-     * 
-     * 1. {@link IllegalArgumentException} - if the property cannot be converted by the {@link Converter} to the specified type
-     * <br>
-     * 2. {@link NoSuchElementException} - if the property is not defined <br>
-     * 3. {@link NoSuchElementException} - if the property is defined as an empty string <br>
-     * 4. {@link NoSuchElementException} - if the {@link Converter} returns {@code null} <br>
-     * <br>
-     * 
-     * Calls from {@link Config#getOptionalValue} should only throw an {@link Exception} for #1
-     * ({@link IllegalArgumentException} when the property cannot be converted to the specified type).
      */
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
@@ -218,6 +204,30 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
+
+        return convertValue(name, value, converter);
+    }
+
+    /**
+     * 
+     * This method handles converting values for both CDI injections and programatical calls.<br>
+     * <br>
+     * 
+     * Calls for converting non-optional values ({@link Config#getValue} and "Injecting Native Values")
+     * should throw an {@link Exception} for each of the following:<br>
+     * 
+     * 1. {@link IllegalArgumentException} - if the property cannot be converted by the {@link Converter} to the specified type
+     * <br>
+     * 2. {@link NoSuchElementException} - if the property is not defined <br>
+     * 3. {@link NoSuchElementException} - if the property is defined as an empty string <br>
+     * 4. {@link NoSuchElementException} - if the {@link Converter} returns {@code null} <br>
+     * <br>
+     * 
+     * Calls for converting optional values ({@link Config#getOptionalValue} and "Injecting Optional Values")
+     * should only throw an {@link Exception} for #1 ({@link IllegalArgumentException} when the property cannot be converted to
+     * the specified type).
+     */
+    public static <T> T convertValue(String name, String value, Converter<T> converter) {
 
         final T converted;
 

@@ -149,7 +149,7 @@ public class ConfigExtension implements Extension {
             try {
                 name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
             } catch (IllegalStateException e) {
-                adv.addDeploymentProblem(e);
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(null, e.getLocalizedMessage(), e));
                 continue;
             }
 
@@ -167,10 +167,8 @@ public class ConfigExtension implements Extension {
             try {
                 // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
                 ConfigProducerUtil.getValue(injectionPoint, config);
-            } catch (IllegalArgumentException e) {
-                adv.addDeploymentProblem(InjectionMessages.msg.illegalConversion(name, type));
-            } catch (NoSuchElementException e) {
-                adv.addDeploymentProblem(e);
+            } catch (Exception e) {
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, e.getLocalizedMessage(), e));
             }
         }
 
@@ -188,7 +186,8 @@ public class ConfigExtension implements Extension {
         try {
             ConfigMappings.registerConfigMappings((SmallRyeConfig) config, configMappingsWithPrefix);
         } catch (ConfigValidationException e) {
-            adv.addDeploymentProblem(e);
+            adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigPropertiesFailure(e.getLocalizedMessage(), e));
+
         }
     }
 

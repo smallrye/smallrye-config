@@ -22,18 +22,23 @@ package io.smallrye.config.inject;
  * 
  * @author Steve Moyer - The Pennsylvania State University
  */
-public class ConfigException extends Exception {
+public class ConfigInjectionException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
     private final String configPropertyName;
 
-    public ConfigException(String configPropertyName, String message) {
+    public ConfigInjectionException(String message, String configPropertyName) {
         super(message);
         this.configPropertyName = configPropertyName;
     }
 
-    public ConfigException(String configPropertyName, String message, Throwable cause) {
+    public ConfigInjectionException(String message, String configPropertyName, Throwable cause) {
+        super(message, cause);
+        this.configPropertyName = configPropertyName;
+    }
+
+    public ConfigInjectionException(String message, String configPropertyName, String causeMessage, Throwable cause) {
         super(message, cause);
         this.configPropertyName = configPropertyName;
     }
