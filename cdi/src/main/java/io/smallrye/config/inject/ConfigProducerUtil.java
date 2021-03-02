@@ -1,15 +1,21 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.Converters.newCollectionConverter;
+import static io.smallrye.config.Converters.newOptionalConverter;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import javax.enterprise.inject.spi.AnnotatedMember;
@@ -21,8 +27,9 @@ import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.Converters;
 import io.smallrye.config.SecretKeys;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.common.AbstractDelegatingConverter;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
@@ -40,6 +47,11 @@ public final class ConfigProducerUtil {
         if (name == null) {
             return null;
         }
+
+        if (hasCollection(injectionPoint.getType())) {
+            return convertValues(name, injectionPoint.getType(), getDefaultValue(injectionPoint), config);
+        }
+
         return convertValue(name, resolveConverter(injectionPoint, config), getDefaultValue(injectionPoint), config);
     }
 
@@ -73,6 +85,26 @@ public final class ConfigProducerUtil {
         return converted;
     }
 
+    public static <T> T convertValues(String name, Type type, String defaultValue, Config config) {
+        String rawValue = getRawValue(name, config);
+        List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
+        if (rawValue != null || indexedProperties.isEmpty()) {
+            return convertValue(name, resolveConverter(type, config), defaultValue, config);
+        }
+
+        BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
+                collectionFactory) -> {
+            Collection<T> collection = collectionFactory.apply(indexedProperties.size());
+            for (String indexedProperty : indexedProperties) {
+                // Never null by the rules of converValue
+                collection.add(convertValue(indexedProperty, itemConverter, null, config));
+            }
+            return collection;
+        };
+
+        return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
+    }
+
     public static ConfigValue getConfigValue(InjectionPoint injectionPoint, Config config) {
         String name = getName(injectionPoint);
         if (name == null) {
@@ -93,28 +125,63 @@ public final class ConfigProducerUtil {
         return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
     }
 
-    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config src) {
-        return resolveConverter(injectionPoint.getType(), src);
+    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config config) {
+        return resolveConverter(injectionPoint.getType(), config);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverter(final Type type, final Config src) {
+    private static <T> Converter<T> resolveConverter(final Type type, final Config config) {
         Class<T> rawType = rawTypeOf(type);
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
             Type[] typeArgs = paramType.getActualTypeArguments();
             if (rawType == List.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), ArrayList::new);
+                return (Converter<T>) newCollectionConverter(resolveConverter(typeArgs[0], config), ArrayList::new);
             } else if (rawType == Set.class) {
-                return (Converter<T>) Converters.newCollectionConverter(resolveConverter(typeArgs[0], src), HashSet::new);
+                return (Converter<T>) newCollectionConverter(resolveConverter(typeArgs[0], config), HashSet::new);
             } else if (rawType == Optional.class) {
-                return (Converter<T>) Converters.newOptionalConverter(resolveConverter(typeArgs[0], src));
+                return (Converter<T>) newOptionalConverter(resolveConverter(typeArgs[0], config));
             } else if (rawType == Supplier.class) {
-                return resolveConverter(typeArgs[0], src);
+                return resolveConverter(typeArgs[0], config);
             }
         }
         // just try the raw type
-        return src.getConverter(rawType).orElseThrow(() -> InjectionMessages.msg.noRegisteredConverter(rawType));
+        return config.getConverter(rawType).orElseThrow(() -> InjectionMessages.msg.noRegisteredConverter(rawType));
+    }
+
+    /**
+     * We need to handle indexed properties in a special way, since a Collection may be wrapped in other converters.
+     * The issue is that in the original code the value was retrieve by calling the first converter that will delegate
+     * to all the wrapped types until it finally gets the result. For indexed properties, because it requires
+     * additional key lookups, a special converter is added to perform the work. This is mostly a workaround, since
+     * converters do not have the proper API, and probably should not have to handle this type of logic.
+     *
+     * @see IndexedCollectionConverter
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> Converter<T> resolveConverterForIndexed(
+            final Type type,
+            final Config config,
+            final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter) {
+
+        Class<T> rawType = rawTypeOf(type);
+        if (type instanceof ParameterizedType) {
+            ParameterizedType paramType = (ParameterizedType) type;
+            Type[] typeArgs = paramType.getActualTypeArguments();
+            if (rawType == List.class) {
+                return (Converter<T>) new IndexedCollectionConverter<>(resolveConverter(typeArgs[0], config), ArrayList::new,
+                        indexedConverter);
+            } else if (rawType == Set.class) {
+                return (Converter<T>) new IndexedCollectionConverter<>(resolveConverter(typeArgs[0], config), HashSet::new,
+                        indexedConverter);
+            } else if (rawType == Optional.class) {
+                return (Converter<T>) newOptionalConverter(resolveConverterForIndexed(typeArgs[0], config, indexedConverter));
+            } else if (rawType == Supplier.class) {
+                return resolveConverterForIndexed(typeArgs[0], config, indexedConverter);
+            }
+        }
+
+        throw new IllegalStateException();
     }
 
     @SuppressWarnings("unchecked")
@@ -128,6 +195,22 @@ public final class ConfigProducerUtil {
         } else {
             throw InjectionMessages.msg.noRawType(type);
         }
+    }
+
+    private static <T> boolean hasCollection(final Type type) {
+        Class<T> rawType = rawTypeOf(type);
+        if (type instanceof ParameterizedType) {
+            ParameterizedType paramType = (ParameterizedType) type;
+            Type[] typeArgs = paramType.getActualTypeArguments();
+            if (rawType == List.class) {
+                return true;
+            } else if (rawType == Set.class) {
+                return true;
+            } else {
+                return hasCollection(typeArgs[0]);
+            }
+        }
+        return false;
     }
 
     public static String getName(InjectionPoint injectionPoint) {
@@ -182,5 +265,28 @@ public final class ConfigProducerUtil {
             }
         }
         throw InjectionMessages.msg.noConfigPropertyDefaultName(ip);
+    }
+
+    final static class IndexedCollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
+        private static final long serialVersionUID = 5186940408317652618L;
+
+        private final IntFunction<Collection<T>> collectionFactory;
+        private final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter;
+
+        public IndexedCollectionConverter(
+                final Converter<T> resolveConverter,
+                final IntFunction<Collection<T>> collectionFactory,
+                final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter) {
+            super(resolveConverter);
+
+            this.collectionFactory = collectionFactory;
+            this.indexedConverter = indexedConverter;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public C convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return (C) indexedConverter.apply((Converter<T>) getDelegate(), collectionFactory);
+        }
     }
 }
