@@ -170,6 +170,9 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getPropertyName(final NamingStrategy namingStrategy) {
+            if (isParentPropertyName()) {
+                return propertyName;
+            }
             return hasPropertyName() && !propertyName.isEmpty() ? propertyName : namingStrategy.apply(method.getName());
         }
 
