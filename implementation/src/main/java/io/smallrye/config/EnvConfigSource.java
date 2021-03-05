@@ -111,7 +111,7 @@ public class EnvConfigSource extends MapBackedConfigSource {
     }
 
     /**
-     * A new Map with the contents of System.getEnv. Im the Windows implementation, the Map is an extension of
+     * A new Map with the contents of System.getEnv. In the Windows implementation, the Map is an extension of
      * ProcessEnvironment. This causes issues with Graal and native mode, since ProcessEnvironment should not be
      * instanciated in the heaop.
      */
