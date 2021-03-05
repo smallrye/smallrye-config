@@ -110,12 +110,13 @@ public class EnvConfigSource extends MapBackedConfigSource {
         return sb.toString();
     }
 
+    /**
+     * A new Map with the contents of System.getEnv. Im the Windows implementation, the Map is an extension of
+     * ProcessEnvironment. This causes issues with Graal and native mode, since ProcessEnvironment should not be
+     * instanciated in the heaop.
+     */
     private static Map<String, String> getEnvProperties() {
-        return unmodifiableMap(doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv));
-    }
-
-    private static String getEnvProperty(final String name) {
-        return doPrivileged((PrivilegedAction<String>) () -> System.getenv(name));
+        return unmodifiableMap(doPrivileged((PrivilegedAction<Map<String, String>>) () -> new HashMap<>(System.getenv())));
     }
 
     private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {
