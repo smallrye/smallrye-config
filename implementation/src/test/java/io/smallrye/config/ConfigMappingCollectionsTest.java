@@ -373,4 +373,35 @@ public class ConfigMappingCollectionsTest {
         assertEquals("batch", server.environment().get().services().get(1));
         assertEquals("a", server.environment().get().apps().get(0).name());
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerSingleCollection {
+        @WithParentName
+        List<Server> origins();
+
+        interface Server {
+            String host();
+
+            int port();
+        }
+    }
+
+    @Test
+    void mappingSingleCollection() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerSingleCollection.class, "server")
+                .withSources(config(
+                        "server[0].host", "localhost",
+                        "server[0].port", "8080",
+                        "server[1].host", "my-server",
+                        "server[1].port", "80"))
+                .build();
+
+        ServerSingleCollection server = config.getConfigMapping(ServerSingleCollection.class);
+        assertEquals(2, server.origins().size());
+        assertEquals("localhost", server.origins().get(0).host());
+        assertEquals(8080, server.origins().get(0).port());
+        assertEquals("my-server", server.origins().get(1).host());
+        assertEquals(80, server.origins().get(1).port());
+    }
 }
