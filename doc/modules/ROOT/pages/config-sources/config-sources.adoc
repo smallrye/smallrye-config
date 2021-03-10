@@ -12,17 +12,20 @@ SmallRye Config provides a few enhancements and extensions to MicroProfile Confi
 Another way to create a `ConfigSource` is via the `ConfigSourceFactory`. The difference between the SmallRye Factory
 and the standard way to create a `ConfigSource` as specified in MicroProfile Config, is the Factory ability to provide
 a context with access to the available configuration. With the `ConfigSourceFactory` it is possible to bootstrap a
-`ConfigSource` that configures itself with other `ConfigSources`
+`ConfigSource` that configures itself with previously initialized `ConfigSources`.
 
-By implementing https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceFactoryjava[ConfigSourceFactory], the ConfigSource is made available via the
-`ConfigSource getConfigSource(ConfigSourceContext context)` method. The `ConfigSourceFactory` can be also assigned a
-priority, like any other `ConfigSource` by overriding the method `OptionalInt getPriority()`.
+By implementing https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceFactory.java[ConfigSourceFactory],
+a list of `ConfigSources` may be provided via the `Iterable<ConfigSource> getConfigSources(ConfigSourceContext context)`
+method. The `ConfigSourceFactory` may also assign a priority by overriding the default method
+`OptionalInt getPriority()`. This is only used to sort multiple factories during initialization. Once all the factories
+are initialized, the provided `ConfigSources` will use their own ordinal and be sorted with all `ConfigSources`
+available in the `Config` instance.
 
-When the Factory is initializing, the provided `ConfigSourceContext` may call a single method
-`ConfigValue getValue(String name)`. This method lookups configuration names in all `ConfigSources` that are already
-initialized by the `Config` even if they have a lower priority than the one defined in the `ConfigSourceFactory`. A
-`ConfigSource` produced by a `ConfigSourceFactory` is not taken into account to configure other sources produced by
-lower priority `ConfigSourceFactory`.
+When the Factory is initializing, the provided `ConfigSourceContext` may call the method
+`ConfigValue getValue(String name)`. This method lookups configuration names in all `ConfigSources` that were already
+initialized by the `Config` instance, including sources with lower ordinals than the ones defined in the
+`ConfigSourceFactory`. `ConfigSources` provided by a `ConfigSourceFactory` is not taken into account to configure other
+sources produced by a lower priority `ConfigSourceFactory`.
 
 Registration of a `ConfigSourceFactory` is done via the `ServiceLoader` mechanism by providing the
 implementation classes in a `META-INF/services/io.smallrye.config.ConfigSourceFactory` file. Alternatively, factories
