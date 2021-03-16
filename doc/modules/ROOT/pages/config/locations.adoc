@@ -33,4 +33,4 @@ taken into account if the location is a directory.
 `smallrye.config.locations=jar:file:///user/local/app/lib/resources-.jar!/resources.properties`
 
 ==== The `config.properties` file from a web server:
-`smallrye.config.locations=http://localhost:8080/config/config.
+`smallrye.config.locations=http://localhost:8080/config/config`.
