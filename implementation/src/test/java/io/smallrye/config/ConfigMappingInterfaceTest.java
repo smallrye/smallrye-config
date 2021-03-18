@@ -753,4 +753,72 @@ class ConfigMappingInterfaceTest {
         assertEquals("naruto", mapping.info().values().get("name"));
         assertEquals("naruto", mapping.info().data().get("first").name());
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerPrefix {
+        String host();
+
+        int port();
+    }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerNamePrefix {
+        String host();
+    }
+
+    @Test
+    void prefixPropertyInRoot() {
+        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerPrefix.class, "server")
+                .withMapping(ServerPrefix.class, "cloud.server")
+                .withMapping(ServerNamePrefix.class, "server")
+                .withSources(config("serverBoot", "server"))
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("cloud.serverBoot", "server"))
+                .withSources(config("cloud.server.host", "localhost", "cloud.server.port", "8080"))
+                .build();
+
+        ServerPrefix server = config.getConfigMapping(ServerPrefix.class, "server");
+        assertNotNull(server);
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+
+        ServerPrefix serverCloud = config.getConfigMapping(ServerPrefix.class, "cloud.server");
+        assertNotNull(server);
+        assertEquals("localhost", serverCloud.host());
+        assertEquals(8080, serverCloud.port());
+
+        ServerNamePrefix serverName = config.getConfigMapping(ServerNamePrefix.class, "server");
+        assertNotNull(server);
+        assertEquals("localhost", serverName.host());
+    }
+
+    @Test
+    void prefixPropertyInRootUnknown() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .withMapping(ServerPrefix.class, "server")
+                .withSources(config("serverBoot", "server"))
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("server.name", "localhost"));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, builder::build);
+        assertTrue(exception.getCause() instanceof ConfigValidationException);
+        assertEquals("server.name does not map to any root",
+                ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
+
+        builder = new SmallRyeConfigBuilder()
+                .withMapping(ServerPrefix.class, "server")
+                .withMapping(ServerPrefix.class, "cloud.server")
+                .withMapping(ServerNamePrefix.class, "server")
+                .withSources(config("serverBoot", "server"))
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("cloud.serverBoot", "server"))
+                .withSources(config("cloud.server.host", "localhost", "cloud.server.port", "8080"))
+                .withSources(config("cloud.server.name", "localhost"));
+
+        exception = assertThrows(IllegalStateException.class, builder::build);
+        assertTrue(exception.getCause() instanceof ConfigValidationException);
+        assertEquals("cloud.server.name does not map to any root",
+                ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
+    }
 }
