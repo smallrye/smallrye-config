@@ -46,7 +46,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 public class SmallRyeConfigBuilder implements ConfigBuilder {
     public static final String META_INF_MICROPROFILE_CONFIG_PROPERTIES = "META-INF/microprofile-config.properties";
-    public static final String WEB_INF_MICROPROFILE_CONFIG_PROPERTIES = "WEB-INF/classes/META-INF/microprofile-config.properties";
 
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
@@ -146,7 +145,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         defaultSources.add(new EnvConfigSource());
         defaultSources.add(new SysPropConfigSource());
         defaultSources.addAll(classPathSources(META_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader));
-        defaultSources.addAll(classPathSources(WEB_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader));
 
         return defaultSources;
     }
