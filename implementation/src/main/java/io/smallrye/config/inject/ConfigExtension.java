@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toSet;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -147,8 +148,11 @@ public class ConfigExtension implements Extension {
                 continue;
             }
 
-            // Check if the name is part of the properties first. Since properties can be a subset, then search for the actual property for a value.
-            if (!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null) {
+            // Check if the name is part of the properties first.
+            // Since properties can be a subset, then search for the actual property for a value.
+            // Finally also check if the property is indexed (might be a Collection with indexed properties).
+            if ((!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null)
+                    && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
                     continue;
@@ -185,5 +189,13 @@ public class ConfigExtension implements Extension {
 
     protected Set<InjectionPoint> getConfigPropertyInjectionPoints() {
         return configPropertyInjectionPoints;
+    }
+
+    private boolean isIndexed(Type type, String name, Config config) {
+        return type instanceof ParameterizedType &&
+                (List.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()) ||
+                        Set.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))
+                &&
+                !((SmallRyeConfig) config).getIndexedPropertiesIndexes(name).isEmpty();
     }
 }
