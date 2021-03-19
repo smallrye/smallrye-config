@@ -279,6 +279,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
         mappingsBuilder.validateUnknown(validateUnknown);
+        withDefaultValue(ConfigMappings.VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
         return this;
     }
 
