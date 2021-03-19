@@ -4,7 +4,7 @@
 Additionally, to the default config locations specified by the MicroProfile Config specification, SmallRye Config
 provides a way to scan additional locations for configuration properties files.
 
-The `smallrye.config.locations` configuration property accepts multiple locations separated by a comma and each must
+The `smallrye.config.locations` configuration property accepts multiple locations separated by a comma `,` and each must
 represent a valid `URI`. The supported `URI` schemes are:
 
 * file or directory
@@ -12,25 +12,54 @@ represent a valid `URI`. The supported `URI` schemes are:
 * jar resource
 * http resource
 
-Each `URI` scheme loads any discovered properties file in a `ConfigSource`. Discovered sources are then sorted with the
-`config_ordinal` property if present. If all sources have the same ordinal, they are sorted by the order in which they
-were found.
+Each `URI` scheme loads all discovered resources in a `ConfigSource`. All sources are loaded with the default ordinal
+`100`. The ordinal may be overridden directly in the resource by setting the `config_ordinal` property. Sources are
+sorted first by their ordinal, then by location order, and finally by loading order.
 
-If a profile is active, the profile resource is only loaded if t he unprofiled resource is available in the same
-location. This is to keep a consistent loading order and match with the unprofiled resource. Profiles are not
-taken into account if the location is a directory.
+If a profile is active, and the `URI` represents a single resource (for instance a file), then resources that match the
+active profile are also loaded. The profile resource name must follow the pattern: `{location}-{profile}`. A profile
+resource is only loaded if the unprofiled resource is also available in the same location. This is to keep a consistent
+loading order and pair all the resources together.
+
+Profile resources are not taken into account if the location is a directory since there is no reliable way to discover
+which file is the main resource. Properties that use the profile prefix syntax `%profile.` will work as expected.
 
 === Examples
 
 ==== All properties files from a directory:
-`smallrye.config.locations=./src/main/resources/`
-`smallrye.config.locations=/user/local/config`
+```properties
+# loads all files from a relative path
+smallrye.config.locations=./src/main/resources/
+
+# loads all files from an absolute path
+smallrye.config.locations=/user/local/config
+```
+
+For relative paths, the JVM `user.dir` property defines the current directory.
+
+==== A specific file :
+```properties
+smallrye.config.locations=./src/main/resources/additional.properties
+```
+
+If a profile `dev` is active, and an `additional-dev.properties` file exists, this will also be loaded.
 
 ==== All `additional.properties` files from the classpath:
-`smallrye.config.locations=additional.properties`
+```properties
+smallrye.config.locations=additional.properties
+```
+
+If a profile `prod` is active, and an `additional-prod.properties` resources exists next to the `additional.properties`
+resource, this will also be loaded.
 
 ==== The `resources.properties` file from a specific jar:
-`smallrye.config.locations=jar:file:///user/local/app/lib/resources-.jar!/resources.properties`
+```properties
+smallrye.config.locations=jar:file:///user/local/app/lib/resources-.jar!/resources.properties
+```
+
+If a profile `test` is active, and an `additional-test.properties` respource exists, this will also be loaded.
 
 ==== The `config.properties` file from a web server:
-`smallrye.config.locations=http://localhost:8080/config/config.
+```properties
+smallrye.config.locations=http://localhost:8080/config/config.
+```

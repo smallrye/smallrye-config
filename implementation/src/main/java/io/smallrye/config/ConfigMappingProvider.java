@@ -672,12 +672,12 @@ final class ConfigMappingProvider implements Serializable {
 
         // lazily sweep
         for (String name : config.getPropertyNames()) {
+            NameIterator ni = new NameIterator(name);
             // filter properties in root
-            if (!isPropertyInRoot(name)) {
+            if (!isPropertyInRoot(ni)) {
                 continue;
             }
 
-            NameIterator ni = new NameIterator(name);
             BiConsumer<ConfigMappingContext, NameIterator> action = matchActions.findRootValue(ni);
             if (action != null) {
                 action.accept(context, ni);
@@ -696,13 +696,46 @@ final class ConfigMappingProvider implements Serializable {
         mappings.registerConfigMappings(context.getRootsMap());
     }
 
-    private boolean isPropertyInRoot(String propertyName) {
+    private boolean isPropertyInRoot(NameIterator propertyName) {
         final Set<String> registeredRoots = roots.keySet();
         for (String registeredRoot : registeredRoots) {
-            if (propertyName.startsWith(registeredRoot)) {
+            // match everything
+            if (registeredRoot.length() == 0) {
                 return true;
             }
+
+            // A sub property from a namespace is always bigger in length
+            if (propertyName.getName().length() <= registeredRoot.length()) {
+                continue;
+            }
+
+            final NameIterator root = new NameIterator(registeredRoot);
+            // compare segments
+            while (root.hasNext()) {
+                String segment = root.getNextSegment();
+                if (!propertyName.hasNext()) {
+                    propertyName.goToStart();
+                    break;
+                }
+
+                final String nextSegment = propertyName.getNextSegment();
+                if (!segment.equals(nextSegment)) {
+                    propertyName.goToStart();
+                    break;
+                }
+
+                root.next();
+                propertyName.next();
+
+                // root has no more segments and we reached this far so everything matched.
+                // on top, property still has more segments to do the mapping.
+                if (!root.hasNext() && propertyName.hasNext()) {
+                    propertyName.goToStart();
+                    return true;
+                }
+            }
         }
+
         return false;
     }
 
