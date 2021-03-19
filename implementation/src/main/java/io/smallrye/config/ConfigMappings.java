@@ -13,6 +13,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public final class ConfigMappings implements Serializable {
+    public static final String VALIDATE_UNKNOWN = "smallrye.config.mapping.validate-unknown";
+
     private static final long serialVersionUID = -7790784345796818526L;
 
     private final ConcurrentMap<Class<?>, Map<String, ConfigMappingObject>> mappings;
@@ -27,7 +29,8 @@ public final class ConfigMappings implements Serializable {
 
     public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
             throws ConfigValidationException {
-        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder().validateUnknown(false);
+        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder()
+                .validateUnknown(config.getOptionalValue(VALIDATE_UNKNOWN, Boolean.class).orElse(Boolean.TRUE));
         for (ConfigMappingWithPrefix mapping : mappings) {
             builder.addRoot(mapping.getPrefix(), mapping.getKlass());
         }
