@@ -4,6 +4,7 @@ import static io.smallrye.config.KeyValuesConfigSource.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -45,6 +46,12 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
                 .withSources(config("server.the-host", "localhost"))
                 .withSources(config("cloud.the-host", "cloud"))
                 .withSources(config("server.port", "8080", "cloud.port", "9090"))
+                .withSources(config("server.hosts[0]", "localhost", "server.hosts[1]", "config"))
+                .withSources(config("indexed.converted[0]", "in"))
+                .withSources(config("indexed.override.defaults[0]", "e", "indexed.override.defaults[1]", "f"))
+                .withSources(config("indexed.comma", "a,b,c", "indexed.comma[0]", "a", "indexed.comma[1]", "b"))
+                .withSources(config("optionals.indexed[0]", "a", "optionals.indexed[1]", "b"))
+                .withSources(config("supplier.indexed[0]", "a", "supplier.indexed[1]", "b"))
                 .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())
                 .build();
     }
@@ -58,6 +65,23 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
 
         public String getValue() {
             return value;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final ConvertedValue that = (ConvertedValue) o;
+            return Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
         }
     }
 
