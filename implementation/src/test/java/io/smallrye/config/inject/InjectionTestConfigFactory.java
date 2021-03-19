@@ -20,6 +20,7 @@ public class InjectionTestConfigFactory extends SmallRyeConfigFactory {
         return configProviderResolver.getBuilder().forClassLoader(classLoader)
                 .addDefaultSources()
                 .addDefaultInterceptors()
+                .withValidateUnknown(false) // TODO - We may want to remove this later.
                 .withSources(config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678",
                         "bad.property.expression.prop", "${missing.prop}"))
                 .withSources(new ConfigSource() {
