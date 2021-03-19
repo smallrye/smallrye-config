@@ -256,6 +256,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
+        mappingsBuilder.validateUnknown(validateUnknown);
+        withDefaultValue(ConfigMappings.VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
