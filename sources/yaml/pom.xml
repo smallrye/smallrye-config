@@ -4,7 +4,7 @@
     <parent>
         <artifactId>smallrye-config-parent</artifactId>
         <groupId>io.smallrye.config</groupId>
-        <version>1.12.0</version>
+        <version>1.12.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
