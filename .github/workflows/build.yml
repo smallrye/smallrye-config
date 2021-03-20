@@ -3,8 +3,8 @@ name: SmallRye Build
 on:
   push:
     branches: 
-      - master
-      - mpconfig20
+      - main
+      - 1.x
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'

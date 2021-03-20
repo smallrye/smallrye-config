@@ -57,7 +57,7 @@ class PropertiesLocationConfigSourceFactoryTest {
     @Test
     void http() {
         SmallRyeConfig config = buildConfig(
-                "https://raw.githubusercontent.com/smallrye/smallrye-config/master/implementation/src/test/resources/config-values.properties");
+                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/implementation/src/test/resources/config-values.properties");
 
         assertEquals("abc", config.getRawValue("my.prop"));
         assertEquals(1, countSources(config));
@@ -74,7 +74,7 @@ class PropertiesLocationConfigSourceFactoryTest {
     @Test
     void all() {
         SmallRyeConfig config = buildConfig("./src/test/resources",
-                "https://raw.githubusercontent.com/smallrye/smallrye-config/master/implementation/src/test/resources/config-values.properties");
+                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/implementation/src/test/resources/config-values.properties");
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
