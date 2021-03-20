@@ -12,7 +12,7 @@ the Config was loaded from.
 == Usage
 
 An interceptor can be created by implementing the
-https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceInterceptor.java[ConfigSourceInterceptor]
+https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/ConfigSourceInterceptor.java[ConfigSourceInterceptor]
 interface.
 
 The `ConfigSourceInterceptor` is able to intercept the resolution of a configuration name with the method

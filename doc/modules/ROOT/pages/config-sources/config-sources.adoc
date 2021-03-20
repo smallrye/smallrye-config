@@ -14,7 +14,7 @@ and the standard way to create a `ConfigSource` as specified in MicroProfile Con
 a context with access to the available configuration. With the `ConfigSourceFactory` it is possible to bootstrap a
 `ConfigSource` that configures itself with previously initialized `ConfigSources`.
 
-By implementing https://github.com/smallrye/smallrye-config/blob/master/implementation/src/main/java/io/smallrye/config/ConfigSourceFactory.java[ConfigSourceFactory],
+By implementing https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/ConfigSourceFactory.java[ConfigSourceFactory],
 a list of `ConfigSources` may be provided via the `Iterable<ConfigSource> getConfigSources(ConfigSourceContext context)`
 method. The `ConfigSourceFactory` may also assign a priority by overriding the default method
 `OptionalInt getPriority()`. This is only used to sort multiple factories during initialization. Once all the factories

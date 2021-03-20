@@ -1,7 +1,7 @@
 [[hocon-config-source]]
 == HOCON Config Source
 
-ConfigSource implementation to support https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] file format.
+ConfigSource implementation to support https://github.com/lightbend/config/blob/main/HOCON.md[HOCON] file format.
 
 This Configuration Source will be looking for the following files in this order of priority:
 
