@@ -15,7 +15,7 @@ jobs:
       GITHUB_TOKEN: ${{secrets.RELEASE_TOKEN}}
 
     steps:
-      - uses: radcortez/project-metadata-action@master
+      - uses: radcortez/project-metadata-action@main
         name: retrieve project metadata
         id: metadata
         with:
@@ -52,7 +52,7 @@ jobs:
           name: tck-report
           path: testsuite/tck/target/surefire-reports
 
-      - uses: radcortez/milestone-release-action@master
+      - uses: radcortez/milestone-release-action@main
         name: milestone release
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}

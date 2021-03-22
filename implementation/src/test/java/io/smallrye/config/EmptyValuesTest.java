@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-// https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configexamples.asciidoc#config-value-conversion-rules
+// https://github.com/eclipse/microprofile-config/blob/2.0/spec/src/main/asciidoc/configexamples.asciidoc#config-value-conversion-rules
 class EmptyValuesTest {
     @Test
     void missingForArray() {

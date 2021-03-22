@@ -11,7 +11,7 @@ jobs:
     name: pre release
 
     steps:
-      - uses: radcortez/project-metadata-action@master
+      - uses: radcortez/project-metadata-action@main
         name: retrieve project metadata
         id: metadata
         with:
@@ -24,7 +24,7 @@ jobs:
           echo '::error::Cannot release a SNAPSHOT version.'
           exit 1
 
-      - uses: radcortez/milestone-review-action@master
+      - uses: radcortez/milestone-review-action@main
         name: milestone review
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
