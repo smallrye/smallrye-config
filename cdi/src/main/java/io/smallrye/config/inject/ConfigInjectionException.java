@@ -28,19 +28,28 @@ public class ConfigInjectionException extends Exception {
 
     private final String configPropertyName;
 
+    /**
+     * Constructor for {@link InjectionMessages#noConfigValue(String, String, String)}
+     */
     public ConfigInjectionException(String message, String configPropertyName) {
         super(message);
         this.configPropertyName = configPropertyName;
     }
 
+    /**
+     * Constructor for {@link InjectionMessages#retrieveConfigFailure(String, String, String, String, Exception)}
+     */
     public ConfigInjectionException(String message, String configPropertyName, Throwable cause) {
         super(message, cause);
         this.configPropertyName = configPropertyName;
     }
 
-    public ConfigInjectionException(String message, String configPropertyName, String causeMessage, Throwable cause) {
+    /**
+     * Constructor for {@link InjectionMessages#retrieveConfigPropertiesFailure(String, Exception)}
+     */
+    public ConfigInjectionException(String message, Throwable cause) {
         super(message, cause);
-        this.configPropertyName = configPropertyName;
+        this.configPropertyName = null;
     }
 
     public String getConfigPropertyName() {

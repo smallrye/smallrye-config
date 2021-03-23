@@ -149,7 +149,9 @@ public class ConfigExtension implements Extension {
             try {
                 name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
             } catch (IllegalStateException e) {
-                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(null, e.getLocalizedMessage(), e));
+                adv.addDeploymentProblem(
+                        InjectionMessages.msg.retrieveConfigFailure(null, injectionPoint.getMember().getName(),
+                                e.getLocalizedMessage(), null, e));
                 continue;
             }
 
@@ -159,7 +161,8 @@ public class ConfigExtension implements Extension {
             if ((!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null)
                     && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                    adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
+                    adv.addDeploymentProblem(
+                            InjectionMessages.msg.noConfigValue(name, injectionPoint.getMember().getName(), name));
                     continue;
                 }
             }
@@ -168,7 +171,8 @@ public class ConfigExtension implements Extension {
                 // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
                 ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (Exception e) {
-                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, e.getLocalizedMessage(), e));
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, injectionPoint.getMember().getName(),
+                        e.getLocalizedMessage(), name, e));
             }
         }
 
