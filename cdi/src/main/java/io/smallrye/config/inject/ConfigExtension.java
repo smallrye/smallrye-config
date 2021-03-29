@@ -19,6 +19,7 @@ import static io.smallrye.config.ConfigMappings.ConfigMappingWithPrefix.configMa
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromInjectionPoint;
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromType;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
+import static io.smallrye.config.inject.InjectionMessagesUtil.formatInjectionPoint;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
 
@@ -150,7 +151,7 @@ public class ConfigExtension implements Extension {
                 name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
             } catch (IllegalStateException e) {
                 adv.addDeploymentProblem(
-                        InjectionMessages.msg.retrieveConfigFailure(null, injectionPoint.getMember().getName(),
+                        InjectionMessages.msg.retrieveConfigFailure(null, formatInjectionPoint(injectionPoint),
                                 e.getLocalizedMessage(), null, e));
                 continue;
             }
@@ -162,7 +163,7 @@ public class ConfigExtension implements Extension {
                     && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(
-                            InjectionMessages.msg.noConfigValue(name, injectionPoint.getMember().getName(), name));
+                            InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint), name));
                     continue;
                 }
             }
@@ -171,7 +172,7 @@ public class ConfigExtension implements Extension {
                 // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
                 ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (Exception e) {
-                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, injectionPoint.getMember().getName(),
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, formatInjectionPoint(injectionPoint),
                         e.getLocalizedMessage(), name, e));
             }
         }

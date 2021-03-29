@@ -50,10 +50,10 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  * The Exception messages caused by Config CDI should have the format:<br>
  * 
  * <pre>
- * {@link org.jboss.weld.exceptions.DeploymentException}: SRCFG0200X: < a SmallRye {@link InjectMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
+ * {@link org.jboss.weld.exceptions.DeploymentException}: SRCFG0200X: < a SmallRye {@link InjectionMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * caused by:
- * {@linkio.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
+ * {@link io.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectionMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * caused by: (where appropriate)
  * the.root.cause.Exception: SRCFG0000X: < a SmallRye {@link ConfigMessages}>
@@ -69,13 +69,13 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  * <pre>
  * {@link org.jboss.weld.exceptions.DeploymentException}: Exception List with n exceptions:
  * Exception 0 :
- * {@linkio.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
+ * {@link io.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectionMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * caused by: (where appropriate)
  * the.root.cause.Exception: SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * Exception n :
- * {@linkio.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
+ * {@link io.smallrye.config.inject.ConfigInjectionException}: SRCFG0200X: < a SmallRye {@link InjectionMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * caused by: (where appropriate)
  * the.root.cause.Exception: SRCFG0000X: < a SmallRye {@link ConfigMessages}>
@@ -143,11 +143,11 @@ public class ValidateInjectionTest {
     void missingProperty() throws Exception {
         DeploymentException exception = getDeploymentException(MissingPropertyTest.class);
         assertThat(exception).hasMessage(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$MissingPropertyTest$MissingPropertyBean.missingProp since the config property could not be found in any config source");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
         assertThat(exception.getCause()).hasMessage(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$MissingPropertyTest$MissingPropertyBean.missingProp since the config property could not be found in any config source");
     }
 
     @Test
@@ -155,7 +155,7 @@ public class ValidateInjectionTest {
         DeploymentException exception = getDeploymentException(EmptyPropertyTest.class);
         assertThat(exception)
                 .hasMessageStartingWith(
-                        "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into emptyProp SRCFG00040:");
+                        "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into io.smallrye.config.inject.ValidateInjectionTest$EmptyPropertyTest$EmptyPropertyBean.emptyProp SRCFG00040:");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
@@ -169,7 +169,7 @@ public class ValidateInjectionTest {
         DeploymentException exception = getDeploymentException(BadPropertyTest.class);
         assertThat(exception)
                 .hasMessageStartingWith(
-                        "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into badProp SRCFG00041:");
+                        "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into io.smallrye.config.inject.ValidateInjectionTest$BadPropertyTest$BadPropertyBean.badProp SRCFG00041:");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
@@ -182,18 +182,18 @@ public class ValidateInjectionTest {
     void customConverterMissingProperty() {
         DeploymentException exception = getDeploymentException(CustomConverterMissingPropertyTest.class);
         assertThat(exception).hasMessage(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$CustomConverterMissingPropertyTest$CustomConverterMissingPropertyBean.missingProp since the config property could not be found in any config source");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
         assertThat(exception.getCause()).hasMessage(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$CustomConverterMissingPropertyTest$CustomConverterMissingPropertyBean.missingProp since the config property could not be found in any config source");
     }
 
     @Test
     void MissingConverter() {
         DeploymentException exception = getDeploymentException(MissingConverterTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key my.prop into myProp SRCFG02006:");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key my.prop into io.smallrye.config.inject.ValidateInjectionTest$MissingConverterTest$MissingConverterBean.myProp SRCFG02006:");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
@@ -206,7 +206,7 @@ public class ValidateInjectionTest {
     void skipProperties() {
         DeploymentException exception = getDeploymentException(SkipPropertiesTest.class);
         assertThat(exception).hasMessage(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$SkipPropertiesTest$SkipPropertiesBean.missingProp since the config property could not be found in any config source");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
     }
@@ -215,7 +215,7 @@ public class ValidateInjectionTest {
     void constructorUnnamedProperty() {
         DeploymentException exception = getDeploymentException(ConstructorUnnamedPropertyTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key null into io.smallrye.config.inject.ValidateInjectionTest$ConstructorUnnamedPropertyTest$ConstructorUnnamedPropertyBean SRCFG02002:");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key null into io.smallrye.config.inject.ValidateInjectionTest$ConstructorUnnamedPropertyTest$ConstructorUnnamedPropertyBean(String) SRCFG02002:");
         assertThat(exception).hasMessageContaining("ConstructorUnnamedPropertyBean(@ConfigProperty String)");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
@@ -230,7 +230,7 @@ public class ValidateInjectionTest {
     void methodUnnamedProperty() {
         DeploymentException exception = getDeploymentException(MethodUnnamedPropertyTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key null into methodUnnamedProperty SRCFG02002:");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key null into io.smallrye.config.inject.ValidateInjectionTest$MethodUnnamedPropertyTest$MethodUnnamedPropertyBean.methodUnnamedProperty(String) SRCFG02002:");
         assertThat(exception).hasMessageContaining("MethodUnnamedPropertyBean.methodUnnamedProperty(@ConfigProperty String)");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
@@ -271,7 +271,7 @@ public class ValidateInjectionTest {
     void missingPropertyExpressionInjection() {
         DeploymentException exception = getDeploymentException(MissingPropertyExpressionInjectionTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property.expression.prop into missingExpressionProp SRCFG00011");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property.expression.prop into io.smallrye.config.inject.ValidateInjectionTest$MissingPropertyExpressionInjectionTest$MissingPropertyExpressionBean.missingExpressionProp SRCFG00011");
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
         assertThat(exception.getCause().getCause()).isInstanceOf(NoSuchElementException.class);
@@ -285,11 +285,11 @@ public class ValidateInjectionTest {
         assertThat(exception).hasMessageStartingWith("Exception List with 3 exceptions:");
 
         assertThat(exception).hasMessageContaining(
-                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into missingProp since the config property could not be found in any config source");
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.missingProp since the config property could not be found in any config source");
         assertThat(exception).hasMessageContaining(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into emptyProp SRCFG00040: The config property empty.property is defined as the empty String (\"\") which the following Converter considered to be null: io.smallrye.config.Converters$BuiltInConverter");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.emptyProp SRCFG00040: The config property empty.property is defined as the empty String (\"\") which the following Converter considered to be null: io.smallrye.config.Converters$BuiltInConverter");
         assertThat(exception).hasMessageContaining(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into badProp SRCFG00041: The config property bad.property with the config value \",\" was converted to null from the following Converter: io.smallrye.config.Converters$ArrayConverter");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.badProp SRCFG00041: The config property bad.property with the config value \",\" was converted to null from the following Converter: io.smallrye.config.Converters$ArrayConverter");
 
         assertThat(exception.getSuppressed()).hasSize(3);
         assertThat(exception.getSuppressed()).allMatch((e) -> e instanceof ConfigInjectionException);
