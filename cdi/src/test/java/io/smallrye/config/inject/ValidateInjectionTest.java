@@ -280,6 +280,38 @@ public class ValidateInjectionTest {
     }
 
     @Test
+    void missingIndexedPropertiesInjection() {
+        DeploymentException exception = getDeploymentException(MissingIndexedPropertiesInjectionTest.class);
+
+        assertThat(exception).hasMessage(
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.indexed[0] into io.smallrye.config.inject.ValidateInjectionTest$MissingIndexedPropertiesInjectionTest$MissingIndexedPropertiesBean.missingIndexedProp since the config property could not be found in any config source");
+
+        assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
+        assertThat(exception.getCause()).hasMessage(
+                "SRCFG02000: Failed to Inject @ConfigProperty for key missing.indexed[0] into io.smallrye.config.inject.ValidateInjectionTest$MissingIndexedPropertiesInjectionTest$MissingIndexedPropertiesBean.missingIndexedProp since the config property could not be found in any config source");
+    }
+
+    @Test
+    void BadIndexedPropertiesInjection() {
+        DeploymentException exception = getDeploymentException(BadIndexedPropertiesInjectionTest.class);
+
+        assertThat(exception)
+                .hasMessageStartingWith(
+                        "SRCFG02001: Failed to Inject @ConfigProperty for key server.hosts into io.smallrye.config.inject.ValidateInjectionTest$BadIndexedPropertiesInjectionTest$BadIndexedPropertiesBean.badIndexedProp SRCFG00039:");
+
+        assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
+
+        assertThat(exception.getCause().getCause()).isInstanceOf(IllegalArgumentException.class);
+        assertThat(exception.getCause().getCause()).hasMessage(
+                "SRCFG00039: The config property server.hosts with the config value \"localhost\" threw an Exception whilst being converted");
+
+        assertThat(exception.getCause().getCause().getCause()).isInstanceOf(NumberFormatException.class);
+        assertThat(exception.getCause().getCause().getCause()).hasMessage(
+                "SRCFG00029: Expected an integer value, got \"localhost\"");
+
+    }
+
+    @Test
     void manyInjectionExceptions() {
         DeploymentException exception = getDeploymentException(ManyInjectionExceptionsTest.class);
         assertThat(exception).hasMessageStartingWith("Exception List with 3 exceptions:");
@@ -485,7 +517,7 @@ public class ValidateInjectionTest {
         }
 
         public static class SortInjectionPointsExtension extends ConfigExtension {
-            // Make sure we test the skiped property first for the validation to continue.
+            // Make sure we test the skipped property first for the validation to continue.
             @Override
             protected Set<InjectionPoint> getConfigPropertyInjectionPoints() {
                 return super.getConfigPropertyInjectionPoints().stream().sorted((o1, o2) -> {
@@ -624,6 +656,56 @@ public class ValidateInjectionTest {
             @Inject
             @ConfigProperty(name = "bad.property.expression.prop") // Exists but contains ${missing.prop} which doesn't 
             String missingExpressionProp;
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class MissingIndexedPropertiesInjectionTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MissingIndexedPropertiesBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        MissingIndexedPropertiesBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        static class MissingIndexedPropertiesBean {
+            @Inject
+            @ConfigProperty(name = "missing.indexed[0]") // missing.indexed[0] doesn't exist
+            String missingIndexedProp;
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class BadIndexedPropertiesInjectionTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, BadIndexedPropertiesBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        BadIndexedPropertiesBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        static class BadIndexedPropertiesBean {
+            @Inject
+            @ConfigProperty(name = "server.hosts") // "server.hosts[0]" and "server.hosts[1]" exist, but are Strings not Integers
+            List<Integer> badIndexedProp;
         }
     }
 
