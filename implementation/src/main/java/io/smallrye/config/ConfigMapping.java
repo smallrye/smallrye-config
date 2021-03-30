@@ -57,6 +57,10 @@ public @interface ConfigMapping {
         /**
          * The method name is derived by replacing case changes with a dash to map the configuration property.
          */
-        KEBAB_CASE;
+        KEBAB_CASE,
+        /**
+         * The method name is derived by replacing case changes with an underscore to map the configuration property.
+         */
+        SNAKE_CASE
     }
 }

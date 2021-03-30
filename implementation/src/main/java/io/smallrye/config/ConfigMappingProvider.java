@@ -89,10 +89,14 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     static String skewer(String camelHumps) {
-        return skewer(camelHumps, 0, camelHumps.length(), new StringBuilder());
+        return skewer(camelHumps, '-');
     }
 
-    static String skewer(String camelHumps, int start, int end, StringBuilder b) {
+    static String skewer(String camelHumps, char separator) {
+        return skewer(camelHumps, 0, camelHumps.length(), new StringBuilder(), separator);
+    }
+
+    private static String skewer(String camelHumps, int start, int end, StringBuilder b, char separator) {
         assert !camelHumps.isEmpty() : "Method seems to have an empty name";
         int cp = camelHumps.codePointAt(start);
         b.appendCodePoint(Character.toLowerCase(cp));
@@ -116,8 +120,8 @@ final class ConfigMappingProvider implements Serializable {
                     nextCp = camelHumps.codePointAt(start);
                     // combine non-letters in with this name
                     if (Character.isLowerCase(nextCp)) {
-                        b.append('-');
-                        return skewer(camelHumps, start, end, b);
+                        b.append(separator);
+                        return skewer(camelHumps, start, end, b, separator);
                     }
                 }
                 // unreachable
@@ -132,8 +136,8 @@ final class ConfigMappingProvider implements Serializable {
                     cp = camelHumps.codePointAt(start);
                     // combine non-letters in with this name
                     if (Character.isUpperCase(cp)) {
-                        b.append('-');
-                        return skewer(camelHumps, start, end, b);
+                        b.append(separator);
+                        return skewer(camelHumps, start, end, b, separator);
                     }
                     b.appendCodePoint(cp);
                     start += Character.charCount(cp);
@@ -147,8 +151,8 @@ final class ConfigMappingProvider implements Serializable {
                 cp = camelHumps.codePointAt(start);
                 // combine non-letters in with this name
                 if (Character.isUpperCase(cp)) {
-                    b.append('-');
-                    return skewer(camelHumps, start, end, b);
+                    b.append(separator);
+                    return skewer(camelHumps, start, end, b, separator);
                 }
                 b.appendCodePoint(cp);
                 start += Character.charCount(cp);
