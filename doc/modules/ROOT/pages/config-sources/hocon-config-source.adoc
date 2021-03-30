@@ -3,12 +3,8 @@
 
 ConfigSource implementation to support https://github.com/lightbend/config/blob/main/HOCON.md[HOCON] file format.
 
-This Configuration Source will be looking for the following files in this order of priority:
-
-. `META-INF/microprofile-config.conf`
-. `WEB-INF/classes/META-INF/microprofile-config.conf`
-
-These configuration files have a lower priority than the default sources.
+This Configuration Source will be looking for the following file `META-INF/microprofile-config.conf` and will be loaded
+with a lower ordinal than the default sources. The loading ordinal is `50`.
 
 === Usage
 
