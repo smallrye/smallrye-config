@@ -479,16 +479,24 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void namingStrategy() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerNamingStrategy.class, "server")
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerVerbatimNamingStrategy.class, "server")
+                .withMapping(ServerSnakeNamingStrategy.class, "server")
                 .withSources(config("server.theHost", "localhost", "server.thePort", "8080", "server.log.enabled", "true"))
+                .withSources(config("server.the_host", "127.0.0.1", "server.the_port", "80", "server.log.enabled", "true"))
                 .build();
 
-        final ServerNamingStrategy server = config.getConfigMapping(ServerNamingStrategy.class, "server");
-        assertNotNull(server);
-        assertEquals("localhost", server.theHost());
-        assertEquals(8080, Integer.valueOf(server.thePort()));
-        assertTrue(server.log().enabled());
+        ServerVerbatimNamingStrategy verbatim = config.getConfigMapping(ServerVerbatimNamingStrategy.class, "server");
+        assertNotNull(verbatim);
+        assertEquals("localhost", verbatim.theHost());
+        assertEquals(8080, Integer.valueOf(verbatim.thePort()));
+        assertTrue(verbatim.log().enabled());
+
+        ServerSnakeNamingStrategy snake = config.getConfigMapping(ServerSnakeNamingStrategy.class, "server");
+        assertNotNull(snake);
+        assertEquals("127.0.0.1", snake.theHost());
+        assertEquals(80, Integer.valueOf(snake.thePort()));
+        assertTrue(snake.log().enabled());
     }
 
     interface Server {
@@ -662,7 +670,20 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
-    public interface ServerNamingStrategy {
+    public interface ServerVerbatimNamingStrategy {
+        String theHost();
+
+        int thePort();
+
+        Log log();
+
+        interface Log {
+            boolean enabled();
+        }
+    }
+
+    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
+    public interface ServerSnakeNamingStrategy {
         String theHost();
 
         int thePort();
