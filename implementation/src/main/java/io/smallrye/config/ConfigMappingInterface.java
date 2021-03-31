@@ -786,6 +786,8 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
                     return VERBATIM_NAMING_STRATEGY;
                 case KEBAB_CASE:
                     return KEBAB_CASE_NAMING_STRATEGY;
+                case SNAKE_CASE:
+                    return SNAKE_CASE_NAMING_STRATEGY;
             }
         }
 
@@ -794,6 +796,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     private static final NamingStrategy VERBATIM_NAMING_STRATEGY = new VerbatimNamingStrategy();
     private static final NamingStrategy KEBAB_CASE_NAMING_STRATEGY = new KebabNamingStrategy();
+    private static final NamingStrategy SNAKE_CASE_NAMING_STRATEGY = new SnakeNamingStrategy();
 
     interface NamingStrategy extends Function<String, String> {
 
@@ -809,7 +812,14 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
     static class KebabNamingStrategy implements NamingStrategy {
         @Override
         public String apply(final String s) {
-            return ConfigMappingProvider.skewer(s);
+            return ConfigMappingProvider.skewer(s, '-');
+        }
+    }
+
+    static class SnakeNamingStrategy implements NamingStrategy {
+        @Override
+        public String apply(final String s) {
+            return ConfigMappingProvider.skewer(s, '_');
         }
     }
 }
