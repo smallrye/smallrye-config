@@ -23,7 +23,8 @@ And their values is the file content.
 Nested directories are not supported.
 
 This Config Source can be used to read configuration from
-https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap[Kubernetes ConfigMap].
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap[Kubernetes ConfigMap]. Check the
+https://github.com/smallrye/smallrye-config/blob/main/examples/configmap/README.adoc[Kubernetes ConfigMap ConfigSource Example].
 
 The same mapping rules as defined for environment variables are applied, so the FileSystemConfigSource will search for a given property name (e.g. com.ACME.size):
 
@@ -44,6 +45,5 @@ To use the FileSystem Config Source, add the following to your Maven `pom.xml`:
 </dependency>
 ----
 
-This Config Source is not automatically registered. This means that you also need to provide your own
-`ConfigSourceProvider` implementation and registration via `ServiceLoader` to use this Config Source like documented in
-MicroProfile Config `ConfigSource` specification.
+This Config Source register itself with the application if the dependency is present. Use the configuration property
+`smallrye.config.source.file.location` to set the directory path to lookup additional configurations.

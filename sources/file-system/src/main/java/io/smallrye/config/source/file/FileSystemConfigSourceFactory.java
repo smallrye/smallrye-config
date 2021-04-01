@@ -1,4 +1,4 @@
-package io.smallrye.config.examples.configmap;
+package io.smallrye.config.source.file;
 
 import java.util.Collections;
 import java.util.OptionalInt;
@@ -8,14 +8,15 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigSourceFactory;
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.source.file.FileSystemConfigSource;
 
-public class ConfigMapConfigSourceFactory implements ConfigSourceFactory {
+public class FileSystemConfigSourceFactory implements ConfigSourceFactory {
+    public static final String SMALLRYE_CONFIG_SOURCE_FILE_LOCATION = "smallrye.config.source.file.location";
+
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-        final ConfigValue value = context.getValue("config.map.dir.source");
+        final ConfigValue value = context.getValue(SMALLRYE_CONFIG_SOURCE_FILE_LOCATION);
         if (value == null || value.getValue() == null) {
-            throw new IllegalArgumentException("CONFIG_MAP_DIR_SOURCE not defined");
+            return Collections.emptyList();
         }
 
         return Collections.singletonList(new FileSystemConfigSource(value.getValue()));
@@ -23,6 +24,6 @@ public class ConfigMapConfigSourceFactory implements ConfigSourceFactory {
 
     @Override
     public OptionalInt getPriority() {
-        return OptionalInt.of(200);
+        return OptionalInt.of(290);
     }
 }

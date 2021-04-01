@@ -35,7 +35,7 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: CONFIG_MAP_DIR_SOURCE
+            - name: SMALLRYE_CONFIG_SOURCE_FILE_LOCATION
               value: "/usr/local/apps/config"
           volumeMounts:
             - name: configmap-app
