@@ -16,33 +16,13 @@ dependency in the project that wants to read configuration from Kubernetes Confi
 </dependency>
 ----
 
-== Implementation
+== Registration
 
-The `FileSystemConfigSource` needs to be registed with the application. The recommended way is to use a
-`ConfigSourceFactory` via the standard ServiceLoader mechanism. The factory gives the option to configure the
-`FileSystemConfigSource` with higher priority ConfigSources.
+The `smallrye-config-source-file-system` automatically registers a `FileSystemConfigSourceFactory` that accepts the
+configuration property `smallrye.config.source.file.location` to set the volume path and read the Kubernetes ConfigMap.
 
-[source,java]
-----
-public class ConfigMapConfigSourceFactory implements ConfigSourceFactory {
-    @Override
-    public ConfigSource getSource(final ConfigSourceContext context) {
-        final ConfigValue value = context.getValue("CONFIG_MAP_DIR_SOURCE");
-        if (value == null || value.getValue() == null) {
-            throw new IllegalArgumentException("CONFIG_MAP_DIR_SOURCE not defined");
-        }
-
-        return new FileSystemConfigSource(value.getValue());
-    }
-
-    @Override
-    public OptionalInt getPriority() {
-        return OptionalInt.of(200);
-    }
-}
-----
-
-In this case, the volume path to read the Kubernetes ConfigMap comes from an environment variable configuration.
+Usually, an environment variable `SMALLRYE_CONFIG_SOURCE_FILE_LOCATION` sets the ConfigMap location in the Kubernetes
+file descriptor.
 
 == Run
 
