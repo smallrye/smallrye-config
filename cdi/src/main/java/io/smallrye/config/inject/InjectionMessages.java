@@ -9,17 +9,18 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.annotations.Param;
+import org.jboss.logging.annotations.Pos;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface InjectionMessages {
     InjectionMessages msg = Messages.getBundle(InjectionMessages.class);
 
     @Message(id = 2000, value = "Failed to Inject @ConfigProperty for key %s into %s since the config property could not be found in any config source")
-    ConfigInjectionException noConfigValue(String key, String location, @Param String configPropertyName);
+    ConfigInjectionException noConfigValue(@Param @Pos(1) String configPropertyName, @Pos(2) String location);
 
     @Message(id = 2001, value = "Failed to Inject @ConfigProperty for key %s into %s %s")
-    ConfigInjectionException retrieveConfigFailure(String key, String location, String causeMessage,
-            @Param String configPropertyName, @Cause Exception e);
+    ConfigInjectionException retrieveConfigFailure(@Param @Pos(1) String configPropertyName, @Pos(2) String location,
+            @Pos(3) String causeMessage, @Cause Exception e);
 
     @Message(id = 2002, value = "Could not find default name for @ConfigProperty InjectionPoint %s")
     IllegalStateException noConfigPropertyDefaultName(InjectionPoint injectionPoint);

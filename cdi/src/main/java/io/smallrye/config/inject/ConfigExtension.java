@@ -151,7 +151,7 @@ public class ConfigExtension implements Extension {
             } catch (IllegalStateException e) {
                 adv.addDeploymentProblem(
                         InjectionMessages.msg.retrieveConfigFailure(null, formatInjectionPoint(injectionPoint),
-                                e.getLocalizedMessage(), null, e));
+                                e.getLocalizedMessage(), e));
                 continue;
             }
 
@@ -162,7 +162,7 @@ public class ConfigExtension implements Extension {
                     && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(
-                            InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint), name));
+                            InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint)));
                     continue;
                 }
             }
@@ -172,7 +172,7 @@ public class ConfigExtension implements Extension {
                 ConfigProducerUtil.getValue(injectionPoint, config);
             } catch (Exception e) {
                 adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, formatInjectionPoint(injectionPoint),
-                        e.getLocalizedMessage(), name, e));
+                        e.getLocalizedMessage(), e));
             }
         }
 

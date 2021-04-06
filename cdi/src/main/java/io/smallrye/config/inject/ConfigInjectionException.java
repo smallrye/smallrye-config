@@ -29,7 +29,7 @@ public class ConfigInjectionException extends Exception {
     private final String configPropertyName;
 
     /**
-     * Constructor for {@link InjectionMessages#noConfigValue(String, String, String)}
+     * Constructor for {@link InjectionMessages#noConfigValue(String, String)}
      */
     public ConfigInjectionException(String message, String configPropertyName) {
         super(message);
@@ -37,7 +37,7 @@ public class ConfigInjectionException extends Exception {
     }
 
     /**
-     * Constructor for {@link InjectionMessages#retrieveConfigFailure(String, String, String, String, Exception)}
+     * Constructor for {@link InjectionMessages#retrieveConfigFailure(String, String, String, Exception)}
      */
     public ConfigInjectionException(String message, String configPropertyName, Throwable cause) {
         super(message, cause);
