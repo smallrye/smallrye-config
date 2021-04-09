@@ -713,7 +713,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void mapsInGroup() throws Exception {
+    void mapsInGroup() {
         final Map<String, String> typesConfig = new HashMap<String, String>() {
             {
                 put("server.info.name", "naruto");
@@ -800,5 +800,79 @@ class ConfigMappingInterfaceTest {
         assertTrue(exception.getCause() instanceof ConfigValidationException);
         assertEquals("cloud.server.name does not map to any root",
                 ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
+    }
+
+    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
+    public interface ServerComposedSnakeNaming {
+        String theHost();
+
+        int thePort();
+
+        LogInheritedNaming log();
+    }
+
+    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
+    public interface ServerComposedVerbatimNaming {
+        String theHost();
+
+        int thePort();
+
+        LogInheritedNaming log();
+    }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerComposedKebabNaming {
+        String theHost();
+
+        int thePort();
+
+        LogInheritedNaming log();
+    }
+
+    public interface LogInheritedNaming {
+        boolean isEnabled();
+
+        List<Appender> logAppenders();
+
+        interface Appender {
+            String logName();
+        }
+    }
+
+    @Test
+    void composedNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidateUnknown(false)
+                .withMapping(ServerComposedSnakeNaming.class, "server")
+                .withMapping(ServerComposedVerbatimNaming.class, "server")
+                .withMapping(ServerComposedKebabNaming.class, "server")
+                .withSources(config("server.the_host", "localhost", "server.the_port", "8080"))
+                .withSources(config("server.log.is_enabled", "true", "server.log.log_appenders[0].log_name", "log"))
+                .withSources(config("server.theHost", "localhost", "server.thePort", "8080"))
+                .withSources(config("server.log.isEnabled", "true", "server.log.logAppenders[0].logName", "log"))
+                .withSources(config("server.the-host", "localhost", "server.the-port", "8080"))
+                .withSources(config("server.log.is-enabled", "true", "server.log.log-appenders[0].log-name", "log"))
+                .build();
+
+        ServerComposedSnakeNaming snake = config.getConfigMapping(ServerComposedSnakeNaming.class);
+        assertNotNull(snake);
+        assertEquals("localhost", snake.theHost());
+        assertEquals(8080, Integer.valueOf(snake.thePort()));
+        assertTrue(snake.log().isEnabled());
+        assertEquals("log", snake.log().logAppenders().get(0).logName());
+
+        ServerComposedVerbatimNaming verbatim = config.getConfigMapping(ServerComposedVerbatimNaming.class);
+        assertNotNull(verbatim);
+        assertEquals("localhost", verbatim.theHost());
+        assertEquals(8080, Integer.valueOf(verbatim.thePort()));
+        assertTrue(verbatim.log().isEnabled());
+        assertEquals("log", verbatim.log().logAppenders().get(0).logName());
+
+        ServerComposedKebabNaming kebab = config.getConfigMapping(ServerComposedKebabNaming.class);
+        assertNotNull(kebab);
+        assertEquals("localhost", kebab.theHost());
+        assertEquals(8080, Integer.valueOf(kebab.thePort()));
+        assertTrue(kebab.log().isEnabled());
+        assertEquals("log", kebab.log().logAppenders().get(0).logName());
     }
 }
