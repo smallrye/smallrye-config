@@ -27,8 +27,8 @@ public class YamlConfigSourceProvider extends AbstractLocationConfigSourceLoader
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
         final List<ConfigSource> sources = new ArrayList<>();
-        sources.addAll(loadConfigSources("META-INF/microprofile-config.yaml", classLoader));
-        sources.addAll(loadConfigSources("META-INF/microprofile-config.yml", classLoader));
+        sources.addAll(loadConfigSources("META-INF/microprofile-config.yaml", 110, classLoader));
+        sources.addAll(loadConfigSources("META-INF/microprofile-config.yml", 110, classLoader));
         return sources;
     }
 }

@@ -26,11 +26,6 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
     }
 
     @Override
-    protected ConfigSource loadConfigSource(final URL url) throws IOException {
-        return loadConfigSource(url, 295);
-    }
-
-    @Override
     protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
         return new EnvConfigSource(ConfigSourceUtil.urlToMap(url), ordinal) {
             @Override
@@ -42,7 +37,7 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
 
     @Override
     public List<ConfigSource> getConfigSources(final ClassLoader forClassLoader) {
-        return loadConfigSources(location, forClassLoader);
+        return loadConfigSources(location, 295, forClassLoader);
     }
 
     public static List<ConfigSource> dotEnvSources(final ClassLoader classLoader) {
