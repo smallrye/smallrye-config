@@ -167,14 +167,10 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getPropertyName() {
-            return getPropertyName(KEBAB_CASE_NAMING_STRATEGY);
-        }
-
-        public String getPropertyName(final NamingStrategy namingStrategy) {
             if (isParentPropertyName()) {
                 return propertyName;
             }
-            return hasPropertyName() && !propertyName.isEmpty() ? propertyName : namingStrategy.apply(method.getName());
+            return hasPropertyName() && !propertyName.isEmpty() ? propertyName : method.getName();
         }
 
         public boolean hasPropertyName() {
@@ -530,7 +526,6 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         private final Property element;
 
         CollectionProperty(final Class<?> collectionType, final Property element) {
-            // TODO - Naming Strategy
             super(element.getMethod(), element.getPropertyName());
             this.collectionRawType = collectionType;
             this.element = element;

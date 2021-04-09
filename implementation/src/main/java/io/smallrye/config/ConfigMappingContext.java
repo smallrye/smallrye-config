@@ -26,6 +26,7 @@ import java.util.function.IntFunction;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
+import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
 
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
@@ -41,6 +42,8 @@ public final class ConfigMappingContext {
     private final SmallRyeConfig config;
     private final StringBuilder stringBuilder = new StringBuilder();
     private final ArrayList<Problem> problems = new ArrayList<>();
+
+    private NamingStrategy namingStrategy = null;
 
     ConfigMappingContext(final SmallRyeConfig config) {
         this.config = config;
@@ -66,6 +69,11 @@ public final class ConfigMappingContext {
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())
                 .computeIfAbsent(key, x -> new IdentityHashMap<>())
                 .put(enclosingObject, value);
+    }
+
+    public <T> T constructRoot(Class<T> interfaceType) {
+        this.namingStrategy = ConfigMappingInterface.getConfigurationInterface(interfaceType).getNamingStrategy();
+        return constructGroup(interfaceType);
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
@@ -175,6 +183,10 @@ public final class ConfigMappingContext {
                 throw new NoSuchMethodError(e.getMessage());
             }
         });
+    }
+
+    public String applyNamingStrategy(final String name) {
+        return namingStrategy.apply(name);
     }
 
     public static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {

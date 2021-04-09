@@ -395,7 +395,7 @@ public class ConfigMappingGenerator {
                 // register the group
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
-                ctor.visitLdcInsn(property.getPropertyName(mapping.getNamingStrategy()));
+                ctor.visitLdcInsn(property.getPropertyName());
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 ctor.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
@@ -420,7 +420,6 @@ public class ConfigMappingGenerator {
                 // stack: this config key
                 // get the converter to use
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
-                //    public <T> Converter<T> getValueConverter(Class<?> enclosingType, String field) {
                 ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
                 ctor.visitLdcInsn(memberName);
                 ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
@@ -565,14 +564,13 @@ public class ConfigMappingGenerator {
 
         ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
 
-        // stack: sb
-        // TODO - NammingStrategy
-        // The NamingStrategy comes from the current mapping interface. We don't support setting a NamingStrategy in
-        // the top of the config root for all the configs in that root to inherit the same NamingStrategy. This needs
-        // to be handled per instance (since groups may belong to different roots), so the NamingStrategy should be
-        // retrieved from the Context. This is just a first implementation that could move into that direction, which
-        // needs more work.
-        ctor.visitLdcInsn(property.getPropertyName(mapping.getNamingStrategy()));
+        ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+
+        ctor.visitLdcInsn(property.getPropertyName());
+
+        ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT,
+                "applyNamingStrategy", "(L" + I_STRING + ";)L" + I_STRING + ";", false);
+
         // stack: sb name
         ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "append",
                 "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ';', false);
