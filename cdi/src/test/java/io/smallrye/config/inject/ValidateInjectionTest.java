@@ -327,14 +327,18 @@ public class ValidateInjectionTest {
                 "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.emptyProp SRCFG00040: The config property empty.property is defined as the empty String (\"\") which the following Converter considered to be null: io.smallrye.config.Converters$BuiltInConverter");
         assertThat(exception).hasMessageContaining(
                 "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.badProp SRCFG00041: The config property bad.property with the config value \",\" was converted to null from the following Converter: io.smallrye.config.Converters$ArrayConverter");
+        String newLineChar = System.lineSeparator();
         assertThat(exception).hasMessageContaining(
-                "SRCFG02003: Failed to create @ConfigProperties bean with prefix server for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsPropertiesBean. Configuration validation failed:\n"
+                "SRCFG02003: Failed to create @ConfigProperties bean with prefix server for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsPropertiesBean. Configuration validation failed:"
+                        + newLineChar
                         + "	java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
         assertThat(exception).hasMessageContaining(
-                "SRCFG02003: Failed to create @ConfigProperties bean with prefix client for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ClientDetailsPropertiesBean. Configuration validation failed:\n"
+                "SRCFG02003: Failed to create @ConfigProperties bean with prefix client for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ClientDetailsPropertiesBean. Configuration validation failed:"
+                        + newLineChar
                         + "	java.util.NoSuchElementException: SRCFG00014: The config property client.host is required but it could not be found in any config source");
         assertThat(exception).hasMessageContaining(
-                "SRCFG02004: Failed to create @ConfigMapping bean with prefix server for interface io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsMappingBean. Configuration validation failed:\n"
+                "SRCFG02004: Failed to create @ConfigMapping bean with prefix server for interface io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsMappingBean. Configuration validation failed:"
+                        + newLineChar
                         + "	java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
 
         assertThat(exception.getSuppressed()).hasSize(6);
