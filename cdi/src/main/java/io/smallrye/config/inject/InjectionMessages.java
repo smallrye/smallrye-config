@@ -25,15 +25,21 @@ public interface InjectionMessages {
     @Message(id = 2002, value = "Could not find default name for @ConfigProperty InjectionPoint %s")
     IllegalStateException noConfigPropertyDefaultName(InjectionPoint injectionPoint);
 
-    @Message(id = 2003, value = "Failed to create @ConfigProperties bean %s")
-    ConfigInjectionException retrieveConfigPropertiesFailure(String causeMessage, @Cause Exception e);
+    @Message(id = 2003, value = "Failed to create @ConfigProperties bean with prefix %s for class %s. %s")
+    ConfigInjectionException retrieveConfigPropertiesFailure(String prefix, String className, String causeMessage,
+            @Cause Exception e);
 
-    @Message(id = 2004, value = "Unhandled ConfigProperty")
+    @Message(id = 2004, value = "Failed to create @ConfigMapping bean with prefix %s for interface %s. %s")
+    ConfigInjectionException retrieveConfigMappingsFailure(String prefix, String interfaceName, String causeMessage,
+            @Cause Exception e);
+
+    @Message(id = 2005, value = "Unhandled ConfigProperty")
     IllegalStateException unhandledConfigProperty();
 
-    @Message(id = 2005, value = "Type has no raw type class: %s")
+    @Message(id = 2006, value = "Type has no raw type class: %s")
     IllegalArgumentException noRawType(Type type);
 
-    @Message(id = 2006, value = "No Converter registered for %s")
+    @Message(id = 2007, value = "No Converter registered for %s")
     IllegalArgumentException noRegisteredConverter(Class<?> type);
+
 }

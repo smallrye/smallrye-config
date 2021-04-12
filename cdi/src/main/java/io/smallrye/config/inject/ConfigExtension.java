@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toSet;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -176,22 +177,35 @@ public class ConfigExtension implements Extension {
             }
         }
 
-        Set<ConfigMappings.ConfigMappingWithPrefix> configMappingsWithPrefix = new HashSet<>();
         for (AnnotatedType<?> configMapping : configMappings) {
-            configMappingsWithPrefix
-                    .add(configMappingWithPrefix(configMapping.getJavaClass(), getPrefixFromType(configMapping)));
+            registerAndValidateConfigMapping(
+                    configMappingWithPrefix(configMapping.getJavaClass(), getPrefixFromType(configMapping)), adv,
+                    (SmallRyeConfig) config);
         }
 
         for (InjectionPoint injectionPoint : configMappingInjectionPoints) {
-            getPrefixFromInjectionPoint(injectionPoint).ifPresent(prefix -> configMappingsWithPrefix
-                    .add(configMappingWithPrefix((Class<?>) injectionPoint.getType(), prefix)));
+            getPrefixFromInjectionPoint(injectionPoint).ifPresent(prefix -> registerAndValidateConfigMapping(
+                    configMappingWithPrefix((Class<?>) injectionPoint.getType(), prefix), adv, (SmallRyeConfig) config));
         }
 
-        try {
-            ConfigMappings.registerConfigMappings((SmallRyeConfig) config, configMappingsWithPrefix);
-        } catch (ConfigValidationException e) {
-            adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigPropertiesFailure(e.getLocalizedMessage(), e));
+    }
 
+    private void registerAndValidateConfigMapping(ConfigMappings.ConfigMappingWithPrefix cm, AfterDeploymentValidation adv,
+            SmallRyeConfig config) {
+        try {
+            ConfigMappings.registerConfigMappings(config, Collections.singleton(cm));
+        } catch (ConfigValidationException e) {
+            if (cm.getKlass().getAnnotation(ConfigMapping.class) != null) {
+                adv.addDeploymentProblem(
+                        InjectionMessages.msg.retrieveConfigMappingsFailure(cm.getPrefix(), cm.getKlass().getName(),
+                                e.getLocalizedMessage(), e));
+            } else if (cm.getKlass().getAnnotation(ConfigProperties.class) != null) {
+                adv.addDeploymentProblem(
+                        InjectionMessages.msg.retrieveConfigPropertiesFailure(cm.getPrefix(), cm.getKlass().getName(),
+                                e.getLocalizedMessage(), e));
+            } else {
+                adv.addDeploymentProblem(e);
+            }
         }
     }
 

@@ -24,7 +24,14 @@ public final class ConfigMappings implements Serializable {
     }
 
     void registerConfigMappings(final Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
-        this.mappings.putAll(mappings);
+        // If the @ConfigMapping or @ConfigProperties interface/class already exists in this.mappings then append the new Map<String, ConfigMappingObject> object to it.
+        for (Class<?> c : mappings.keySet()) {
+            if (this.mappings.containsKey(c)) {
+                this.mappings.get(c).putAll(mappings.get(c));
+            } else {
+                this.mappings.put(c, mappings.get(c));
+            }
+        }
     }
 
     public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)

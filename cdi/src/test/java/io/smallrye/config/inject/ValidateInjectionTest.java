@@ -40,6 +40,7 @@ import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.junit.platform.testkit.engine.Event;
 
+import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValue;
@@ -193,13 +194,13 @@ public class ValidateInjectionTest {
     void MissingConverter() {
         DeploymentException exception = getDeploymentException(MissingConverterTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02001: Failed to Inject @ConfigProperty for key my.prop into io.smallrye.config.inject.ValidateInjectionTest$MissingConverterTest$MissingConverterBean.myProp SRCFG02006:");
+                "SRCFG02001: Failed to Inject @ConfigProperty for key my.prop into io.smallrye.config.inject.ValidateInjectionTest$MissingConverterTest$MissingConverterBean.myProp SRCFG02007:");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
         assertThat(exception.getCause().getCause()).isInstanceOf(java.lang.IllegalArgumentException.class);
         assertThat(exception.getCause().getCause()).hasMessage(
-                "SRCFG02006: No Converter registered for class io.smallrye.config.inject.ValidateInjectionTest$MissingConverterTest$MyType");
+                "SRCFG02007: No Converter registered for class io.smallrye.config.inject.ValidateInjectionTest$MissingConverterTest$MyType");
     }
 
     @Test
@@ -242,10 +243,12 @@ public class ValidateInjectionTest {
     }
 
     @Test
-    void missingConfigPropertiesInjection() {
-        DeploymentException exception = getDeploymentException(MissingConfigPropertiesInjectionTest.class);
+    void badConfigPropertiesInjection() {
+        DeploymentException exception = getDeploymentException(BadConfigPropertiesInjectionTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02003: Failed to create @ConfigProperties bean Configuration validation failed");
+                "SRCFG02003: Failed to create @ConfigProperties bean with prefix server for class io.smallrye.config.inject.ValidateInjectionTest$BadConfigPropertiesInjectionTest$ServerDetailsBean. Configuration validation failed");
+        assertThat(exception).hasMessageContaining(
+                "java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
         assertThat(exception).hasMessageContaining(
                 "java.util.NoSuchElementException: SRCFG00014: The config property server.missingPort is required but it could not be found in any config source");
 
@@ -255,12 +258,14 @@ public class ValidateInjectionTest {
     }
 
     @Test
-    void badConfigPropertiesInjection() {
-        DeploymentException exception = getDeploymentException(BadConfigPropertiesInjectionTest.class);
+    void badConfigMappingInjection() {
+        DeploymentException exception = getDeploymentException(BadConfigMappingInjectionTest.class);
         assertThat(exception).hasMessageStartingWith(
-                "SRCFG02003: Failed to create @ConfigProperties bean Configuration validation failed");
+                "SRCFG02004: Failed to create @ConfigMapping bean with prefix server for interface io.smallrye.config.inject.ValidateInjectionTest$BadConfigMappingInjectionTest$ServerDetailsBean. Configuration validation failed:");
         assertThat(exception).hasMessageContaining(
                 "java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
+        assertThat(exception).hasMessageContaining(
+                "java.util.NoSuchElementException: SRCFG00014: The config property server.missing-port is required but it could not be found in any config source");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigInjectionException.class);
 
@@ -314,7 +319,7 @@ public class ValidateInjectionTest {
     @Test
     void manyInjectionExceptions() {
         DeploymentException exception = getDeploymentException(ManyInjectionExceptionsTest.class);
-        assertThat(exception).hasMessageStartingWith("Exception List with 3 exceptions:");
+        assertThat(exception).hasMessageStartingWith("Exception List with 6 exceptions:");
 
         assertThat(exception).hasMessageContaining(
                 "SRCFG02000: Failed to Inject @ConfigProperty for key missing.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.missingProp since the config property could not be found in any config source");
@@ -322,10 +327,18 @@ public class ValidateInjectionTest {
                 "SRCFG02001: Failed to Inject @ConfigProperty for key empty.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.emptyProp SRCFG00040: The config property empty.property is defined as the empty String (\"\") which the following Converter considered to be null: io.smallrye.config.Converters$BuiltInConverter");
         assertThat(exception).hasMessageContaining(
                 "SRCFG02001: Failed to Inject @ConfigProperty for key bad.property into io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ManyInjectionExceptionsBean.badProp SRCFG00041: The config property bad.property with the config value \",\" was converted to null from the following Converter: io.smallrye.config.Converters$ArrayConverter");
+        assertThat(exception).hasMessageContaining(
+                "SRCFG02003: Failed to create @ConfigProperties bean with prefix server for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsPropertiesBean. Configuration validation failed:\n"
+                        + "	java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
+        assertThat(exception).hasMessageContaining(
+                "SRCFG02003: Failed to create @ConfigProperties bean with prefix client for class io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ClientDetailsPropertiesBean. Configuration validation failed:\n"
+                        + "	java.util.NoSuchElementException: SRCFG00014: The config property client.host is required but it could not be found in any config source");
+        assertThat(exception).hasMessageContaining(
+                "SRCFG02004: Failed to create @ConfigMapping bean with prefix server for interface io.smallrye.config.inject.ValidateInjectionTest$ManyInjectionExceptionsTest$ServerDetailsMappingBean. Configuration validation failed:\n"
+                        + "	java.lang.IllegalArgumentException: SRCFG00039: The config property server.host with the config value \"localhost\" threw an Exception whilst being converted");
 
-        assertThat(exception.getSuppressed()).hasSize(3);
+        assertThat(exception.getSuppressed()).hasSize(6);
         assertThat(exception.getSuppressed()).allMatch((e) -> e instanceof ConfigInjectionException);
-
     }
 
     @Test
@@ -584,43 +597,13 @@ public class ValidateInjectionTest {
     }
 
     @ExtendWith(WeldJunit5Extension.class)
-    static class MissingConfigPropertiesInjectionTest {
+    static class BadConfigPropertiesInjectionTest  {
         @WeldSetup
         WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerDetailsBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
                 .build();
-
-        @Inject
-        @ConfigProperties
-        ServerDetailsBean server;
-
-        @Test
-        void fail() {
-            Assertions.fail();
-        }
-
-        @Dependent
-        @ConfigProperties(prefix = "server")
-        public static class ServerDetailsBean {
-            public String host;
-            public int missingPort; // server.missingPort doesn't exist
-        }
-    }
-
-    @ExtendWith(WeldJunit5Extension.class)
-    static class BadConfigPropertiesInjectionTest {
-        @WeldSetup
-        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerDetailsBean.class)
-                .addBeans()
-                .activate(ApplicationScoped.class)
-                .inject(this)
-                .build();
-
-        @Inject
-        @ConfigProperties
-        ServerDetailsBean server;
 
         @Test
         void fail() {
@@ -631,6 +614,30 @@ public class ValidateInjectionTest {
         @ConfigProperties(prefix = "server")
         public static class ServerDetailsBean {
             public int host; // server.host cannot be converted to type int
+            public int missingPort; // server.missingPort doesn't exist
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class BadConfigMappingInjectionTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerDetailsBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @Dependent
+        @ConfigMapping(prefix = "server")
+        interface ServerDetailsBean {
+            int host(); // server.host cannot be converted to type int
+
+            int missingPort(); // server.missingPort doesn't exist
         }
     }
 
@@ -712,7 +719,9 @@ public class ValidateInjectionTest {
     @ExtendWith(WeldJunit5Extension.class)
     static class ManyInjectionExceptionsTest {
         @WeldSetup
-        WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ManyInjectionExceptionsBean.class)
+        WeldInitiator weld = WeldInitiator
+                .from(ConfigExtension.class, ManyInjectionExceptionsBean.class, ServerDetailsPropertiesBean.class,
+                        ClientDetailsPropertiesBean.class, ServerDetailsMappingBean.class)
                 .addBeans()
                 .activate(ApplicationScoped.class)
                 .inject(this)
@@ -739,6 +748,24 @@ public class ValidateInjectionTest {
             @Inject
             @ConfigProperty(name = "bad.property")
             String[] badProp;
+        }
+
+        @Dependent
+        @ConfigProperties(prefix = "server")
+        public static class ServerDetailsPropertiesBean {
+            public int host; // server.host cannot be converted to type int
+        }
+
+        @Dependent
+        @ConfigProperties(prefix = "client")
+        public static class ClientDetailsPropertiesBean {
+            public int host; // client.host doesn't exist
+        }
+
+        @Dependent
+        @ConfigMapping(prefix = "server")
+        interface ServerDetailsMappingBean {
+            int host(); // server.host cannot be converted to type int
         }
     }
 
