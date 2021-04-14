@@ -769,7 +769,7 @@ final class ConfigMappingProvider implements Serializable {
     public static final class Builder {
         final Map<String, List<Class<?>>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
-        boolean validateUnknown = true;
+        boolean validateUnknown = ConfigMappings.VALIDATE_UNKNOWN_DEFAULT;
 
         Builder() {
         }

@@ -820,7 +820,8 @@ class ConfigMappingInterfaceTest {
                 .withMapping(ServerPrefix.class, "server")
                 .withSources(config("serverBoot", "server"))
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
-                .withSources(config("server.name", "localhost"));
+                .withSources(config("server.name", "localhost"))
+                .withValidateUnknown(true);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, builder::build);
         assertTrue(exception.getCause() instanceof ConfigValidationException);
@@ -835,7 +836,8 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
                 .withSources(config("cloud.serverBoot", "server"))
                 .withSources(config("cloud.server.host", "localhost", "cloud.server.port", "8080"))
-                .withSources(config("cloud.server.name", "localhost"));
+                .withSources(config("cloud.server.name", "localhost"))
+                .withValidateUnknown(true);
 
         exception = assertThrows(IllegalStateException.class, builder::build);
         assertTrue(exception.getCause() instanceof ConfigValidationException);
