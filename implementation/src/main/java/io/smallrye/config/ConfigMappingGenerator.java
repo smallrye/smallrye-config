@@ -399,7 +399,7 @@ public class ConfigMappingGenerator {
             if (property.isCollection() || realProperty.isCollection() && optional) {
                 ctor.visitVarInsn(ALOAD, V_THIS);
                 // append property name
-                boolean restoreLength = appendPropertyName(ctor, mapping, property);
+                boolean restoreLength = appendPropertyName(ctor, property);
 
                 ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';', false);
@@ -456,28 +456,63 @@ public class ConfigMappingGenerator {
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
                     ctor.visitVarInsn(ISTORE, 9);
 
-                    // append collection index
-                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-                    ctor.visitLdcInsn('[');
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';',
-                            false);
+                    // construct collection index
+                    ctor.visitTypeInsn(NEW, I_STRING_BUILDER);
+                    ctor.visitInsn(DUP);
+                    ctor.visitMethodInsn(INVOKESPECIAL, I_STRING_BUILDER, "<init>", "()V", false);
+                    ctor.visitLdcInsn("[");
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
                     ctor.visitVarInsn(ALOAD, 8);
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
-                            "(L" + I_OBJECT + ";)L" + I_STRING_BUILDER + ';', false);
-                    ctor.visitLdcInsn(']');
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';',
+                            "(L" + I_OBJECT + ";)L" + I_STRING_BUILDER + ";", false);
+                    ctor.visitLdcInsn("]");
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ";",
                             false);
+                    ctor.visitVarInsn(ASTORE, 10);
+
+                    // append collection index
+                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                    ctor.visitVarInsn(ALOAD, 10);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
                     ctor.visitInsn(POP);
 
-                    // add Group with indexed properties as a Collection element
-                    ctor.visitVarInsn(ALOAD, 5);
+                    // create group
                     ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
                     ctor.visitLdcInsn(
                             getType(realProperty.asCollection().getElement().asGroup().getGroupType().getInterfaceType()));
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "constructGroup",
                             "(L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                    ctor.visitVarInsn(ASTORE, 11);
+
+                    // add group to collection
+                    ctor.visitVarInsn(ALOAD, 5);
+                    ctor.visitTypeInsn(CHECKCAST, I_COLLECTION);
+                    ctor.visitVarInsn(ALOAD, 11);
                     ctor.visitMethodInsn(INVOKEINTERFACE, I_COLLECTION, "add", "(L" + I_OBJECT + ";)Z", true);
                     ctor.visitInsn(POP);
+
+                    // register indexed enclosing element
+                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
+                    ctor.visitTypeInsn(NEW, I_STRING_BUILDER);
+                    ctor.visitInsn(DUP);
+                    ctor.visitMethodInsn(INVOKESPECIAL, I_STRING_BUILDER, "<init>", "()V", false);
+                    ctor.visitLdcInsn(property.getPropertyName());
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
+                    ctor.visitVarInsn(ALOAD, 10);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ";", false);
+                    ctor.visitVarInsn(ALOAD, V_THIS);
+                    ctor.visitVarInsn(ALOAD, 11);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "registerEnclosedField",
+                            "(L" + I_CLASS + ";L" + I_STRING + ";L" + I_OBJECT + ";L" + I_OBJECT + ";)V",
+                            false);
 
                     // reset sb without index
                     ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
@@ -595,7 +630,7 @@ public class ConfigMappingGenerator {
                 fio.visitLabel(_done);
             } else if (property.isGroup()) {
                 // stack: -
-                boolean restoreLength = appendPropertyName(ctor, mapping, property);
+                boolean restoreLength = appendPropertyName(ctor, property);
                 // stack: -
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 // stack: ctxt
@@ -627,7 +662,7 @@ public class ConfigMappingGenerator {
                 // stack: -
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 // stack: this
-                boolean restoreLength = appendPropertyName(ctor, mapping, property);
+                boolean restoreLength = appendPropertyName(ctor, property);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';',
                         false);
@@ -753,8 +788,7 @@ public class ConfigMappingGenerator {
         }
     }
 
-    private static boolean appendPropertyName(final MethodVisitor ctor, final ConfigMappingInterface mapping,
-            final Property property) {
+    private static boolean appendPropertyName(final MethodVisitor ctor, final Property property) {
         if (property.isParentPropertyName()) {
             return false;
         }
