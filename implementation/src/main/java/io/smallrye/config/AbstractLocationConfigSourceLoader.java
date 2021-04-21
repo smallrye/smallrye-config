@@ -49,27 +49,38 @@ import io.smallrye.common.annotation.Experimental;
 public abstract class AbstractLocationConfigSourceLoader {
     private static final Converter<URI> URI_CONVERTER = new URIConverter();
 
+    /**
+     * The file extensions to filter the locations to load. It does not require to include the dot separator.
+     *
+     * @return an array with the file extensions.
+     */
     protected abstract String[] getFileExtensions();
 
+    /**
+     * Loads a {@link ConfigSource} from an {@link URL}. Implementations must construct the {@link ConfigSource} to
+     * load.
+     *
+     * @param url the {@link URL} to load the {@link ConfigSource}.
+     * @param ordinal the ordinal of the {@link ConfigSource}.
+     *
+     * @return the loaded {@link ConfigSource}.
+     * @throws IOException if an error occurred when reading from the the {@link URL}.
+     */
     protected abstract ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException;
 
-    protected ConfigSource loadConfigSource(final URL url) throws IOException {
-        return this.loadConfigSource(url, ConfigSource.DEFAULT_ORDINAL);
+    protected List<ConfigSource> loadConfigSources(final String location, final int ordinal) {
+        return loadConfigSources(new String[] { location }, ordinal);
     }
 
-    protected List<ConfigSource> loadConfigSources(final String location) {
-        return loadConfigSources(new String[] { location });
+    protected List<ConfigSource> loadConfigSources(final String location, final int ordinal, final ClassLoader classLoader) {
+        return loadConfigSources(new String[] { location }, ordinal, classLoader);
     }
 
-    protected List<ConfigSource> loadConfigSources(final String location, final ClassLoader classLoader) {
-        return loadConfigSources(new String[] { location }, classLoader);
+    protected List<ConfigSource> loadConfigSources(final String[] locations, final int ordinal) {
+        return loadConfigSources(locations, ordinal, SecuritySupport.getContextClassLoader());
     }
 
-    protected List<ConfigSource> loadConfigSources(final String[] locations) {
-        return loadConfigSources(locations, SecuritySupport.getContextClassLoader());
-    }
-
-    protected List<ConfigSource> loadConfigSources(final String[] locations, final ClassLoader classLoader) {
+    protected List<ConfigSource> loadConfigSources(final String[] locations, final int ordinal, final ClassLoader classLoader) {
         if (locations == null || locations.length == 0) {
             return Collections.emptyList();
         }
@@ -78,14 +89,14 @@ public abstract class AbstractLocationConfigSourceLoader {
         for (String location : locations) {
             final URI uri = URI_CONVERTER.convert(location);
             if (uri.getScheme() == null) {
-                configSources.addAll(tryFileSystem(uri));
-                configSources.addAll(tryClassPath(uri, classLoader));
+                configSources.addAll(tryFileSystem(uri, ordinal));
+                configSources.addAll(tryClassPath(uri, ordinal, classLoader));
             } else if (uri.getScheme().equals("file")) {
-                configSources.addAll(tryFileSystem(uri));
+                configSources.addAll(tryFileSystem(uri, ordinal));
             } else if (uri.getScheme().equals("jar")) {
-                configSources.addAll(tryJar(uri));
+                configSources.addAll(tryJar(uri, ordinal));
             } else if (uri.getScheme().startsWith("http")) {
-                configSources.addAll(tryHttpResource(uri));
+                configSources.addAll(tryHttpResource(uri, ordinal));
             } else {
                 throw ConfigMessages.msg.schemeNotSupported(uri.getScheme());
             }
@@ -93,15 +104,15 @@ public abstract class AbstractLocationConfigSourceLoader {
         return configSources;
     }
 
-    protected List<ConfigSource> tryFileSystem(final URI uri) {
+    protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         final Path urlPath = uri.getScheme() != null ? Paths.get(uri) : Paths.get(uri.getPath());
         if (Files.isRegularFile(urlPath)) {
-            consumeAsPath(toURL(urlPath.toUri()), new ConfigSourcePathConsumer(configSources));
+            consumeAsPath(toURL(urlPath.toUri()), new ConfigSourcePathConsumer(ordinal, configSources));
         } else if (Files.isDirectory(urlPath)) {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(urlPath, this::validExtension)) {
                 for (Path path : paths) {
-                    addConfigSource(path.toUri(), configSources);
+                    addConfigSource(path.toUri(), ordinal, configSources);
                 }
             } catch (IOException e) {
                 throw ConfigMessages.msg.failedToLoadResource(e);
@@ -110,47 +121,47 @@ public abstract class AbstractLocationConfigSourceLoader {
         return configSources;
     }
 
-    protected List<ConfigSource> tryClassPath(final URI uri, final ClassLoader classLoader) {
+    protected List<ConfigSource> tryClassPath(final URI uri, final int ordinal, final ClassLoader classLoader) {
         final List<ConfigSource> configSources = new ArrayList<>();
+        final ClassLoader useClassloader = classLoader != null ? classLoader : SecuritySupport.getContextClassLoader();
         try {
-            ClassLoader useCl = classLoader != null ? classLoader : SecuritySupport.getContextClassLoader();
-            consumeAsPaths(useCl, uri.getPath(), new ConfigSourcePathConsumer(configSources));
+            consumeAsPaths(useClassloader, uri.getPath(), new ConfigSourcePathConsumer(ordinal, configSources));
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         } catch (IllegalArgumentException e) {
-            configSources.addAll(fallbackToUnknownProtocol(uri, classLoader));
+            configSources.addAll(fallbackToUnknownProtocol(uri, ordinal, useClassloader));
         }
         return configSources;
     }
 
-    protected List<ConfigSource> tryJar(final URI uri) {
+    protected List<ConfigSource> tryJar(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         try {
-            consumeAsPath(toURL(uri), new ConfigSourcePathConsumer(configSources));
+            consumeAsPath(toURL(uri), new ConfigSourcePathConsumer(ordinal, configSources));
         } catch (Exception e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         }
         return configSources;
     }
 
-    protected List<ConfigSource> fallbackToUnknownProtocol(final URI uri, final ClassLoader classLoader) {
+    protected List<ConfigSource> fallbackToUnknownProtocol(final URI uri, final int ordinal, final ClassLoader classLoader) {
         final List<ConfigSource> configSources = new ArrayList<>();
         try {
             Enumeration<URL> resources = classLoader.getResources(uri.toString());
             while (resources.hasMoreElements()) {
                 final URL resourceUrl = resources.nextElement();
                 if (validExtension(resourceUrl.getFile())) {
-                    final ConfigSource mainSource = addConfigSource(resourceUrl, configSources);
+                    final ConfigSource mainSource = addConfigSource(resourceUrl, ordinal, configSources);
                     configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
                         final List<ConfigSource> profileSources = new ArrayList<>();
                         for (int i = profiles.size() - 1; i >= 0; i--) {
-                            final int ordinal = mainSource.getOrdinal() + profiles.size() - i + 1;
+                            final int mainOrdinal = mainSource.getOrdinal() + profiles.size() - i + 1;
                             final URI profileUri = addProfileName(uri, profiles.get(i));
                             try {
                                 final Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
                                 while (profileResources.hasMoreElements()) {
                                     final URL profileUrl = profileResources.nextElement();
-                                    addProfileConfigSource(profileUrl, ordinal, profileSources);
+                                    addProfileConfigSource(profileUrl, mainOrdinal, profileSources);
                                 }
                             } catch (IOException e) {
                                 // It is ok to not find the resource here, because it is an optional profile resource.
@@ -166,10 +177,10 @@ public abstract class AbstractLocationConfigSourceLoader {
         return configSources;
     }
 
-    protected List<ConfigSource> tryHttpResource(final URI uri) {
+    protected List<ConfigSource> tryHttpResource(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         if (validExtension(uri.getPath())) {
-            final ConfigSource mainSource = addConfigSource(uri, configSources);
+            final ConfigSource mainSource = addConfigSource(uri, ordinal, configSources);
             configSources.addAll(tryProfiles(uri, mainSource));
         }
         return configSources;
@@ -197,14 +208,14 @@ public abstract class AbstractLocationConfigSourceLoader {
         }
     }
 
-    private ConfigSource addConfigSource(final URI uri, final List<ConfigSource> configSources) {
-        return addConfigSource(toURL(uri), configSources);
+    private ConfigSource addConfigSource(final URI uri, final int ordinal, final List<ConfigSource> configSources) {
+        return addConfigSource(toURL(uri), ordinal, configSources);
     }
 
-    private ConfigSource addConfigSource(final URL url, final List<ConfigSource> configSources) {
+    private ConfigSource addConfigSource(final URL url, final int ordinal, final List<ConfigSource> configSources) {
         try {
-            configSources.add(loadConfigSource(url));
-            return loadConfigSource(url);
+            configSources.add(loadConfigSource(url, ordinal));
+            return loadConfigSource(url, ordinal);
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         }
@@ -278,8 +289,10 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private class ConfigSourcePathConsumer implements Consumer<Path> {
         private final List<ConfigSource> configSources;
+        private final int ordinal;
 
-        public ConfigSourcePathConsumer(final List<ConfigSource> configSources) {
+        public ConfigSourcePathConsumer(final int ordinal, final List<ConfigSource> configSources) {
+            this.ordinal = ordinal;
             this.configSources = configSources;
         }
 
@@ -287,7 +300,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         public void accept(final Path path) {
             final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
-                final ConfigSource mainSource = loader.addConfigSource(decodeIfNeeded(path.toUri()), configSources);
+                final ConfigSource mainSource = loader.addConfigSource(decodeIfNeeded(path.toUri()), ordinal, configSources);
                 configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
             }
         }

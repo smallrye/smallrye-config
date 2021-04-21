@@ -12,9 +12,11 @@ represent a valid `URI`. The supported `URI` schemes are:
 * jar resource
 * http resource
 
-Each `URI` scheme loads all discovered resources in a `ConfigSource`. All sources are loaded with the default ordinal
-`100`. The ordinal may be overridden directly in the resource by setting the `config_ordinal` property. Sources are
-sorted first by their ordinal, then by location order, and finally by loading order.
+Each `URI` scheme loads all discovered resources in a `ConfigSource`. All loaded sources use the same ordinal of the
+source that found the `smallrye.config.locations` configuration property. For instance, if `smallrye.config.locations`
+is set as a system property, then all loaded sources have their ordinals set to `400` (system properties use `400` as
+their ordinal). The ordinal may be overridden directly in the resource by setting the `config_ordinal` property. Sources
+are sorted first by their ordinal, then by location order, and finally by loading order.
 
 If a profile is active, and the `URI` represents a single resource (for instance a file), then resources that match the
 active profile are also loaded. The profile resource name must follow the pattern: `{location}-{profile}`. A profile
