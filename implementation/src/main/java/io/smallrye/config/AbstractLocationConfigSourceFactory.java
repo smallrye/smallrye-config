@@ -27,6 +27,7 @@ public abstract class AbstractLocationConfigSourceFactory extends AbstractLocati
             return Collections.emptyList();
         }
 
-        return loadConfigSources(newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()));
+        return loadConfigSources(newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()),
+                value.getConfigSourceOrdinal());
     }
 }

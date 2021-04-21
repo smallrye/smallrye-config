@@ -5,6 +5,7 @@ import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.AbstractConfigSource;
+import io.smallrye.config.common.MapBackedConfigSource;
 
 class ConfigConfigSourceTest {
     @Test
@@ -173,5 +175,43 @@ class ConfigConfigSourceTest {
 
         // Profiles come in priority order
         assertEquals("bar,foo", config.getRawValue("profiles"));
+    }
+
+    @Test
+    void interceptorsFirst() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new ConfigSourceInterceptor() {
+                            @Override
+                            public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                                if (name.equals("my.prop")) {
+                                    throw new RuntimeException();
+                                }
+
+                                return context.proceed(name);
+                            }
+                        };
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Integer.MIN_VALUE);
+                    }
+                })
+                .withSources(new MapBackedConfigSource("test", new HashMap<String, String>() {
+                    {
+                        put("my.prop", "1234");
+                    }
+                }, Integer.MAX_VALUE) {
+                })
+                .build();
+
+        assertEquals(Integer.MAX_VALUE, config.getConfigSources().iterator().next().getOrdinal());
+        assertEquals("1234", config.getConfigSources().iterator().next().getValue("my.prop"));
+        assertThrows(RuntimeException.class, () -> config.getRawValue("my.prop"));
     }
 }

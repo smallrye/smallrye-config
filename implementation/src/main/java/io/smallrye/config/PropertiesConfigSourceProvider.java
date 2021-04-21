@@ -34,7 +34,7 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
     public PropertiesConfigSourceProvider(final String location, final ClassLoader classLoader,
             final boolean includeFileSystem) {
         this.includeFileSystem = includeFileSystem;
-        this.configSources.addAll(loadConfigSources(location, classLoader));
+        this.configSources.addAll(loadConfigSources(location, ConfigSource.DEFAULT_ORDINAL, classLoader));
     }
 
     @Deprecated
@@ -61,9 +61,9 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
     }
 
     @Override
-    protected List<ConfigSource> tryFileSystem(final URI uri) {
+    protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
         if (includeFileSystem) {
-            return super.tryFileSystem(uri);
+            return super.tryFileSystem(uri, ordinal);
         } else {
             return new ArrayList<>();
         }

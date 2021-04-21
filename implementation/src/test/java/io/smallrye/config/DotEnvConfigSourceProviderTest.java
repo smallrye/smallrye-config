@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -29,6 +30,12 @@ class DotEnvConfigSourceProviderTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("1234", config.getRawValue("MY_PROP"));
+
+        for (ConfigSource configSource : config.getConfigSources()) {
+            if (configSource.getName().endsWith(".env]")) {
+                assertEquals(295, configSource.getOrdinal());
+            }
+        }
     }
 
     @Test

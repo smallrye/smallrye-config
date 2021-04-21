@@ -351,6 +351,22 @@ public class SmallRyeConfig implements Config, Serializable {
         return names;
     }
 
+    /**
+     * Checks if a property is present in the {@link Config} instance.
+     *
+     * Because {@link ConfigSource#getPropertyNames()} may not include all available properties, it is not possible to
+     * reliable determine if the property is present in the properties list. The property needs to be retrieved to make
+     * sure it exists. The lookup is done without expression expansion, because the expansion value may not be
+     * available and it not relevant for the final check.
+     *
+     * @param name the property name.
+     * @return true if the property is present or false otherwise.
+     */
+    @Experimental("Check if a property is present")
+    public boolean isPropertyPresent(String name) {
+        return Expressions.withoutExpansion(() -> getConfigValue(name).getValue() != null);
+    }
+
     @Override
     public Iterable<ConfigSource> getConfigSources() {
         return configSources.getSources();
@@ -578,6 +594,7 @@ public class SmallRyeConfig implements Config, Serializable {
         private final int priority;
         private final int loadPriority = loadPrioritySequence--;
         private final String name;
+        private final Type type;
 
         private ConfigSourceInterceptor interceptor;
 
@@ -585,12 +602,14 @@ public class SmallRyeConfig implements Config, Serializable {
             this.init = interceptor::getInterceptor;
             this.priority = interceptor.getPriority();
             this.name = "undefined";
+            this.type = Type.INTERCEPTOR;
         }
 
         ConfigSourceInterceptorWithPriority(final ConfigSource configSource) {
             this.init = context -> configSourceInterceptor(configSource);
             this.priority = configSource.getOrdinal();
             this.name = configSource.getName();
+            this.type = Type.CONFIG_SOURCE;
         }
 
         private ConfigSourceInterceptorWithPriority(final ConfigSourceInterceptor interceptor, final int priority,
@@ -599,6 +618,7 @@ public class SmallRyeConfig implements Config, Serializable {
             this.priority = priority;
             this.name = name;
             this.interceptor = interceptor;
+            this.type = Type.INTERCEPTOR;
         }
 
         ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -631,8 +651,19 @@ public class SmallRyeConfig implements Config, Serializable {
 
         @Override
         public int compareTo(final ConfigSourceInterceptorWithPriority other) {
-            int res = Integer.compare(this.priority, other.priority);
-            return res != 0 ? res : Integer.compare(this.loadPriority, other.loadPriority);
+            if (this.type.equals(other.type)) {
+                int res = Integer.compare(this.priority, other.priority);
+                return res != 0 ? res : Integer.compare(this.loadPriority, other.loadPriority);
+            } else if (this.type.equals(Type.INTERCEPTOR)) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+
+        enum Type {
+            INTERCEPTOR,
+            CONFIG_SOURCE;
         }
     }
 

@@ -12,6 +12,11 @@ public class PropertiesLocationConfigSourceFactory extends AbstractLocationConfi
     }
 
     @Override
+    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+        return super.getConfigSources(context);
+    }
+
+    @Override
     protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
         return new PropertiesConfigSource(url, ordinal);
     }
