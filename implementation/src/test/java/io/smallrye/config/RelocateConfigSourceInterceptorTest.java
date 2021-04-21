@@ -1,19 +1,27 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-class MappingConfigSourceInterceptorTest {
+class RelocateConfigSourceInterceptorTest {
     @Test
     void relocateAndFallback() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "mp.jwt.token.cookie", "Bearer");
 
@@ -23,7 +31,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void relocate() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "smallrye.jwt.token.header", "Cookie",
                 "mp.jwt.token.header", "Authorization");
 
@@ -32,7 +40,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void fallback() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "smallrye.jwt.token.cookie", "jwt",
                 "mp.jwt.token.cookie", "Bearer");
 
@@ -41,7 +49,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void relocateWithProfile() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "Cookie",
                 SMALLRYE_PROFILE, "prof");
@@ -51,7 +59,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void relocateWithProfileAndExpression() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
                 "token.header", "Cookie",
@@ -62,7 +70,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void relocateWithProfileExpressionAndFallback() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
                 "token.header", "Cookie",
@@ -75,7 +83,7 @@ class MappingConfigSourceInterceptorTest {
 
     @Test
     void relocateIsSecret() {
-        final Config config = buildConfig(
+        Config config = buildConfig(
                 Collections.singleton("mp.jwt.token.header"),
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
@@ -86,13 +94,55 @@ class MappingConfigSourceInterceptorTest {
         assertThrows(SecurityException.class, () -> config.getValue("mp.jwt.token.header", String.class));
     }
 
+    @Test
+    void relocatePropertyNames() {
+        Config config = buildConfig("smallrye.jwt.token.header", "Authorization");
+
+        assertEquals("Authorization", config.getValue("smallrye.jwt.token.header", String.class));
+        List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        assertEquals(2, names.size());
+        assertTrue(names.contains("smallrye.jwt.token.header"));
+        assertTrue(names.contains("mp.jwt.token.header"));
+
+        RelocateConfigSourceInterceptor relocateInterceptor = new RelocateConfigSourceInterceptor(
+                s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header"));
+        Iterator<ConfigValue> configValues = relocateInterceptor.iterateValues(new ConfigSourceInterceptorContext() {
+            @Override
+            public ConfigValue proceed(final String name) {
+                return null;
+            }
+
+            @Override
+            public Iterator<String> iterateNames() {
+                return null;
+            }
+
+            @Override
+            public Iterator<ConfigValue> iterateValues() {
+                Set<ConfigValue> values = new HashSet<>();
+                values.add(
+                        ConfigValue.builder().withName("smallrye.jwt.token.header").withValue("Authorization").build());
+                return values.iterator();
+            }
+        });
+
+        Map<String, ConfigValue> values = new HashMap<>();
+        while (configValues.hasNext()) {
+            ConfigValue configValue = configValues.next();
+            values.put(configValue.getName(), configValue);
+        }
+
+        assertEquals(2, values.size());
+        assertEquals("Authorization", values.get("smallrye.jwt.token.header").getValue());
+        assertEquals("Authorization", values.get("mp.jwt.token.header").getValue());
+    }
+
     private static Config buildConfig(String... keyValues) {
         return buildConfig(Collections.emptySet(), keyValues);
     }
 
     private static Config buildConfig(Set<String> secretKeys, String... keyValues) {
         return new SmallRyeConfigBuilder()
-                .addDefaultSources()
                 .addDefaultInterceptors()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .withInterceptors(
