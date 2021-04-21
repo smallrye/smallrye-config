@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.AbstractLocationConfigSourceFactory.SMALLRYE_LOCATIONS;
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -69,6 +70,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals(1, countSources(config));
+        assertEquals(500, config.getConfigSources().iterator().next().getOrdinal());
     }
 
     @Test
@@ -556,6 +558,18 @@ class PropertiesLocationConfigSourceFactoryTest {
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
+    }
+
+    @Test
+    void ordinal() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDiscoveredSources()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_LOCATIONS, "more.properties", "config_ordinal", "1000"))
+                .build();
+
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
+        assertEquals(1000, config.getConfigValue("more.prop").getConfigSourceOrdinal());
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

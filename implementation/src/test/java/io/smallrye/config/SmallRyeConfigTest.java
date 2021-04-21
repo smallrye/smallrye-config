@@ -1,6 +1,8 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -10,12 +12,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.common.MapBackedConfigSource;
 
 class SmallRyeConfigTest {
     @Test
@@ -229,5 +236,32 @@ class SmallRyeConfigTest {
         assertEquals("qa", values.get(1));
         assertEquals("prd", values.get(2));
         assertEquals("perf", values.get(3));
+    }
+
+    @Test
+    void isPropertyPresent() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "1234", "my.expansion", "${not.available}"))
+                .withSources(new MapBackedConfigSource("hidder", new HashMap<String, String>() {
+                    {
+                        put("my.hidden", "hidden");
+                    }
+                }) {
+                    @Override
+                    public Set<String> getPropertyNames() {
+                        return Collections.emptySet();
+                    }
+                })
+                .build();
+
+        assertTrue(config.isPropertyPresent("my.prop"));
+        assertTrue(config.isPropertyPresent("my.expansion"));
+        assertFalse(config.isPropertyPresent("not.available"));
+        assertTrue(config.isPropertyPresent("my.hidden"));
+
+        Set<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(2, names.size());
+        assertTrue(names.contains("my.prop"));
+        assertTrue(names.contains("my.expansion"));
     }
 }

@@ -351,6 +351,22 @@ public class SmallRyeConfig implements Config, Serializable {
         return names;
     }
 
+    /**
+     * Checks if a property is present in the {@link Config} instance.
+     *
+     * Because {@link ConfigSource#getPropertyNames()} may not include all available properties, it is not possible to
+     * reliable determine if the property is present in the properties list. The property needs to be retrieved to make
+     * sure it exists. The lookup is done without expression expansion, because the expansion value may not be
+     * available and it not relevant for the final check.
+     *
+     * @param name the property name.
+     * @return true if the property is present or false otherwise.
+     */
+    @Experimental("Check if a property is present")
+    public boolean isPropertyPresent(String name) {
+        return Expressions.withoutExpansion(() -> getConfigValue(name).getValue() != null);
+    }
+
     @Override
     public Iterable<ConfigSource> getConfigSources() {
         return configSources.getSources();
