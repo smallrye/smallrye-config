@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -38,7 +39,20 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, String.join(",", "./src/test/resources/additional.properties"))
+                .withDefaultValue(SMALLRYE_LOCATIONS, "./src/test/resources/additional.properties")
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+        assertNull(config.getRawValue("more.prop"));
+        assertEquals(1, countSources(config));
+
+        config = new SmallRyeConfigBuilder()
+                .addDiscoveredSources()
+                .addDefaultInterceptors()
+                .withProfile("dev")
+                .withDefaultValue(SMALLRYE_LOCATIONS,
+                        Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "additional.properties").toUri()
+                                .toString())
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop"));
