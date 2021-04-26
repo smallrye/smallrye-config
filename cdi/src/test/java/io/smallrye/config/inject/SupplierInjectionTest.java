@@ -1,22 +1,35 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+
 @ExtendWith(WeldJunit5Extension.class)
-class SupplierInjectionTest extends InjectionTest {
+class SupplierInjectionTest {
     @WeldSetup
     WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, SupplierBean.class)
             .addBeans()
@@ -79,5 +92,42 @@ class SupplierInjectionTest extends InjectionTest {
         Supplier<Integer> getSupplierDynamic() {
             return supplierDynamic;
         }
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "1234"))
+                .withSources(new ConfigSource() {
+                    int counter = 1;
+
+                    @Override
+                    public Map<String, String> getProperties() {
+                        return new HashMap<>();
+                    }
+
+                    @Override
+                    public Set<String> getPropertyNames() {
+                        return new HashSet<>();
+                    }
+
+                    @Override
+                    public String getValue(final String propertyName) {
+                        return "my.counter".equals(propertyName) ? "" + counter++ : null;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return this.getClass().getName();
+                    }
+                })
+                .addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
     }
 }

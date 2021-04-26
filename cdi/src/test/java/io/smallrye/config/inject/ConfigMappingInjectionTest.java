@@ -1,22 +1,29 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithDefault;
 
 @ExtendWith(WeldJunit5Extension.class)
-class ConfigMappingInjectionTest extends InjectionTest {
+class ConfigMappingInjectionTest {
     @WeldSetup
     WeldInitiator weld = WeldInitiator
             .from(ConfigExtension.class, ConfigMappingInjectionTest.class, Server.class, Client.class, ConfigMappingBean.class)
@@ -111,5 +118,21 @@ class ConfigMappingInjectionTest extends InjectionTest {
         public void setClient(@ConfigMapping(prefix = "client") final Server client) {
             this.client = client;
         }
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.the-host", "localhost", "server.port", "8080"))
+                .withSources(config("client.the-host", "client"))
+                .withSources(config("cloud.the-host", "cloud", "cloud.port", "9090"))
+                .addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
     }
 }

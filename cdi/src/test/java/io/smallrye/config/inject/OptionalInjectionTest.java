@@ -1,5 +1,6 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,15 +10,22 @@ import java.util.OptionalLong;
 
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+
 @ExtendWith(WeldJunit5Extension.class)
-class OptionalInjectionTest extends InjectionTest {
+class OptionalInjectionTest {
     @WeldSetup
     WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, OptionalInjectionTest.class)
             .addBeans()
@@ -44,5 +52,19 @@ class OptionalInjectionTest extends InjectionTest {
 
         assertTrue(optionalDouble.isPresent());
         assertEquals(3.3, optionalDouble.getAsDouble(), 0);
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("optional.int.value", "1", "optional.long.value", "2", "optional.double.value", "3.3"))
+                .addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
     }
 }
