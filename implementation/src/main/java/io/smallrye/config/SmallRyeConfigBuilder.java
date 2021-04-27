@@ -352,10 +352,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     @Override
     public SmallRyeConfig build() {
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
-        KeyMap<String> mappingProviderDefaultValues = mappingProvider.getDefaultValues();
-        for (Map.Entry<String, KeyMap<String>> entry : mappingProviderDefaultValues.entrySet()) {
-            defaultValues.putIfAbsent(entry.getKey(), entry.getValue());
-        }
+        defaultValues.putAll(mappingProvider.getDefaultValues());
 
         try {
             ConfigMappings configMappings = new ConfigMappings();
