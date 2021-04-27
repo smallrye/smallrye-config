@@ -1,5 +1,6 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 import static org.junit.platform.testkit.engine.EventConditions.finishedWithFailure;
@@ -7,6 +8,7 @@ import static org.junit.platform.testkit.engine.TestExecutionResultConditions.in
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -16,13 +18,18 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
 
 import org.assertj.core.api.Condition;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.Converter;
 import org.jboss.weld.exceptions.DeploymentException;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.engine.JupiterTestEngine;
@@ -31,7 +38,8 @@ import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.inject.InjectionTestConfigFactory.ConvertedValue;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 
 public class ValidateInjectionTest {
     @Test
@@ -260,7 +268,7 @@ public class ValidateInjectionTest {
     }
 
     @ExtendWith(WeldJunit5Extension.class)
-    static class UnqualifiedConfigPropertiesInjectionTest extends InjectionTest {
+    static class UnqualifiedConfigPropertiesInjectionTest {
         @WeldSetup
         WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, Server.class)
                 .addBeans()
@@ -285,7 +293,7 @@ public class ValidateInjectionTest {
     }
 
     @ExtendWith(WeldJunit5Extension.class)
-    static class MissingPropertyExpressionInjectionTest extends InjectionTest {
+    static class MissingPropertyExpressionInjectionTest {
         @WeldSetup
         WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, MissingPropertyExpressionBean.class)
                 .addBeans()
@@ -306,6 +314,61 @@ public class ValidateInjectionTest {
             @Inject
             @ConfigProperty(name = "bad.property.expression.prop")
             String missing;
+        }
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("bad.property.expression.prop", "${missing.prop}"))
+                .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())
+                .addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
+    }
+
+    static class ConvertedValue {
+        private final String value;
+
+        public ConvertedValue(final String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final ConvertedValue that = (ConvertedValue) o;
+            return value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+    }
+
+    static class ConvertedValueConverter implements Converter<ConvertedValue> {
+        @Override
+        public ConvertedValue convert(final String value) {
+            if (value == null || value.isEmpty()) {
+                return null;
+            }
+            return new ConvertedValue("out");
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -17,11 +18,16 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+
 @ExtendWith(WeldJunit5Extension.class)
-class InjectedConfigSerializationTest extends InjectionTest {
+class InjectedConfigSerializationTest {
 
     @WeldSetup
     WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, Config.class).build();
@@ -89,5 +95,19 @@ class InjectedConfigSerializationTest extends InjectionTest {
             fail("Could not deserialize object: " + o, e);
         }
         return result;
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "1234"))
+                .addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
     }
 }
