@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -114,7 +115,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         }
         String seg = ni.getNextSegment();
         ni.next();
-        KeyMap<V> next = getOrDefault(seg, any);
+        KeyMap<V> next = findOrDefault(seg);
         return next == null ? null : next.find(ni);
     }
 
@@ -123,12 +124,32 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return this;
         }
         String seg = iter.next();
-        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? any : getOrDefault(seg, any);
+        KeyMap<V> next = seg.equals("*") ? any : getOrDefault(seg, any);
         return next == null ? null : next.find(iter);
     }
 
     public KeyMap<V> find(final Iterable<String> i) {
         return find(i.iterator());
+    }
+
+    private KeyMap<V> findOrDefault(final String seg) {
+        KeyMap<V> next = getOrDefault(seg, any);
+        if (seg.endsWith("]")) {
+            int begin = seg.lastIndexOf('[');
+            if (begin != -1) {
+                next = getOrDefault(seg.substring(0, begin), any);
+                if (next != null) {
+                    next = next.find("[");
+                    if (next != null) {
+                        next = next.getOrDefault(seg.substring(begin + 1, seg.length() - 1), next.any);
+                        if (next != null) {
+                            next = next.find("]");
+                        }
+                    }
+                }
+            }
+        }
+        return next;
     }
 
     public KeyMap<V> findOrAdd(final String path) {
@@ -142,8 +163,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         String seg = ni.getNextSegment();
         ni.next();
         try {
-            KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny()
-                    : computeIfAbsent(seg, k -> new KeyMap<>());
+            KeyMap<V> next = getNext(seg);
             return next.findOrAdd(ni);
         } finally {
             ni.previous();
@@ -155,7 +175,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return this;
         }
         String seg = iter.next();
-        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+        KeyMap<V> next = getNext(seg);
         return next.findOrAdd(iter);
     }
 
@@ -169,8 +189,28 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
 
     public KeyMap<V> findOrAdd(final String[] keys, int off, int len) {
         String seg = keys[off];
-        KeyMap<V> next = seg.equals("*") || seg.endsWith("[*]") ? getOrCreateAny() : computeIfAbsent(seg, k -> new KeyMap<>());
+        KeyMap<V> next = getNext(seg);
         return off + 1 > len - 1 ? next : next.findOrAdd(keys, off + 1, len);
+    }
+
+    private KeyMap<V> getNext(final String seg) {
+        if (seg.equals("*")) {
+            return getOrCreateAny();
+        } else if (seg.endsWith("]")) {
+            int begin = seg.lastIndexOf('[');
+            if (begin != -1) {
+                String index = seg.substring(begin + 1, seg.length() - 1);
+                KeyMap<V> next = computeIfAbsent(seg.substring(0, begin), k -> new KeyMap<>());
+                next = next.computeIfAbsent("[", k -> new KeyMap<>());
+                next = index.equals("*") ? next.getOrCreateAny() : next.computeIfAbsent(index, k -> new KeyMap<>());
+                next = next.computeIfAbsent("]", k -> new KeyMap<>());
+                return next;
+            } else {
+                return computeIfAbsent(seg, k -> new KeyMap<>());
+            }
+        } else {
+            return computeIfAbsent(seg, k -> new KeyMap<>());
+        }
     }
 
     public V findRootValue(final String path) {
@@ -217,6 +257,33 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             newMap.putRootValue(conversion.apply(param, getRootValue()));
         }
         return newMap;
+    }
+
+    public void putAll(final KeyMap<V> m) {
+        for (Entry<? extends String, ? extends KeyMap<V>> entry : m.entrySet()) {
+            String key = entry.getKey();
+            KeyMap<V> value = entry.getValue();
+            KeyMap<V> all = putIfAbsent(key, value);
+            if (all != null) {
+                all.putAll(value);
+            }
+        }
+
+        if (m.any != null) {
+            if (this.any == null) {
+                getOrCreateAny().putRootValue(m.any.rootValue);
+            }
+            getAny().putAll(m.any);
+        }
+    }
+
+    @Override
+    public void putAll(final Map<? extends String, ? extends KeyMap<V>> m) {
+        if (m instanceof KeyMap) {
+            this.putAll((KeyMap) m);
+        } else {
+            super.putAll(m);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

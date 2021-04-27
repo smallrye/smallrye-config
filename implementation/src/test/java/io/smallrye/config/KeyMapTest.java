@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -122,14 +123,78 @@ class KeyMapTest {
     void indexed() {
         KeyMap<String> map = new KeyMap<>();
         map.findOrAdd("root.foo").putRootValue("bar");
-        map.findOrAdd("root.foo[*]").putRootValue("bar");
-        map.findOrAdd("root.foo[1]").putRootValue("baz");
-        map.findOrAdd("root.foo[*].name").putRootValue("baz");
+        map.findOrAdd("root.foo[*]").putRootValue("foo.star");
+        map.findOrAdd("root.foo[1]").putRootValue("foo.one");
+        map.findOrAdd("root.foo[*].name").putRootValue("foo.star.name");
 
         assertEquals("bar", map.findRootValue("root.foo"));
-        assertEquals("bar", map.findRootValue("root.foo[*]"));
-        assertEquals("baz", map.findRootValue("root.foo[1]"));
-        assertEquals("bar", map.findRootValue("root.foo[2]"));
-        assertEquals("baz", map.findRootValue("root.foo[3].name"));
+        assertEquals("foo.star", map.findRootValue("root.foo[*]"));
+        assertEquals("foo.one", map.findRootValue("root.foo[1]"));
+        assertEquals("foo.star", map.findRootValue("root.foo[2]"));
+        assertEquals("foo.star", map.findRootValue("root.foo[1234]"));
+        assertEquals("foo.star.name", map.findRootValue("root.foo[3].name"));
+        assertNull(map.findRootValue("root.a.name"));
+    }
+
+    @Test
+    void indexedRoot() {
+        ArrayDeque<String> foo = new ArrayDeque<>();
+        foo.addLast("root");
+        foo.addLast("[");
+        foo.addLast("*");
+        foo.addLast("]");
+        foo.addLast("foo");
+
+        ArrayDeque<String> bar = new ArrayDeque<>();
+        bar.addLast("root[*]");
+        bar.addLast("bars[*]");
+
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd(foo).putRootValue("foo");
+        map.findOrAdd(bar).putRootValue("bars");
+
+        assertEquals("foo", map.findRootValue("root.[.0.].foo"));
+        assertEquals("bars", map.findRootValue("root[0].bars[0]"));
+    }
+
+    @Test
+    void putAll() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("root.foo").putRootValue("bar");
+        map.findOrAdd("star.foo.*").putRootValue("star.bar");
+        map.findOrAdd("star.foo.*.foo").putRootValue("star.bar.foo");
+
+        KeyMap<String> other = new KeyMap<>();
+        other.findOrAdd("root.foo.bar").putRootValue("baz");
+        other.findOrAdd("star.foo.bar.*").putRootValue("star.baz");
+
+        map.putAll(other);
+
+        assertEquals("bar", map.findRootValue("root.foo"));
+        assertEquals("baz", map.findRootValue("root.foo.bar"));
+        assertEquals("star.bar", map.findRootValue("star.foo.*"));
+        assertEquals("star.bar", map.findRootValue("star.foo.a"));
+        assertEquals("star.baz", map.findRootValue("star.foo.bar.*"));
+        assertEquals("star.baz", map.findRootValue("star.foo.bar.a"));
+        assertEquals("star.bar.foo", map.findRootValue("star.foo.a.foo"));
+    }
+
+    @Test
+    void putAllAny() {
+        KeyMap<String> map = new KeyMap<>();
+
+        KeyMap<String> other = new KeyMap<>();
+        other.findOrAdd("root[*].foo").putRootValue("foo");
+        other.findOrAdd("root[*].bars[*]").putRootValue("bars");
+        other.findOrAdd("root[*].bazs[*]").putRootValue("bazs");
+
+        assertEquals("foo", other.findRootValue("root[0].foo"));
+        assertEquals("bars", other.findRootValue("root[0].bars[0]"));
+        assertEquals("bazs", other.findRootValue("root[0].bazs[0]"));
+
+        map.putAll(other);
+
+        assertEquals("foo", map.findRootValue("root[0].foo"));
+        assertEquals("bars", map.findRootValue("root[0].bars[0]"));
     }
 }
