@@ -251,22 +251,39 @@ final class ConfigMappingProvider implements Serializable {
                     memberName, nestedProperty);
         } else if (property.isGroup()) {
             processEagerGroup(currentPath, matchActions, defaultValues, namingStrategy, property.asGroup().getGroupType(),
-                    new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup()));
+                    new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup(), currentPath));
         } else if (property.isPrimitive()) {
             // already processed eagerly
             PrimitiveProperty primitiveProperty = property.asPrimitive();
             if (primitiveProperty.hasDefaultValue()) {
                 defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+                // collections may also be represented without [] so we need to register both paths
+                if (isCollection(currentPath)) {
+                    defaultValues.findOrAdd(inlineCollectionPath(currentPath))
+                            .putRootValue(primitiveProperty.getDefaultValue());
+                }
             }
             matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            // collections may also be represented without [] so we need to register both paths
+            if (isCollection(currentPath)) {
+                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+            }
         } else if (property.isLeaf()) {
             // already processed eagerly
             LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
                 defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                // collections may also be represented without [] so we need to register both paths
+                if (isCollection(currentPath)) {
+                    defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                }
             }
             // ignore with no error message
             matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            // collections may also be represented without [] so we need to register both paths
+            if (isCollection(currentPath)) {
+                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+            }
         } else if (property.isMap()) {
             // the enclosure of the map is this group
             processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
@@ -292,7 +309,7 @@ final class ConfigMappingProvider implements Serializable {
             GroupProperty nestedGroup = nestedProperty.asGroup();
             // on match, always create the outermost group, which recursively creates inner groups
             GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
-                    getEnclosingFunction, group, nestedGroup);
+                    getEnclosingFunction, group, nestedGroup, currentPath);
             GetFieldOfEnclosing ef = new GetFieldOfEnclosing(
                     nestedGroup.isParentPropertyName() ? getEnclosingFunction
                             : new ConsumeOneAndThenFn<>(getEnclosingFunction),
@@ -303,8 +320,16 @@ final class ConfigMappingProvider implements Serializable {
             LeafProperty leafProperty = nestedProperty.asLeaf();
             if (leafProperty.hasDefaultValue()) {
                 defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                // collections may also be represented without [] so we need to register both paths
+                if (isCollection(currentPath)) {
+                    defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                }
             }
             matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            // collections may also be represented without [] so we need to register both paths
+            if (isCollection(currentPath)) {
+                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+            }
         } else if (nestedProperty.isCollection()) {
             CollectionProperty collectionProperty = nestedProperty.asCollection();
             currentPath.addLast(currentPath.removeLast() + "[*]");
@@ -367,7 +392,7 @@ final class ConfigMappingProvider implements Serializable {
             GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
                     property.isParentPropertyName() ? getEnclosingFunction
                             : new ConsumeOneAndThenFn<>(getEnclosingFunction),
-                    group, nestedGroup);
+                    group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup, nestedMatchAction,
                     nestedMatchAction, new HashSet<>());
         } else if (property.isGroup()) {
@@ -375,7 +400,7 @@ final class ConfigMappingProvider implements Serializable {
             GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
                     property.isParentPropertyName() ? getEnclosingFunction
                             : new ConsumeOneAndThenFn<>(getEnclosingFunction),
-                    group, asGroup);
+                    group, asGroup, currentPath);
             BiConsumer<ConfigMappingContext, NameIterator> nestedMatchAction;
             nestedMatchAction = matchAction;
             if (!property.isParentPropertyName()) {
@@ -392,20 +417,37 @@ final class ConfigMappingProvider implements Serializable {
                 actualAction = matchAction;
             }
             matchActions.findOrAdd(currentPath).putRootValue(actualAction);
+            // collections may also be represented without [] so we need to register both paths
+            if (isCollection(currentPath)) {
+                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(actualAction);
+            }
             if (property.isPrimitive()) {
                 PrimitiveProperty primitiveProperty = property.asPrimitive();
                 if (primitiveProperty.hasDefaultValue()) {
                     defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+                    // collections may also be represented without [] so we need to register both paths
+                    if (isCollection(currentPath)) {
+                        defaultValues.findOrAdd(inlineCollectionPath(currentPath))
+                                .putRootValue(primitiveProperty.getDefaultValue());
+                    }
                 }
             } else if (property.isLeaf() && optional) {
                 LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
                 if (leafProperty.hasDefaultValue()) {
                     defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                    // collections may also be represented without [] so we need to register both paths
+                    if (isCollection(currentPath)) {
+                        defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                    }
                 }
             } else {
                 LeafProperty leafProperty = property.asLeaf();
                 if (leafProperty.hasDefaultValue()) {
                     defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                    // collections may also be represented without [] so we need to register both paths
+                    if (isCollection(currentPath)) {
+                        defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                    }
                 }
             }
         } else if (property.isMap()) {
@@ -501,6 +543,17 @@ final class ConfigMappingProvider implements Serializable {
         currentPath.removeLast();
     }
 
+    private static boolean isCollection(final ArrayDeque<String> currentPath) {
+        return currentPath.getLast().endsWith("[*]");
+    }
+
+    private static ArrayDeque<String> inlineCollectionPath(final ArrayDeque<String> currentPath) {
+        ArrayDeque<String> inlineCollectionPath = new ArrayDeque<>(currentPath);
+        String last = inlineCollectionPath.removeLast();
+        inlineCollectionPath.addLast(last.substring(0, last.length() - 3));
+        return inlineCollectionPath;
+    }
+
     static class GetRootAction implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> {
         private final Class<?> root;
         private final String rootPath;
@@ -521,27 +574,62 @@ final class ConfigMappingProvider implements Serializable {
         private final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate;
         private final ConfigMappingInterface enclosingGroup;
         private final GroupProperty enclosedGroup;
+        private final ArrayDeque<String> path;
 
-        GetOrCreateEnclosingGroupInGroup(final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate,
-                final ConfigMappingInterface enclosingGroup, final GroupProperty enclosedGroup) {
+        GetOrCreateEnclosingGroupInGroup(
+                final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate,
+                final ConfigMappingInterface enclosingGroup,
+                final GroupProperty enclosedGroup,
+                final ArrayDeque<String> path) {
             this.delegate = delegate;
             this.enclosingGroup = enclosingGroup;
             this.enclosedGroup = enclosedGroup;
+            this.path = new ArrayDeque<>(path);
         }
 
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String methodName = enclosedGroup.getMethod().getName();
-            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType, methodName, ourEnclosing);
+            String propertyName = enclosedGroup.getPropertyName();
+            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType,
+                    normalizeKey(propertyName, path, ni), ourEnclosing);
             if (val == null) {
                 // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());
                 val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
-                context.registerEnclosedField(enclosingType, methodName, ourEnclosing, val);
+                context.registerEnclosedField(enclosingType, propertyName, ourEnclosing, val);
             }
             return val;
+        }
+
+        // This will add the property index (if exists) to the current property
+        private static String normalizeKey(final String propertyName, final ArrayDeque<String> groupPath,
+                final NameIterator nameIterator) {
+            String property = nameIterator.getAllPreviousSegments();
+            int start = property.indexOf(normalizeIfIndexed(groupPath.getLast()));
+            if (start != -1) {
+                int i = start + normalizeIfIndexed(groupPath.getLast()).length();
+                if (i < property.length() && property.charAt(i) == '[') {
+                    for (;;) {
+                        if (property.charAt(i) == ']') {
+                            try {
+                                int index = Integer.parseInt(
+                                        property.substring(start + normalizeIfIndexed(groupPath.getLast()).length() + 1, i));
+                                return propertyName + "[" + index + "]";
+                            } catch (NumberFormatException e) {
+                                //NOOP
+                            }
+                            break;
+                        } else if (i < property.length() - 1) {
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            return propertyName;
         }
 
         public void accept(final ConfigMappingContext context, final NameIterator nameIterator) {
@@ -745,7 +833,7 @@ final class ConfigMappingProvider implements Serializable {
                 }
 
                 final String nextSegment = propertyName.getNextSegment();
-                if (!segment.equals(nextSegment)) {
+                if (!segment.equals(normalizeIfIndexed(nextSegment))) {
                     propertyName.goToStart();
                     break;
                 }
@@ -763,6 +851,15 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         return false;
+    }
+
+    private static String normalizeIfIndexed(final String propertyName) {
+        int indexStart = propertyName.indexOf("[");
+        int indexEnd = propertyName.indexOf("]");
+        if (indexStart != -1 && indexEnd != -1) {
+            return propertyName.substring(0, indexStart);
+        }
+        return propertyName;
     }
 
     public static final class Builder {
