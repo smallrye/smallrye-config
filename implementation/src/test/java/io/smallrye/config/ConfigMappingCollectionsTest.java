@@ -146,16 +146,20 @@ public class ConfigMappingCollectionsTest {
 
     @ConfigMapping(prefix = "server")
     public interface ServerCollectionsDefaults {
+        @WithParentName
         List<Environment> environments();
 
-        @WithDefault("80,443")
-        List<Integer> ports();
-
         interface Environment {
+            @WithDefault("-1")
+            int id();
+
             String name();
 
             @WithDefault("web,rest")
             List<String> apps();
+
+            @WithDefault("80,443")
+            List<Integer> ports();
         }
     }
 
@@ -163,21 +167,24 @@ public class ConfigMappingCollectionsTest {
     void mappingCollectionsWithDefaults() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerCollectionsDefaults.class, "server")
-                .withSources(config("server.environments[0].name", "dev"))
+                .withSources(config("server[0].name", "dev"))
                 .build();
 
         ServerCollectionsDefaults server = config.getConfigMapping(ServerCollectionsDefaults.class);
 
         assertEquals(1, server.environments().size());
+        assertEquals(-1, server.environments().get(0).id());
         assertEquals("dev", server.environments().get(0).name());
         assertEquals(Stream.of("web", "rest").collect(toList()), server.environments().get(0).apps());
 
-        assertEquals(2, server.ports().size());
-        assertEquals(Stream.of(80, 443).collect(toList()), server.ports());
+        assertEquals(2, server.environments().get(0).ports().size());
+        assertEquals(Stream.of(80, 443).collect(toList()), server.environments().get(0).ports());
     }
 
     @ConfigMapping(prefix = "server")
     public interface ServerCollectionsOptionals {
+        List<Environment> environments();
+
         Optional<Environment> notRequired();
 
         Optional<Environment> required();
@@ -194,6 +201,12 @@ public class ConfigMappingCollectionsTest {
             Optional<List<String>> requiredServices();
 
             Optional<List<String>> indexed();
+
+            Optional<App> app();
+
+            interface App {
+                Optional<String> alias();
+            }
         }
     }
 
@@ -201,7 +214,11 @@ public class ConfigMappingCollectionsTest {
     void mappingCollectionsOptionals() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerCollectionsOptionals.class, "server")
-                .withSources(config("server.required.name", "dev",
+                .withSources(config(
+                        "server.environments[0].name", "dev",
+                        "server.environments[1].name", "prod",
+                        "server.environments[0].app.alias", "rest",
+                        "server.required.name", "dev",
                         "server.required.required-services", "rest,db",
                         "server.required.indexed[0]", "rest",
                         "server.required.indexed[1]", "db",
@@ -211,6 +228,11 @@ public class ConfigMappingCollectionsTest {
 
         ServerCollectionsOptionals server = config.getConfigMapping(ServerCollectionsOptionals.class);
 
+        assertFalse(server.environments().isEmpty());
+        assertEquals("dev", server.environments().get(0).name());
+        assertTrue(server.environments().get(0).app().isPresent());
+        assertTrue(server.environments().get(0).app().get().alias().isPresent());
+        assertEquals("rest", server.environments().get(0).app().get().alias().get());
         assertFalse(server.notRequired().isPresent());
         assertTrue(server.required().isPresent());
         assertEquals("dev", server.required().get().name());

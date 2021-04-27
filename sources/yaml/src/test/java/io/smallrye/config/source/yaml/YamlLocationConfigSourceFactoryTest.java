@@ -36,7 +36,7 @@ class YamlLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(9, countSources(config));
+        assertEquals(10, countSources(config));
     }
 
     @Test
@@ -63,7 +63,7 @@ class YamlLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(10, countSources(config));
+        assertEquals(11, countSources(config));
     }
 
     @Test
