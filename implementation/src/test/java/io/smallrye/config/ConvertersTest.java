@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -348,6 +349,15 @@ class ConvertersTest {
         expected.set(7);
         assertEquals(expected.toString(), (config.getValue("simple.bitset", BitSet.class)).toString(),
                 "Unexpected value for byte config");
+    }
+
+    @Test
+    void pattern() {
+        final SmallRyeConfig config = buildConfig("simple.pattern", "[0-9]");
+        final Pattern expected = Pattern.compile("[0-9]");
+        assertEquals(expected.pattern(),
+                config.getValue("simple.pattern", Pattern.class).pattern(),
+                "Unexpected value for pattern");
     }
 
     @Test
