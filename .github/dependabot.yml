@@ -5,16 +5,3 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: org.junit.platform:junit-platform-commons
-    versions:
-    - "> 1.6.2, < 2"
-  - dependency-name: org.junit.platform:junit-platform-launcher
-    versions:
-    - "> 1.6.2, < 2"
-  - dependency-name: org.junit.platform:junit-platform-testkit
-    versions:
-    - "> 1.6.2, < 2"
-  - dependency-name: org.ow2.asm:asm
-    versions:
-    - "9.1"
