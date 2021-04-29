@@ -57,6 +57,14 @@ public final class ConfigProducerUtil {
         return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(injectionPoint, config));
     }
 
+    public static <T> T getValue(String name, Type type, String defaultValue, Config config) {
+        if (name == null) {
+            return null;
+        }
+        String resolvedValue = resolveValue(name, config, defaultValue);
+        return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(type, config));
+    }
+
     public static <T> T convertValues(String name, Type type, String resolvedValue, String defaultValue, Config config) {
         String rawValue = getRawValue(name, config);
         List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
