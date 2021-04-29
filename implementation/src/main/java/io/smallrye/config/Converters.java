@@ -168,6 +168,9 @@ public final class Converters {
                 return BitSet.valueOf(data);
             })));
 
+    static final Converter<Pattern> PATTERN_CONVERTER = BuiltInConverter.of(17,
+            newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -203,6 +206,8 @@ public final class Converters {
         ALL_CONVERTERS.put(Currency.class, CURRENCY_CONVERTER);
 
         ALL_CONVERTERS.put(BitSet.class, BITSET_CONVERTER);
+
+        ALL_CONVERTERS.put(Pattern.class, PATTERN_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
@@ -922,6 +927,8 @@ public final class Converters {
                     return CURRENCY_CONVERTER;
                 case 16:
                     return BITSET_CONVERTER;
+                case 17:
+                    return PATTERN_CONVERTER;
                 default:
                     throw ConfigMessages.msg.unknownConverterId(id);
             }
