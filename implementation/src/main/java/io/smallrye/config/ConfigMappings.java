@@ -1,6 +1,8 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
+import static java.lang.Boolean.TRUE;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -10,10 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public final class ConfigMappings implements Serializable {
-
     private static final long serialVersionUID = -7790784345796818526L;
 
     private final ConcurrentMap<Class<?>, Map<String, ConfigMappingObject>> mappings;
@@ -26,28 +26,30 @@ public final class ConfigMappings implements Serializable {
         this.mappings.putAll(mappings);
     }
 
-    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigMappingWithPrefix> mappings)
+    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
-        final ConfigMappingProvider.Builder builder = ConfigMappingProvider.builder()
-                .validateUnknown(config.getOptionalValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
-                        .orElse(Boolean.TRUE));
-        for (ConfigMappingWithPrefix mapping : mappings) {
-            builder.addRoot(mapping.getPrefix(), mapping.getKlass());
+        if (!configClasses.isEmpty()) {
+            Boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
+                    .orElse(TRUE);
+            mapConfiguration(ConfigMappingProvider.builder().validateUnknown(validateUnknown), config, configClasses);
         }
-
-        registerConfigMappings(config, builder.build());
     }
 
-    public static void registerConfigMappings(final SmallRyeConfig config, final ConfigMappingProvider mappingProvider)
+    public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
-        for (ConfigSource configSource : config.getConfigSources()) {
-            if (configSource instanceof DefaultValuesConfigSource) {
-                final DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
-                defaultValuesConfigSource.registerDefaults(mappingProvider.getDefaultValues());
-            }
+        if (!configClasses.isEmpty()) {
+            mapConfiguration(ConfigMappingProvider.builder().validateUnknown(false), config, configClasses);
         }
+    }
 
-        mappingProvider.mapConfiguration(config);
+    static void mapConfiguration(
+            final ConfigMappingProvider.Builder builder,
+            final SmallRyeConfig config,
+            final Set<ConfigClassWithPrefix> configClasses) throws ConfigValidationException {
+        for (ConfigClassWithPrefix configClass : configClasses) {
+            builder.addRoot(configClass.getPrefix(), configClass.getKlass());
+        }
+        builder.build().mapConfiguration(config);
     }
 
     <T> T getConfigMapping(Class<T> type) {
@@ -86,11 +88,11 @@ public final class ConfigMappings implements Serializable {
         return configMapping != null ? configMapping.prefix() : "";
     }
 
-    public static final class ConfigMappingWithPrefix {
+    public static final class ConfigClassWithPrefix {
         private final Class<?> klass;
         private final String prefix;
 
-        public ConfigMappingWithPrefix(final Class<?> klass, final String prefix) {
+        public ConfigClassWithPrefix(final Class<?> klass, final String prefix) {
             this.klass = klass;
             this.prefix = prefix;
         }
@@ -103,8 +105,8 @@ public final class ConfigMappings implements Serializable {
             return prefix;
         }
 
-        public static ConfigMappingWithPrefix configMappingWithPrefix(final Class<?> klass, final String prefix) {
-            return new ConfigMappingWithPrefix(klass, prefix);
+        public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass, final String prefix) {
+            return new ConfigClassWithPrefix(klass, prefix);
         }
     }
 }
