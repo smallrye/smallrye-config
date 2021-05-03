@@ -1,7 +1,7 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.AbstractLocationConfigSourceFactory.SMALLRYE_LOCATIONS;
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,7 +39,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, "./src/test/resources/additional.properties")
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "./src/test/resources/additional.properties")
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop"));
@@ -50,7 +50,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS,
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS,
                         Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "additional.properties").toUri()
                                 .toString())
                 .build();
@@ -220,7 +220,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                     .addDefaultSources()
                     .addDiscoveredSources()
                     .addDefaultInterceptors()
-                    .withDefaultValue(SMALLRYE_LOCATIONS, mainFile.toURI() + "," + fallbackFile.toURI())
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, mainFile.toURI() + "," + fallbackFile.toURI())
                     .build();
 
             // Check if all sources are up
@@ -271,7 +271,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
                 .build();
 
         assertEquals("main", config.getRawValue("my.prop.main"));
@@ -292,7 +292,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
                 .build();
 
         assertNull(config.getRawValue("my.prop.profile"));
@@ -342,7 +342,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                     .addDiscoveredSources()
                     .addDefaultInterceptors()
                     .withProfile("common,dev")
-                    .withDefaultValue(SMALLRYE_LOCATIONS, "META-INF/config.properties")
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "META-INF/config.properties")
                     .build();
 
             assertEquals("main", config.getRawValue("my.prop.main"));
@@ -384,7 +384,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                     .addDiscoveredSources()
                     .addDefaultInterceptors()
                     .withProfile("common,dev")
-                    .withDefaultValue(SMALLRYE_LOCATIONS, "jar:" + filePathOne.toUri() + "!/META-INF/config.properties")
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "jar:" + filePathOne.toUri() + "!/META-INF/config.properties")
                     .build();
 
             assertEquals("main", config.getRawValue("my.prop.main"));
@@ -446,7 +446,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev,unknown")
-                .withDefaultValue(SMALLRYE_LOCATIONS,
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS,
                         "http://localhost:" + server.getAddress().getPort() + "/config.properties")
                 .build();
 
@@ -519,7 +519,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                     .addDiscoveredSources()
                     .addDefaultInterceptors()
                     .withProfile("common,dev")
-                    .withDefaultValue(SMALLRYE_LOCATIONS,
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS,
                             tempDir.resolve("config.properties").toUri() + "," + "config.properties")
                     .build();
 
@@ -563,7 +563,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                     .addDiscoveredSources()
                     .addDefaultInterceptors()
                     .withProfile("common,dev")
-                    .withDefaultValue(SMALLRYE_LOCATIONS, "META-INF/config.properties")
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "META-INF/config.properties")
                     .build();
 
             assertEquals("main", config.getRawValue("my.prop.main"));
@@ -579,7 +579,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
-                .withSources(config(SMALLRYE_LOCATIONS, "more.properties", "config_ordinal", "1000"))
+                .withSources(config(SMALLRYE_CONFIG_LOCATIONS, "more.properties", "config_ordinal", "1000"))
                 .build();
 
         assertEquals("5678", config.getConfigValue("more.prop").getValue());
@@ -590,7 +590,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         return new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
-                .withDefaultValue(SMALLRYE_LOCATIONS, String.join(",", locations))
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, String.join(",", locations))
                 .build();
     }
 

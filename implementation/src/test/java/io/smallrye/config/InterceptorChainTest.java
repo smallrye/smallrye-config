@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.microprofile.config.Config;
@@ -15,7 +15,7 @@ class InterceptorChainTest {
                 "%prof.my.prop.profile", "3",
                 "my.prop.relocate", "4", // relocation
                 "%prof.my.prop.relocate", "${%prof.my.prop.profile}", // profile with relocation
-                SMALLRYE_PROFILE, "prof" // profile to use
+                SMALLRYE_CONFIG_PROFILE, "prof" // profile to use
         );
         assertEquals("3", config.getValue("my.prop", String.class));
     }

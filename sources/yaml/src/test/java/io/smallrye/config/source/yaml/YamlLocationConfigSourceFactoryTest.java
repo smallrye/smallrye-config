@@ -1,6 +1,6 @@
 package io.smallrye.config.source.yaml;
 
-import static io.smallrye.config.AbstractLocationConfigSourceFactory.SMALLRYE_LOCATIONS;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -155,7 +155,7 @@ class YamlLocationConfigSourceFactoryTest {
         return new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
-                .withDefaultValue(SMALLRYE_LOCATIONS, String.join(",", locations))
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, String.join(",", locations))
                 .build();
     }
 

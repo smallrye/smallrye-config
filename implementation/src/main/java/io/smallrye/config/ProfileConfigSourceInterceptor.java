@@ -16,8 +16,6 @@ import javax.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 600)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
-    public static final String SMALLRYE_PROFILE = "smallrye.config.profile";
-    public static final String SMALLRYE_PROFILE_PARENT = "smallrye.config.profile.parent";
 
     private static final long serialVersionUID = -6305289277993917313L;
     private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (o1, o2) -> {
@@ -122,9 +120,9 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private static List<String> convertProfile(final ConfigSourceInterceptorContext context) {
         final List<String> profiles = new ArrayList<>();
-        final ConfigValue profile = context.proceed(SMALLRYE_PROFILE);
+        final ConfigValue profile = context.proceed(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE);
         if (profile != null) {
-            final ConfigValue parentProfile = context.proceed(SMALLRYE_PROFILE_PARENT);
+            final ConfigValue parentProfile = context.proceed(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT);
             if (parentProfile != null) {
                 profiles.add(parentProfile.getValue());
             }

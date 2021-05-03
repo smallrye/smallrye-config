@@ -1,8 +1,8 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE_PARENT;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,7 +30,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
 class ProfileConfigSourceInterceptorTest {
     @Test
     void profile() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
 
@@ -41,21 +41,21 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void profileOnly() {
-        final Config config = buildConfig("%prof.my.prop", "2", SMALLRYE_PROFILE, "prof");
+        final Config config = buildConfig("%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
     }
 
     @Test
     void fallback() {
-        final Config config = buildConfig("my.prop", "1", SMALLRYE_PROFILE, "prof");
+        final Config config = buildConfig("my.prop", "1", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("1", config.getValue("my.prop", String.class));
     }
 
     @Test
     void expressions() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_PROFILE, "prof");
+        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertThrows(IllegalArgumentException.class, () -> config.getValue("my.prop", String.class));
     }
@@ -65,7 +65,7 @@ class ProfileConfigSourceInterceptorTest {
         final Config config = buildConfig("my.prop", "1",
                 "%prof.my.prop", "${%prof.my.prop.profile}",
                 "%prof.my.prop.profile", "2",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
     }
@@ -74,8 +74,8 @@ class ProfileConfigSourceInterceptorTest {
     void cannotExpand() {
         final Config config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(config("my.prop", "${another.prop}", SMALLRYE_PROFILE, "prof", "config_ordinal", "1000"))
-                .withSources(config("my.prop", "${another.prop}", "%prof.my.prop", "2", SMALLRYE_PROFILE, "prof"))
+                .withSources(config("my.prop", "${another.prop}", SMALLRYE_CONFIG_PROFILE, "prof", "config_ordinal", "1000"))
+                .withSources(config("my.prop", "${another.prop}", "%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof"))
                 .build();
 
         assertThrows(NoSuchElementException.class, () -> config.getValue("my.prop", String.class));
@@ -186,7 +186,7 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void propertyNames() {
         final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getConfigValue("my.prop").getValue());
         assertEquals("1", config.getConfigValue("prof.only").getValue());
@@ -219,7 +219,7 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void multipleProfiles() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(SMALLRYE_PROFILE, "common,prof", "config_ordinal", "1000"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "common,prof", "config_ordinal", "1000"))
                 .withSources(config("%common.common.prop", "1234", "%prof.my.prop", "5678"))
                 .addDefaultInterceptors()
                 .build();
@@ -243,7 +243,7 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void multipleProfilesDifferentPriorities() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(SMALLRYE_PROFILE, "common,prof", "config_ordinal", "1000"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "common,prof", "config_ordinal", "1000"))
                 .withSources(config("%prof.common.prop", "5678", "config_ordinal", "300"))
                 .withSources(config("%common.common.prop", "1234", "config_ordinal", "500"))
                 .addDefaultInterceptors()
@@ -255,7 +255,7 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void multipleProfilesDifferentPrioritiesMain() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(SMALLRYE_PROFILE, "common,prof", "config_ordinal", "1000"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "common,prof", "config_ordinal", "1000"))
                 .withSources(config("common.prop", "9", "config_ordinal", "900"))
                 .withSources(config("%prof.common.prop", "5678", "config_ordinal", "500"))
                 .withSources(config("%common.common.prop", "1234", "config_ordinal", "300"))
@@ -352,8 +352,8 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void parentProfile() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(SMALLRYE_PROFILE, "prof"))
-                .withSources(config(SMALLRYE_PROFILE_PARENT, "common"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "prof"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE_PARENT, "common"))
                 .withSources(config("%common.common.prop", "1234", "%prof.my.prop", "5678"))
                 .addDefaultInterceptors()
                 .build();

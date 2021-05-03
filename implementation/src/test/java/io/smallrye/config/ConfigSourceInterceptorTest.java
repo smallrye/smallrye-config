@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -77,7 +77,7 @@ class ConfigSourceInterceptorTest {
                 .withSources(KeyValuesConfigSource.config("my.prop", "1",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
-                        SMALLRYE_PROFILE, "prof"))
+                        SMALLRYE_CONFIG_PROFILE, "prof"))
                 .addDefaultInterceptors()
                 .build();
 
@@ -91,7 +91,7 @@ class ConfigSourceInterceptorTest {
                 .withSources(KeyValuesConfigSource.config("my.prop", "${expansion}",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
-                        SMALLRYE_PROFILE, "prof"))
+                        SMALLRYE_CONFIG_PROFILE, "prof"))
                 .addDefaultInterceptors()
                 .build();
 
@@ -106,7 +106,7 @@ class ConfigSourceInterceptorTest {
                 .withSources(KeyValuesConfigSource.config("my.prop", "1",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
-                        SMALLRYE_PROFILE, "prof"))
+                        SMALLRYE_CONFIG_PROFILE, "prof"))
                 .build();
 
         Set<String> names = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
