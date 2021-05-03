@@ -15,7 +15,9 @@
  */
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.ConfigMappings.ConfigMappingWithPrefix.configMappingWithPrefix;
+import static io.smallrye.config.ConfigMappings.registerConfigMappings;
+import static io.smallrye.config.ConfigMappings.registerConfigProperties;
+import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromInjectionPoint;
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromType;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
@@ -55,7 +57,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.ConfigMappings;
+import io.smallrye.config.ConfigMappings.ConfigClassWithPrefix;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.SmallRyeConfig;
 
@@ -67,6 +69,8 @@ import io.smallrye.config.SmallRyeConfig;
 public class ConfigExtension implements Extension {
     private final Set<InjectionPoint> configPropertyInjectionPoints = new HashSet<>();
 
+    private final Set<AnnotatedType<?>> configProperties = new HashSet<>();
+    private final Set<InjectionPoint> configPropertiesInjectionPoints = new HashSet<>();
     private final Set<AnnotatedType<?>> configMappings = new HashSet<>();
     private final Set<InjectionPoint> configMappingInjectionPoints = new HashSet<>();
 
@@ -78,26 +82,36 @@ public class ConfigExtension implements Extension {
         bbd.addAnnotatedType(configBean, ConfigProducer.class.getName());
     }
 
-    protected void processConfigMappings(
-            @Observes @WithAnnotations({ ConfigProperties.class,
-                    ConfigMapping.class }) ProcessAnnotatedType<?> processAnnotatedType) {
-
+    protected void processConfigProperties(
+            @Observes @WithAnnotations(ConfigProperties.class) ProcessAnnotatedType<?> processAnnotatedType) {
         // Even if we filter in the CDI event, beans containing injection points of ConfigMapping are also fired.
-        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigProperties.class)
-                || processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
+        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigProperties.class)) {
+            // We are going to veto, because it may be a managed bean and we will use a configurator bean
+            processAnnotatedType.veto();
+            configProperties.add(processAnnotatedType.getAnnotatedType());
+        }
+    }
+
+    protected void processConfigMappings(
+            @Observes @WithAnnotations(ConfigMapping.class) ProcessAnnotatedType<?> processAnnotatedType) {
+        // Even if we filter in the CDI event, beans containing injection points of ConfigMapping are also fired.
+        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
             // We are going to veto, because it may be a managed bean and we will use a configurator bean
             processAnnotatedType.veto();
             configMappings.add(processAnnotatedType.getAnnotatedType());
         }
     }
 
-    protected void collectConfigPropertyInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
+    protected void processConfigInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
             configPropertyInjectionPoints.add(pip.getInjectionPoint());
         }
 
-        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperties.class)
-                || pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
+        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperties.class)) {
+            configPropertiesInjectionPoints.add(pip.getInjectionPoint());
+        }
+
+        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
             configMappingInjectionPoints.add(pip.getInjectionPoint());
         }
     }
@@ -123,6 +137,8 @@ public class ConfigExtension implements Extension {
         }
 
         customTypes.stream().map(customType -> new ConfigInjectionBean<>(bm, customType)).forEach(abd::addBean);
+        configProperties.stream().map(annotatedType -> new ConfigMappingInjectionBean<>(bm, annotatedType))
+                .forEach(abd::addBean);
         configMappings.stream().map(annotatedType -> new ConfigMappingInjectionBean<>(bm, annotatedType)).forEach(abd::addBean);
     }
 
@@ -174,19 +190,14 @@ public class ConfigExtension implements Extension {
             }
         }
 
-        Set<ConfigMappings.ConfigMappingWithPrefix> configMappingsWithPrefix = new HashSet<>();
-        for (AnnotatedType<?> configMapping : configMappings) {
-            configMappingsWithPrefix
-                    .add(configMappingWithPrefix(configMapping.getJavaClass(), getPrefixFromType(configMapping)));
-        }
-
-        for (InjectionPoint injectionPoint : configMappingInjectionPoints) {
-            getPrefixFromInjectionPoint(injectionPoint).ifPresent(prefix -> configMappingsWithPrefix
-                    .add(configMappingWithPrefix((Class<?>) injectionPoint.getType(), prefix)));
-        }
+        Set<ConfigClassWithPrefix> configMappingsWithPrefix = mapToConfigObjectWithPrefix(configMappings,
+                configMappingInjectionPoints);
+        Set<ConfigClassWithPrefix> configPropertiesWithPrefix = mapToConfigObjectWithPrefix(configProperties,
+                configPropertiesInjectionPoints);
 
         try {
-            ConfigMappings.registerConfigMappings((SmallRyeConfig) config, configMappingsWithPrefix);
+            registerConfigMappings(config.unwrap(SmallRyeConfig.class), configMappingsWithPrefix);
+            registerConfigProperties(config.unwrap(SmallRyeConfig.class), configPropertiesWithPrefix);
         } catch (ConfigValidationException e) {
             adv.addDeploymentProblem(e);
         }
@@ -196,7 +207,23 @@ public class ConfigExtension implements Extension {
         return configPropertyInjectionPoints;
     }
 
-    private boolean isIndexed(Type type, String name, Config config) {
+    private static Set<ConfigClassWithPrefix> mapToConfigObjectWithPrefix(
+            Set<AnnotatedType<?>> annotatedTypes,
+            Set<InjectionPoint> injectionPoints) {
+
+        Set<ConfigClassWithPrefix> configMappingsWithPrefix = new HashSet<>();
+        for (AnnotatedType<?> annotatedType : annotatedTypes) {
+            configMappingsWithPrefix
+                    .add(configClassWithPrefix(annotatedType.getJavaClass(), getPrefixFromType(annotatedType)));
+        }
+        for (InjectionPoint injectionPoint : injectionPoints) {
+            getPrefixFromInjectionPoint(injectionPoint).ifPresent(prefix -> configMappingsWithPrefix
+                    .add(configClassWithPrefix((Class<?>) injectionPoint.getType(), prefix)));
+        }
+        return configMappingsWithPrefix;
+    }
+
+    private static boolean isIndexed(Type type, String name, Config config) {
         return type instanceof ParameterizedType &&
                 (List.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()) ||
                         Set.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))

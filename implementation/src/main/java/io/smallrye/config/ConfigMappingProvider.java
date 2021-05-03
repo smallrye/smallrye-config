@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
@@ -766,6 +767,13 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     void mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+        for (ConfigSource configSource : config.getConfigSources()) {
+            if (configSource instanceof DefaultValuesConfigSource) {
+                final DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
+                defaultValuesConfigSource.registerDefaults(this.getDefaultValues());
+            }
+        }
+
         mapConfiguration(config, config.getConfigMappings());
     }
 
