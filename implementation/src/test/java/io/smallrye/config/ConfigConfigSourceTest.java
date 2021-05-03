@@ -1,7 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -143,8 +143,8 @@ class ConfigConfigSourceTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(config(SMALLRYE_PROFILE, "foo", "%foo.my.prop", "1234", "%bar.my.prop", "5678"))
-                .withSources(new ConfigurableConfigSource(context -> singletonList(config(SMALLRYE_PROFILE, "bar"))))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "foo", "%foo.my.prop", "1234", "%bar.my.prop", "5678"))
+                .withSources(new ConfigurableConfigSource(context -> singletonList(config(SMALLRYE_CONFIG_PROFILE, "bar"))))
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop"));

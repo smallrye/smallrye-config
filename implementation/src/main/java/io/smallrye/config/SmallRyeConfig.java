@@ -51,6 +51,11 @@ import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SmallRyeConfig implements Config, Serializable {
+    public static final String SMALLRYE_CONFIG_PROFILE = "smallrye.config.profile";
+    public static final String SMALLRYE_CONFIG_PROFILE_PARENT = "smallrye.config.profile.parent";
+    public static final String SMALLRYE_CONFIG_LOCATIONS = "smallrye.config.locations";
+    public static final String SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN = "smallrye.config.mapping.validate-unknown";
+
     private static final long serialVersionUID = 8138651532357898263L;
 
     private final ConfigSources configSources;

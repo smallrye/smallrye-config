@@ -12,17 +12,16 @@ import io.smallrye.common.annotation.Experimental;
 
 /**
  * This {@code AbstractLocationConfigSourceFactory} allows to initialize additional config locations with the
- * configuration {@link AbstractLocationConfigSourceFactory#SMALLRYE_LOCATIONS}. The configuration support multiple
+ * configuration {@link SmallRyeConfig#SMALLRYE_CONFIG_LOCATIONS}. The configuration support multiple
  * locations separated by a comma and each must represent a valid {@link URI}.
  */
 @Experimental("Loads additional config locations")
 public abstract class AbstractLocationConfigSourceFactory extends AbstractLocationConfigSourceLoader
         implements ConfigSourceFactory {
-    public static final String SMALLRYE_LOCATIONS = "smallrye.config.locations";
 
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-        final ConfigValue value = context.getValue(SMALLRYE_LOCATIONS);
+        final ConfigValue value = context.getValue(SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS);
         if (value.getValue() == null) {
             return Collections.emptyList();
         }

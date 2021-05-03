@@ -171,7 +171,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
                 final Map<String, String> relocations = new HashMap<>();
-                relocations.put(ProfileConfigSourceInterceptor.SMALLRYE_PROFILE, Config.PROFILE);
+                relocations.put(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, Config.PROFILE);
                 return new RelocateConfigSourceInterceptor(relocations);
             }
 
@@ -279,7 +279,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
         mappingsBuilder.validateUnknown(validateUnknown);
-        withDefaultValue(ConfigMappings.VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
+        withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
         return this;
     }
 

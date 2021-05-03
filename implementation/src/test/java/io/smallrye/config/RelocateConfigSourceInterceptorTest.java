@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ProfileConfigSourceInterceptor.SMALLRYE_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +52,7 @@ class RelocateConfigSourceInterceptorTest {
         Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "Cookie",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("Cookie", config.getValue("smallrye.jwt.token.header", String.class));
     }
@@ -63,7 +63,7 @@ class RelocateConfigSourceInterceptorTest {
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
                 "token.header", "Cookie",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("Cookie", config.getValue("smallrye.jwt.token.header", String.class));
     }
@@ -76,7 +76,7 @@ class RelocateConfigSourceInterceptorTest {
                 "token.header", "Cookie",
                 "smallrye.jwt.token.cookie", "jwt",
                 "%prof.smallrye.jwt.token.cookie", "Basic",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("Basic", config.getValue("smallrye.jwt.token.cookie", String.class));
     }
@@ -88,7 +88,7 @@ class RelocateConfigSourceInterceptorTest {
                 "mp.jwt.token.header", "Authorization",
                 "%prof.mp.jwt.token.header", "${token.header}",
                 "token.header", "Cookie",
-                SMALLRYE_PROFILE, "prof");
+                SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertThrows(SecurityException.class, () -> config.getValue("smallrye.jwt.token.header", String.class));
         assertThrows(SecurityException.class, () -> config.getValue("mp.jwt.token.header", String.class));
