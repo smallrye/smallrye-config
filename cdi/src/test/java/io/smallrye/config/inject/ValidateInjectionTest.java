@@ -86,59 +86,62 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  */
 public class ValidateInjectionTest {
 
-	@BeforeAll
-	static void beforeAll() {
-		SmallRyeConfig config = new SmallRyeConfigBuilder()
-				.withSources(config("server.host", "localhost", "server.port", "8080"))
-				.withSources(config("bad.property.expression.prop", "${missing.prop}"))
-				.withConverter(ConvertedValue.class, 100, new ConvertedValueConverter()).addDefaultInterceptors()
-				.build();
-		ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
-	}
+    @BeforeAll
+    static void beforeAll() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "1234"))
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("bad.property", ",", "empty.property", ""))
+                .withSources(config("bad.property.expression.prop", "${missing.prop}"))
+                .withSources(config("server.hosts[0]", "localhost", "server.hosts[1]", "config"))
+                .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter()).addDefaultInterceptors()
+                .build();
+        ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
+    }
 
-	@AfterAll
-	static void afterAll() {
-		ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
-	}
+    @AfterAll
+    static void afterAll() {
+        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
+    }
 
-	static class ConvertedValue {
-		private final String value;
+    static class ConvertedValue {
+        private final String value;
 
-		public ConvertedValue(final String value) {
-			this.value = value;
-		}
+        public ConvertedValue(final String value) {
+            this.value = value;
+        }
 
-		public String getValue() {
-			return value;
-		}
+        public String getValue() {
+            return value;
+        }
 
-		@Override
-		public boolean equals(final Object o) {
-			if (this == o) {
-				return true;
-			}
-			if (o == null || getClass() != o.getClass()) {
-				return false;
-			}
-			final ConvertedValue that = (ConvertedValue) o;
-			return value.equals(that.value);
-		}
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final ConvertedValue that = (ConvertedValue) o;
+            return value.equals(that.value);
+        }
 
-		@Override
-		public int hashCode() {
-			return Objects.hash(value);
-		}
-	}
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+    }
 
-	static class ConvertedValueConverter implements Converter<ConvertedValue> {
-		@Override
-		public ConvertedValue convert(final String value) {
-			if (value == null || value.isEmpty()) {
-				return null;
-			}
-			return new ConvertedValue("out");
-		}
-	}
+    static class ConvertedValueConverter implements Converter<ConvertedValue> {
+        @Override
+        public ConvertedValue convert(final String value) {
+            if (value == null || value.isEmpty()) {
+                return null;
+            }
+            return new ConvertedValue("out");
+        }
+    }
 
     @Test
     void missingProperty() throws Exception {
@@ -601,7 +604,7 @@ public class ValidateInjectionTest {
     }
 
     @ExtendWith(WeldJunit5Extension.class)
-    static class BadConfigPropertiesInjectionTest  {
+    static class BadConfigPropertiesInjectionTest {
         @WeldSetup
         WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, ServerDetailsBean.class)
                 .addBeans()
