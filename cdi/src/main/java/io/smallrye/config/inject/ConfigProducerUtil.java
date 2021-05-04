@@ -48,48 +48,28 @@ public final class ConfigProducerUtil {
             return null;
         }
 
+        String defaultValue = getDefaultValue(injectionPoint);
+        String resolvedValue = resolveValue(name, config, defaultValue);
         if (hasCollection(injectionPoint.getType())) {
-            return convertValues(name, injectionPoint.getType(), getDefaultValue(injectionPoint), config);
+            return convertValues(name, injectionPoint.getType(), resolvedValue, defaultValue, config);
         }
 
-        return convertValue(name, resolveConverter(injectionPoint, config), getDefaultValue(injectionPoint), config);
+        return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(injectionPoint, config));
     }
 
     public static <T> T getValue(String name, Type type, String defaultValue, Config config) {
         if (name == null) {
             return null;
         }
-        return convertValue(name, resolveConverter(type, config), defaultValue, config);
+        String resolvedValue = resolveValue(name, config, defaultValue);
+        return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(type, config));
     }
 
-    public static <T> T convertValue(String name, Converter<T> converter, String defaultValue, Config config) {
-        String rawValue = getRawValue(name, config);
-        if (rawValue == null) {
-            rawValue = defaultValue;
-        }
-
-        T converted;
-        if (rawValue == null) {
-            // convert an empty value
-            try {
-                converted = converter.convert("");
-            } catch (IllegalArgumentException ignored) {
-                throw InjectionMessages.msg.propertyNotFound(name);
-            }
-        } else {
-            converted = converter.convert(rawValue);
-        }
-        if (converted == null) {
-            throw InjectionMessages.msg.propertyNotFound(name);
-        }
-        return converted;
-    }
-
-    public static <T> T convertValues(String name, Type type, String defaultValue, Config config) {
+    public static <T> T convertValues(String name, Type type, String resolvedValue, String defaultValue, Config config) {
         String rawValue = getRawValue(name, config);
         List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
         if (rawValue != null || indexedProperties.isEmpty()) {
-            return convertValue(name, resolveConverter(type, config), defaultValue, config);
+            return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(type, config));
         }
 
         BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
@@ -97,7 +77,8 @@ public final class ConfigProducerUtil {
             Collection<T> collection = collectionFactory.apply(indexedProperties.size());
             for (String indexedProperty : indexedProperties) {
                 // Never null by the rules of converValue
-                collection.add(convertValue(indexedProperty, itemConverter, null, config));
+                collection.add(
+                        SmallRyeConfig.convertValue(name, resolveValue(indexedProperty, config, defaultValue), itemConverter));
             }
             return collection;
         };
@@ -123,6 +104,11 @@ public final class ConfigProducerUtil {
 
     public static String getRawValue(String name, Config config) {
         return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
+    }
+
+    private static String resolveValue(String name, Config config, String defaultValue) {
+        String rawValue = getRawValue(name, config);
+        return rawValue != null ? rawValue : defaultValue;
     }
 
     public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config config) {

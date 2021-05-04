@@ -11,19 +11,17 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.annotations.Param;
 import org.jboss.logging.annotations.Pos;
-import org.jboss.logging.annotations.Signature;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface InjectionMessages {
     InjectionMessages msg = Messages.getBundle(InjectionMessages.class);
 
-    @Signature(messageIndex = 1, value = { String.class, String.class })
-    @Message(id = 2000, value = "No Config Value exists for required property %s")
-    ConfigException noConfigValue(@Param @Pos(1) String key);
+    @Message(id = 2000, value = "Failed to Inject @ConfigProperty for key %s into %s since the config property could not be found in any config source")
+    ConfigException noConfigValue(@Param @Pos(1) String configPropertyName, @Pos(2) String location);
 
-    @Signature(messageIndex = 1, value = { String.class, String.class, Throwable.class })
-    @Message(id = 2001, value = "Failed to retrieve config for key %s")
-    ConfigException retrieveConfigFailure(@Cause IllegalArgumentException cause, @Param @Pos(1) String key);
+    @Message(id = 2001, value = "Failed to Inject @ConfigProperty for key %s into %s %s")
+    ConfigException retrieveConfigFailure(@Param @Pos(1) String configPropertyName, @Pos(2) String location,
+            @Pos(3) String causeMessage, @Cause Exception e);
 
     @Message(id = 2002, value = "Could not find default name for @ConfigProperty InjectionPoint %s")
     IllegalStateException noConfigPropertyDefaultName(InjectionPoint injectionPoint);
