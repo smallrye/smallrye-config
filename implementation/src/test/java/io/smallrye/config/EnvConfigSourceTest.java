@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -47,7 +48,7 @@ class EnvConfigSourceTest {
         assertFalse(cs.getPropertyNames().contains("smallrye_mp_config_prop"));
 
         assertEquals(envProp, cs.getValue("smallrye.mp.config.prop"));
-        assertFalse(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
+        assertTrue(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
 
         assertEquals(envProp, cs.getValue("SMALLRYE.MP.CONFIG.PROP"));
         assertFalse(cs.getPropertyNames().contains("SMALLRYE.MP.CONFIG.PROP"));
@@ -94,5 +95,19 @@ class EnvConfigSourceTest {
 
         assertTrue(configSource instanceof EnvConfigSource);
         assertEquals(configSource.getOrdinal(), 301);
+    }
+
+    @Test
+    void propertyNames() {
+        ConfigSource configSource = new EnvConfigSource();
+        Set<String> propertyNames = configSource.getPropertyNames();
+        assertTrue(propertyNames.contains("MAPPING_SERVER_ENV__LOCALHOST__NAME"));
+        assertTrue(propertyNames.contains("mapping.server.env.\"localhost\".name"));
+        assertTrue(propertyNames.contains("MAPPING_SERVER_ENV__LOCALHOST__ALIAS"));
+        assertTrue(propertyNames.contains("mapping.server.env.\"localhost\".alias"));
+        assertTrue(propertyNames.contains("MAPPING_SERVER_ENV_CLOUD_NAME"));
+        assertTrue(propertyNames.contains("mapping.server.env.cloud.name"));
+        assertTrue(propertyNames.contains("MAPPING_SERVER_ENV_CLOUD_ALIAS"));
+        assertTrue(propertyNames.contains("mapping.server.env.cloud.alias"));
     }
 }
