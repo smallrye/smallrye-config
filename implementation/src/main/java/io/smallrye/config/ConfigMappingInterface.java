@@ -24,7 +24,7 @@ import io.smallrye.common.constraint.Assert;
 /**
  * Information about a configuration interface.
  */
-final class ConfigMappingInterface implements ConfigMappingMetadata {
+public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
     static final ClassValue<ConfigMappingInterface> cv = new ClassValue<ConfigMappingInterface>() {
@@ -56,7 +56,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
      * @param interfaceType the interface type (must not be {@code null})
      * @return the configuration interface, or {@code null} if the type does not appear to be a configuration interface
      */
-    static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
+    public static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
         Assert.checkNotNullParam("interfaceType", interfaceType);
         return cv.get(interfaceType);
     }
@@ -99,7 +99,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         return superTypes[index];
     }
 
-    Property[] getProperties() {
+    public Property[] getProperties() {
         return properties;
     }
 
@@ -130,7 +130,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
         return propertiesByName.get(name);
     }
 
-    NamingStrategy getNamingStrategy() {
+    public NamingStrategy getNamingStrategy() {
         return namingStrategy;
     }
 
@@ -792,7 +792,7 @@ final class ConfigMappingInterface implements ConfigMappingMetadata {
     private static final NamingStrategy KEBAB_CASE_NAMING_STRATEGY = new KebabNamingStrategy();
     private static final NamingStrategy SNAKE_CASE_NAMING_STRATEGY = new SnakeNamingStrategy();
 
-    interface NamingStrategy extends Function<String, String> {
+    public interface NamingStrategy extends Function<String, String> {
 
     }
 
