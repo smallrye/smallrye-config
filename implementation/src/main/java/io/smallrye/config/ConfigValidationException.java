@@ -7,7 +7,7 @@ import io.smallrye.common.constraint.Assert;
 /**
  * An exception which is thrown when a configuration validation problem occurs.
  */
-public class ConfigValidationException extends Exception {
+public class ConfigValidationException extends RuntimeException {
     private static final long serialVersionUID = -2637730579475070264L;
 
     private final Problem[] problems;
