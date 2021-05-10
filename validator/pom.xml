@@ -32,7 +32,7 @@
 
         <!-- Test -->
         <version.hibernate.validator>6.2.0.Final</version.hibernate.validator>
-        <version.jakarta.el>3.0.3</version.jakarta.el>
+        <version.jakarta.el>4.0.1</version.jakarta.el>
     </properties>
 
     <dependencies>
