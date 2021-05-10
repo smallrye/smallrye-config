@@ -31,7 +31,7 @@
         <version.jakarta.validation>2.0.2</version.jakarta.validation>
 
         <!-- Test -->
-        <version.hibernate.validator>6.2.0.Final</version.hibernate.validator>
+        <version.hibernate.validator>7.0.1.Final</version.hibernate.validator>
         <version.jakarta.el>3.0.3</version.jakarta.el>
     </properties>
 
