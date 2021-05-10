@@ -244,17 +244,17 @@ public class ValidateInjectionTest {
 
         assertThat(exception)
                 .hasMessageStartingWith(
-                        "SRCFG02001: Failed to Inject @ConfigProperty for key server.hosts into io.smallrye.config.inject.ValidateInjectionTest$BadIndexedPropertiesInjectionTest$BadIndexedPropertiesBean.badIndexedProp SRCFG00039:");
+                        "SRCFG02001: Failed to Inject @ConfigProperty for key server.ports into io.smallrye.config.inject.ValidateInjectionTest$BadIndexedPropertiesInjectionTest$BadIndexedPropertiesBean.badIndexedProp SRCFG00039:");
 
         assertThat(exception.getCause()).isInstanceOf(ConfigException.class);
 
         assertThat(exception.getCause().getCause()).isInstanceOf(IllegalArgumentException.class);
         assertThat(exception.getCause().getCause()).hasMessageStartingWith(
-                "SRCFG00039: The config property server.hosts with the config value \"localhost\" threw an Exception whilst being converted SRCFG00029:");
+                "SRCFG00039: The config property server.ports[1] with the config value \"astring\" threw an Exception whilst being converted SRCFG00029:");
 
         assertThat(exception.getCause().getCause().getCause()).isInstanceOf(NumberFormatException.class);
         assertThat(exception.getCause().getCause().getCause()).hasMessage(
-                "SRCFG00029: Expected an integer value, got \"localhost\"");
+                "SRCFG00029: Expected an integer value, got \"astring\"");
 
     }
 
@@ -644,7 +644,7 @@ public class ValidateInjectionTest {
         @ApplicationScoped
         static class BadIndexedPropertiesBean {
             @Inject
-            @ConfigProperty(name = "server.hosts") // "server.hosts[0]" and "server.hosts[1]" exist, but are Strings not Integers
+            @ConfigProperty(name = "server.ports") // "server.hosts[0]" and "server.hosts[1]" exist, but "server.hosts[1]" is a String not an Integer
             List<Integer> badIndexedProp;
         }
     }
@@ -712,12 +712,13 @@ public class ValidateInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("my.prop", "1234"))
-                .withSources(config("server.host", "localhost", "server.port", "8080"))
-                .withSources(config("bad.property", ",", "empty.property", ""))
-                .withSources(config("client.host", "clienthost"))
-                .withSources(config("bad.property.expression.prop", "${missing.prop}"))
-                .withSources(config("server.hosts[0]", "localhost", "server.hosts[1]", "config"))
+                .withSources(config("empty.property", "")) // {@link EmptyPropertyTest}
+                .withSources(config("bad.property", ",")) // {@link BadPropertyTest}
+                .withSources(config("my.prop", "1234")) // {@link MissingConverterTest}
+                .withSources(config("server.host", "localhost", "server.port", "8080")) // {@link BadConfigPropertiesInjectionTest} and {@link UnqualifiedConfigPropertiesInjectionTest}
+                .withSources(config("client.host", "clienthost")) // {@link BadConfigMappingInjectionTest}
+                .withSources(config("bad.property.expression.prop", "${missing.prop}")) // {@link MissingPropertyExpressionInjectionTest}
+                .withSources(config("server.ports[0]", "9080", "server.ports[1]", "astring")) // {@link BadIndexedPropertiesInjectionTest}
                 .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter()).addDefaultInterceptors()
                 .build();
         ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());

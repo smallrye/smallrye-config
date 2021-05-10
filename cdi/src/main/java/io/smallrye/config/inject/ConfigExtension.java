@@ -21,7 +21,7 @@ import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClas
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromInjectionPoint;
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromType;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
-import static io.smallrye.config.inject.InjectionMessagesUtil.formatInjectionPoint;
+import static io.smallrye.config.inject.InjectionMessages.formatInjectionPoint;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
 

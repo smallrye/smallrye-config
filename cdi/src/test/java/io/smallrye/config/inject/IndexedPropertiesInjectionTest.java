@@ -49,6 +49,7 @@ class IndexedPropertiesInjectionTest {
     void indexed() {
         assertEquals("localhost", indexedBean.getHost0());
         assertEquals("config", indexedBean.getHost1());
+        assertEquals("defaulthost", indexedBean.getHost2());
         assertEquals(Stream.of("localhost", "config").collect(Collectors.toList()), indexedBean.getHosts());
         assertEquals(Stream.of("localhost", "config").collect(Collectors.toSet()), indexedBean.getHostsSet());
         assertEquals(Stream.of(new ConvertedValue("out")).collect(Collectors.toList()), indexedBean.getConverted());
@@ -81,6 +82,9 @@ class IndexedPropertiesInjectionTest {
         @Inject
         @ConfigProperty(name = "server.hosts[1]")
         String host1;
+        @Inject
+        @ConfigProperty(name = "server.hosts[2]", defaultValue = "defaulthost")
+        String host2;
         @Inject
         @ConfigProperty(name = "server.hosts")
         List<String> hosts;
@@ -124,6 +128,10 @@ class IndexedPropertiesInjectionTest {
 
         public String getHost1() {
             return host1;
+        }
+
+        public String getHost2() {
+            return host2;
         }
 
         public List<String> getHosts() {
