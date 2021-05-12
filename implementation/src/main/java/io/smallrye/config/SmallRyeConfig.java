@@ -233,7 +233,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * should only throw an {@link Exception} for #1 ({@link IllegalArgumentException} when the property cannot be converted to
      * the specified type).
      */
-    public static <T> T convertValue(String name, String value, Converter<T> converter) {
+    public <T> T convertValue(String name, String value, Converter<T> converter) {
 
         final T converted;
 

@@ -54,7 +54,7 @@ public final class ConfigProducerUtil {
             return convertValues(name, injectionPoint.getType(), rawValue, defaultValue, config);
         }
 
-        return SmallRyeConfig.convertValue(name, resolveDefault(rawValue, defaultValue),
+        return ((SmallRyeConfig) config).convertValue(name, resolveDefault(rawValue, defaultValue),
                 resolveConverter(injectionPoint, config));
     }
 
@@ -63,14 +63,15 @@ public final class ConfigProducerUtil {
             return null;
         }
         String resolvedValue = resolveValue(name, defaultValue, config);
-        return SmallRyeConfig.convertValue(name, resolvedValue, resolveConverter(type, config));
+        return ((SmallRyeConfig) config).convertValue(name, resolvedValue, resolveConverter(type, config));
     }
 
     public static <T> T convertValues(String name, Type type, String rawValue, String defaultValue, Config config) {
         List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
         // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
         if (rawValue != null || indexedProperties.isEmpty()) {
-            return SmallRyeConfig.convertValue(name, resolveDefault(rawValue, defaultValue), resolveConverter(type, config));
+            return ((SmallRyeConfig) config).convertValue(name, resolveDefault(rawValue, defaultValue),
+                    resolveConverter(type, config));
         }
 
         BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
@@ -79,7 +80,7 @@ public final class ConfigProducerUtil {
             for (String indexedProperty : indexedProperties) {
                 // Never null by the rules of converValue
                 collection.add(
-                        SmallRyeConfig.convertValue(indexedProperty, resolveValue(indexedProperty, null, config),
+                        ((SmallRyeConfig) config).convertValue(indexedProperty, resolveValue(indexedProperty, null, config),
                                 itemConverter));
             }
             return collection;
