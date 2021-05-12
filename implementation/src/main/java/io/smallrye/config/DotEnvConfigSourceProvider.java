@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -13,7 +14,7 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
     private final String location;
 
     public DotEnvConfigSourceProvider() {
-        this(".env");
+        this(Paths.get(System.getProperty("user.dir"), ".env").toUri().toString());
     }
 
     public DotEnvConfigSourceProvider(final String location) {

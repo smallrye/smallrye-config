@@ -21,6 +21,7 @@ import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClas
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromInjectionPoint;
 import static io.smallrye.config.inject.ConfigMappingInjectionBean.getPrefixFromType;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
+import static io.smallrye.config.inject.InjectionMessages.formatInjectionPoint;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
 
@@ -28,7 +29,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -165,7 +165,9 @@ public class ConfigExtension implements Extension {
             try {
                 name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
             } catch (IllegalStateException e) {
-                adv.addDeploymentProblem(e);
+                adv.addDeploymentProblem(
+                        InjectionMessages.msg.retrieveConfigFailure(null, formatInjectionPoint(injectionPoint),
+                                e.getLocalizedMessage(), e));
                 continue;
             }
 
@@ -175,7 +177,8 @@ public class ConfigExtension implements Extension {
             if ((!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null)
                     && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                    adv.addDeploymentProblem(InjectionMessages.msg.noConfigValue(name));
+                    adv.addDeploymentProblem(
+                            InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint)));
                     continue;
                 }
             }
@@ -183,10 +186,9 @@ public class ConfigExtension implements Extension {
             try {
                 // Check if the value can be injected. This may cause duplicated config reads (to validate and to inject).
                 ConfigProducerUtil.getValue(injectionPoint, config);
-            } catch (IllegalArgumentException e) {
-                adv.addDeploymentProblem(InjectionMessages.msg.illegalConversion(name, type));
-            } catch (NoSuchElementException e) {
-                adv.addDeploymentProblem(e);
+            } catch (Exception e) {
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(name, formatInjectionPoint(injectionPoint),
+                        e.getLocalizedMessage(), e));
             }
         }
 
