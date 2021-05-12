@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -54,12 +55,14 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final KeyMap<String> defaultValues = new KeyMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
+    private ConfigValidator validator = ConfigValidator.EMPTY;
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
     private boolean addDiscoveredSources = false;
     private boolean addDiscoveredConverters = false;
     private boolean addDiscoveredInterceptors = false;
+    private boolean addDiscoveredValidator = false;
 
     public SmallRyeConfigBuilder() {
     }
@@ -78,6 +81,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder addDiscoveredInterceptors() {
         addDiscoveredInterceptors = true;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder addDiscoveredValidator() {
+        addDiscoveredValidator = true;
         return this;
     }
 
@@ -129,6 +137,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         return interceptors;
+    }
+
+    ConfigValidator discoverValidator() {
+        ServiceLoader<ConfigValidator> validatorLoader = ServiceLoader.load(ConfigValidator.class, classLoader);
+        Iterator<ConfigValidator> iterator = validatorLoader.iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
+        }
+        return ConfigValidator.EMPTY;
     }
 
     @Override
@@ -283,6 +300,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withValidator(ConfigValidator validator) {
+        this.validator = validator;
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
@@ -335,6 +357,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
+    private ConfigValidator getValidator() {
+        if (isAddDiscoveredValidator()) {
+            this.validator = discoverValidator();
+        }
+        return validator;
+    }
+
     KeyMap<String> getDefaultValues() {
         return defaultValues;
     }
@@ -359,13 +388,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDiscoveredInterceptors;
     }
 
+    boolean isAddDiscoveredValidator() {
+        return addDiscoveredValidator;
+    }
+
     @Override
     public SmallRyeConfig build() {
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
         defaultValues.putAll(mappingProvider.getDefaultValues());
 
         try {
-            ConfigMappings configMappings = new ConfigMappings();
+            ConfigMappings configMappings = new ConfigMappings(getValidator());
             SmallRyeConfig config = new SmallRyeConfig(this, configMappings);
             mappingProvider.mapConfiguration(config);
             return config;

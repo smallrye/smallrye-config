@@ -16,9 +16,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperties;
 public final class ConfigMappings implements Serializable {
     private static final long serialVersionUID = -7790784345796818526L;
 
+    private final ConfigValidator configValidator;
     private final ConcurrentMap<Class<?>, Map<String, ConfigMappingObject>> mappings;
 
-    ConfigMappings() {
+    ConfigMappings(final ConfigValidator configValidator) {
+        this.configValidator = configValidator;
         this.mappings = new ConcurrentHashMap<>();
     }
 
@@ -76,11 +78,14 @@ public final class ConfigMappings implements Serializable {
             throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
         }
 
+        Object value = configMappingObject;
         if (configMappingObject instanceof ConfigMappingClassMapper) {
-            return type.cast(((ConfigMappingClassMapper) configMappingObject).map());
+            value = ((ConfigMappingClassMapper) configMappingObject).map();
         }
 
-        return type.cast(configMappingObject);
+        configValidator.validateMapping(type, prefix, value);
+
+        return type.cast(value);
     }
 
     static String getPrefix(Class<?> type) {
