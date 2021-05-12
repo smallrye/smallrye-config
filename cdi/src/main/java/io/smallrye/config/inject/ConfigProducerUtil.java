@@ -42,6 +42,14 @@ public final class ConfigProducerUtil {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Retrieves a converted configuration value from {@link Config}.
+     *
+     * @param injectionPoint the {@link InjectionPoint} where the configuration value will be injected
+     * @param config the current {@link Config} instance.
+     *
+     * @return the converted configuration value.
+     */
     public static <T> T getValue(InjectionPoint injectionPoint, Config config) {
         String name = getName(injectionPoint);
         if (name == null) {
@@ -58,6 +66,16 @@ public final class ConfigProducerUtil {
                 resolveConverter(injectionPoint, config));
     }
 
+    /**
+     * Retrieves a converted configuration value from {@link Config}.
+     *
+     * @param name the name of the configuration property.
+     * @param type the {@link Type} of the configuration value to convert.
+     * @param defaultValue the defaut value to use if no configuration value is found.
+     * @param config the current {@link Config} instance.
+     *
+     * @return the converted configuration value.
+     */
     public static <T> T getValue(String name, Type type, String defaultValue, Config config) {
         if (name == null) {
             return null;
@@ -66,7 +84,7 @@ public final class ConfigProducerUtil {
         return ((SmallRyeConfig) config).convertValue(name, resolvedValue, resolveConverter(type, config));
     }
 
-    public static <T> T convertValues(String name, Type type, String rawValue, String defaultValue, Config config) {
+    private static <T> T convertValues(String name, Type type, String rawValue, String defaultValue, Config config) {
         List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
         // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
         if (rawValue != null || indexedProperties.isEmpty()) {
@@ -89,7 +107,7 @@ public final class ConfigProducerUtil {
         return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
     }
 
-    public static ConfigValue getConfigValue(InjectionPoint injectionPoint, Config config) {
+    static ConfigValue getConfigValue(InjectionPoint injectionPoint, Config config) {
         String name = getName(injectionPoint);
         if (name == null) {
             return null;
@@ -105,7 +123,7 @@ public final class ConfigProducerUtil {
         return configValue;
     }
 
-    public static String getRawValue(String name, Config config) {
+    static String getRawValue(String name, Config config) {
         return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
     }
 
@@ -118,7 +136,7 @@ public final class ConfigProducerUtil {
         return rawValue != null ? rawValue : defaultValue;
     }
 
-    public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config config) {
+    private static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config config) {
         return resolveConverter(injectionPoint.getType(), config);
     }
 
@@ -206,7 +224,7 @@ public final class ConfigProducerUtil {
         return false;
     }
 
-    public static String getName(InjectionPoint injectionPoint) {
+    private static String getName(InjectionPoint injectionPoint) {
         for (Annotation qualifier : injectionPoint.getQualifiers()) {
             if (qualifier.annotationType().equals(ConfigProperty.class)) {
                 ConfigProperty configProperty = ((ConfigProperty) qualifier);
@@ -216,7 +234,7 @@ public final class ConfigProducerUtil {
         return null;
     }
 
-    public static String getDefaultValue(InjectionPoint injectionPoint) {
+    private static String getDefaultValue(InjectionPoint injectionPoint) {
         for (Annotation qualifier : injectionPoint.getQualifiers()) {
             if (qualifier.annotationType().equals(ConfigProperty.class)) {
                 String str = ((ConfigProperty) qualifier).defaultValue();
@@ -239,7 +257,7 @@ public final class ConfigProducerUtil {
         return null;
     }
 
-    public static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
+    static String getConfigKey(InjectionPoint ip, ConfigProperty configProperty) {
         String key = configProperty.name();
         if (!key.trim().isEmpty()) {
             return key;
