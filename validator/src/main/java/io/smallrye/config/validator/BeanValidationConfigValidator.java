@@ -1,6 +1,7 @@
 package io.smallrye.config.validator;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -88,8 +89,16 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
 
                 validateMappingInterface(property.asGroup().getGroupType(), appendPropertyName(currentPath, property),
                         namingStrategy, group, problems);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                throw new IllegalAccessError(e.getMessage());
+            } catch (InvocationTargetException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException | Error e2) {
+                    throw e2;
+                } catch (Throwable t2) {
+                    throw new UndeclaredThrowableException(t2);
+                }
             }
         }
 
@@ -105,8 +114,16 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                                 namingStrategy, element, problems);
                         i++;
                     }
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                } catch (InvocationTargetException e) {
+                    try {
+                        throw e.getCause();
+                    } catch (RuntimeException | Error e2) {
+                        throw e2;
+                    } catch (Throwable t2) {
+                        throw new UndeclaredThrowableException(t2);
+                    }
                 }
             } else if (collectionProperty.getElement().isLeaf()) {
                 validateProperty(collectionProperty.getElement(), currentPath, namingStrategy, mappingObject, optional,
@@ -124,8 +141,16 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                                 appendPropertyName(currentPath, property) + "." + entry.getKey(),
                                 namingStrategy, entry.getValue(), problems);
                     }
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                } catch (InvocationTargetException e) {
+                    try {
+                        throw e.getCause();
+                    } catch (RuntimeException | Error e2) {
+                        throw e2;
+                    } catch (Throwable t2) {
+                        throw new UndeclaredThrowableException(t2);
+                    }
                 }
             } else if (mapProperty.getValueProperty().isLeaf()) {
                 validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
@@ -147,8 +172,16 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             for (ConstraintViolation<Object> violation : violations) {
                 problems.add(new Problem(interpolateMessage(currentPath, namingStrategy, property, violation)));
             }
-        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error e2) {
+                throw e2;
+            } catch (Throwable t2) {
+                throw new UndeclaredThrowableException(t2);
+            }
         }
     }
 
