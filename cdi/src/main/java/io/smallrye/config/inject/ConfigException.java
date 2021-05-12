@@ -28,12 +28,18 @@ public class ConfigException extends Exception {
 
     private final String configPropertyName;
 
-    public ConfigException(String configPropertyName, String message) {
+    /**
+     * Constructor for {@link InjectionMessages#noConfigValue(String, String)}
+     */
+    public ConfigException(String message, String configPropertyName) {
         super(message);
         this.configPropertyName = configPropertyName;
     }
 
-    public ConfigException(String configPropertyName, String message, Throwable cause) {
+    /**
+     * Constructor for {@link InjectionMessages#retrieveConfigFailure(String, String, String, Exception)}
+     */
+    public ConfigException(String message, String configPropertyName, Throwable cause) {
         super(message, cause);
         this.configPropertyName = configPropertyName;
     }

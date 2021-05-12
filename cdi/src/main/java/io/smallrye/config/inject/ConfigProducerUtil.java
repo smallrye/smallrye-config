@@ -48,48 +48,30 @@ public final class ConfigProducerUtil {
             return null;
         }
 
+        String defaultValue = getDefaultValue(injectionPoint);
+        String rawValue = getRawValue(name, config);
         if (hasCollection(injectionPoint.getType())) {
-            return convertValues(name, injectionPoint.getType(), getDefaultValue(injectionPoint), config);
+            return convertValues(name, injectionPoint.getType(), rawValue, defaultValue, config);
         }
 
-        return convertValue(name, resolveConverter(injectionPoint, config), getDefaultValue(injectionPoint), config);
+        return ((SmallRyeConfig) config).convertValue(name, resolveDefault(rawValue, defaultValue),
+                resolveConverter(injectionPoint, config));
     }
 
     public static <T> T getValue(String name, Type type, String defaultValue, Config config) {
         if (name == null) {
             return null;
         }
-        return convertValue(name, resolveConverter(type, config), defaultValue, config);
+        String resolvedValue = resolveValue(name, defaultValue, config);
+        return ((SmallRyeConfig) config).convertValue(name, resolvedValue, resolveConverter(type, config));
     }
 
-    public static <T> T convertValue(String name, Converter<T> converter, String defaultValue, Config config) {
-        String rawValue = getRawValue(name, config);
-        if (rawValue == null) {
-            rawValue = defaultValue;
-        }
-
-        T converted;
-        if (rawValue == null) {
-            // convert an empty value
-            try {
-                converted = converter.convert("");
-            } catch (IllegalArgumentException ignored) {
-                throw InjectionMessages.msg.propertyNotFound(name);
-            }
-        } else {
-            converted = converter.convert(rawValue);
-        }
-        if (converted == null) {
-            throw InjectionMessages.msg.propertyNotFound(name);
-        }
-        return converted;
-    }
-
-    public static <T> T convertValues(String name, Type type, String defaultValue, Config config) {
-        String rawValue = getRawValue(name, config);
+    public static <T> T convertValues(String name, Type type, String rawValue, String defaultValue, Config config) {
         List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
+        // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
         if (rawValue != null || indexedProperties.isEmpty()) {
-            return convertValue(name, resolveConverter(type, config), defaultValue, config);
+            return ((SmallRyeConfig) config).convertValue(name, resolveDefault(rawValue, defaultValue),
+                    resolveConverter(type, config));
         }
 
         BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
@@ -97,7 +79,9 @@ public final class ConfigProducerUtil {
             Collection<T> collection = collectionFactory.apply(indexedProperties.size());
             for (String indexedProperty : indexedProperties) {
                 // Never null by the rules of converValue
-                collection.add(convertValue(indexedProperty, itemConverter, null, config));
+                collection.add(
+                        ((SmallRyeConfig) config).convertValue(indexedProperty, resolveValue(indexedProperty, null, config),
+                                itemConverter));
             }
             return collection;
         };
@@ -123,6 +107,15 @@ public final class ConfigProducerUtil {
 
     public static String getRawValue(String name, Config config) {
         return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
+    }
+
+    private static String resolveValue(String name, String defaultValue, Config config) {
+        String rawValue = getRawValue(name, config);
+        return resolveDefault(rawValue, defaultValue);
+    }
+
+    private static String resolveDefault(String rawValue, String defaultValue) {
+        return rawValue != null ? rawValue : defaultValue;
     }
 
     public static <T> Converter<T> resolveConverter(final InjectionPoint injectionPoint, final Config config) {

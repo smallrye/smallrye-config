@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.NoSuchElementException;
 
@@ -94,9 +95,8 @@ class ConfigValueConversionRulesExceptionsTest {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withDefaultValue("not.an.Integer", "notInt").build();
         final Exception exception = assertThrows(IllegalArgumentException.class,
                 () -> config.getValue("not.an.Integer", Integer.class));
-        assertEquals(
-                "SRCFG00039: The config property not.an.Integer with the config value \"notInt\" threw an Exception whilst being converted",
-                exception.getMessage());
+        assertTrue(exception.getMessage().startsWith(
+                "SRCFG00039: The config property not.an.Integer with the config value \"notInt\" threw an Exception whilst being converted SRCFG00029:"));
         assertEquals("SRCFG00029: Expected an integer value, got \"notInt\"", exception.getCause().getMessage());
     }
 }

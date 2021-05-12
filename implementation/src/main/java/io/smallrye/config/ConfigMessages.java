@@ -133,8 +133,9 @@ public interface ConfigMessages {
     @Message(id = 38, value = "Type has no raw type class: %s")
     IllegalArgumentException noRawType(Type type);
 
-    @Message(id = 39, value = "The config property %s with the config value \"%s\" threw an Exception whilst being converted")
-    IllegalArgumentException converterException(@Cause Throwable converterException, String configProperty, String configValue);
+    @Message(id = 39, value = "The config property %s with the config value \"%s\" threw an Exception whilst being converted %s")
+    IllegalArgumentException converterException(@Cause Throwable converterException, String configProperty, String configValue,
+            String causeMessage);
 
     @Message(id = 40, value = "The config property %s is defined as the empty String (\"\") which the following Converter considered to be null: %s")
     NoSuchElementException propertyEmptyString(String configPropertyName, String converter);
