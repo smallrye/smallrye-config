@@ -26,6 +26,11 @@
       <groupId>io.smallrye.config</groupId>
       <artifactId>smallrye-config</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-validator</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Config Sources -->
     <dependency>
