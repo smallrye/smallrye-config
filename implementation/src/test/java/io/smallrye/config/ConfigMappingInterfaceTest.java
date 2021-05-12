@@ -794,4 +794,31 @@ class ConfigMappingInterfaceTest {
         assertEquals("cloud.server.name does not map to any root",
                 ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
     }
+
+    @ConfigMapping(prefix = "mapping.server.env")
+    public interface ServerMapEnv {
+        @WithParentName
+        Map<String, Info> info();
+
+        interface Info {
+            String name();
+
+            List<String> alias();
+        }
+    }
+
+    @Test
+    void mapEnv() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource())
+                .withMapping(ServerMapEnv.class)
+                .build();
+
+        ServerMapEnv mapping = config.getConfigMapping(ServerMapEnv.class);
+
+        assertEquals("development", mapping.info().get("localhost").name());
+        assertEquals("dev", mapping.info().get("localhost").alias().get(0));
+        assertEquals("production", mapping.info().get("cloud").name());
+        assertEquals("prod", mapping.info().get("cloud").alias().get(0));
+    }
 }
