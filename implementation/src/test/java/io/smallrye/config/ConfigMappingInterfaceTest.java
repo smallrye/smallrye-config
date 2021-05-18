@@ -821,4 +821,32 @@ class ConfigMappingInterfaceTest {
         assertEquals("production", mapping.info().get("cloud").name());
         assertEquals("prod", mapping.info().get("cloud").alias().get(0));
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerOptionalWithName {
+        @WithName("a_server")
+        Optional<Server> aServer();
+
+        interface Server {
+            @WithName("a_host")
+            String host();
+
+            @WithName("a_port")
+            int port();
+        }
+    }
+
+    @Test
+    void optionalWithName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource())
+                .withMapping(ServerOptionalWithName.class)
+                .withSources(config("server.a_server.a_host", "localhost", "server.a_server.a_port", "8080"))
+                .build();
+
+        ServerOptionalWithName mapping = config.getConfigMapping(ServerOptionalWithName.class);
+        assertTrue(mapping.aServer().isPresent());
+        assertEquals("localhost", mapping.aServer().get().host());
+        assertEquals(8080, mapping.aServer().get().port());
+    }
 }

@@ -592,22 +592,21 @@ final class ConfigMappingProvider implements Serializable {
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String propertyName = enclosedGroup.getPropertyName();
-            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType,
-                    normalizeKey(propertyName, path, ni), ourEnclosing);
+            String key = indexName(enclosedGroup.getMethod().getName(), path, ni);
+            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType, key, ourEnclosing);
             context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
             if (val == null) {
                 // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());
                 val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
-                context.registerEnclosedField(enclosingType, propertyName, ourEnclosing, val);
+                context.registerEnclosedField(enclosingType, key, ourEnclosing, val);
             }
             return val;
         }
 
-        // This will add the property index (if exists) to the current property
-        private static String normalizeKey(final String propertyName, final ArrayDeque<String> groupPath,
+        // This will add the property index (if exists) to the name
+        private static String indexName(final String name, final ArrayDeque<String> groupPath,
                 final NameIterator nameIterator) {
             String property = nameIterator.getAllPreviousSegments();
             int start = property.indexOf(normalizeIfIndexed(groupPath.getLast()));
@@ -619,7 +618,7 @@ final class ConfigMappingProvider implements Serializable {
                             try {
                                 int index = Integer.parseInt(
                                         property.substring(start + normalizeIfIndexed(groupPath.getLast()).length() + 1, i));
-                                return propertyName + "[" + index + "]";
+                                return name + "[" + index + "]";
                             } catch (NumberFormatException e) {
                                 //NOOP
                             }
@@ -632,7 +631,7 @@ final class ConfigMappingProvider implements Serializable {
                     }
                 }
             }
-            return propertyName;
+            return name;
         }
 
         public void accept(final ConfigMappingContext context, final NameIterator nameIterator) {
