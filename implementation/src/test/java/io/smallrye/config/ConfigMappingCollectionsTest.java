@@ -183,14 +183,17 @@ public class ConfigMappingCollectionsTest {
 
     @ConfigMapping(prefix = "server")
     public interface ServerCollectionsOptionals {
+        @WithName("env")
         List<Environment> environments();
 
         Optional<Environment> notRequired();
 
+        @WithName("req")
         Optional<Environment> required();
 
         Optional<List<Environment>> notRequiredEnvs();
 
+        @WithName("req-envs")
         Optional<List<Environment>> requiredEnvs();
 
         interface Environment {
@@ -215,15 +218,15 @@ public class ConfigMappingCollectionsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerCollectionsOptionals.class, "server")
                 .withSources(config(
-                        "server.environments[0].name", "dev",
-                        "server.environments[1].name", "prod",
-                        "server.environments[0].app.alias", "rest",
-                        "server.required.name", "dev",
-                        "server.required.required-services", "rest,db",
-                        "server.required.indexed[0]", "rest",
-                        "server.required.indexed[1]", "db",
-                        "server.required-envs[0].name", "dev",
-                        "server.required-envs[1].name", "prod"))
+                        "server.env[0].name", "dev",
+                        "server.env[1].name", "prod",
+                        "server.env[0].app.alias", "rest",
+                        "server.req.name", "dev",
+                        "server.req.required-services", "rest,db",
+                        "server.req.indexed[0]", "rest",
+                        "server.req.indexed[1]", "db",
+                        "server.req-envs[0].name", "dev",
+                        "server.req-envs[1].name", "prod"))
                 .build();
 
         ServerCollectionsOptionals server = config.getConfigMapping(ServerCollectionsOptionals.class);
