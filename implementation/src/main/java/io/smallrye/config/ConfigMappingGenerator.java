@@ -287,7 +287,7 @@ public class ConfigMappingGenerator {
                     ctor.visitTypeInsn(NEW, I_STRING_BUILDER);
                     ctor.visitInsn(DUP);
                     ctor.visitMethodInsn(INVOKESPECIAL, I_STRING_BUILDER, "<init>", "()V", false);
-                    ctor.visitLdcInsn(property.getPropertyName());
+                    ctor.visitLdcInsn(memberName);
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
                             "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
                     ctor.visitVarInsn(ALOAD, 10);
@@ -433,7 +433,7 @@ public class ConfigMappingGenerator {
                 // register the group
                 ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                 ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
-                ctor.visitLdcInsn(property.getPropertyName());
+                ctor.visitLdcInsn(memberName);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 ctor.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
