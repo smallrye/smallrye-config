@@ -593,6 +593,7 @@ final class ConfigMappingProvider implements Serializable {
             String propertyName = enclosedGroup.getPropertyName();
             ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType,
                     normalizeKey(propertyName, path, ni), ourEnclosing);
+            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
             if (val == null) {
                 // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
@@ -662,6 +663,7 @@ final class ConfigMappingProvider implements Serializable {
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
             ConfigMappingObject val = (ConfigMappingObject) ourEnclosing.get(mapKey);
+            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());
@@ -700,6 +702,7 @@ final class ConfigMappingProvider implements Serializable {
                 ni.next();
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
             String methodName = property.getMethod().getName();
+            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
             Map<?, ?> val = (Map<?, ?>) context.getEnclosedField(enclosingType, methodName, ourEnclosing);
             if (val == null) {
                 // map is not yet constructed

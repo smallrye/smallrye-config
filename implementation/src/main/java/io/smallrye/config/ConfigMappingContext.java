@@ -185,6 +185,10 @@ public final class ConfigMappingContext {
         });
     }
 
+    void applyNamingStrategy(final NamingStrategy namingStrategy) {
+        this.namingStrategy = namingStrategy;
+    }
+
     public String applyNamingStrategy(final String name) {
         return namingStrategy.apply(name);
     }
