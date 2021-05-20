@@ -132,6 +132,11 @@
             <smallrye_mp_config_prop_lower>1234</smallrye_mp_config_prop_lower>
             <SMALLRYE_MP_CONFIG_EMPTY />
             <CONFIG_ORDINAL>301</CONFIG_ORDINAL>
+
+            <MAPPING_SERVER_ENV__LOCALHOST__NAME>development</MAPPING_SERVER_ENV__LOCALHOST__NAME>
+            <MAPPING_SERVER_ENV__LOCALHOST__ALIAS>dev</MAPPING_SERVER_ENV__LOCALHOST__ALIAS>
+            <MAPPING_SERVER_ENV_CLOUD_NAME>production</MAPPING_SERVER_ENV_CLOUD_NAME>
+            <MAPPING_SERVER_ENV_CLOUD_ALIAS>prod</MAPPING_SERVER_ENV_CLOUD_ALIAS>
           </environmentVariables>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>
