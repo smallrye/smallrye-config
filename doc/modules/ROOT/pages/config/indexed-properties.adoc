@@ -6,7 +6,7 @@ for simple cases, but it becomes cumbersome and limited for more advanced cases.
 
 Indexed Properties provide a way to use indexes in config property names to map specific elements in a `Collection`
 type. Since the indexed element is part of the property name and not contained in the value, this can also be used to
-map complex object types as `Collectionª elements. Consider:
+map complex object types as `Collection` elements. Consider:
 
 [source,properties]
 ----

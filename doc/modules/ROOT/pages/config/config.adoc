@@ -6,11 +6,14 @@ include::../attributes.adoc[]
 = Config
 
 * <<indexed-properties>>
+* <<map-support>>
 * <<profiles>>
 * <<locations>>
 * <<secret-keys>>
 
 include::indexed-properties.adoc[]
+
+include::map-support.adoc[]
 
 include::profiles.adoc[]
 

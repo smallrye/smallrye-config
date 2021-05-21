@@ -36,11 +36,13 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.IntFunction;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.common.AbstractConverter;
 import io.smallrye.config.common.AbstractDelegatingConverter;
 import io.smallrye.config.common.AbstractSimpleDelegatingConverter;
 import io.smallrye.config.common.utils.StringUtil;
@@ -299,6 +301,21 @@ public final class Converters {
             throw ConfigMessages.msg.notArrayType(arrayType.toString());
         }
         return new ArrayConverter<>(itemConverter, arrayType);
+    }
+
+    /**
+     * Get a converter that converts content of type {@code <key1>=<value1>;<key2>=<value2>...} into
+     * a {@code Map<K, V>} using the given key and value converters.
+     *
+     * @param keyConverter the converter used to convert the keys
+     * @param valueConverter the converter used to convert the values
+     * @param <K> the type of the keys
+     * @param <V> the type of the values
+     * @return the new converter (not {@code null})
+     */
+    public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
+            Converter<? extends V> valueConverter) {
+        return new MapConverter<>(keyConverter, valueConverter);
     }
 
     /**
@@ -978,6 +995,64 @@ public final class Converters {
                 throw ConfigMessages.msg.converterNullValue();
             }
             return getDelegate().convert(value.trim());
+        }
+    }
+
+    /**
+     * A converter for a Map knowing that the expected format is {@code <key1>=<value1>;<key2>=<value2>...}.
+     * <p>
+     * The special characters {@code =} and {@code ;} can be used respectively in the key and in the value
+     * if they are escaped with a backslash.
+     * <p>
+     * It will ignore properties whose key contains sub namespaces, in other words if the name of a property
+     * contains the special character {@code .} it will be ignored.
+     *
+     * @param <K> The type of the key
+     * @param <V> The type of the value
+     */
+    static class MapConverter<K, V> extends AbstractConverter<Map<K, V>> {
+        private static final long serialVersionUID = 4343545736186221103L;
+
+        /**
+         * The regular expression used to extract the values of a map.
+         */
+        private static final Pattern MAP_VALUES_PATTERN = Pattern.compile(";?(([^=]|(?<=\\\\)=)+)=(([^;]|(?<=\\\\);)+)");
+        /**
+         * The converter to use the for keys.
+         */
+        private final Converter<? extends K> keyConverter;
+        /**
+         * The converter to use the for values.
+         */
+        private final Converter<? extends V> valueConverter;
+
+        /**
+         * Construct a {@code MapConverter} with the given converters.
+         * 
+         * @param keyConverter the converter to use the for keys
+         * @param valueConverter the converter to use the for values
+         */
+        MapConverter(Converter<? extends K> keyConverter, Converter<? extends V> valueConverter) {
+            this.keyConverter = keyConverter;
+            this.valueConverter = valueConverter;
+        }
+
+        @Override
+        public Map<K, V> convert(String value) throws IllegalArgumentException, NullPointerException {
+            if (value == null) {
+                return null;
+            }
+            final Matcher matcher = MAP_VALUES_PATTERN.matcher(value);
+            final Map<K, V> map = new HashMap<>();
+            while (matcher.find()) {
+                final String key = matcher.group(1).replace("\\=", "=");
+                if (key.indexOf('.') >= 0) {
+                    // Ignore sub namespaces
+                    continue;
+                }
+                map.put(keyConverter.convert(key), valueConverter.convert(matcher.group(3).replace("\\;", ";")));
+            }
+            return map.isEmpty() ? null : map;
         }
     }
 }
