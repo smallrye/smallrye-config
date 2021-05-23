@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -92,23 +93,40 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     List<ConfigSource> discoverSources() {
         List<ConfigSource> discoveredSources = new ArrayList<>();
         ServiceLoader<ConfigSource> configSourceLoader = ServiceLoader.load(ConfigSource.class, classLoader);
-        for (ConfigSource source : configSourceLoader) {
-            discoveredSources.add(source);
+        Iterator<ConfigSource> it = new IgnoringFailedIterator<ConfigSource>(configSourceLoader.iterator());
+
+        while (it.hasNext()) {
+            ConfigSource source = it.next();
+            if (source != null) {
+                discoveredSources.add(source);
+            }
         }
 
         // load all ConfigSources from ConfigSourceProviders
         ServiceLoader<ConfigSourceProvider> configSourceProviderLoader = ServiceLoader.load(ConfigSourceProvider.class,
                 classLoader);
-        for (ConfigSourceProvider configSourceProvider : configSourceProviderLoader) {
-            for (ConfigSource configSource : configSourceProvider.getConfigSources(classLoader)) {
-                discoveredSources.add(configSource);
+        Iterator<ConfigSourceProvider> itProviders = new IgnoringFailedIterator<ConfigSourceProvider>(
+                configSourceProviderLoader.iterator());
+
+        while (itProviders.hasNext()) {
+            ConfigSourceProvider configSourceProvider = itProviders.next();
+            if (configSourceProvider != null) {
+                for (ConfigSource configSource : configSourceProvider.getConfigSources(classLoader)) {
+                    discoveredSources.add(configSource);
+                }
             }
         }
 
         ServiceLoader<ConfigSourceFactory> configSourceFactoryLoader = ServiceLoader.load(ConfigSourceFactory.class,
                 classLoader);
-        for (ConfigSourceFactory factory : configSourceFactoryLoader) {
-            discoveredSources.add(new ConfigurableConfigSource(factory));
+        Iterator<ConfigSourceFactory> itFactories = new IgnoringFailedIterator<ConfigSourceFactory>(
+                configSourceFactoryLoader.iterator());
+
+        while (itFactories.hasNext()) {
+            ConfigSourceFactory factory = itFactories.next();
+            if (factory != null) {
+                discoveredSources.add(new ConfigurableConfigSource(factory));
+            }
         }
 
         return discoveredSources;
@@ -460,5 +478,38 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         int getPriority() {
             return priority;
         }
+    }
+
+    /**
+     * Implementation of the Iterator to allow to ignore failed service loaded classes.
+     * Main use case is to not fail completely on missing classes for native image based
+     * services
+     */
+    static class IgnoringFailedIterator<T> implements Iterator<T> {
+
+        private Iterator<T> delegate;
+
+        public IgnoringFailedIterator(Iterator<T> iterator) {
+            this.delegate = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            try {
+                return delegate.hasNext();
+            } catch (ServiceConfigurationError e) {
+                return true;
+            }
+        }
+
+        @Override
+        public T next() {
+            try {
+                return delegate.next();
+            } catch (ServiceConfigurationError e) {
+                return null;
+            }
+        }
+
     }
 }
