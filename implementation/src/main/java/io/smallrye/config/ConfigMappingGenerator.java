@@ -352,20 +352,6 @@ public class ConfigMappingGenerator {
         return writer.toByteArray();
     }
 
-    static String generateInterfaceName(final Class<?> classType) {
-        if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
-                Modifier.isAbstract(classType.getModifiers()) ||
-                classType.isEnum()) {
-            throw new IllegalArgumentException();
-        }
-
-        return classType.getPackage().getName() +
-                "." +
-                classType.getSimpleName() +
-                classType.getName().hashCode() +
-                "I";
-    }
-
     private static void addProperties(
             final ClassVisitor cv,
             final MethodVisitor ctor,
@@ -858,6 +844,7 @@ public class ConfigMappingGenerator {
         if (typeName.indexOf('<') != -1 && typeName.indexOf('>') != -1) {
             String signature = "()L" + typeName.replace(".", "/");
             signature = signature.replace("<", "<L");
+            signature = signature.replace(", ", ";L");
             signature = signature.replace(">", ";>;");
             return signature;
         }

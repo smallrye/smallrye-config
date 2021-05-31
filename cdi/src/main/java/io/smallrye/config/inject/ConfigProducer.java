@@ -138,6 +138,13 @@ public class ConfigProducer {
     @Dependent
     @Produces
     @ConfigProperty
+    protected <K, V> Map<K, V> producesMapConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig(ip));
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
     protected OptionalInt produceOptionalIntConfigProperty(InjectionPoint ip) {
         return ConfigProducerUtil.getValue(ip, getConfig(ip));
     }

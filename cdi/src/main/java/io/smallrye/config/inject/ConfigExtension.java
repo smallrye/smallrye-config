@@ -29,6 +29,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -173,9 +174,10 @@ public class ConfigExtension implements Extension {
 
             // Check if the name is part of the properties first.
             // Since properties can be a subset, then search for the actual property for a value.
+            // Check if it is a map
             // Finally also check if the property is indexed (might be a Collection with indexed properties).
             if ((!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null)
-                    && !isIndexed(type, name, config)) {
+                    && !isMap(type) && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(
                             InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint)));
@@ -231,5 +233,16 @@ public class ConfigExtension implements Extension {
                         Set.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))
                 &&
                 !((SmallRyeConfig) config).getIndexedPropertiesIndexes(name).isEmpty();
+    }
+
+    /**
+     * Indicates whether the given type is a type of Map.
+     *
+     * @param type the type to check
+     * @return {@code true} if the given type is a type of Map, {@code false} otherwise.
+     */
+    private static boolean isMap(final Type type) {
+        return type instanceof ParameterizedType &&
+                Map.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType());
     }
 }
