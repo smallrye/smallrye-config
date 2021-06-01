@@ -24,12 +24,12 @@ With `@ConfigProperty`
 public class ConfigBean {
 
     @Inject
-    @ConfigProperty(name = "server.reasons") <1>
+    @ConfigProperty(name = "server.reasons", defaultValue = "200=OK;201=Created") <1>
     Map<Integer, String> reasons; <2>
 
 }
 ----
-<1> Provide the name of the parent configuration property from the annotation `@ConfigProperty`.
+<1> Provide the name of the parent configuration property from the annotation `@ConfigProperty`. Provide also the default values to use in case no direct sub properties could be found, using the syntax `<key1>=<value1>;<key2>=<value2>...`, so here the default values are "OK" for 200 and "Created" for 201.
 <2> Provide the expected type of `Map`, here the keys will automatically be converted into Integers, and the values into Strings.
 
 With `@ConfigProperties`

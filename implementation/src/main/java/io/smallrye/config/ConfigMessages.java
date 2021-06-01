@@ -143,4 +143,7 @@ public interface ConfigMessages {
     @Message(id = 41, value = "The config property %s with the config value \"%s\" was converted to null from the following Converter: %s")
     NoSuchElementException converterReturnedNull(String configPropertyName, String configValue, String converter);
 
+    @Message(id = 42, value = "Value does not match the expected map format \"<key1>=<value1>;<key2>=<value2>...\" (value was \"%s\")")
+    NoSuchElementException valueNotMatchMapFormat(String value);
+
 }
