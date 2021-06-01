@@ -30,13 +30,13 @@ import java.util.Comparator;
 import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.IntFunction;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -1014,10 +1014,6 @@ public final class Converters {
         private static final long serialVersionUID = 4343545736186221103L;
 
         /**
-         * The regular expression used to extract the values of a map.
-         */
-        private static final Pattern MAP_VALUES_PATTERN = Pattern.compile(";?(([^=]|(?<=\\\\)=)+)=(([^;]|(?<=\\\\);)+)");
-        /**
          * The converter to use the for keys.
          */
         private final Converter<? extends K> keyConverter;
@@ -1042,17 +1038,60 @@ public final class Converters {
             if (value == null) {
                 return null;
             }
-            final Matcher matcher = MAP_VALUES_PATTERN.matcher(value);
             final Map<K, V> map = new HashMap<>();
-            while (matcher.find()) {
-                final String key = matcher.group(1).replace("\\=", "=");
-                if (key.indexOf('.') >= 0) {
-                    // Ignore sub namespaces
+            final StringBuilder currentLine = new StringBuilder(value.length());
+            int fromIndex = 0;
+            for (int idx; (idx = value.indexOf(';', fromIndex)) >= 0; fromIndex = idx + 1) {
+                if (value.charAt(idx - 1) == '\\') {
+                    // The line separator has been escaped
+                    currentLine.append(value, fromIndex, idx + 1);
                     continue;
                 }
-                map.put(keyConverter.convert(key), valueConverter.convert(matcher.group(3).replace("\\;", ";")));
+                processLine(map, value, currentLine.append(value, fromIndex, idx).toString());
+                currentLine.delete(0, currentLine.length());
+            }
+            currentLine.append(value, fromIndex, value.length());
+            if (currentLine.length() > 0) {
+                processLine(map, value, currentLine.toString());
             }
             return map.isEmpty() ? null : map;
+        }
+
+        /**
+         * Converts the line into an entry and add it to the given map.
+         * 
+         * @param map the map to which the extracted entries are added.
+         * @param value the original value to convert.
+         * @param rawLine the extracted line to convert into an entry.
+         * @throws NoSuchElementException if the line could not be converted into an entry or doesn't have the expected format.
+         */
+        private void processLine(Map<K, V> map, String value, String rawLine) {
+            final String line = rawLine.replace("\\;", ";");
+            for (int idx, fromIndex = 0; (idx = line.indexOf('=', fromIndex)) >= 0; fromIndex = idx + 1) {
+                if (line.charAt(idx - 1) == '\\') {
+                    // The key separator has been escaped
+                    continue;
+                }
+                processEntry(map, line.substring(0, idx).replace("\\=", "="), line.substring(idx + 1).replace("\\=", "="));
+                return;
+            }
+            throw ConfigMessages.msg.valueNotMatchMapFormat(value);
+        }
+
+        /**
+         * Converts the key/value pair into the expected format and add it to the given map. It will ignore
+         * keys with sub namespace.
+         *
+         * @param map the map to which the key/value pair is added.
+         * @param key the key of the key/value pair to add to the map
+         * @param value the value of the key/value pair to add to the map
+         */
+        private void processEntry(Map<K, V> map, String key, String value) {
+            if (key.indexOf('.') >= 0) {
+                // Ignore sub namespaces
+                return;
+            }
+            map.put(keyConverter.convert(key), valueConverter.convert(value));
         }
     }
 }

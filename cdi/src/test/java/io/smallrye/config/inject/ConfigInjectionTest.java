@@ -63,6 +63,8 @@ class ConfigInjectionTest {
         assertEquals(2, configBean.getVersionsDefault().size());
         assertEquals(new Version(1, "The version 1;2;3"), configBean.getVersionsDefault().get("v1=1;2;3"));
         assertEquals(new Version(2, "The version 2;1;0"), configBean.getVersionsDefault().get("v2=2;1;0"));
+        assertEquals(1, configBean.getVersionDefault().size());
+        assertEquals(new Version(0, "The version 0"), configBean.getVersionDefault().get("v0"));
         assertEquals(2, configBean.getNumbersList().size());
         assertEquals(4, configBean.getNumbersList().get("even").size());
         assertTrue(configBean.getNumbersList().get("even").containsAll(Arrays.asList(2, 4, 6, 8)));
@@ -131,8 +133,11 @@ class ConfigInjectionTest {
         @ConfigProperty(name = "versions")
         Map<String, Version> versions;
         @Inject
-        @ConfigProperty(name = "default.versions", defaultValue = "v0.1=0.The version 0;v1\\=1;2;3=1.The version 1\\;2\\;3;v2\\=2;1;0=2.The version 2\\;1\\;0")
+        @ConfigProperty(name = "default.versions", defaultValue = "v0.1=0.The version 0;v1\\=1\\;2\\;3=1.The version 1\\;2\\;3;v2\\=2\\;1\\;0=2.The version 2\\;1\\;0")
         Map<String, Version> versionsDefault;
+        @Inject
+        @ConfigProperty(name = "default.version", defaultValue = "v0=0.The version 0")
+        Map<String, Version> versionDefault;
         @Inject
         @ConfigProperty(name = "nums")
         Map<String, Integer> numbers;
@@ -190,6 +195,10 @@ class ConfigInjectionTest {
 
         Map<String, Version> getVersionsDefault() {
             return versionsDefault;
+        }
+
+        Map<String, Version> getVersionDefault() {
+            return versionDefault;
         }
 
         Map<String, List<Integer>> getNumbersList() {
