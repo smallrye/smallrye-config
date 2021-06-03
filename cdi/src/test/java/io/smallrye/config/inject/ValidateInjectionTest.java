@@ -9,6 +9,7 @@ import static org.junit.platform.testkit.engine.TestExecutionResultConditions.in
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
@@ -272,6 +273,28 @@ public class ValidateInjectionTest {
 
         assertThat(exception.getSuppressed()).hasSize(3);
         assertThat(exception.getSuppressed()).allMatch((e) -> e instanceof ConfigException);
+    }
+
+    @Test
+    void missingSubProperties() {
+        DeploymentException exception = getDeploymentException(MissingSubPropertiesTest.class);
+        assertThat(exception).hasMessageStartingWith(
+                "SRCFG02001: Failed to Inject @ConfigProperty for key missing.sub.properties into io.smallrye.config.inject.ValidateInjectionTest$MissingSubPropertiesTest$MissingSubPropertiesBean.missingSubProps SRCFG00014");
+
+        assertThat(exception.getCause()).isInstanceOf(ConfigException.class);
+        assertThat(exception.getCause()).hasMessageStartingWith(
+                "SRCFG02001: Failed to Inject @ConfigProperty for key missing.sub.properties into io.smallrye.config.inject.ValidateInjectionTest$MissingSubPropertiesTest$MissingSubPropertiesBean.missingSubProps SRCFG00014");
+    }
+
+    @Test
+    void invalidMapFormat() {
+        DeploymentException exception = getDeploymentException(InvalidMapFormatTest.class);
+        assertThat(exception).hasMessageStartingWith(
+                "SRCFG02001: Failed to Inject @ConfigProperty for key missing.sub.properties into io.smallrye.config.inject.ValidateInjectionTest$InvalidMapFormatTest$InvalidMapFormatBean.missingSubProps SRCFG00042");
+
+        assertThat(exception.getCause()).isInstanceOf(ConfigException.class);
+        assertThat(exception.getCause()).hasMessageStartingWith(
+                "SRCFG02001: Failed to Inject @ConfigProperty for key missing.sub.properties into io.smallrye.config.inject.ValidateInjectionTest$InvalidMapFormatTest$InvalidMapFormatBean.missingSubProps SRCFG00042");
     }
 
     @Test
@@ -706,6 +729,58 @@ public class ValidateInjectionTest {
         public static class ServerDetailsBean {
             public String host;
             public int port;
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class InvalidMapFormatTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator
+                .from(ConfigExtension.class, InvalidMapFormatBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        InvalidMapFormatBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        static class InvalidMapFormatBean {
+            @Inject
+            @ConfigProperty(name = "missing.sub.properties", defaultValue = "bad default value format")
+            Map<String, String> missingSubProps;
+        }
+    }
+
+    @ExtendWith(WeldJunit5Extension.class)
+    static class MissingSubPropertiesTest {
+        @WeldSetup
+        WeldInitiator weld = WeldInitiator
+                .from(ConfigExtension.class, MissingSubPropertiesBean.class)
+                .addBeans()
+                .activate(ApplicationScoped.class)
+                .inject(this)
+                .build();
+
+        @Inject
+        MissingSubPropertiesBean bean;
+
+        @Test
+        void fail() {
+            Assertions.fail();
+        }
+
+        @ApplicationScoped
+        static class MissingSubPropertiesBean {
+            @Inject
+            @ConfigProperty(name = "missing.sub.properties")
+            Map<String, String> missingSubProps;
         }
     }
 

@@ -1,0 +1,52 @@
+[[map-support]]
+== Map Support
+
+SmallRye Config allows injecting multiple configuration parameters as a `Map` using the standard annotations (`@ConfigProperty` and `@ConfigProperties`) which can
+be very helpful especially with a dynamic configuration.
+
+For example, let's say that I want to keep in my configuration the custom reason phrases to return to the end user according to the http status code.
+In that particular use case, the configuration could then be something like the following properties file:
+
+[source,properties]
+----
+server.reasons.200=My custom reason phrase for OK
+server.reasons.201=My custom reason phrase for Created
+...
+----
+
+The previous configuration could be injected directly into your bean using the standard annotations as next:
+
+With `@ConfigProperty`
+
+[source,java]
+----
+@ApplicationScoped
+public class ConfigBean {
+
+    @Inject
+    @ConfigProperty(name = "server.reasons", defaultValue = "200=OK;201=Created") <1>
+    Map<Integer, String> reasons; <2>
+
+}
+----
+<1> Provide the name of the parent configuration property from the annotation `@ConfigProperty`. Provide also the default values to use in case no direct sub properties could be found, using the syntax `<key1>=<value1>;<key2>=<value2>...`, so here the default values are "OK" for 200 and "Created" for 201.
+<2> Provide the expected type of `Map`, here the keys will automatically be converted into Integers, and the values into Strings.
+
+With `@ConfigProperties`
+
+[source,java]
+----
+@ConfigProperties(prefix = "server") <1>
+public class Config {
+
+    Map<Integer, String> reasons; <2>
+}
+----
+<1> Provide the prefix of the name of the parent configuration property from the annotation `@ConfigProperties`, here the prefix is `server`.
+<2> Provide the suffix of the name of the parent configuration, and the expected type of `Map`, here the keys will automatically be converted into Integers, and the values into Strings.
+
+NOTE: Only the direct sub properties will be converted into a `Map` and injected into the target bean, the rest will be ignored. In other words, in the previous example, a property whose name is `reasons.200.a` would be ignored as not considered as a direct sub property.
+
+NOTE: The property will be considered as missing if no direct sub properties could be found.
+
+It is also possible to do the exact same thing programmatically by calling the non-standard method `SmallRyeConfig#getValues("server.reasons", Integer.class, String.class)` if the property is mandatory otherwise by calling the method `SmallRyeConfig#getOptionalValues("server.reasons", Integer.class, String.class)`.

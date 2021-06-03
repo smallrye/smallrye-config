@@ -117,6 +117,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return converters;
     }
 
+    @Override
     public <T> List<T> getValues(final String propertyName, final Class<T> propertyType) {
         return getValues(propertyName, propertyType, ArrayList::new);
     }
@@ -192,12 +193,61 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
+     * Return the content of the direct sub properties as the requested type of Map.
+     *
+     * @param name The configuration property name
+     * @param kClass the type into which the keys should be converted
+     * @param vClass the type into which the values should be converted
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the resolved property value as an instance of the requested Map (not {@code null})
+     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     * @throws NoSuchElementException if no direct sub properties could be found.
+     */
+    @Experimental("Extension to retrieve mandatory sub properties as a Map")
+    public <K, V> Map<K, V> getValues(String name, Class<K> kClass, Class<V> vClass) {
+        final Map<K, V> result = getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass));
+        if (result == null) {
+            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+        }
+        return result;
+    }
+
+    /**
+     * Return the content of the direct sub properties as the requested type of Map.
+     *
+     * @param name The configuration property name
+     * @param keyConverter The converter to use for the keys.
+     * @param valueConverter The converter to use for the values.
+     * @param <K> The type of the keys.
+     * @param <V> The type of the values.
+     * @return the resolved property value as an instance of the requested Map or {@code null} if it could not be found.
+     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     */
+    public <K, V> Map<K, V> getValuesAsMap(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+        final String prefix = name.endsWith(".") ? name : name + ".";
+        final Map<K, V> result = new HashMap<>();
+        for (String propertyName : getPropertyNames()) {
+            if (propertyName.startsWith(prefix)) {
+                final String key = propertyName.substring(prefix.length());
+                if (key.indexOf('.') >= 0) {
+                    // Ignore sub namespaces
+                    continue;
+                }
+                result.put(convertValue(propertyName + "#key", key, keyConverter),
+                        convertValue(propertyName + "#value", getRawValue(propertyName), valueConverter));
+            }
+        }
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
      * 
      * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
      */
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
-        ConfigValue configValue = getConfigValue(name);
+        final ConfigValue configValue = getConfigValue(name);
         if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(converter)) {
             return (T) configValue;
         }
@@ -209,7 +259,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
 
-        String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
+        final String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
 
         return convertValue(name, value, converter);
     }
@@ -297,6 +347,22 @@ public class SmallRyeConfig implements Config, Serializable {
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
         return getValue(name, getOptionalConverter(aClass));
+    }
+
+    /**
+     * Return the content of the direct sub properties as the requested type of Map.
+     *
+     * @param name The configuration property name
+     * @param kClass the type into which the keys should be converted
+     * @param vClass the type into which the values should be converted
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the resolved property value as an instance of the requested Map (not {@code null})
+     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     */
+    @Experimental("Extension to retrieve non mandatory sub properties as a Map")
+    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass) {
+        return Optional.ofNullable(getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass)));
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
@@ -441,7 +507,7 @@ public class SmallRyeConfig implements Config, Serializable {
         throw ConfigMessages.msg.getTypeNotSupportedForUnwrapping(type);
     }
 
-    @Experimental("To retrive active profiles")
+    @Experimental("To retrieve active profiles")
     public List<String> getProfiles() {
         return configSources.getProfiles();
     }

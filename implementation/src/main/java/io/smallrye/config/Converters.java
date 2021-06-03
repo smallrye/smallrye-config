@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -41,6 +42,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.common.AbstractConverter;
 import io.smallrye.config.common.AbstractDelegatingConverter;
 import io.smallrye.config.common.AbstractSimpleDelegatingConverter;
 import io.smallrye.config.common.utils.StringUtil;
@@ -299,6 +301,21 @@ public final class Converters {
             throw ConfigMessages.msg.notArrayType(arrayType.toString());
         }
         return new ArrayConverter<>(itemConverter, arrayType);
+    }
+
+    /**
+     * Get a converter that converts content of type {@code <key1>=<value1>;<key2>=<value2>...} into
+     * a {@code Map<K, V>} using the given key and value converters.
+     *
+     * @param keyConverter the converter used to convert the keys
+     * @param valueConverter the converter used to convert the values
+     * @param <K> the type of the keys
+     * @param <V> the type of the values
+     * @return the new converter (not {@code null})
+     */
+    public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
+            Converter<? extends V> valueConverter) {
+        return new MapConverter<>(keyConverter, valueConverter);
     }
 
     /**
@@ -978,6 +995,103 @@ public final class Converters {
                 throw ConfigMessages.msg.converterNullValue();
             }
             return getDelegate().convert(value.trim());
+        }
+    }
+
+    /**
+     * A converter for a Map knowing that the expected format is {@code <key1>=<value1>;<key2>=<value2>...}.
+     * <p>
+     * The special characters {@code =} and {@code ;} can be used respectively in the key and in the value
+     * if they are escaped with a backslash.
+     * <p>
+     * It will ignore properties whose key contains sub namespaces, in other words if the name of a property
+     * contains the special character {@code .} it will be ignored.
+     *
+     * @param <K> The type of the key
+     * @param <V> The type of the value
+     */
+    static class MapConverter<K, V> extends AbstractConverter<Map<K, V>> {
+        private static final long serialVersionUID = 4343545736186221103L;
+
+        /**
+         * The converter to use the for keys.
+         */
+        private final Converter<? extends K> keyConverter;
+        /**
+         * The converter to use the for values.
+         */
+        private final Converter<? extends V> valueConverter;
+
+        /**
+         * Construct a {@code MapConverter} with the given converters.
+         * 
+         * @param keyConverter the converter to use the for keys
+         * @param valueConverter the converter to use the for values
+         */
+        MapConverter(Converter<? extends K> keyConverter, Converter<? extends V> valueConverter) {
+            this.keyConverter = keyConverter;
+            this.valueConverter = valueConverter;
+        }
+
+        @Override
+        public Map<K, V> convert(String value) throws IllegalArgumentException, NullPointerException {
+            if (value == null) {
+                return null;
+            }
+            final Map<K, V> map = new HashMap<>();
+            final StringBuilder currentLine = new StringBuilder(value.length());
+            int fromIndex = 0;
+            for (int idx; (idx = value.indexOf(';', fromIndex)) >= 0; fromIndex = idx + 1) {
+                if (value.charAt(idx - 1) == '\\') {
+                    // The line separator has been escaped
+                    currentLine.append(value, fromIndex, idx + 1);
+                    continue;
+                }
+                processLine(map, value, currentLine.append(value, fromIndex, idx).toString());
+                currentLine.delete(0, currentLine.length());
+            }
+            currentLine.append(value, fromIndex, value.length());
+            if (currentLine.length() > 0) {
+                processLine(map, value, currentLine.toString());
+            }
+            return map.isEmpty() ? null : map;
+        }
+
+        /**
+         * Converts the line into an entry and add it to the given map.
+         * 
+         * @param map the map to which the extracted entries are added.
+         * @param value the original value to convert.
+         * @param rawLine the extracted line to convert into an entry.
+         * @throws NoSuchElementException if the line could not be converted into an entry or doesn't have the expected format.
+         */
+        private void processLine(Map<K, V> map, String value, String rawLine) {
+            final String line = rawLine.replace("\\;", ";");
+            for (int idx, fromIndex = 0; (idx = line.indexOf('=', fromIndex)) >= 0; fromIndex = idx + 1) {
+                if (line.charAt(idx - 1) == '\\') {
+                    // The key separator has been escaped
+                    continue;
+                }
+                processEntry(map, line.substring(0, idx).replace("\\=", "="), line.substring(idx + 1).replace("\\=", "="));
+                return;
+            }
+            throw ConfigMessages.msg.valueNotMatchMapFormat(value);
+        }
+
+        /**
+         * Converts the key/value pair into the expected format and add it to the given map. It will ignore
+         * keys with sub namespace.
+         *
+         * @param map the map to which the key/value pair is added.
+         * @param key the key of the key/value pair to add to the map
+         * @param value the value of the key/value pair to add to the map
+         */
+        private void processEntry(Map<K, V> map, String key, String value) {
+            if (key.indexOf('.') >= 0) {
+                // Ignore sub namespaces
+                return;
+            }
+            map.put(keyConverter.convert(key), valueConverter.convert(value));
         }
     }
 }

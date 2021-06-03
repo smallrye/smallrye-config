@@ -27,12 +27,26 @@ final class ConfigMappingClass implements ConfigMappingMetadata {
         return new ConfigMappingClass(classType);
     }
 
+    private static String generateInterfaceName(final Class<?> classType) {
+        if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
+                Modifier.isAbstract(classType.getModifiers()) ||
+                classType.isEnum()) {
+            throw new IllegalArgumentException();
+        }
+
+        return classType.getPackage().getName() +
+                "." +
+                classType.getSimpleName() +
+                classType.getName().hashCode() +
+                "I";
+    }
+
     private final Class<?> classType;
     private final String interfaceName;
 
     public ConfigMappingClass(final Class<?> classType) {
         this.classType = classType;
-        this.interfaceName = ConfigMappingGenerator.generateInterfaceName(classType);
+        this.interfaceName = generateInterfaceName(classType);
     }
 
     @Override
