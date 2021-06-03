@@ -242,12 +242,17 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * 
-     * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
+     * This method handles calls from {@link Config#getValue}.
+     */
+    public <T> T getValue(String name, Converter<T> converter) {
+        return getValue(name, getConfigValue(name, false), converter);
+    }
+
+    /**
+     * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.
      */
     @SuppressWarnings("unchecked")
-    public <T> T getValue(String name, Converter<T> converter) {
-        final ConfigValue configValue = getConfigValue(name);
+    public <T> T getValue(String name, ConfigValue configValue, Converter<T> converter) {
         if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(converter)) {
             return (T) configValue;
         }
@@ -327,10 +332,32 @@ public class SmallRyeConfig implements Config, Serializable {
         return Objects.equals(expected, getRawValue(name));
     }
 
-    @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
     public ConfigValue getConfigValue(String name) {
-        final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
-        return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
+        return getConfigValue(name, true);
+    }
+
+    /**
+     * Return the {@link org.eclipse.microprofile.config.ConfigValue} for the specified property name from the underlying
+     * {@linkplain ConfigSource
+     * configuration source}. The lookup of the configuration is performed immediately, meaning that calls to
+     * {@link org.eclipse.microprofile.config.ConfigValue} will always yield the same results.
+     *
+     * @param name The configuration property name
+     * @param noSuchElementExceptionForbidden Indicates whether {@code NoSuchElementException} can be thrown or not.
+     * @return the resolved property value as a {@link org.eclipse.microprofile.config.ConfigValue}
+     * @throws NoSuchElementException in case the property value could not be expanded and
+     *         {@code noSuchElementExceptionForbidden} has been set to {@code false}.
+     */
+    public ConfigValue getConfigValue(String name, boolean noSuchElementExceptionForbidden) {
+        try {
+            final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
+            return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
+        } catch (NoSuchElementException e) {
+            if (noSuchElementExceptionForbidden) {
+                return ConfigValue.builder().withName(name).build();
+            }
+            throw e;
+        }
     }
 
     /**
@@ -346,7 +373,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
-        return getValue(name, getOptionalConverter(aClass));
+        return getValue(name, getConfigValue(name), getOptionalConverter(aClass));
     }
 
     /**

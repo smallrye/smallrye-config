@@ -1,14 +1,19 @@
 package io.smallrye.config;
 
+import static io.smallrye.common.constraint.Assert.assertNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.junit.jupiter.api.Test;
 
 class ExpressionConfigSourceInterceptorTest {
@@ -74,12 +79,50 @@ class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
+    void noExpressionButOptional() {
+        SmallRyeConfig config = buildConfig("expression", "${my.prop}");
+
+        assertEquals(Optional.empty(), config.getOptionalValue("expression", String.class));
+    }
+
+    @Test
+    void noExpressionButConfigValue() {
+        Config config = buildConfig("expression", "${my.prop}");
+
+        ConfigValue configValue = config.getConfigValue("expression");
+        assertNotNull(configValue);
+        assertEquals("expression", configValue.getName());
+        assertNull(configValue.getValue());
+        assertNull(configValue.getSourceName());
+        assertEquals(0, configValue.getSourceOrdinal());
+    }
+
+    @Test
     void noExpressionComposed() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop${compose}}");
 
         final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
         assertEquals("SRCFG00011: Could not expand value compose in property expression", exception.getMessage());
+    }
+
+    @Test
+    void noExpressionComposedButOptional() {
+        SmallRyeConfig config = buildConfig("expression", "${my.prop${compose}}");
+
+        assertEquals(Optional.empty(), config.getOptionalValue("expression", String.class));
+    }
+
+    @Test
+    void noExpressionComposedButConfigValue() {
+        Config config = buildConfig("expression", "${my.prop${compose}}");
+
+        ConfigValue configValue = config.getConfigValue("expression");
+        assertNotNull(configValue);
+        assertEquals("expression", configValue.getName());
+        assertNull(configValue.getValue());
+        assertNull(configValue.getSourceName());
+        assertEquals(0, configValue.getSourceOrdinal());
     }
 
     @Test

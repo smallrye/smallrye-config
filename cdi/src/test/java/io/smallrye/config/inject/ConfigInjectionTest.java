@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -106,11 +109,21 @@ class ConfigInjectionTest {
         assertEquals("my.prop.missing", configValueMissing.getName());
         assertEquals("default", configValueMissing.getValue());
         assertNull(configValueMissing.getConfigSourceName());
+
+        final ConfigValue badExpansionConfigValue = configBean.getBadExpansionConfigValue();
+        assertNotNull(badExpansionConfigValue);
+        assertEquals("bad.property.expression.prop", badExpansionConfigValue.getName());
+        assertNull(badExpansionConfigValue.getValue());
+        assertNull(badExpansionConfigValue.getConfigSourceName());
     }
 
     @Test
     void optionals() {
         assertFalse(configBean.getUnknown().isPresent());
+        assertFalse(configBean.getBadExpansion().isPresent());
+        assertFalse(configBean.getBadExpansionInt().isPresent());
+        assertFalse(configBean.getBadExpansionDouble().isPresent());
+        assertFalse(configBean.getBadExpansionLong().isPresent());
     }
 
     @Test
@@ -157,6 +170,18 @@ class ConfigInjectionTest {
         @ConfigProperty(name = "expansion")
         String expansion;
         @Inject
+        @ConfigProperty(name = "bad.property.expression.prop")
+        Optional<String> badExpansion;
+        @Inject
+        @ConfigProperty(name = "bad.property.expression.prop")
+        OptionalInt badExpansionInt;
+        @Inject
+        @ConfigProperty(name = "bad.property.expression.prop")
+        OptionalDouble badExpansionDouble;
+        @Inject
+        @ConfigProperty(name = "bad.property.expression.prop")
+        OptionalLong badExpansionLong;
+        @Inject
         @ConfigProperty(name = "secret")
         String secret;
         @Inject
@@ -170,6 +195,9 @@ class ConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "my.prop.missing", defaultValue = "default")
         ConfigValue configValueMissing;
+        @Inject
+        @ConfigProperty(name = "bad.property.expression.prop")
+        ConfigValue badExpansionConfigValue;
         @Inject
         @ConfigProperty(name = "unknown")
         Optional<String> unknown;
@@ -225,6 +253,22 @@ class ConfigInjectionTest {
             return expansion;
         }
 
+        Optional<String> getBadExpansion() {
+            return badExpansion;
+        }
+
+        OptionalInt getBadExpansionInt() {
+            return badExpansionInt;
+        }
+
+        OptionalDouble getBadExpansionDouble() {
+            return badExpansionDouble;
+        }
+
+        public OptionalLong getBadExpansionLong() {
+            return badExpansionLong;
+        }
+
         String getSecret() {
             return secret;
         }
@@ -243,6 +287,10 @@ class ConfigInjectionTest {
 
         ConfigValue getConfigValueMissing() {
             return configValueMissing;
+        }
+
+        ConfigValue getBadExpansionConfigValue() {
+            return badExpansionConfigValue;
         }
 
         Optional<String> getUnknown() {

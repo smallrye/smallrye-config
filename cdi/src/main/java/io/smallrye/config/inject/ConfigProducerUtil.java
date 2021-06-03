@@ -14,7 +14,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
@@ -78,7 +82,7 @@ public final class ConfigProducerUtil {
             return convertValues(name, type, defaultValue, config);
         }
 
-        return ((SmallRyeConfig) config).convertValue(name, resolveDefault(getRawValue(name, config), defaultValue),
+        return ((SmallRyeConfig) config).convertValue(name, resolveDefault(getRawValue(name, config, type), defaultValue),
                 resolveConverter(type, config));
     }
 
@@ -110,7 +114,7 @@ public final class ConfigProducerUtil {
                 collectionFactory) -> {
             Collection<T> collection = collectionFactory.apply(indexedProperties.size());
             for (String indexedProperty : indexedProperties) {
-                // Never null by the rules of converValue
+                // Never null by the rules of convertValue
                 collection.add(
                         ((SmallRyeConfig) config).convertValue(indexedProperty, getRawValue(indexedProperty, config),
                                 itemConverter));
@@ -137,8 +141,27 @@ public final class ConfigProducerUtil {
         return configValue;
     }
 
+    /**
+     * @param name the configuration property name
+     * @param config the configuration from which the property value should be extracted.
+     * @return the value of the property
+     * @throws NoSuchElementException in case the property value could not be expanded.
+     */
     static String getRawValue(String name, Config config) {
-        return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
+        return SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getConfigValue(name, false).getValue());
+    }
+
+    /**
+     * @param name the configuration property name
+     * @param config the configuration from which the property value should be extracted.
+     * @param type the target type of the value to extract allowing to know whether a {@code NoSuchElementException}
+     *        can be thrown or not.
+     * @return the value of the property.
+     * @throws NoSuchElementException in case the property value could not be expanded and the type allows it.
+     */
+    private static String getRawValue(String name, Config config, Type type) {
+        return SecretKeys.doUnlocked(
+                () -> ((SmallRyeConfig) config).getConfigValue(name, noSuchElementExceptionForbidden(type)).getValue());
     }
 
     private static String resolveDefault(String rawValue, String defaultValue) {
@@ -238,6 +261,28 @@ public final class ConfigProducerUtil {
             return true;
         } else if (type instanceof ParameterizedType) {
             return hasMap(((ParameterizedType) type).getActualTypeArguments()[0]);
+        }
+        return false;
+    }
+
+    /**
+     * Indicates whether the given type is a type that forbids throwing {@code NoSuchElementException} if the
+     * corresponding property value could not be extracted.
+     *
+     * @param type the type to check
+     * @return {@code true} if the given type is a type that forbids throwing {@code NoSuchElementException},
+     *         {@code false} otherwise.
+     */
+    private static boolean noSuchElementExceptionForbidden(final Type type) {
+        Class<?> rawType = rawTypeOf(type);
+        if (rawType == Optional.class
+                || rawType == OptionalInt.class
+                || rawType == OptionalLong.class
+                || rawType == OptionalDouble.class
+                || rawType == ConfigValue.class) {
+            return true;
+        } else if (type instanceof ParameterizedType) {
+            return noSuchElementExceptionForbidden(((ParameterizedType) type).getActualTypeArguments()[0]);
         }
         return false;
     }
