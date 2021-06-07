@@ -316,7 +316,8 @@ final class ConfigMappingProvider implements Serializable {
                     nestedGroup.isParentPropertyName() ? getEnclosingFunction
                             : new ConsumeOneAndThenFn<>(getEnclosingFunction),
                     type, memberName);
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup, ef, matchAction,
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(), ef,
+                    matchAction,
                     new HashSet<>());
         } else if (nestedProperty.isLeaf()) {
             LeafProperty leafProperty = nestedProperty.asLeaf();
@@ -345,11 +346,10 @@ final class ConfigMappingProvider implements Serializable {
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final KeyMap<String> defaultValues,
             final NamingStrategy namingStrategy,
-            final GroupProperty groupProperty,
+            final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
             final BiConsumer<ConfigMappingContext, NameIterator> matchAction, HashSet<String> usedProperties) {
 
-        ConfigMappingInterface group = groupProperty.getGroupType();
         int pc = group.getPropertyCount();
         int pathLen = currentPath.size();
         for (int i = 0; i < pc; i++) {
@@ -372,7 +372,7 @@ final class ConfigMappingProvider implements Serializable {
         }
         int sc = group.getSuperTypeCount();
         for (int i = 0; i < sc; i++) {
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, groupProperty,
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, group.getSuperType(i),
                     getEnclosingFunction, matchAction, usedProperties);
         }
     }
@@ -395,7 +395,8 @@ final class ConfigMappingProvider implements Serializable {
                     property.isParentPropertyName() ? getEnclosingFunction
                             : new ConsumeOneAndThenFn<>(getEnclosingFunction),
                     group, nestedGroup, currentPath);
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup, nestedMatchAction,
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
+                    nestedMatchAction,
                     nestedMatchAction, new HashSet<>());
         } else if (property.isGroup()) {
             GroupProperty asGroup = property.asGroup();
@@ -408,7 +409,8 @@ final class ConfigMappingProvider implements Serializable {
             if (!property.isParentPropertyName()) {
                 nestedMatchAction = new ConsumeOneAndThen(nestedMatchAction);
             }
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, asGroup, nestedEnclosingFunction,
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, asGroup.getGroupType(),
+                    nestedEnclosingFunction,
                     nestedMatchAction, usedProperties);
         } else if (property.isLeaf() || property.isPrimitive()
                 || optional && property.asOptional().getNestedProperty().isLeaf()) {
@@ -539,7 +541,8 @@ final class ConfigMappingProvider implements Serializable {
             assert valueProperty.isGroup();
             final GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, property,
                     enclosingGroup, valueProperty.asGroup());
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, valueProperty.asGroup(),
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy,
+                    valueProperty.asGroup().getGroupType(),
                     ef, ef, new HashSet<>());
         }
         currentPath.removeLast();

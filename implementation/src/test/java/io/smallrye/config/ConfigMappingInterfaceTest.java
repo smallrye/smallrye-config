@@ -849,4 +849,37 @@ class ConfigMappingInterfaceTest {
         assertEquals("localhost", mapping.aServer().get().host());
         assertEquals(8080, mapping.aServer().get().port());
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerHierarchy extends Server {
+        @WithParentName
+        Named named();
+
+        Optional<Alias> alias();
+
+        interface Named {
+            String name();
+        }
+
+        interface Alias extends Named {
+            String alias();
+        }
+    }
+
+    @Test
+    void hierarchy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerHierarchy.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080",
+                        "server.name", "server", "server.alias.name", "alias", "server.alias.alias", "alias"))
+                .build();
+
+        ServerHierarchy mapping = config.getConfigMapping(ServerHierarchy.class);
+        assertEquals("localhost", mapping.host());
+        assertEquals(8080, mapping.port());
+        assertEquals("server", mapping.named().name());
+        assertTrue(mapping.alias().isPresent());
+        assertEquals("alias", mapping.alias().get().alias());
+        assertEquals("alias", mapping.alias().get().name());
+    }
 }
