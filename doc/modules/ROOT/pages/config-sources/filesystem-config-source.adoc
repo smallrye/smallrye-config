@@ -46,4 +46,5 @@ To use the FileSystem Config Source, add the following to your Maven `pom.xml`:
 ----
 
 This Config Source register itself with the application if the dependency is present. Use the configuration property
-`smallrye.config.source.file.location` to set the directory path to lookup additional configurations.
+`smallrye.config.source.file.locations` to set the directory paths to lookup additional configurations.
+It accepts multiple locations separated by a comma and each must represent a valid URI to a directory.
