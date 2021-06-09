@@ -100,7 +100,9 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     private static String skewer(String camelHumps, int start, int end, StringBuilder b, char separator) {
-        assert !camelHumps.isEmpty() : "Method seems to have an empty name";
+        if (camelHumps.isEmpty()) {
+            throw new IllegalArgumentException("Method seems to have an empty name");
+        }
         int cp = camelHumps.codePointAt(start);
         b.appendCodePoint(Character.toLowerCase(cp));
         start += Character.charCount(cp);
@@ -114,7 +116,7 @@ final class ConfigMappingProvider implements Serializable {
             if (Character.isUpperCase(nextCp)) {
                 // it's some kind of `WORD`
                 for (;;) {
-                    b.appendCodePoint(Character.toLowerCase(cp));
+                    b.appendCodePoint(Character.toLowerCase(nextCp));
                     start += Character.charCount(cp);
                     cp = nextCp;
                     if (start == end) {
