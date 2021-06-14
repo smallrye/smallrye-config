@@ -48,6 +48,17 @@ class RelocateConfigSourceInterceptorTest {
     }
 
     @Test
+    void fallbackEmpty() {
+        Config config = buildConfig(
+                "smallrye.jwt.token.header", "Authorization",
+                "mp.jwt.token.header", "");
+
+        ConfigValue configValue = (ConfigValue) config.getConfigValue("smallrye.jwt.token.header");
+        assertEquals("smallrye.jwt.token.header", configValue.getName());
+        assertEquals("Authorization", configValue.getValue());
+    }
+
+    @Test
     void relocateWithProfile() {
         Config config = buildConfig(
                 "mp.jwt.token.header", "Authorization",
@@ -148,6 +159,8 @@ class RelocateConfigSourceInterceptorTest {
                 .withInterceptors(
                         new RelocateConfigSourceInterceptor(
                                 s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header")),
+                        new FallbackConfigSourceInterceptor(
+                                s -> s.replaceAll("mp\\.jwt\\.token\\.header", "smallrye.jwt.token.header")),
                         new FallbackConfigSourceInterceptor(
                                 s -> s.replaceAll("smallrye\\.jwt", "mp.jwt")))
                 .withInterceptors(new LoggingConfigSourceInterceptor())
