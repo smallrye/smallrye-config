@@ -22,7 +22,7 @@ public class FallbackConfigSourceInterceptor implements ConfigSourceInterceptor 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         ConfigValue configValue = context.proceed(name);
-        if (configValue == null) {
+        if (configValue == null || configValue.getValue().isEmpty()) {
             final String map = mapping.apply(name);
             if (!name.equals(map)) {
                 configValue = context.proceed(map);
