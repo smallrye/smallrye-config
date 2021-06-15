@@ -17,7 +17,7 @@ package io.smallrye.config.test.converter;
 
 import static org.testng.Assert.assertEquals;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.jboss.arquillian.container.test.api.Deployment;

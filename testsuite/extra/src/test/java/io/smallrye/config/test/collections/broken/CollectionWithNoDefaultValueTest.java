@@ -15,7 +15,7 @@
  */
 package io.smallrye.config.test.collections.broken;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.ShouldThrowException;
