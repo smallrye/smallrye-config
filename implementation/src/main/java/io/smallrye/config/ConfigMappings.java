@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-Ê
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 public final class ConfigMappings implements Serializable {
