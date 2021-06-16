@@ -22,10 +22,10 @@
 
 package io.smallrye.config.test.provider;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class ProviderAlone {
 

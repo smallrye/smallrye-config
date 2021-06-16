@@ -19,10 +19,10 @@ package io.smallrye.config.test.collections;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.

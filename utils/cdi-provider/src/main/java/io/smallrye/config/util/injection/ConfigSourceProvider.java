@@ -8,15 +8,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Making the Config sources available via CDI
