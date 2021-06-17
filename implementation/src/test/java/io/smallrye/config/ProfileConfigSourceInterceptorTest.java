@@ -6,6 +6,7 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -226,6 +227,21 @@ class ProfileConfigSourceInterceptorTest {
 
         assertEquals("1234", config.getRawValue("common.prop"));
         assertEquals("5678", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void multipleProfilesDocs() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "common,dev"))
+                .withSources(config("my.prop", "1234", "%common.my.prop", "0", "%dev.my.prop", "5678", "%common.common.prop",
+                        "common", "%dev.dev.prop", "dev", "%test.test.prop", "test"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("common", config.getRawValue("common.prop"));
+        assertEquals("dev", config.getRawValue("dev.prop"));
+        assertEquals("5678", config.getRawValue("my.prop"));
+        assertNull(config.getRawValue("test.prop"));
     }
 
     @Test
