@@ -1,29 +1,29 @@
 package io.smallrye.config.source.hocon;
 
-import java.util.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigParseOptions;
-import com.typesafe.config.ConfigSyntax;
+import io.smallrye.config.AbstractLocationConfigSourceLoader;
 
-public class HoconConfigSourceProvider implements ConfigSourceProvider {
-
-    private static final String META_INF_MICROPROFILE_CONFIG_RESOURCE = "META-INF/microprofile-config.conf";
-
-    static ConfigSource getConfigSource(ClassLoader classLoader, String resource, int ordinal) {
-        final Config config = ConfigFactory.parseResourcesAnySyntax(classLoader, resource,
-                ConfigParseOptions.defaults().setClassLoader(classLoader).setSyntax(ConfigSyntax.CONF));
-        return new HoconConfigSource(config, resource, ordinal);
+public class HoconConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
+    @Override
+    protected String[] getFileExtensions() {
+        return new String[] {
+                "conf"
+        };
     }
 
     @Override
-    public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        final List<ConfigSource> configSources = new ArrayList<>(2);
-        configSources.add(getConfigSource(classLoader, META_INF_MICROPROFILE_CONFIG_RESOURCE, 50));
-        return Collections.unmodifiableList(configSources);
+    protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
+        return new HoconConfigSource(url, ordinal);
+    }
+
+    @Override
+    public Iterable<ConfigSource> getConfigSources(final ClassLoader classLoader) {
+        return new ArrayList<>(loadConfigSources("META-INF/microprofile-config.conf", HoconConfigSource.ORDINAL, classLoader));
     }
 }
