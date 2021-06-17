@@ -7,6 +7,7 @@ import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -801,6 +802,7 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         // lazily sweep
+        Set<String> unknownProperties = new HashSet<>();
         for (String name : config.getPropertyNames()) {
             NameIterator ni = new NameIterator(name);
             // filter properties in root
@@ -814,9 +816,12 @@ final class ConfigMappingProvider implements Serializable {
             } else {
                 if (validateUnknown) {
                     context.unknownConfigElement(name);
+                    //unknownProperties.add(name);
                 }
             }
         }
+
+        unknownProperties(unknownProperties, context);
         ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
         if (!problems.isEmpty()) {
             throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
@@ -876,6 +881,31 @@ final class ConfigMappingProvider implements Serializable {
             return propertyName.substring(0, indexStart);
         }
         return propertyName;
+    }
+
+    private static void unknownProperties(Set<String> properties, ConfigMappingContext context) {
+        Set<String> usedProperties = new HashSet<>();
+        for (String property : context.getConfig().getPropertyNames()) {
+            if (properties.contains(property)) {
+                continue;
+            }
+
+            usedProperties.add(replaceNonAlphanumericByUnderscores(property));
+        }
+        usedProperties.removeAll(properties);
+
+        for (String property : properties) {
+            boolean found = false;
+            for (String usedProperty : usedProperties) {
+                if (usedProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(property))) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                context.unknownConfigElement(property);
+            }
+        }
     }
 
     public static final class Builder {
