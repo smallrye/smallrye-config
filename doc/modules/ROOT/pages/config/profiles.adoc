@@ -70,7 +70,7 @@ Then
 
 * `common.prop` value is `common`
 * `dev.prop` value is `dev`
-* `my.prop` value is `0`
+* `my.prop` value is `5678`
 * `test.prop` does not have a value
 
 === Parent Profile
