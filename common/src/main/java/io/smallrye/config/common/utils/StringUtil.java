@@ -87,4 +87,20 @@ public class StringUtil {
         }
         return list.toArray(NO_STRINGS);
     }
+
+    public static String replaceNonAlphanumericByUnderscores(final String name) {
+        int length = name.length();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char c = name.charAt(i);
+            if ('a' <= c && c <= 'z' ||
+                    'A' <= c && c <= 'Z' ||
+                    '0' <= c && c <= '9') {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
 }

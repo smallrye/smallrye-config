@@ -16,6 +16,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toSet;
@@ -103,22 +104,6 @@ public class EnvConfigSource extends MapBackedConfigSource {
 
         cache.put(name, NULL_VALUE);
         return null;
-    }
-
-    private static String replaceNonAlphanumericByUnderscores(final String name) {
-        int length = name.length();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            char c = name.charAt(i);
-            if ('a' <= c && c <= 'z' ||
-                    'A' <= c && c <= 'Z' ||
-                    '0' <= c && c <= '9') {
-                sb.append(c);
-            } else {
-                sb.append('_');
-            }
-        }
-        return sb.toString();
     }
 
     private static String envToProperty(final String name) {
