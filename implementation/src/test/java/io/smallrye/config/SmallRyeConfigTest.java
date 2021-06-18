@@ -264,4 +264,23 @@ class SmallRyeConfigTest {
         assertTrue(names.contains("my.prop"));
         assertTrue(names.contains("my.expansion"));
     }
+
+    @Test
+    void getPropertyNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultInterceptors().addDefaultSources().build();
+        assertEquals("1234", config.getRawValue("SMALLRYE_MP_CONFIG_PROP"));
+        assertEquals("1234", config.getRawValue("smallrye.mp.config.prop"));
+        assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
+        assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
+        assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
+
+        config = new SmallRyeConfigBuilder().addDefaultInterceptors().addDefaultSources()
+                .withSources(KeyValuesConfigSource.config("smallrye.mp-config.prop", "5678")).build();
+        assertEquals("1234", config.getRawValue("SMALLRYE_MP_CONFIG_PROP"));
+        assertEquals("1234", config.getRawValue("smallrye.mp.config.prop"));
+        assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
+        assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
+        assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp-config.prop"));
+        assertFalse(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
+    }
 }

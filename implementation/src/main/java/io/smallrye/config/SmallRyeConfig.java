@@ -560,8 +560,15 @@ public class SmallRyeConfig implements Config, Serializable {
                 initInterceptors.add(initInterceptor);
             }
 
+            // Adds the PropertyNamesConfigSourceInterceptor
+            final List<ConfigSource> configSources = getSources(initInterceptors);
+            final ConfigSourceInterceptorWithPriority propertyNamesInterceptor = createPropertyNamesInterceptor(sources,
+                    current);
+            current = new SmallRyeConfigSourceInterceptorContext(propertyNamesInterceptor.getInterceptor(), current);
+            initInterceptors.add(propertyNamesInterceptor);
+
             this.interceptorChain = current;
-            this.sources = Collections.unmodifiableList(getSources(initInterceptors));
+            this.sources = Collections.unmodifiableList(configSources);
             this.interceptors = Collections.unmodifiableList(initInterceptors);
         }
 
@@ -645,6 +652,18 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             Collections.reverse(sources);
             return sources;
+        }
+
+        private static ConfigSourceInterceptorWithPriority createPropertyNamesInterceptor(final List<ConfigSource> sources,
+                final SmallRyeConfigSourceInterceptorContext current) {
+            final Set<String> properties = new HashSet<>();
+            final Iterator<String> iterateNames = current.iterateNames();
+            while (iterateNames.hasNext()) {
+                String name = iterateNames.next();
+                properties.add(name);
+            }
+            return new ConfigSourceInterceptorWithPriority(new PropertyNamesConfigSourceInterceptor(properties, sources),
+                    Integer.MAX_VALUE, ProfileConfigSourceInterceptor.class.getSimpleName());
         }
 
         List<ConfigSource> getSources() {

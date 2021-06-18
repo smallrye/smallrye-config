@@ -119,7 +119,6 @@ class ConfigSourceInterceptorTest {
     @Test
     void replaceNames() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
                 .addDefaultInterceptors()
                 .withSources(KeyValuesConfigSource.config("my.prop", "1"))
                 .withInterceptors(new ConfigSourceInterceptor() {

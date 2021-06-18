@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,12 @@ class ConfigConfigSourceTest {
 
                             @Override
                             public Map<String, String> getProperties() {
-                                return null;
+                                return Collections.emptyMap();
                             }
 
                             @Override
                             public Set<String> getPropertyNames() {
-                                return null;
+                                return Collections.emptySet();
                             }
 
                             @Override
@@ -81,12 +82,12 @@ class ConfigConfigSourceTest {
 
                             @Override
                             public Map<String, String> getProperties() {
-                                return null;
+                                return Collections.emptyMap();
                             }
 
                             @Override
                             public Set<String> getPropertyNames() {
-                                return null;
+                                return Collections.emptySet();
                             }
 
                             @Override
