@@ -4,6 +4,7 @@ import static io.smallrye.config.ConfigValueConfigSourceWrapper.wrap;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -34,7 +35,10 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
         while (namesIterator.hasNext()) {
             names.add(namesIterator.next());
         }
-        names.addAll(configSource.getPropertyNames());
+        final Set<String> propertyNames = configSource.getPropertyNames();
+        if (propertyNames != null) {
+            names.addAll(propertyNames);
+        }
         return names.iterator();
     }
 
@@ -45,7 +49,10 @@ class SmallRyeConfigSourceInterceptor implements ConfigSourceInterceptor {
         while (valuesIterator.hasNext()) {
             values.add(valuesIterator.next());
         }
-        values.addAll(configSource.getConfigValueProperties().values());
+        final Map<String, ConfigValue> configValueProperties = configSource.getConfigValueProperties();
+        if (configValueProperties != null) {
+            values.addAll(configValueProperties.values());
+        }
         return values.iterator();
     }
 

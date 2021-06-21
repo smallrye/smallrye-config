@@ -815,8 +815,7 @@ final class ConfigMappingProvider implements Serializable {
                 action.accept(context, ni);
             } else {
                 if (validateUnknown) {
-                    context.unknownConfigElement(name);
-                    //unknownProperties.add(name);
+                    unknownProperties.add(name);
                 }
             }
         }

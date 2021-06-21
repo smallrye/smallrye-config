@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.MapBackedConfigSource;
@@ -76,7 +75,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void configMappingBuilder() throws Exception {
+    void configMappingBuilder() {
         final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder().addRoot("server", Server.class)
                 .addIgnored("server.name").build();
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
@@ -154,7 +153,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void splitRoots() throws Exception {
+    void splitRoots() {
         final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
@@ -811,10 +810,19 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    @Disabled
     void mapEnv() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new EnvConfigSource())
+                .withSources(new EnvConfigSource(new HashMap<String, String>() {
+                    {
+                        put("MAPPING_SERVER_ENV__LOCALHOST__NAME", "development");
+                        put("MAPPING_SERVER_ENV__LOCALHOST__ALIAS", "dev");
+                        put("MAPPING_SERVER_ENV_CLOUD_NAME", "production");
+                        put("MAPPING_SERVER_ENV_CLOUD_ALIAS", "prod");
+                        put("MAPPING_SERVER_ENV_SIMPLE_DASHED_PROPERTY", "5678");
+                        put("mapping.server.env.simple.dashed.property", "5678");
+                    }
+                }, 300))
+                .withSources(config("mapping.server.env.simple-dashed-property", "1234"))
                 .withMapping(ServerMapEnv.class)
                 .build();
 
@@ -824,7 +832,7 @@ class ConfigMappingInterfaceTest {
         assertEquals("dev", mapping.info().get("localhost").alias().get(0));
         assertEquals("production", mapping.info().get("cloud").name());
         assertEquals("prod", mapping.info().get("cloud").alias().get(0));
-        assertEquals("1234", mapping.simpleDashedProperty());
+        assertEquals("5678", mapping.simpleDashedProperty());
     }
 
     @ConfigMapping(prefix = "server")

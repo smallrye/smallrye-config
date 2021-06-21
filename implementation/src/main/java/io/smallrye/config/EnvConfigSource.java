@@ -19,14 +19,11 @@ import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KE
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.smallrye.config.common.MapBackedConfigSource;
@@ -41,7 +38,6 @@ public class EnvConfigSource extends MapBackedConfigSource {
     private static final Object NULL_VALUE = new Object();
 
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
-    private final Set<String> propertyNames = new HashSet<>();
 
     protected EnvConfigSource() {
         this(DEFAULT_ORDINAL);
@@ -53,18 +49,11 @@ public class EnvConfigSource extends MapBackedConfigSource {
 
     public EnvConfigSource(final Map<String, String> propertyMap, final int ordinal) {
         super("EnvConfigSource", propertyMap, getEnvOrdinal(propertyMap, ordinal));
-        this.propertyNames.addAll(super.getPropertyNames());
-        this.propertyNames.addAll(super.getPropertyNames().stream().map(EnvConfigSource::envToProperty).collect(toSet()));
     }
 
     @Override
     public String getValue(final String propertyName) {
         return getValue(propertyName, getProperties(), cache);
-    }
-
-    @Override
-    public Set<String> getPropertyNames() {
-        return propertyNames;
     }
 
     private static String getValue(final String name, final Map<String, String> properties, final Map<String, Object> cache) {
@@ -104,38 +93,6 @@ public class EnvConfigSource extends MapBackedConfigSource {
 
         cache.put(name, NULL_VALUE);
         return null;
-    }
-
-    private static String envToProperty(final String name) {
-        int length = name.length();
-        boolean quotesOpen = false;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            char c = name.charAt(i);
-            if ('_' == c) {
-                int j = i + 1;
-                if (j < length) {
-                    if ('_' == name.charAt(j) && !quotesOpen) {
-                        sb.append(".");
-                        sb.append("\"");
-                        i = j;
-                        quotesOpen = true;
-                    } else if ('_' == name.charAt(j) && quotesOpen) {
-                        sb.append("\"");
-                        sb.append(".");
-                        i = j;
-                        quotesOpen = false;
-                    } else {
-                        sb.append(".");
-                    }
-                } else {
-                    sb.append(".");
-                }
-            } else {
-                sb.append(Character.toLowerCase(c));
-            }
-        }
-        return sb.toString();
     }
 
     /**
