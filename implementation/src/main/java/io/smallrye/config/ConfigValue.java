@@ -116,6 +116,18 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return Objects.hash(name, value, configSourceName);
     }
 
+    @Override
+    public String toString() {
+        return "ConfigValue{" +
+                "name='" + name + '\'' +
+                ", value='" + value + '\'' +
+                ", rawValue='" + rawValue + '\'' +
+                ", configSourceName='" + configSourceName + '\'' +
+                ", configSourceOrdinal=" + configSourceOrdinal +
+                ", lineNumber=" + lineNumber +
+                '}';
+    }
+
     ConfigValueBuilder from() {
         return new ConfigValueBuilder()
                 .withName(name)
