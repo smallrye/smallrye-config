@@ -22,6 +22,7 @@ import java.util.Set;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 class SmallRyeConfigTest {
@@ -282,5 +283,28 @@ class SmallRyeConfigTest {
         assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp-config.prop"));
         assertFalse(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
+    }
+
+    @Test
+    void getConfigSource() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(KeyValuesConfigSource.config()).build();
+
+        assertFalse(config.getConfigSource("something").isPresent());
+        assertTrue(config.getConfigSource("KeyValuesConfigSource").isPresent());
+        assertFalse(config.getConfigSource(null).isPresent());
+
+        config = new SmallRyeConfigBuilder().withSources(new AbstractConfigSource(null, 100) {
+            @Override
+            public Set<String> getPropertyNames() {
+                return null;
+            }
+
+            @Override
+            public String getValue(final String propertyName) {
+                return null;
+            }
+        }).build();
+        assertFalse(config.getConfigSource("something").isPresent());
+        assertFalse(config.getConfigSource(null).isPresent());
     }
 }
