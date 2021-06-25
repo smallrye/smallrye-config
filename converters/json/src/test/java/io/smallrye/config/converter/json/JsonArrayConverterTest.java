@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.inject.ConfigExtension;
-import io.smallrye.config.inject.ConfigProducer;
 
 /**
  * Testing the injection of a JsonArray
@@ -27,12 +26,8 @@ import io.smallrye.config.inject.ConfigProducer;
  */
 @ExtendWith(WeldJunit5Extension.class)
 class JsonArrayConverterTest {
-    @SuppressWarnings("unchecked")
     @WeldSetup
-    WeldInitiator weld = WeldInitiator.from(WeldInitiator.createWeld()
-            .addExtensions(ConfigExtension.class)
-            .addBeanClass(ConfigProducer.class)
-            .addBeanClass(JsonArrayConverterTest.class))
+    WeldInitiator weld = WeldInitiator.from(ConfigExtension.class, JsonArrayConverterTest.class)
             .addBeans()
             .activate(ApplicationScoped.class)
             .inject(this)
