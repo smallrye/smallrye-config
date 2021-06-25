@@ -90,6 +90,9 @@ class ConfigInjectionTest {
         assertEquals("5678", configBean.getMyPropProfile());
         assertThrows(SecurityException.class, () -> configBean.getConfig().getValue("secret", String.class),
                 "Not allowed to access secret key secret");
+
+        assertEquals("1234", configBean.getConfig().getValue("my.prop", String.class));
+        assertEquals("1234", configBean.getSmallRyeConfig().getRawValue("my.prop"));
     }
 
     @Test
@@ -165,6 +168,8 @@ class ConfigInjectionTest {
         @Inject
         Config config;
         @Inject
+        SmallRyeConfig smallRyeConfig;
+        @Inject
         @ConfigProperty(name = "my.prop")
         ConfigValue configValue;
         @Inject
@@ -235,6 +240,10 @@ class ConfigInjectionTest {
 
         Config getConfig() {
             return config;
+        }
+
+        SmallRyeConfig getSmallRyeConfig() {
+            return smallRyeConfig;
         }
 
         ConfigValue getConfigValue() {
