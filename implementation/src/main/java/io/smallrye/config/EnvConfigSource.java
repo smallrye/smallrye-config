@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -35,9 +34,6 @@ public class EnvConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
 
     private static final int DEFAULT_ORDINAL = 300;
-    private static final Object NULL_VALUE = new Object();
-
-    private final Map<String, Object> cache = new ConcurrentHashMap<>();
 
     protected EnvConfigSource() {
         this(DEFAULT_ORDINAL);
@@ -53,26 +49,17 @@ public class EnvConfigSource extends MapBackedConfigSource {
 
     @Override
     public String getValue(final String propertyName) {
-        return getValue(propertyName, getProperties(), cache);
+        return getValue(propertyName, getProperties());
     }
 
-    private static String getValue(final String name, final Map<String, String> properties, final Map<String, Object> cache) {
+    private static String getValue(final String name, final Map<String, String> properties) {
         if (name == null) {
             return null;
-        }
-
-        Object cachedValue = cache.get(name);
-        if (cachedValue != null) {
-            if (cachedValue == NULL_VALUE) {
-                return null;
-            }
-            return (String) cachedValue;
         }
 
         // exact match
         String value = properties.get(name);
         if (value != null) {
-            cache.put(name, value);
             return value;
         }
 
@@ -80,19 +67,11 @@ public class EnvConfigSource extends MapBackedConfigSource {
         String sanitizedName = replaceNonAlphanumericByUnderscores(name);
         value = properties.get(sanitizedName);
         if (value != null) {
-            cache.put(name, value);
             return value;
         }
 
         // replace non-alphanumeric characters by underscores and convert to uppercase
-        value = properties.get(sanitizedName.toUpperCase());
-        if (value != null) {
-            cache.put(name, value);
-            return value;
-        }
-
-        cache.put(name, NULL_VALUE);
-        return null;
+        return properties.get(sanitizedName.toUpperCase());
     }
 
     /**
@@ -105,7 +84,7 @@ public class EnvConfigSource extends MapBackedConfigSource {
     }
 
     private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {
-        final String value = getValue(CONFIG_ORDINAL_KEY, properties, new HashMap<>());
+        final String value = getValue(CONFIG_ORDINAL_KEY, properties);
         if (value != null) {
             return Converters.INTEGER_CONVERTER.convert(value);
         }
