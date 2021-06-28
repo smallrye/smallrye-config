@@ -25,7 +25,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -41,12 +40,15 @@ import io.smallrye.config.SmallRyeConfig;
  */
 @ApplicationScoped
 public class ConfigProducer {
-    @Inject
     Config config;
+
+    ConfigProducer() {
+        this.config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+    }
 
     @Produces
     protected SmallRyeConfig getConfig() {
-        return ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        return config.unwrap(SmallRyeConfig.class);
     }
 
     @Dependent
