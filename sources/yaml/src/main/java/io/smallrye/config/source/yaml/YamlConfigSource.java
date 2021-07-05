@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,10 +150,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
             }
 
             if (value instanceof String) {
-                // We don't add the indexed form for List of String and keep in the MP form, comma-separated.
-                if (!indexed) {
-                    target.put(key, (String) value);
-                }
+                target.put(key, (String) value);
             } else if (value instanceof Map) {
                 flattenYaml(key, (Map<Object, Object>) value, target, false);
             } else if (value instanceof List) {
@@ -162,16 +160,29 @@ public class YamlConfigSource extends MapBackedConfigSource {
                     flattenYaml(key, Collections.singletonMap("[" + i + "]", list.get(i)), target, true);
                 }
             } else {
-                target.put(key, (value != null ? value.toString() : ""));
+                if (value != null) {
+                    target.put(key, value.toString());
+                }
             }
         });
     }
 
     private static void flattenList(String key, List<Object> source, Map<String, String> target) {
-        if (source.stream().allMatch(o -> o instanceof String)) {
-            target.put(key, source.stream().map(o -> {
+        boolean mixed = false;
+        List<String> flatten = new ArrayList<>();
+        for (Object value : source) {
+            if (value instanceof String || value instanceof Boolean) {
+                flatten.add(value.toString());
+            } else if (value != null) {
+                mixed = true;
+                break;
+            }
+        }
+
+        if (!mixed) {
+            target.put(key, flatten.stream().map(value -> {
                 StringBuilder sb = new StringBuilder();
-                escapeCommas(sb, o.toString(), 1);
+                escapeCommas(sb, value, 1);
                 return sb.toString();
             }).collect(Collectors.joining(",")));
         } else {
@@ -216,6 +227,8 @@ public class YamlConfigSource extends MapBackedConfigSource {
      */
     private static class StringConstructor extends Constructor {
         public StringConstructor() {
+            this.yamlConstructors.put(Tag.INT, new ConstructYamlStr());
+            this.yamlConstructors.put(Tag.FLOAT, new ConstructYamlStr());
             this.yamlConstructors.put(Tag.TIMESTAMP, new ConstructYamlStr());
         }
     }
