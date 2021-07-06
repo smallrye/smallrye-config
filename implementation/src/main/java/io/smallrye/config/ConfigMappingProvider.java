@@ -218,7 +218,8 @@ final class ConfigMappingProvider implements Serializable {
             if (usedProperties.add(memberName)) {
                 // process by property type
                 if (!property.isParentPropertyName()) {
-                    NameIterator ni = new NameIterator(namingStrategy.apply(property.getPropertyName()));
+                    NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
+                            : namingStrategy.apply(property.getPropertyName()));
                     while (ni.hasNext()) {
                         currentPath.add(ni.getNextSegment());
                         ni.next();
@@ -358,7 +359,8 @@ final class ConfigMappingProvider implements Serializable {
         for (int i = 0; i < pc; i++) {
             Property property = group.getProperty(i);
             if (!property.isParentPropertyName()) {
-                NameIterator ni = new NameIterator(namingStrategy.apply(property.getPropertyName()));
+                NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
+                        : namingStrategy.apply(property.getPropertyName()));
                 while (ni.hasNext()) {
                     currentPath.add(ni.getNextSegment());
                     ni.next();

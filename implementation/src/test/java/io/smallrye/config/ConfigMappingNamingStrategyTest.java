@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.junit.jupiter.api.Test;
@@ -68,33 +69,36 @@ public class ConfigMappingNamingStrategyTest {
                 .withMapping(ServerComposedVerbatimNaming.class, "server")
                 .withMapping(ServerComposedKebabNaming.class, "server")
                 .withSources(config("server.the_host", "localhost", "server.the_port", "8080"))
-                .withSources(config("server.log.is_enabled", "true", "server.log.log_appenders[0].log_name", "log"))
+                .withSources(config("server.the_log.is_enabled", "true", "server.the_log.log_appenders[0].log_name", "log"))
                 .withSources(config("server.theHost", "localhost", "server.thePort", "8080"))
                 .withSources(config("server.log.isEnabled", "true", "server.log.logAppenders[0].logName", "log"))
+                .withSources(config("server.oLog.isEnabled", "false", "server.oLog.logAppenders[0].logName", "oLog"))
                 .withSources(config("server.the-host", "localhost", "server.the-port", "8080"))
-                .withSources(config("server.log.is-enabled", "true", "server.log.log-appenders[0].log-name", "log"))
+                .withSources(config("server.the-log.is-enabled", "true", "server.the-log.log-appenders[0].log-name", "log"))
                 .build();
 
         ServerComposedSnakeNaming snake = config.getConfigMapping(ServerComposedSnakeNaming.class);
         assertNotNull(snake);
         assertEquals("localhost", snake.theHost());
         assertEquals(8080, Integer.valueOf(snake.thePort()));
-        assertTrue(snake.log().isEnabled());
-        assertEquals("log", snake.log().logAppenders().get(0).logName());
+        assertTrue(snake.theLog().isEnabled());
+        assertEquals("log", snake.theLog().logAppenders().get(0).logName());
 
         ServerComposedVerbatimNaming verbatim = config.getConfigMapping(ServerComposedVerbatimNaming.class);
         assertNotNull(verbatim);
         assertEquals("localhost", verbatim.theHost());
         assertEquals(8080, Integer.valueOf(verbatim.thePort()));
-        assertTrue(verbatim.log().isEnabled());
-        assertEquals("log", verbatim.log().logAppenders().get(0).logName());
+        assertTrue(verbatim.theLog().isEnabled());
+        assertEquals("log", verbatim.theLog().logAppenders().get(0).logName());
+        assertTrue(verbatim.optionalLog().isPresent());
+        assertEquals("oLog", verbatim.optionalLog().get().logAppenders().get(0).logName());
 
         ServerComposedKebabNaming kebab = config.getConfigMapping(ServerComposedKebabNaming.class);
         assertNotNull(kebab);
         assertEquals("localhost", kebab.theHost());
         assertEquals(8080, Integer.valueOf(kebab.thePort()));
-        assertTrue(kebab.log().isEnabled());
-        assertEquals("log", kebab.log().logAppenders().get(0).logName());
+        assertTrue(kebab.theLog().isEnabled());
+        assertEquals("log", kebab.theLog().logAppenders().get(0).logName());
     }
 
     @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
@@ -103,7 +107,7 @@ public class ConfigMappingNamingStrategyTest {
 
         int thePort();
 
-        LogInheritedNaming log();
+        LogInheritedNaming theLog();
     }
 
     @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
@@ -112,7 +116,11 @@ public class ConfigMappingNamingStrategyTest {
 
         int thePort();
 
-        LogInheritedNaming log();
+        @WithName("log")
+        LogInheritedNaming theLog();
+
+        @WithName("oLog")
+        Optional<LogInheritedNaming> optionalLog();
     }
 
     @ConfigMapping(prefix = "server")
@@ -121,7 +129,7 @@ public class ConfigMappingNamingStrategyTest {
 
         int thePort();
 
-        LogInheritedNaming log();
+        LogInheritedNaming theLog();
     }
 
     public interface LogInheritedNaming {

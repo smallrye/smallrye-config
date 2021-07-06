@@ -525,7 +525,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         private final Property element;
 
         CollectionProperty(final Class<?> collectionType, final Property element) {
-            super(element.getMethod(), element.getPropertyName());
+            super(element.getMethod(), element.hasPropertyName() ? element.getPropertyName() : null);
             this.collectionRawType = collectionType;
             this.element = element;
         }
