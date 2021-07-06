@@ -801,12 +801,16 @@ public class ConfigMappingGenerator {
 
         ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
 
-        ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+        if (property.hasPropertyName()) {
+            ctor.visitLdcInsn(property.getPropertyName());
+        } else {
+            ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
 
-        ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitLdcInsn(property.getPropertyName());
 
-        ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT,
-                "applyNamingStrategy", "(L" + I_STRING + ";)L" + I_STRING + ";", false);
+            ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT,
+                    "applyNamingStrategy", "(L" + I_STRING + ";)L" + I_STRING + ";", false);
+        }
 
         // stack: sb name
         ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "append",

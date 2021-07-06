@@ -193,7 +193,7 @@ public class ConfigMappingCollectionsTest {
 
         Optional<List<Environment>> notRequiredEnvs();
 
-        @WithName("req-envs")
+        @WithName("reqEnvs")
         Optional<List<Environment>> requiredEnvs();
 
         interface Environment {
@@ -214,7 +214,7 @@ public class ConfigMappingCollectionsTest {
     }
 
     @Test
-    void mappingCollectionsOptionals() {
+    void mappingCollectionsOptionals() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerCollectionsOptionals.class, "server")
                 .withSources(config(
@@ -225,8 +225,8 @@ public class ConfigMappingCollectionsTest {
                         "server.req.required-services", "rest,db",
                         "server.req.indexed[0]", "rest",
                         "server.req.indexed[1]", "db",
-                        "server.req-envs[0].name", "dev",
-                        "server.req-envs[1].name", "prod"))
+                        "server.reqEnvs[0].name", "dev",
+                        "server.reqEnvs[1].name", "prod"))
                 .build();
 
         ServerCollectionsOptionals server = config.getConfigMapping(ServerCollectionsOptionals.class);
