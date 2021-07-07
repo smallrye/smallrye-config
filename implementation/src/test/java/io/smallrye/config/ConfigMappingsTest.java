@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 public class ConfigMappingsTest {
     @Test
-    void registerMapping() throws Exception {
+    void registerMapping() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080",
                         "server.reasons.200", "OK", "server.reasons.201", "Created",
@@ -47,7 +47,7 @@ public class ConfigMappingsTest {
     }
 
     @Test
-    void registerProperties() throws Exception {
+    void registerProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080",
                         "server.reasons.200", "OK", "server.reasons.201", "Created",
@@ -84,7 +84,7 @@ public class ConfigMappingsTest {
     }
 
     @Test
-    void validate() throws Exception {
+    void validate() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
                 .build();
@@ -94,6 +94,34 @@ public class ConfigMappingsTest {
                 "server.unmapped does not map to any root");
 
         registerConfigProperties(config, singleton(configClassWithPrefix(ServerClass.class, "server")));
+        ServerClass server = config.getConfigMapping(ServerClass.class);
+
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.port);
+    }
+
+    @Test
+    void validateWithBuilderOrConfig() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
+                .withMapping(ServerClass.class, "server")
+                .withValidateUnknown(true)
+                .withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, "false")
+                .build();
+
+        ServerClass server = config.getConfigMapping(ServerClass.class);
+
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.port);
+    }
+
+    @Test
+    void validateDisableOnConfigProperties() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
+                .withMapping(ServerClass.class, "server")
+                .build();
+
         ServerClass server = config.getConfigMapping(ServerClass.class);
 
         assertEquals("localhost", server.host);

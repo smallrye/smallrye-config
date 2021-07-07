@@ -7,6 +7,7 @@ import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
 import java.io.Serializable;
@@ -816,7 +817,7 @@ final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                if (validateUnknown) {
+                if (validateUnknown(validateUnknown, config)) {
                     unknownProperties.add(name);
                 }
             }
@@ -884,6 +885,11 @@ final class ConfigMappingProvider implements Serializable {
         return propertyName;
     }
 
+    private static boolean validateUnknown(final boolean validateUnknown, final SmallRyeConfig config) {
+        return config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
+                .orElse(validateUnknown);
+    }
+
     private static void unknownProperties(Set<String> properties, ConfigMappingContext context) {
         Set<String> usedProperties = new HashSet<>();
         for (String property : context.getConfig().getPropertyNames()) {
@@ -910,6 +916,7 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     public static final class Builder {
+        final Set<Class<?>> types = new HashSet<>();
         final Map<String, List<Class<?>>> roots = new HashMap<>();
         final List<String[]> ignored = new ArrayList<>();
         boolean validateUnknown = true;
@@ -920,6 +927,7 @@ final class ConfigMappingProvider implements Serializable {
         public Builder addRoot(String path, Class<?> type) {
             Assert.checkNotNullParam("path", path);
             Assert.checkNotNullParam("type", type);
+            types.add(type);
             roots.computeIfAbsent(path, k -> new ArrayList<>(4)).add(getConfigMappingClass(type));
             return this;
         }
@@ -936,6 +944,19 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         public ConfigMappingProvider build() {
+            // We don't validate for MP ConfigProperties, so if all classes are MP ConfigProperties disable validation.
+            boolean allConfigurationProperties = true;
+            for (Class<?> type : types) {
+                if (ConfigMappingClass.getConfigurationClass(type) == null) {
+                    allConfigurationProperties = false;
+                    break;
+                }
+            }
+
+            if (allConfigurationProperties) {
+                this.validateUnknown = false;
+            }
+
             return new ConfigMappingProvider(this);
         }
     }
