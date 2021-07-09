@@ -30,4 +30,8 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1004, value = "Unable to set accessible flag on %s")
     void failedToSetAccessible(@Cause Throwable cause, String accessibleObject);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1005, value = "Could not find sources with %s in %s")
+    void configLocationsNotFound(String name, String value);
 }
