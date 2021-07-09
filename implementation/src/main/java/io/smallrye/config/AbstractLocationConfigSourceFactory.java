@@ -2,9 +2,11 @@ package io.smallrye.config;
 
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newArrayConverter;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -21,12 +23,17 @@ public abstract class AbstractLocationConfigSourceFactory extends AbstractLocati
 
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-        final ConfigValue value = context.getValue(SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS);
+        final ConfigValue value = context.getValue(SMALLRYE_CONFIG_LOCATIONS);
         if (value.getValue() == null) {
             return Collections.emptyList();
         }
 
-        return loadConfigSources(newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()),
-                value.getConfigSourceOrdinal());
+        final List<ConfigSource> configSources = loadConfigSources(
+                newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()), value.getConfigSourceOrdinal());
+        if (configSources.isEmpty()) {
+            ConfigLogging.log.configLocationsNotFound(SMALLRYE_CONFIG_LOCATIONS, value.getValue());
+        }
+
+        return configSources;
     }
 }
