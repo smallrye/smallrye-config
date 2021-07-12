@@ -98,7 +98,7 @@ public class ConfigMappingGenerator {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
 
-        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, mapping.getClassInternalName(), null, I_OBJECT,
+        visitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, mapping.getClassInternalName(), null, I_OBJECT,
                 new String[] {
                         I_CONFIGURATION_OBJECT,
                         getInternalName(mapping.getInterfaceType())
