@@ -146,4 +146,9 @@ public interface ConfigMessages {
     @Message(id = 42, value = "Value does not match the expected map format \"<key1>=<value1>;<key2>=<value2>...\" (value was \"%s\")")
     NoSuchElementException valueNotMatchMapFormat(String value);
 
+    @Message(id = 43, value = "The @ConfigMapping annotation can only be placed in interfaces, %s is a class")
+    IllegalStateException mappingAnnotationNotSupportedInClass(Class<?> type);
+
+    @Message(id = 44, value = "The @ConfigProperties annotation can only be placed in classes, %s is an interface")
+    IllegalStateException propertiesAnnotationNotSupportedInInterface(Class<?> type);
 }
