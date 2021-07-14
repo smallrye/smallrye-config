@@ -8,6 +8,7 @@ import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Objects;
@@ -128,6 +129,31 @@ public class ConfigMappingsTest {
         assertEquals(8080, server.port);
     }
 
+    @Test
+    void validateAnnotations() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> registerConfigMappings(config, singleton(configClassWithPrefix(ServerMappingClass.class, "server"))));
+        assertTrue(exception.getMessage()
+                .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
+
+        exception = assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(ServerMappingClass.class, "server").build());
+        assertTrue(exception.getMessage()
+                .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
+
+        exception = assertThrows(IllegalStateException.class,
+                () -> registerConfigMappings(config,
+                        singleton(configClassWithPrefix(ServerPropertiesInterface.class, "server"))));
+        assertTrue(exception.getMessage()
+                .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
+
+        exception = assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(ServerPropertiesInterface.class, "server").build());
+        assertTrue(exception.getMessage()
+                .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
+    }
+
     @ConfigMapping(prefix = "server")
     interface Server {
         String host();
@@ -148,6 +174,16 @@ public class ConfigMappingsTest {
         Map<Integer, String> reasons;
         Map<String, Version> versions;
         Map<String, Integer> numbers;
+    }
+
+    @ConfigMapping(prefix = "server")
+    static class ServerMappingClass {
+        String host;
+    }
+
+    @ConfigProperties(prefix = "server")
+    interface ServerPropertiesInterface {
+        String host();
     }
 
     static class Version {
@@ -176,7 +212,6 @@ public class ConfigMappingsTest {
     }
 
     static class VersionConverter implements Converter<Version> {
-
         @Override
         public Version convert(String value) {
             return new Version(Integer.parseInt(value.substring(0, 1)), value.substring(2));

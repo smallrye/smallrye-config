@@ -7,6 +7,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.microprofile.config.inject.ConfigProperties;
+
 import io.smallrye.common.classloader.ClassDefiner;
 
 public final class ConfigMappingLoader {
@@ -39,6 +41,8 @@ public final class ConfigMappingLoader {
     }
 
     static Class<?> getConfigMappingClass(final Class<?> type) {
+        validateAnnotations(type);
+
         final ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass == null) {
             return type;
@@ -83,6 +87,16 @@ public final class ConfigMappingLoader {
             return parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
         } catch (ClassNotFoundException e) {
             return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+        }
+    }
+
+    static void validateAnnotations(Class<?> type) {
+        if (!type.isInterface() && type.isAnnotationPresent(ConfigMapping.class)) {
+            throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(type);
+        }
+
+        if (type.isInterface() && type.isAnnotationPresent(ConfigProperties.class)) {
+            throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(type);
         }
     }
 
