@@ -895,4 +895,25 @@ class ConfigMappingInterfaceTest {
         assertEquals("alias", mapping.alias().get().alias());
         assertEquals("alias", mapping.alias().get().name());
     }
+
+    @ConfigMapping(prefix = "server")
+    public interface ServerExpandDefaults {
+        @WithDefault("localhost")
+        String host();
+
+        String url();
+    }
+
+    @Test
+    void expandDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(ServerExpandDefaults.class, "server")
+                .withSources(config("server.url", "http://${server.host}"))
+                .build();
+
+        ServerExpandDefaults mapping = config.getConfigMapping(ServerExpandDefaults.class);
+        assertEquals("localhost", mapping.host());
+        assertEquals("http://localhost", mapping.url());
+    }
 }
