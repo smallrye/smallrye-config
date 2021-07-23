@@ -295,10 +295,10 @@ class ConfigMappingInterfaceTest {
                 put("server.host", "localhost");
                 put("server.port", "8080");
 
-                put("server.server.host", "localhost");
+                put("server.server.host", "localhost-server");
                 put("server.server.port", "8080");
 
-                put("server.group.server.host", "localhost");
+                put("server.group.server.host", "localhost-group");
                 put("server.group.server.port", "8080");
             }
         };
@@ -312,10 +312,10 @@ class ConfigMappingInterfaceTest {
         assertEquals("localhost", maps.server().get("host"));
         assertEquals(8080, Integer.valueOf(maps.server().get("port")));
 
-        assertEquals("localhost", maps.group().get("server").host());
+        assertEquals("localhost-group", maps.group().get("server").host());
         assertEquals(8080, maps.group().get("server").port());
 
-        assertEquals("localhost", maps.groupParentName().get("server").host());
+        assertEquals("localhost-server", maps.groupParentName().get("server").host());
         assertEquals(8080, maps.groupParentName().get("server").port());
     }
 
@@ -915,5 +915,77 @@ class ConfigMappingInterfaceTest {
         ServerExpandDefaults mapping = config.getConfigMapping(ServerExpandDefaults.class);
         assertEquals("localhost", mapping.host());
         assertEquals("http://localhost", mapping.url());
+    }
+
+    interface ServerBase {
+        String host();
+
+        int port();
+
+        Map<String, String> properties();
+
+        Map<String, ServerAlias> otherAlias();
+
+        ServerAlias alias();
+
+        Optional<ServerAlias> optionalAlias();
+
+        List<ServerAlias> aliases();
+    }
+
+    @ConfigMapping(prefix = "server")
+    interface ServerOverrides extends ServerBase {
+        @Override
+        String host();
+
+        @Override
+        int port();
+
+        @Override
+        Map<String, String> properties();
+
+        @Override
+        Map<String, ServerAlias> otherAlias();
+
+        @Override
+        ServerAlias alias();
+
+        @Override
+        Optional<ServerAlias> optionalAlias();
+
+        @Override
+        List<ServerAlias> aliases();
+    }
+
+    interface ServerAlias {
+        String name();
+    }
+
+    @Test
+    void hierarchyOverrides() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerOverrides.class, "server")
+                .withSources(config("server.host", "localhost", "server.port", "8080"))
+                .withSources(config("server.properties.host", "localhost", "server.properties.port", "8080"))
+                .withSources(config("server.other-alias.other.name", "other"))
+                .withSources(config("server.alias.name", "server"))
+                .withSources(config("server.optional-alias.name", "server"))
+                .withSources(config("server.aliases[0].name", "server"))
+                .withValidateUnknown(false)
+                .build();
+
+        ServerOverrides mapping = config.getConfigMapping(ServerOverrides.class, "server");
+        assertEquals("localhost", mapping.host());
+        assertEquals(8080, mapping.port());
+        assertFalse(mapping.properties().isEmpty());
+        assertEquals("localhost", mapping.properties().get("host"));
+        assertEquals("8080", mapping.properties().get("port"));
+        assertFalse(mapping.otherAlias().isEmpty());
+        assertEquals("other", mapping.otherAlias().get("other").name());
+        assertEquals("server", mapping.alias().name());
+        assertTrue(mapping.optionalAlias().isPresent());
+        assertEquals("server", mapping.optionalAlias().get().name());
+        assertFalse(mapping.aliases().isEmpty());
+        assertEquals("server", mapping.aliases().get(0).name());
     }
 }

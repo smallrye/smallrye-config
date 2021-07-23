@@ -231,6 +231,11 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         return result != null && result.hasRootValue();
     }
 
+    public boolean hasRootValue(final Iterable<String> i) {
+        KeyMap<V> result = find(i.iterator());
+        return result != null && result.hasRootValue();
+    }
+
     public <P, V2> KeyMap<V2> map(P param, BiFunction<P, V, V2> conversion) {
         return map(param, conversion, new IdentityHashMap<>());
     }
