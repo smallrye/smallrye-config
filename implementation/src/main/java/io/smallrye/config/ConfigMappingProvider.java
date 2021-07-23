@@ -367,6 +367,12 @@ final class ConfigMappingProvider implements Serializable {
                     ni.next();
                 }
             }
+            if (matchActions.hasRootValue(currentPath)) {
+                while (currentPath.size() > pathLen) {
+                    currentPath.removeLast();
+                }
+                continue;
+            }
             if (usedProperties.add(property.getMethod().getName())) {
                 boolean optional = property.isOptional();
                 processLazyPropertyInGroup(currentPath, matchActions, defaultValues, getEnclosingFunction, matchAction,
@@ -500,6 +506,11 @@ final class ConfigMappingProvider implements Serializable {
 
         currentPath.addLast("*");
         if (valueProperty.isLeaf()) {
+            if (matchActions.hasRootValue(currentPath)) {
+                currentPath.removeLast();
+                return;
+            }
+
             LeafProperty leafProperty = valueProperty.asLeaf();
             Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
             Class<?> valueRawType = leafProperty.getValueRawType();
