@@ -5,6 +5,7 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE
 import static java.lang.Boolean.TRUE;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+
+import io.smallrye.config.ConfigMappingInterface.Property;
 
 public final class ConfigMappings implements Serializable {
     private static final long serialVersionUID = -7790784345796818526L;
@@ -42,6 +45,30 @@ public final class ConfigMappings implements Serializable {
         if (!configClasses.isEmpty()) {
             mapConfiguration(ConfigMappingProvider.builder().validateUnknown(false), config, configClasses);
         }
+    }
+
+    public static Map<String, Property> getProperties(final ConfigClassWithPrefix configClass) {
+        ConfigMappingProvider provider = ConfigMappingProvider.builder()
+                .validateUnknown(false)
+                .addRoot(configClass.getPrefix(), configClass.getKlass())
+                .build();
+
+        return provider.getProperties();
+    }
+
+    public static Set<String> mappedProperties(final ConfigClassWithPrefix configClass, final Set<String> properties) {
+        ConfigMappingProvider provider = ConfigMappingProvider.builder()
+                .validateUnknown(false)
+                .addRoot(configClass.getPrefix(), configClass.getKlass())
+                .build();
+
+        Set<String> mappedProperties = new HashSet<>();
+        for (String property : properties) {
+            if (provider.getMatchActions().findRootValue(new NameIterator(property)) != null) {
+                mappedProperties.add(property);
+            }
+        }
+        return mappedProperties;
     }
 
     static void mapConfiguration(
@@ -112,6 +139,10 @@ public final class ConfigMappings implements Serializable {
 
         public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass, final String prefix) {
             return new ConfigClassWithPrefix(klass, prefix);
+        }
+
+        public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass) {
+            return configClassWithPrefix(klass, ConfigMappings.getPrefix(klass));
         }
     }
 }

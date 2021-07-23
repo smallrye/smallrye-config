@@ -84,7 +84,16 @@ public final class ConfigMappingLoader {
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
         // Check if the interface implementation was already loaded. If not we will load it.
         try {
-            return parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
+            final Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
+            // Check if this is the right classloader class. If not we will load it.
+            if (parent.isAssignableFrom(klass)) {
+                return klass;
+            }
+            // ConfigProperties should not have issues with classloader and interfaces.
+            if (configMappingMetadata instanceof ConfigMappingClass) {
+                return klass;
+            }
+            return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
         } catch (ClassNotFoundException e) {
             return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
         }

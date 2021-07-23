@@ -10,13 +10,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.ConfigMappingInterface.Property;
 
 public class ConfigMappingsTest {
     @Test
@@ -216,5 +222,39 @@ public class ConfigMappingsTest {
         public Version convert(String value) {
             return new Version(Integer.parseInt(value.substring(0, 1)), value.substring(2));
         }
+    }
+
+    @ConfigMapping(prefix = "mapped")
+    interface MappedProperties {
+        String value();
+
+        Nested nested();
+
+        List<Nested> collection();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void properties() {
+        Map<String, Property> properties = ConfigMappings.getProperties(configClassWithPrefix(MappedProperties.class));
+        assertEquals(3, properties.size());
+    }
+
+    @Test
+    void mappedProperties() {
+        Set<String> mappedProperties = mappedProperties(MappedProperties.class, "mapped.value", "mapped.nested.value",
+                "mapped.collection[0].value", "mapped.unknown");
+        assertEquals(3, mappedProperties.size());
+        assertTrue(mappedProperties.contains("mapped.value"));
+        assertTrue(mappedProperties.contains("mapped.nested.value"));
+        assertTrue(mappedProperties.contains("mapped.collection[0].value"));
+    }
+
+    private static Set<String> mappedProperties(final Class<?> mappingClass, final String... properties) {
+        return ConfigMappings.mappedProperties(configClassWithPrefix(mappingClass),
+                Stream.of(properties).collect(Collectors.toSet()));
     }
 }
