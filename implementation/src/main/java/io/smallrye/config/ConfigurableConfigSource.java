@@ -41,6 +41,10 @@ public class ConfigurableConfigSource implements ConfigSource {
         return factory.getPriority().orElse(DEFAULT_ORDINAL);
     }
 
+    ConfigSourceFactory getFactory() {
+        return factory;
+    }
+
     List<ConfigSource> getConfigSources(final ConfigSourceContext context) {
         return unwrap(context, new ArrayList<>());
     }

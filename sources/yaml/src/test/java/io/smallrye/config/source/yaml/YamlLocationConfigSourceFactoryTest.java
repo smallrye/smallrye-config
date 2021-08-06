@@ -5,22 +5,35 @@ import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.util.logging.Level;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.testing.logging.LogCapture;
 
 class YamlLocationConfigSourceFactoryTest {
+    @RegisterExtension
+    static LogCapture logCapture = LogCapture.with(logRecord -> logRecord.getMessage().startsWith("SRCFG"), Level.ALL);
+
+    @BeforeEach
+    void setUp() {
+        logCapture.records().clear();
+    }
+
     @Test
     void systemFile() {
         SmallRyeConfig config = buildConfig("./src/test/resources/additional.yml");
@@ -149,6 +162,21 @@ class YamlLocationConfigSourceFactoryTest {
         assertThrows(IllegalStateException.class,
                 () -> buildConfig("https://raw.githubusercontent.com/smallrye/smallrye-config/notfound.yml"));
         buildConfig("https://github.com/smallrye/smallrye-config/blob/3cc4809734d7fbd03852a20b5870ca743a2427bc/pom.xml");
+    }
+
+    @Test
+    void warningConfigLocationsNotFound() {
+        buildConfig("not.found");
+
+        assertEquals("SRCFG01005: Could not find sources with smallrye.config.locations in not.found",
+                logCapture.records().get(0).getMessage());
+    }
+
+    @Test
+    void warningNoMessageIfAnySourceFound() {
+        buildConfig("additional.yml");
+
+        assertTrue(logCapture.records().isEmpty());
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

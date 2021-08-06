@@ -6,7 +6,6 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 
 import java.net.URI;
 import java.util.Collections;
-import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -28,12 +27,7 @@ public abstract class AbstractLocationConfigSourceFactory extends AbstractLocati
             return Collections.emptyList();
         }
 
-        final List<ConfigSource> configSources = loadConfigSources(
-                newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()), value.getConfigSourceOrdinal());
-        if (configSources.isEmpty()) {
-            ConfigLogging.log.configLocationsNotFound(SMALLRYE_CONFIG_LOCATIONS, value.getValue());
-        }
-
-        return configSources;
+        return loadConfigSources(newArrayConverter(STRING_CONVERTER, String[].class).convert(value.getValue()),
+                value.getConfigSourceOrdinal());
     }
 }
