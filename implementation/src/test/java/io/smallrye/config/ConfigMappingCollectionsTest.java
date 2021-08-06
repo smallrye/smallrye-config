@@ -429,4 +429,26 @@ public class ConfigMappingCollectionsTest {
         assertEquals("my-server", server.origins().get(1).host());
         assertEquals(80, server.origins().get(1).port());
     }
+
+    @Test
+    void mappingCollectionProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerSingleCollection.class, "server")
+                .withSources(config(
+                        "server[0].host", "localhost",
+                        "server[0].port", "8080",
+                        "server[1].host", "my-server",
+                        "server[1].port", "80",
+                        "%test.server[0].host", "localhost-test",
+                        "%test.server[0].port", "8081"))
+                .withProfile("test")
+                .build();
+
+        ServerSingleCollection mapping = config.getConfigMapping(ServerSingleCollection.class);
+        assertEquals(2, mapping.origins().size());
+        assertEquals("localhost-test", mapping.origins().get(0).host());
+        assertEquals(8081, mapping.origins().get(0).port());
+        assertEquals("my-server", mapping.origins().get(1).host());
+        assertEquals(80, mapping.origins().get(1).port());
+    }
 }
