@@ -627,6 +627,8 @@ public class SmallRyeConfig implements Config, Serializable {
             lateSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal));
 
             ConfigSourceInterceptorWithPriority.raiseLoadPriority();
+
+            int countSourcesFromLocations = 0;
             final List<ConfigSourceInterceptorWithPriority> sourcesWithPriority = new ArrayList<>();
             for (ConfigurableConfigSource configurableSource : lateSources) {
                 final List<ConfigSource> configSources = configurableSource.getConfigSources(new ConfigSourceContext() {
@@ -647,8 +649,19 @@ public class SmallRyeConfig implements Config, Serializable {
                     }
                 });
 
+                if (configurableSource.getFactory() instanceof AbstractLocationConfigSourceFactory) {
+                    countSourcesFromLocations = countSourcesFromLocations + configSources.size();
+                }
+
                 for (ConfigSource configSource : configSources) {
                     sourcesWithPriority.add(new ConfigSourceInterceptorWithPriority(configSource));
+                }
+            }
+
+            if (countSourcesFromLocations == 0) {
+                ConfigValue locations = initChain.proceed(SMALLRYE_CONFIG_LOCATIONS);
+                if (locations != null && locations.getValue() != null) {
+                    ConfigLogging.log.configLocationsNotFound(SMALLRYE_CONFIG_LOCATIONS, locations.getValue());
                 }
             }
 

@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -27,12 +28,24 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.sun.net.httpserver.HttpServer;
 
+import io.smallrye.testing.logging.LogCapture;
+
 class PropertiesLocationConfigSourceFactoryTest {
+    @RegisterExtension
+    static LogCapture logCapture = LogCapture.with(logRecord -> logRecord.getMessage().startsWith("SRCFG"), Level.ALL);
+
+    @BeforeEach
+    void setUp() {
+        logCapture.records().clear();
+    }
+
     @Test
     void systemFile() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -584,6 +597,17 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(1000, config.getConfigValue("more.prop").getConfigSourceOrdinal());
+    }
+
+    @Test
+    void warningConfigLocationsNotFound() {
+        new SmallRyeConfigBuilder()
+                .addDiscoveredSources()
+                .withSources(config(SMALLRYE_CONFIG_LOCATIONS, "not.found"))
+                .build();
+
+        assertEquals("SRCFG01005: Could not find sources with smallrye.config.locations in not.found",
+                logCapture.records().get(0).getMessage());
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

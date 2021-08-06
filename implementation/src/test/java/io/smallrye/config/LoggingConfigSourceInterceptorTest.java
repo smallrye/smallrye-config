@@ -46,16 +46,19 @@ class LoggingConfigSourceInterceptorTest {
         // This should not log the secret value:
         assertEquals("12345678", SecretKeys.doUnlocked(() -> config.getValue("secret", String.class)));
 
-        // First element is the profile lookup
+        // 1st element is the MP profile lookup
+        // 2nd element is the SR profile lookup
+        // 3rd element is the MP Property Expressions
+        // 4th element is the SR Config Locations
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         // my.prop lookup
-        assertTrue(logs.get(3).startsWith("SRCFG01001"));
-        assertTrue(logs.get(3).contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource"));
-        assertTrue(logs.get(3).contains(":1 with the value abc"));
+        assertTrue(logs.get(4).startsWith("SRCFG01001"));
+        assertTrue(logs.get(4).contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource"));
+        assertTrue(logs.get(4).contains(":1 with the value abc"));
         // not.found lookup
-        assertEquals("SRCFG01002: The config not.found was not found", logs.get(4));
+        assertEquals("SRCFG01002: The config not.found was not found", logs.get(5));
         // secret lookup, shows the key but hides the source and value
-        assertEquals("SRCFG01001: The config secret was loaded from secret with the value secret", logs.get(5));
+        assertEquals("SRCFG01001: The config secret was loaded from secret with the value secret", logs.get(6));
     }
 
     @Test
@@ -67,10 +70,13 @@ class LoggingConfigSourceInterceptorTest {
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop.expand"));
-        // First element is the profile lookup
+        // 1st element is the MP profile lookup
+        // 2nd element is the SR profile lookup
+        // 3rd element is the MP Property Expressions
+        // 4th element is the SR Config Locations
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         assertEquals("SRCFG01001: The config my.prop.expand was loaded from KeyValuesConfigSource with the value ${expand}",
-                logs.get(3));
-        assertEquals("SRCFG01001: The config expand was loaded from KeyValuesConfigSource with the value 1234", logs.get(4));
+                logs.get(4));
+        assertEquals("SRCFG01001: The config expand was loaded from KeyValuesConfigSource with the value 1234", logs.get(5));
     }
 }
