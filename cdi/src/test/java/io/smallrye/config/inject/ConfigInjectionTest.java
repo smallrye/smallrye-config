@@ -109,6 +109,13 @@ class ConfigInjectionTest {
         assertEquals("my.prop.missing", configValueMissing.getName());
         assertEquals("default", configValueMissing.getValue());
         assertNull(configValueMissing.getConfigSourceName());
+
+        ConfigValue configValueEmpty = configBean.getConfigValueEmpty();
+        assertNotNull(configValueEmpty);
+        assertEquals("empty", configValueEmpty.getName());
+        assertEquals("", configValueEmpty.getValue());
+        assertEquals("KeyValuesConfigSource", configValueEmpty.getConfigSourceName());
+        assertEquals(100, configValueEmpty.getConfigSourceOrdinal());
     }
 
     @Test
@@ -175,6 +182,9 @@ class ConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "my.prop.missing", defaultValue = "default")
         ConfigValue configValueMissing;
+        @Inject
+        @ConfigProperty(name = "empty")
+        ConfigValue configValueEmpty;
         @Inject
         @ConfigProperty(name = "unknown")
         Optional<String> unknown;
@@ -254,6 +264,10 @@ class ConfigInjectionTest {
             return configValueMissing;
         }
 
+        ConfigValue getConfigValueEmpty() {
+            return configValueEmpty;
+        }
+
         Optional<String> getUnknown() {
             return unknown;
         }
@@ -266,7 +280,7 @@ class ConfigInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678",
+                .withSources(config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678", "empty", "",
                         "mp.config.profile", "prof", "my.prop.profile", "1234", "%prof.my.prop.profile", "5678",
                         "bad.property.expression.prop", "${missing.prop}", "reasons.200", "OK", "reasons.201", "Created",
                         "versions.v1", "1.The version 1.2.3", "versions.v1.2", "1.The version 1.2.0", "versions.v2",
