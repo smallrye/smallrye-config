@@ -378,6 +378,27 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("5678", config.getRawValue("my.prop"));
     }
 
+    @Test
+    void whitespaceProfiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, ""))
+                .addDefaultInterceptors()
+                .build();
+        assertTrue(config.getProfiles().isEmpty());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, " "))
+                .addDefaultInterceptors()
+                .build();
+        assertTrue(config.getProfiles().isEmpty());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config(Config.PROFILE, ""))
+                .addDefaultInterceptors()
+                .build();
+        assertTrue(config.getProfiles().isEmpty());
+    }
+
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(config(keyValues))
