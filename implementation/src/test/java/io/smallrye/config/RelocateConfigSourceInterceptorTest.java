@@ -4,6 +4,7 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,9 +112,9 @@ class RelocateConfigSourceInterceptorTest {
 
         assertEquals("Authorization", config.getValue("smallrye.jwt.token.header", String.class));
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
-        assertEquals(2, names.size());
+        assertEquals(1, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
-        assertTrue(names.contains("mp.jwt.token.header"));
+        assertFalse(names.contains("mp.jwt.token.header"));
 
         RelocateConfigSourceInterceptor relocateInterceptor = new RelocateConfigSourceInterceptor(
                 s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header"));
