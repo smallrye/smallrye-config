@@ -65,34 +65,9 @@ public class SmallRyeConfig implements Config, Serializable {
     private final ConfigMappings mappings;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder, ConfigMappings mappings) {
-        this.configSources = new ConfigSources(buildConfigSources(builder), buildInterceptors(builder));
+        this.configSources = new ConfigSources(builder);
         this.converters = buildConverters(builder);
         this.mappings = mappings;
-    }
-
-    private List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
-        final List<ConfigSource> sourcesToBuild = new ArrayList<>(builder.getSources());
-        if (builder.isAddDiscoveredSources()) {
-            sourcesToBuild.addAll(builder.discoverSources());
-        }
-        if (builder.isAddDefaultSources()) {
-            sourcesToBuild.addAll(builder.getDefaultSources());
-        }
-        sourcesToBuild.add(new DefaultValuesConfigSource(builder.getDefaultValues()));
-
-        return sourcesToBuild;
-    }
-
-    private List<InterceptorWithPriority> buildInterceptors(final SmallRyeConfigBuilder builder) {
-        final List<InterceptorWithPriority> interceptors = new ArrayList<>(builder.getInterceptors());
-        if (builder.isAddDiscoveredInterceptors()) {
-            interceptors.addAll(builder.discoverInterceptors());
-        }
-        if (builder.isAddDefaultInterceptors()) {
-            interceptors.addAll(builder.getDefaultInterceptors());
-        }
-
-        return interceptors;
     }
 
     private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
@@ -537,11 +512,10 @@ public class SmallRyeConfig implements Config, Serializable {
          *
          * Instances of the Interceptors are then kept in ConfigSources if the interceptor chain requires a reorder (in
          * the case a new ConfigSource is addded to Config).
-         *
-         * @param sources the Config Sources to be part of Config.
-         * @param interceptors the Interceptors to be part of Config.
          */
-        ConfigSources(final List<ConfigSource> sources, final List<InterceptorWithPriority> interceptors) {
+        ConfigSources(final SmallRyeConfigBuilder builder) {
+            final List<ConfigSource> sources = buildConfigSources(builder);
+            final List<InterceptorWithPriority> interceptors = buildInterceptors(builder);
             final List<ConfigSourceInterceptorWithPriority> sortInterceptors = new ArrayList<>();
             // Add all sources except for ConfigurableConfigSource types. These are initialized later
             // Sources are converted to the interceptor API
@@ -558,7 +532,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Init all late sources. Late sources are converted to the interceptor API and sorted again
             List<String> profiles = getProfiles(sortInterceptors);
-            sortInterceptors.addAll(mapLateSources(current, sources, profiles));
+            sortInterceptors.addAll(mapLateSources(current, sources, profiles, builder.isAddDiscoveredSources()));
             sortInterceptors.sort(null);
 
             // Rebuild the chain with the late sources and collect new instances of the interceptors
@@ -582,6 +556,31 @@ public class SmallRyeConfig implements Config, Serializable {
             this.profiles = profiles;
             this.sources = Collections.unmodifiableList(configSources);
             this.interceptorChain = current;
+        }
+
+        private static List<ConfigSource> buildConfigSources(final SmallRyeConfigBuilder builder) {
+            final List<ConfigSource> sourcesToBuild = new ArrayList<>(builder.getSources());
+            if (builder.isAddDiscoveredSources()) {
+                sourcesToBuild.addAll(builder.discoverSources());
+            }
+            if (builder.isAddDefaultSources()) {
+                sourcesToBuild.addAll(builder.getDefaultSources());
+            }
+            sourcesToBuild.add(new DefaultValuesConfigSource(builder.getDefaultValues()));
+
+            return sourcesToBuild;
+        }
+
+        private static List<InterceptorWithPriority> buildInterceptors(final SmallRyeConfigBuilder builder) {
+            final List<InterceptorWithPriority> interceptors = new ArrayList<>(builder.getInterceptors());
+            if (builder.isAddDiscoveredInterceptors()) {
+                interceptors.addAll(builder.discoverInterceptors());
+            }
+            if (builder.isAddDefaultInterceptors()) {
+                interceptors.addAll(builder.getDefaultInterceptors());
+            }
+
+            return interceptors;
         }
 
         private static List<ConfigSourceInterceptorWithPriority> mapSources(final List<ConfigSource> sources) {
@@ -616,7 +615,8 @@ public class SmallRyeConfig implements Config, Serializable {
         private static List<ConfigSourceInterceptorWithPriority> mapLateSources(
                 final SmallRyeConfigSourceInterceptorContext initChain,
                 final List<ConfigSource> sources,
-                final List<String> profiles) {
+                final List<String> profiles,
+                final boolean addDiscoveredSources) {
 
             final List<ConfigurableConfigSource> lateSources = new ArrayList<>();
             for (ConfigSource source : sources) {
@@ -658,7 +658,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 }
             }
 
-            if (countSourcesFromLocations == 0) {
+            if (countSourcesFromLocations == 0 && addDiscoveredSources) {
                 ConfigValue locations = initChain.proceed(SMALLRYE_CONFIG_LOCATIONS);
                 if (locations != null && locations.getValue() != null) {
                     ConfigLogging.log.configLocationsNotFound(SMALLRYE_CONFIG_LOCATIONS, locations.getValue());
@@ -799,5 +799,4 @@ public class SmallRyeConfig implements Config, Serializable {
             return ConfigProvider.getConfig();
         }
     }
-
 }
