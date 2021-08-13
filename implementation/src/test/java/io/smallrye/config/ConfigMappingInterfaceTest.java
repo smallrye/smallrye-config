@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -987,5 +988,45 @@ class ConfigMappingInterfaceTest {
         assertEquals("server", mapping.optionalAlias().get().name());
         assertFalse(mapping.aliases().isEmpty());
         assertEquals("server", mapping.aliases().get(0).name());
+    }
+
+    @ConfigMapping(prefix = "maps")
+    interface NestedGroupMaps {
+        Map<String, User> users();
+
+        interface User {
+            int age();
+
+            Map<String, String> items();
+
+            Map<String, Address> addresses();
+
+            interface Address {
+                String location();
+
+                Map<String, String> alias();
+            }
+        }
+    }
+
+    @Test
+    void nestedGroupMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedGroupMaps.class, "maps")
+                .withSources(config("maps.users.naruto.age", "17",
+                        "maps.users.naruto.items.attack1", "rasengan",
+                        "maps.users.naruto.addresses.home.location", "Konoha",
+                        "maps.users.naruto.addresses.home.alias.konoha", "Konohagakure"))
+                .withSources(config("maps.users.sasuke.age", "18", "maps.users.sasuke.items.attack1", "chidori"))
+                .build();
+
+        NestedGroupMaps mapping = config.getConfigMapping(NestedGroupMaps.class);
+        assertEquals(2, mapping.users().size());
+        assertEquals(17, mapping.users().get("naruto").age());
+        assertEquals("rasengan", mapping.users().get("naruto").items().get("attack1"));
+        assertEquals("Konoha", mapping.users().get("naruto").addresses().get("home").location());
+        assertEquals("Konohagakure", mapping.users().get("naruto").addresses().get("home").alias().get("konoha"));
+        assertEquals(18, mapping.users().get("sasuke").age());
+        assertEquals("chidori", mapping.users().get("sasuke").items().get("attack1"));
     }
 }

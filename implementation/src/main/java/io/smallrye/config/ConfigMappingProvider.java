@@ -504,8 +504,8 @@ final class ConfigMappingProvider implements Serializable {
         Class<? extends Converter<?>> keyConvertWith = property.hasKeyConvertWith() ? property.getKeyConvertWith() : null;
         Class<?> keyRawType = property.getKeyRawType();
 
-        currentPath.addLast("*");
         if (valueProperty.isLeaf()) {
+            currentPath.addLast("*");
             if (matchActions.hasRootValue(currentPath)) {
                 currentPath.removeLast();
                 return;
@@ -539,6 +539,7 @@ final class ConfigMappingProvider implements Serializable {
                 ((Map) map).put(key, config.getValue(configKey, valueConv));
             });
         } else if (valueProperty.isMap()) {
+            currentPath.addLast("*");
             processLazyMap(currentPath, matchActions, defaultValues, valueProperty.asMap(), (mc, ni) -> {
                 ni.previous();
                 Map<?, ?> enclosingMap = getEnclosingMap.apply(mc, ni);
@@ -556,8 +557,9 @@ final class ConfigMappingProvider implements Serializable {
             }, namingStrategy, enclosingGroup);
         } else {
             assert valueProperty.isGroup();
-            final GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, property,
-                    enclosingGroup, valueProperty.asGroup());
+            GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, property, enclosingGroup,
+                    valueProperty.asGroup(), String.join(".", currentPath));
+            currentPath.addLast("*");
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy,
                     valueProperty.asGroup().getGroupType(),
                     ef, ef, new HashSet<>());
@@ -664,15 +666,17 @@ final class ConfigMappingProvider implements Serializable {
         final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap;
         final MapProperty enclosingMap;
         final ConfigMappingInterface enclosingGroup;
-        private final GroupProperty enclosedGroup;
+        final GroupProperty enclosedGroup;
+        final String mapPath;
 
         GetOrCreateEnclosingGroupInMap(final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
                 final MapProperty enclosingMap, final ConfigMappingInterface enclosingGroup,
-                final GroupProperty enclosedGroup) {
+                final GroupProperty enclosedGroup, final String mapPath) {
             this.getEnclosingMap = getEnclosingMap;
             this.enclosingMap = enclosingMap;
             this.enclosingGroup = enclosingGroup;
             this.enclosedGroup = enclosedGroup;
+            this.mapPath = mapPath;
         }
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -680,7 +684,7 @@ final class ConfigMappingProvider implements Serializable {
             ni.previous();
             Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, ni);
             ni.next();
-            String mapKey = ni.getPreviousSegment();
+            String mapKey = mapKey(ni);
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
             ConfigMappingObject val = (ConfigMappingObject) ourEnclosing.get(mapKey);
@@ -697,6 +701,20 @@ final class ConfigMappingProvider implements Serializable {
 
         public void accept(final ConfigMappingContext context, final NameIterator ni) {
             apply(context, ni);
+        }
+
+        private String mapKey(final NameIterator ni) {
+            NameIterator mapPath = new NameIterator(this.mapPath);
+            NameIterator mapKey = new NameIterator(ni.getName());
+            while (mapPath.hasNext() && mapKey.hasNext()) {
+                if (mapPath.getNextSegment().equals(mapKey.getNextSegment()) || mapPath.getNextSegment().equals("*")) {
+                    mapPath.next();
+                    mapKey.next();
+                } else {
+                    break;
+                }
+            }
+            return mapKey.hasNext() ? mapKey.getNextSegment() : ni.getPreviousSegment();
         }
     }
 
@@ -755,26 +773,6 @@ final class ConfigMappingProvider implements Serializable {
             // eagerly populated groups will always exist
             return (ConfigMappingObject) mc.getEnclosedField(type, memberName, outer);
         }
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    static Map<?, ?> getOrCreateEnclosingMapInMap(
-            ConfigMappingContext context, NameIterator ni,
-            BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap, ConfigMappingInterface enclosingGroup,
-            MapProperty property) {
-        ni.previous();
-        Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, ni);
-        String mapKey = ni.getNextSegment();
-        Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(), property.getMethod().getName(),
-                property.getLevels() - 1);
-        Object realKey = keyConverter.convert(mapKey);
-        Map<?, ?> map = (Map<?, ?>) ourEnclosing.get(realKey);
-        if (map == null) {
-            map = new HashMap<>();
-            ((Map) ourEnclosing).put(realKey, map);
-        }
-        ni.next();
-        return map;
     }
 
     public static Builder builder() {
