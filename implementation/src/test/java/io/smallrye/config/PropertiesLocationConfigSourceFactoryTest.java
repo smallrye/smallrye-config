@@ -610,6 +610,24 @@ class PropertiesLocationConfigSourceFactoryTest {
                 logCapture.records().get(0).getMessage());
     }
 
+    @Test
+    void warningConfigLocationsNotFoundFromExisting() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDiscoveredSources()
+                .withSources(config(SMALLRYE_CONFIG_LOCATIONS, "more.properties", "config_ordinal", "1000"))
+                .build();
+
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
+        assertTrue(logCapture.records().isEmpty());
+
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder().addDefaultInterceptors();
+        for (ConfigSource configSource : config.getConfigSources()) {
+            builder.withSources(configSource);
+        }
+        builder.build();
+        assertTrue(logCapture.records().isEmpty());
+    }
+
     private static SmallRyeConfig buildConfig(String... locations) {
         return new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
