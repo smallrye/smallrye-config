@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
+import static io.smallrye.config.Converters.newTrimmingConverter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -115,7 +116,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public static List<String> convertProfile(final String profile) {
-        return newCollectionConverter(STRING_CONVERTER, ArrayList::new).convert(profile);
+        return newCollectionConverter(newTrimmingConverter(STRING_CONVERTER), ArrayList::new).convert(profile);
     }
 
     private static List<String> convertProfile(final ConfigSourceInterceptorContext context) {
@@ -126,7 +127,10 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
             if (parentProfile != null) {
                 profiles.add(parentProfile.getValue());
             }
-            profiles.addAll(convertProfile(profile.getValue()));
+            final List<String> convertedProfiles = convertProfile(profile.getValue());
+            if (convertedProfiles != null) {
+                profiles.addAll(convertedProfiles);
+            }
         }
         return profiles;
     }
