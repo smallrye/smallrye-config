@@ -553,6 +553,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
         }
+        // No reason to use a JDK interface to generate a config class? Primarily to fix the java.nio.file.Path case.
+        if (interfaceType.getName().startsWith("java")) {
+            return null;
+        }
+
         // first, find any supertypes
         ConfigMappingInterface[] superTypes = getSuperTypes(interfaceType.getInterfaces(), 0, 0);
         // now find any properties

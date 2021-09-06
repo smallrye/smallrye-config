@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1027,5 +1029,22 @@ class ConfigMappingInterfaceTest {
         assertEquals("Konohagakure", mapping.users().get("naruto").addresses().get("home").alias().get("konoha"));
         assertEquals(18, mapping.users().get("sasuke").age());
         assertEquals("chidori", mapping.users().get("sasuke").items().get("attack1"));
+    }
+
+    @ConfigMapping(prefix = "path")
+    interface MappingPath {
+        Path path();
+    }
+
+    @Test
+    void path() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MappingPath.class, "path")
+                .withSources(config("path.path", "path"))
+                .withConverter(Path.class, 100, value -> value.isEmpty() ? null : Paths.get(value))
+                .build();
+
+        MappingPath mapping = config.getConfigMapping(MappingPath.class);
+        assertEquals("path", mapping.path().toString());
     }
 }
