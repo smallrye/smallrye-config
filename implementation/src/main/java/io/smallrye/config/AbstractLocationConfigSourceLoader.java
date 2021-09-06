@@ -214,8 +214,9 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private ConfigSource addConfigSource(final URL url, final int ordinal, final List<ConfigSource> configSources) {
         try {
-            configSources.add(loadConfigSource(url, ordinal));
-            return loadConfigSource(url, ordinal);
+            ConfigSource configSource = loadConfigSource(url, ordinal);
+            configSources.add(configSource);
+            return configSource;
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e);
         }
