@@ -49,14 +49,18 @@ final class ConfigMappingProvider implements Serializable {
 
     private final Map<String, List<Class<?>>> roots;
     private final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions;
+    private final Map<String, Property> properties;
     private final KeyMap<String> defaultValues;
     private final boolean validateUnknown;
 
     ConfigMappingProvider(final Builder builder) {
         this.roots = new HashMap<>(builder.roots);
+        this.matchActions = new KeyMap<>();
+        this.properties = new HashMap<>();
+        this.defaultValues = new KeyMap<>();
+        this.validateUnknown = builder.validateUnknown;
+
         final ArrayDeque<String> currentPath = new ArrayDeque<>();
-        KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions = new KeyMap<>();
-        KeyMap<String> defaultValues = new KeyMap<>();
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             NameIterator rootNi = new NameIterator(entry.getKey());
             while (rootNi.hasNext()) {
@@ -88,9 +92,6 @@ final class ConfigMappingProvider implements Serializable {
                 found.putRootValue(DO_NOTHING);
             }
         }
-        this.matchActions = matchActions;
-        this.defaultValues = defaultValues;
-        this.validateUnknown = builder.validateUnknown;
     }
 
     static String skewer(String camelHumps) {
@@ -270,10 +271,10 @@ final class ConfigMappingProvider implements Serializable {
                             .putRootValue(primitiveProperty.getDefaultValue());
                 }
             }
-            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            addAction(currentPath, property, DO_NOTHING);
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
-                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+                addAction(inlineCollectionPath(currentPath), property, DO_NOTHING);
             }
         } else if (property.isLeaf()) {
             // already processed eagerly
@@ -286,10 +287,10 @@ final class ConfigMappingProvider implements Serializable {
                 }
             }
             // ignore with no error message
-            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            addAction(currentPath, property, DO_NOTHING);
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
-                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+                addAction(inlineCollectionPath(currentPath), property, DO_NOTHING);
             }
         } else if (property.isMap()) {
             // the enclosure of the map is this group
@@ -310,10 +311,10 @@ final class ConfigMappingProvider implements Serializable {
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
-            final Class<?> type, final String memberName, final Property nestedProperty) {
+            final Class<?> type, final String memberName, final Property property) {
 
-        if (nestedProperty.isGroup()) {
-            GroupProperty nestedGroup = nestedProperty.asGroup();
+        if (property.isGroup()) {
+            GroupProperty nestedGroup = property.asGroup();
             // on match, always create the outermost group, which recursively creates inner groups
             GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
                     getEnclosingFunction, group, nestedGroup, currentPath);
@@ -324,8 +325,8 @@ final class ConfigMappingProvider implements Serializable {
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(), ef,
                     matchAction,
                     new HashSet<>());
-        } else if (nestedProperty.isLeaf()) {
-            LeafProperty leafProperty = nestedProperty.asLeaf();
+        } else if (property.isLeaf()) {
+            LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
                 defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
                 // collections may also be represented without [] so we need to register both paths
@@ -333,13 +334,13 @@ final class ConfigMappingProvider implements Serializable {
                     defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
                 }
             }
-            matchActions.findOrAdd(currentPath).putRootValue(DO_NOTHING);
+            addAction(currentPath, property, DO_NOTHING);
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
-                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(DO_NOTHING);
+                addAction(inlineCollectionPath(currentPath), property, DO_NOTHING);
             }
-        } else if (nestedProperty.isCollection()) {
-            CollectionProperty collectionProperty = nestedProperty.asCollection();
+        } else if (property.isCollection()) {
+            CollectionProperty collectionProperty = property.asCollection();
             currentPath.addLast(currentPath.removeLast() + "[*]");
             processProperty(currentPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
                     memberName, collectionProperty.getElement());
@@ -432,10 +433,10 @@ final class ConfigMappingProvider implements Serializable {
             } else {
                 actualAction = matchAction;
             }
-            matchActions.findOrAdd(currentPath).putRootValue(actualAction);
+            addAction(currentPath, property, actualAction);
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
-                matchActions.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(actualAction);
+                addAction(inlineCollectionPath(currentPath), property, actualAction);
             }
             if (property.isPrimitive()) {
                 PrimitiveProperty primitiveProperty = property.asPrimitive();
@@ -515,7 +516,7 @@ final class ConfigMappingProvider implements Serializable {
             Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
             Class<?> valueRawType = leafProperty.getValueRawType();
 
-            matchActions.findOrAdd(currentPath).putRootValue((mc, ni) -> {
+            addAction(currentPath, property, (mc, ni) -> {
                 StringBuilder sb = mc.getStringBuilder();
                 sb.setLength(0);
                 sb.append(ni.getAllPreviousSegments());
@@ -565,6 +566,14 @@ final class ConfigMappingProvider implements Serializable {
                     ef, ef, new HashSet<>());
         }
         currentPath.removeLast();
+    }
+
+    private void addAction(
+            final ArrayDeque<String> currentPath,
+            final Property property,
+            final BiConsumer<ConfigMappingContext, NameIterator> action) {
+        matchActions.findOrAdd(currentPath).putRootValue(action);
+        properties.put(String.join(".", currentPath), property);
     }
 
     private static boolean isCollection(final ArrayDeque<String> currentPath) {
@@ -777,6 +786,14 @@ final class ConfigMappingProvider implements Serializable {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> getMatchActions() {
+        return matchActions;
+    }
+
+    Map<String, Property> getProperties() {
+        return properties;
     }
 
     KeyMap<String> getDefaultValues() {
