@@ -46,14 +46,22 @@ jobs:
           git push
           git push --tags
 
-      - uses: actions/upload-artifact@v2
-        name: tck-report
-        with:
-          name: tck-report
-          path: testsuite/tck/target/surefire-reports
-
       - uses: radcortez/milestone-release-action@main
         name: milestone release
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           milestone-title: ${{steps.metadata.outputs.current-version}}
+
+      - name: generate tck report
+        run: |
+          mvn -pl testsuite/tck surefire-report:report-only
+          mv testsuite/tck/target/tck-results.html .
+
+      - uses: meeDamian/github-release@2.0
+        name: upload tck asset to release
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          tag: ${{steps.metadata.outputs.current-version}}
+          allow_override: true
+          gzip: false
+          files: tck-results.html

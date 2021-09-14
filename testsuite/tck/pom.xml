@@ -52,6 +52,16 @@
           </systemProperties>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <configuration>
+          <title>SmallRye Config</title>
+          <outputName>tck-results</outputName>
+          <outputDirectory>${project.build.directory}</outputDirectory>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
