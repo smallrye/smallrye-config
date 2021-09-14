@@ -4,6 +4,9 @@ import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
+import static org.eclipse.microprofile.config.Config.PROFILE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -16,7 +19,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.StreamSupport;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -192,7 +195,7 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("2", config.getConfigValue("my.prop").getValue());
         assertEquals("1", config.getConfigValue("prof.only").getValue());
 
-        final List<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        final List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertFalse(properties.contains("%prof.my.prop"));
         assertTrue(properties.contains("my.prop"));
         assertTrue(properties.contains("prof.only"));
@@ -202,7 +205,7 @@ class ProfileConfigSourceInterceptorTest {
     void excludePropertiesFromInactiveProfiles() {
         final Config config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
 
-        final List<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        final List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertTrue(properties.contains("my.prop"));
         assertFalse(properties.contains("another"));
     }
@@ -352,10 +355,9 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void mpProfileRelocate() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(
-                        KeyValuesConfigSource.config("my.prop", "1", "%prof.my.prop", "2", "mp.config.profile", "prof"))
+                .withSources(config("my.prop", "1", "%prof.my.prop", "2", PROFILE, "prof"))
                 .build();
 
         assertEquals("2", config.getValue("my.prop", String.class));
@@ -363,6 +365,22 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("my.prop", config.getConfigValue("my.prop").getName());
         assertEquals("my.prop", config.getConfigValue("%prof.my.prop").getName());
         assertEquals("2", config.getConfigValue("my.prop").getValue());
+        assertEquals("prof", config.getConfigValue(PROFILE).getValue());
+        assertEquals("prof", config.getConfigValue(SMALLRYE_CONFIG_PROFILE).getValue());
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains(PROFILE));
+        assertFalse(properties.contains(SMALLRYE_CONFIG_PROFILE));
+
+        config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "sr"))
+                .build();
+
+        properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains(SMALLRYE_CONFIG_PROFILE));
+        assertFalse(properties.contains(PROFILE));
+        assertEquals("sr", config.getConfigValue(SMALLRYE_CONFIG_PROFILE).getValue());
+        assertNull(config.getConfigValue(PROFILE).getValue());
     }
 
     @Test
