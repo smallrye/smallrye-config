@@ -1047,4 +1047,22 @@ class ConfigMappingInterfaceTest {
         MappingPath mapping = config.getConfigMapping(MappingPath.class);
         assertEquals("path", mapping.path().toString());
     }
+
+    @ConfigMapping(prefix = "map")
+    public interface DottedKeyInMap {
+        @WithParentName
+        Map<String, String> map();
+    }
+
+    @Test
+    void properties() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DottedKeyInMap.class, "map")
+                .withSources(config("map.key", "1234", "map.\"dotted.key\"", "5678"))
+                .build();
+
+        DottedKeyInMap mapping = config.getConfigMapping(DottedKeyInMap.class);
+        assertEquals("1234", mapping.map().get("key"));
+        assertEquals("5678", mapping.map().get("dotted.key"));
+    }
 }
