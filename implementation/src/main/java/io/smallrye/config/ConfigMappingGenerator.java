@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -59,6 +60,10 @@ import io.smallrye.config.ConfigMappingInterface.Property;
 
 public class ConfigMappingGenerator {
     static final boolean usefulDebugInfo;
+    /**
+     * The regular expression allowing to detect arrays in a full type name.
+     */
+    private static final Pattern ARRAY_FORMAT_REGEX = Pattern.compile("([<;])L(.*)\\[];");
 
     static {
         usefulDebugInfo = Boolean.parseBoolean(AccessController.doPrivileged(
@@ -849,7 +854,11 @@ public class ConfigMappingGenerator {
             String signature = "()L" + typeName.replace(".", "/");
             signature = signature.replace("<", "<L");
             signature = signature.replace(", ", ";L");
-            signature = signature.replace(">", ";>;");
+            signature = signature.replace(">", ";>");
+            signature += ";";
+            if (typeName.contains("[]")) {
+                signature = ARRAY_FORMAT_REGEX.matcher(signature).replaceAll("$1[L$2;");
+            }
             return signature;
         }
 
