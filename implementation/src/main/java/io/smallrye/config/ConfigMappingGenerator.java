@@ -534,6 +534,7 @@ public class ConfigMappingGenerator {
                         ctor.visitMethodInsn(INVOKESTATIC, I_OPTIONAL, "of", "(L" + I_OBJECT + ";)L" + I_OPTIONAL + ';', false);
                         ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
                         ctor.visitLabel(optionalOf);
+                        ctor.visitInsn(Opcodes.POP);
                     } else {
                         ctor.visitVarInsn(ALOAD, 5);
                         ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
