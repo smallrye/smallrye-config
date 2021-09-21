@@ -1,9 +1,14 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
+import static io.smallrye.config.ConfigMappingLoader.getImplementationClass;
+import static io.smallrye.config.ConfigMappingLoader.loadClass;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,5 +91,95 @@ class ConfigMappingLoaderTest {
         interface App {
             String name();
         }
+    }
+
+    @ConfigMapping
+    interface OptionalCollection {
+        @WithDefault("property")
+        boolean property();
+
+        Optional<List<OptionalCollectionGroup>> optional();
+    }
+
+    interface OptionalCollectionGroup {
+        Optional<String> property();
+    }
+
+    /**
+     * Because declared methods may return a different order, there was an issue where a bytecode POP was missing if a
+     * collection group wrapped in an Optional was added first. This test manually set the method order so the issue is
+     * 100% reproducible and not dependent on the result of java.lang.Class#getDeclaredMethods().
+     */
+    @Test
+    void optionalCollectionGroup() throws Exception {
+        Method[] methods = new Method[] {
+                OptionalCollection.class.getDeclaredMethod("optional"),
+                OptionalCollection.class.getDeclaredMethod("property")
+        };
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollection.class,
+                new ConfigMappingInterface[] {}, properties);
+
+        loadClass(OptionalCollection.class, getConfigurationInterface(OptionalCollectionGroup.class));
+        loadClass(OptionalCollection.class, configMappingInterface);
+
+        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(OptionalCollection.class);
+        // If the bytecode has an issue this will throw a VerifyError
+        assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
+    }
+
+    @ConfigMapping
+    interface OptionalCollectionPrimitive {
+        @WithDefault("property")
+        boolean property();
+
+        Optional<List<String>> optional();
+    }
+
+    @Test
+    void optionalCollectionPrimitive() throws Exception {
+        Method[] methods = new Method[] {
+                OptionalCollectionPrimitive.class.getDeclaredMethod("optional"),
+                OptionalCollectionPrimitive.class.getDeclaredMethod("property")
+        };
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollectionPrimitive.class,
+                new ConfigMappingInterface[] {}, properties);
+
+        loadClass(OptionalCollection.class, configMappingInterface);
+
+        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(OptionalCollectionPrimitive.class);
+        // If the bytecode has an issue this will throw a VerifyError
+        assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
+    }
+
+    @ConfigMapping
+    interface MappingCollection {
+        @WithDefault("property")
+        boolean property();
+
+        Optional<List<MappingCollectionGroup>> collection();
+    }
+
+    interface MappingCollectionGroup {
+        Optional<String> property();
+    }
+
+    @Test
+    void collectionGroup() throws Exception {
+        Method[] methods = new Method[] {
+                MappingCollection.class.getDeclaredMethod("collection"),
+                MappingCollection.class.getDeclaredMethod("property")
+        };
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(MappingCollection.class,
+                new ConfigMappingInterface[] {}, properties);
+
+        loadClass(OptionalCollection.class, getConfigurationInterface(MappingCollectionGroup.class));
+        loadClass(OptionalCollection.class, configMappingInterface);
+
+        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(MappingCollection.class);
+        // If the bytecode has an issue this will throw a VerifyError
+        assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
 }

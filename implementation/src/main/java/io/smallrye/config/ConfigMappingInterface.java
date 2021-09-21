@@ -585,7 +585,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    private static Property[] getProperties(Method[] methods, int si, int ti) {
+    static Property[] getProperties(Method[] methods, int si, int ti) {
         if (si == methods.length) {
             if (ti == 0) {
                 return NO_PROPERTIES;
