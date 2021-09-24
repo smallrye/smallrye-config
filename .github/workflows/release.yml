@@ -54,8 +54,9 @@ jobs:
 
       - name: generate tck report
         run: |
-          mvn -pl testsuite/tck surefire-report:report-only
-          mv testsuite/tck/target/tck-results.html .
+          cd target/checkout
+          mvn surefire-report:report-only
+          mv testsuite/tck/target/tck-results.html $GITHUB_WORKSPACE
 
       - uses: meeDamian/github-release@2.0
         name: upload tck asset to release
