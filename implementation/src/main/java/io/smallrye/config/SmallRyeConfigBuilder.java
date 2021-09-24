@@ -49,6 +49,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
+    private final List<ConfigSourceProvider> sourceProviders = new ArrayList<>();
     private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private final List<String> profiles = new ArrayList<>();
     private final Set<String> secretKeys = new HashSet<>();
@@ -230,6 +231,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withSources(ConfigSourceProvider provider) {
+        sourceProviders.add(provider);
+        return this;
+    }
+
     public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
         for (ConfigSourceFactory configSourceFactory : configSourceFactories) {
             sources.add(new ConfigurableConfigSource(configSourceFactory));
@@ -345,55 +351,65 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return priority;
     }
 
-    protected List<ConfigSource> getSources() {
+    public List<ConfigSource> getSources() {
         return sources;
     }
 
-    protected Map<Type, ConverterWithPriority> getConverters() {
+    public List<ConfigSourceProvider> getSourceProviders() {
+        return sourceProviders;
+    }
+
+    public Map<Type, ConverterWithPriority> getConverters() {
         return converters;
     }
 
-    List<InterceptorWithPriority> getInterceptors() {
+    public List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
     }
 
-    private ConfigValidator getValidator() {
+    public ConfigValidator getValidator() {
         if (isAddDiscoveredValidator()) {
             this.validator = discoverValidator();
         }
         return validator;
     }
 
-    KeyMap<String> getDefaultValues() {
+    public KeyMap<String> getDefaultValues() {
         return defaultValues;
     }
 
-    protected boolean isAddDefaultSources() {
+    public boolean isAddDefaultSources() {
         return addDefaultSources;
     }
 
-    boolean isAddDefaultInterceptors() {
+    public boolean isAddDefaultInterceptors() {
         return addDefaultInterceptors;
     }
 
-    protected boolean isAddDiscoveredSources() {
+    public boolean isAddDiscoveredSources() {
         return addDiscoveredSources;
     }
 
-    protected boolean isAddDiscoveredConverters() {
+    public boolean isAddDiscoveredConverters() {
         return addDiscoveredConverters;
     }
 
-    boolean isAddDiscoveredInterceptors() {
+    public boolean isAddDiscoveredInterceptors() {
         return addDiscoveredInterceptors;
     }
 
-    boolean isAddDiscoveredValidator() {
+    public boolean isAddDiscoveredValidator() {
         return addDiscoveredValidator;
     }
 
     @Override
     public SmallRyeConfig build() {
+        for (ConfigSourceProvider sourceProvider : sourceProviders) {
+            for (ConfigSource configSource : sourceProvider.getConfigSources(classLoader)) {
+                sources.add(configSource);
+            }
+        }
+
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
         defaultValues.putAll(mappingProvider.getDefaultValues());
 
