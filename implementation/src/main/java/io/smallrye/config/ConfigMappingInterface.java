@@ -208,6 +208,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return false;
         }
 
+        public boolean isDefaultMethod() {
+            return false;
+        }
+
         public PrimitiveProperty asPrimitive() {
             throw new ClassCastException();
         }
@@ -233,6 +237,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public CollectionProperty asCollection() {
+            throw new ClassCastException();
+        }
+
+        public DefaultMethodProperty asDefaultMethod() {
             throw new ClassCastException();
         }
     }
@@ -549,6 +557,38 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
+    public static final class DefaultMethodProperty extends Property {
+        private final Method defaultMethod;
+        private final Property defaultProperty;
+
+        DefaultMethodProperty(
+                final Method method,
+                final Method defaultMethod,
+                final Property defaultProperty) {
+            super(method, "");
+            this.defaultMethod = defaultMethod;
+            this.defaultProperty = defaultProperty;
+        }
+
+        public Method getDefaultMethod() {
+            return defaultMethod;
+        }
+
+        public Property getDefaultProperty() {
+            return defaultProperty;
+        }
+
+        @Override
+        public boolean isDefaultMethod() {
+            return true;
+        }
+
+        @Override
+        public DefaultMethodProperty asDefaultMethod() {
+            return this;
+        }
+    }
+
     private static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
@@ -611,6 +651,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     private static Property getPropertyDef(Method method, Type type) {
+        Method defaultMethod = hasDefaultMethodImplementation(method);
+        if (defaultMethod != null) {
+            return new DefaultMethodProperty(method, defaultMethod, getPropertyDef(defaultMethod, type));
+        }
+
         // now figure out what kind it is
         Class<? extends Converter<?>> convertWith = getConvertWith(type);
         if (convertWith == null) {
@@ -672,6 +717,26 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         // otherwise it's a leaf
         WithDefault annotation = method.getAnnotation(WithDefault.class);
         return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
+    }
+
+    private static Method hasDefaultMethodImplementation(Method method) {
+        Class<?> methodClass = method.getDeclaringClass();
+        Class<?>[] memberClasses = methodClass.getClasses();
+        for (Class<?> memberClass : memberClasses) {
+            if (memberClass.getSimpleName().equals("DefaultImpls")) {
+                Method candidateMethod;
+                try {
+                    candidateMethod = memberClass.getMethod(method.getName(), methodClass);
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+
+                if (candidateMethod.getReturnType().equals(method.getReturnType())) {
+                    return candidateMethod;
+                }
+            }
+        }
+        return null;
     }
 
     private static Class<? extends Converter<?>> getConvertWith(final Type type) {

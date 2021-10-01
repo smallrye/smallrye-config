@@ -756,6 +756,16 @@ public class ConfigMappingGenerator {
                 fio.visitInsn(Opcodes.POP);
                 // stack: -
                 fio.visitLabel(_done);
+            } else if (property.isDefaultMethod()) {
+                // Call default methods in fillInOptionals.
+                // We don't know the order in the constructor and the default method may require call to other
+                // properties that may not be initialized yet.
+                fio.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                Method defaultMethod = property.asDefaultMethod().getDefaultMethod();
+                fio.visitVarInsn(Opcodes.ALOAD, V_THIS);
+                fio.visitMethodInsn(INVOKESTATIC, getInternalName(defaultMethod.getDeclaringClass()), defaultMethod.getName(),
+                        "(" + getType(mapping.getInterfaceType()) + ")" + fieldDesc, false);
+                fio.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
             }
 
             // the accessor method implementation
@@ -765,11 +775,8 @@ public class ConfigMappingGenerator {
             // stack: this
             mv.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
             // stack: obj
-            if (property.isPrimitive()) {
-                mv.visitInsn(getReturnInstruction(property.asPrimitive()));
-            } else {
-                mv.visitInsn(Opcodes.ARETURN);
-            }
+            mv.visitInsn(getReturnInstruction(property));
+
             mv.visitEnd();
             mv.visitMaxs(0, 0);
             // end loop
@@ -837,7 +844,16 @@ public class ConfigMappingGenerator {
         // stack: -
     }
 
-    private static int getReturnInstruction(PrimitiveProperty primitiveProperty) {
+    private static int getReturnInstruction(Property property) {
+        PrimitiveProperty primitiveProperty;
+        if (property.isPrimitive()) {
+            primitiveProperty = property.asPrimitive();
+        } else if (property.isDefaultMethod() && property.asDefaultMethod().getDefaultProperty().isPrimitive()) {
+            primitiveProperty = property.asDefaultMethod().getDefaultProperty().asPrimitive();
+        } else {
+            return ARETURN;
+        }
+
         if (primitiveProperty.getPrimitiveType() == float.class) {
             return Opcodes.FRETURN;
         } else if (primitiveProperty.getPrimitiveType() == double.class) {

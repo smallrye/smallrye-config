@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1116,5 +1117,77 @@ class ConfigMappingInterfaceTest {
         assertEquals("app", mapping.clients().get("naruto").app().createdByApplication());
         assertTrue(mapping.clients().get("naruto").callback().enabled());
         assertTrue(mapping.clients().get("naruto").task().enabled());
+    }
+
+    @ConfigMapping(prefix = "defaults")
+    public interface DefaultMethods {
+        default String host() {
+            return "localhost";
+        }
+
+        @WithDefault("8080")
+        int port();
+    }
+
+    @Test
+    void defaultMethods() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DefaultMethods.class, "defaults")
+                .build();
+
+        DefaultMethods mapping = config.getConfigMapping(DefaultMethods.class);
+        assertEquals("localhost", mapping.host());
+        assertEquals(8080, mapping.port());
+    }
+
+    @ConfigMapping(prefix = "defaults")
+    public interface DefaultKotlinMethods {
+        String host();
+
+        @WithDefault("8080")
+        int port();
+
+        List<String> servers();
+
+        Optional<String> optional();
+
+        int anotherPort();
+
+        final class DefaultImpls {
+            public static String host(DefaultKotlinMethods config) {
+                return "localhost";
+            }
+
+            public static int port() {
+                throw new IllegalStateException();
+            }
+
+            public static List<String> servers(DefaultKotlinMethods config) {
+                return singletonList("server");
+            }
+
+            public static Optional<String> optional(DefaultKotlinMethods config) {
+                return Optional.of("optional");
+            }
+
+            public static int anotherPort(DefaultKotlinMethods config) {
+                return 9;
+            }
+        }
+    }
+
+    @Test
+    void defaultKotlinMethods() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DefaultKotlinMethods.class, "defaults")
+                .build();
+
+        DefaultKotlinMethods mapping = config.getConfigMapping(DefaultKotlinMethods.class);
+        assertEquals("localhost", mapping.host());
+        assertEquals(8080, mapping.port());
+        assertEquals(singletonList("server"), mapping.servers());
+        assertTrue(mapping.optional().isPresent());
+        assertEquals("optional", mapping.optional().get());
+        assertEquals(9, mapping.anotherPort());
     }
 }
