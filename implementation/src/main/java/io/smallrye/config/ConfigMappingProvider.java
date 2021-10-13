@@ -354,7 +354,8 @@ final class ConfigMappingProvider implements Serializable {
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
-            final BiConsumer<ConfigMappingContext, NameIterator> matchAction, HashSet<String> usedProperties) {
+            final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
+            final HashSet<String> usedProperties) {
 
         int pc = group.getPropertyCount();
         int pathLen = currentPath.size();
@@ -374,7 +375,7 @@ final class ConfigMappingProvider implements Serializable {
                 }
                 continue;
             }
-            if (usedProperties.add(property.getMethod().getName())) {
+            if (usedProperties.add(String.join(".", String.join(".", currentPath), property.getMethod().getName()))) {
                 boolean optional = property.isOptional();
                 processLazyPropertyInGroup(currentPath, matchActions, defaultValues, getEnclosingFunction, matchAction,
                         usedProperties, namingStrategy, group, optional, property);

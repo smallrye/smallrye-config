@@ -1065,4 +1065,56 @@ class ConfigMappingInterfaceTest {
         assertEquals("1234", mapping.map().get("key"));
         assertEquals("5678", mapping.map().get("dotted.key"));
     }
+
+    // From https://github.com/quarkusio/quarkus/issues/20728
+    @ConfigMapping(prefix = "clients")
+    public interface BugsConfiguration {
+        @WithParentName
+        Map<String, ClientConfiguration> clients();
+
+        interface ClientConfiguration {
+            MediumProperties medium();
+
+            CreatedByProperties app();
+
+            EnabledProperties callback();
+
+            EnabledProperties task();
+        }
+
+        interface MediumProperties {
+            boolean web();
+
+            boolean app();
+        }
+
+        interface CreatedByProperties {
+            String createdByApplication();
+        }
+
+        interface EnabledProperties {
+            boolean enabled();
+        }
+    }
+
+    @Test
+    void mapWithMultipleGroupsAndSameMethodNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(BugsConfiguration.class, "clients")
+                .withSources(config(
+                        "clients.naruto.medium.web", "true",
+                        "clients.naruto.medium.app", "true",
+                        "clients.naruto.app.created-by-application", "app",
+                        "clients.naruto.callback.enabled", "true",
+                        "clients.naruto.task.enabled", "true"))
+                .build();
+
+        BugsConfiguration mapping = config.getConfigMapping(BugsConfiguration.class);
+
+        assertTrue(mapping.clients().get("naruto").medium().web());
+        assertTrue(mapping.clients().get("naruto").medium().app());
+        assertEquals("app", mapping.clients().get("naruto").app().createdByApplication());
+        assertTrue(mapping.clients().get("naruto").callback().enabled());
+        assertTrue(mapping.clients().get("naruto").task().enabled());
+    }
 }
