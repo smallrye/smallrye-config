@@ -140,22 +140,31 @@ public final class ConfigMappingContext {
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())
                 .computeIfAbsent(field, x -> {
                     ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
-                    MapProperty property = ci.getProperty(field).asMap();
-                    while (degree + 1 > property.getLevels()) {
-                        property = property.getValueProperty().asMap();
+                    Property property = ci.getProperty(field);
+                    MapProperty mapProperty;
+                    if (property.isMap()) {
+                        mapProperty = property.asMap();
+                    } else if (property.isCollection()) {
+                        mapProperty = property.asCollection().getElement().asMap();
+                    } else {
+                        throw new IllegalStateException();
                     }
-                    if (property.hasKeyConvertWith()) {
-                        return getConverterInstance(property.getKeyConvertWith());
+
+                    while (degree + 1 > mapProperty.getLevels()) {
+                        mapProperty = mapProperty.getValueProperty().asMap();
+                    }
+                    if (mapProperty.hasKeyConvertWith()) {
+                        return getConverterInstance(mapProperty.getKeyConvertWith());
                     } else {
                         // todo: replace with generic converter lookup
-                        Class<?> valueRawType = property.getKeyRawType();
+                        Class<?> valueRawType = mapProperty.getKeyRawType();
                         if (valueRawType == List.class) {
                             return Converters.newCollectionConverter(
-                                    config.requireConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))),
+                                    config.requireConverter(rawTypeOf(typeOfParameter(mapProperty.getKeyType(), 0))),
                                     ArrayList::new);
                         } else if (valueRawType == Set.class) {
                             return Converters.newCollectionConverter(
-                                    config.requireConverter(rawTypeOf(typeOfParameter(property.getKeyType(), 0))),
+                                    config.requireConverter(rawTypeOf(typeOfParameter(mapProperty.getKeyType(), 0))),
                                     HashSet::new);
                         } else {
                             return config.requireConverter(valueRawType);

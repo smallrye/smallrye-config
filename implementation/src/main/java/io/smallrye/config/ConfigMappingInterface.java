@@ -690,6 +690,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
             if (rawType == List.class || rawType == Set.class) {
                 Type elementType = typeOfParameter(type, 0);
+
+                if (rawTypeOf(elementType) == Map.class) {
+                    return new CollectionProperty(rawType, getPropertyDef(method, elementType));
+                }
+
                 ConfigMappingInterface configurationInterface = getConfigurationInterface((Class<?>) elementType);
                 if (configurationInterface != null) {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));

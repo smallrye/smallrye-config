@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -233,5 +234,33 @@ class YamlConfigMappingTest {
 
         @WithName("regex")
         Optional<String> regex();
+    }
+
+    @Test
+    void yamlListMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapConfig.class, "app")
+                .withSources(new YamlConfigSource("yaml", "app:\n" +
+                        "  config:\n" +
+                        "    - name: Bob\n" +
+                        "      foo: thing\n" +
+                        "      bar: false\n" +
+                        "    - name: Tim\n" +
+                        "      baz: stuff\n" +
+                        "      qux: 3"))
+                .build();
+
+        MapConfig mapping = config.getConfigMapping(MapConfig.class);
+        assertEquals("Bob", mapping.config().get(0).get("name"));
+        assertEquals("thing", mapping.config().get(0).get("foo"));
+        assertEquals("false", mapping.config().get(0).get("bar"));
+        assertEquals("Tim", mapping.config().get(1).get("name"));
+        assertEquals("stuff", mapping.config().get(1).get("baz"));
+        assertEquals("3", mapping.config().get(1).get("qux"));
+    }
+
+    @ConfigMapping(prefix = "app")
+    interface MapConfig {
+        List<Map<String, String>> config();
     }
 }
