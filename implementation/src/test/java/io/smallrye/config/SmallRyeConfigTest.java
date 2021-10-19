@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -306,5 +307,12 @@ class SmallRyeConfigTest {
         }).build();
         assertFalse(config.getConfigSource("something").isPresent());
         assertFalse(config.getConfigSource(null).isPresent());
+    }
+
+    @Test
+    void builderSourcesProvider() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(classLoader -> singletonList(config("my.prop", "1234")))
+                .build();
+        assertEquals("1234", config.getRawValue("my.prop"));
     }
 }
