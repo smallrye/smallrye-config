@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
 
@@ -398,14 +400,16 @@ public class ConfigMappingGenerator {
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
 
                 // For Both Group and Optional Group
-                if (realProperty.asCollection().getElement().isGroup()) {
+                if (realProperty.asCollection().getElement().isGroup() || realProperty.asCollection().getElement().isMap()) {
+                    CollectionProperty collectionProperty = realProperty.asCollection();
+
                     // get properties indexes
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getIndexedPropertiesIndexes",
                             "(L" + I_STRING + ";)L" + I_LIST + ';', false);
                     ctor.visitVarInsn(ASTORE, 4);
 
                     // Retrieve Collection to init.
-                    ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
+                    ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
                     ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
                             "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ';', false);
                     ctor.visitVarInsn(ALOAD, 4);
@@ -471,15 +475,22 @@ public class ConfigMappingGenerator {
                             "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
                     ctor.visitInsn(POP);
 
-                    // create group
-                    ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-                    ctor.visitLdcInsn(
-                            getType(realProperty.asCollection().getElement().asGroup().getGroupType().getInterfaceType()));
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "constructGroup",
-                            "(L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
-                    ctor.visitVarInsn(ASTORE, 11);
+                    if (collectionProperty.getElement().isGroup()) {
+                        // create group
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(collectionProperty.getElement().asGroup().getGroupType().getInterfaceType()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "constructGroup",
+                                "(L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                        ctor.visitVarInsn(ASTORE, 11);
+                    } else if (collectionProperty.getElement().isMap()) {
+                        // create empty map
+                        ctor.visitTypeInsn(NEW, getInternalName(HashMap.class));
+                        ctor.visitInsn(DUP);
+                        ctor.visitMethodInsn(INVOKESPECIAL, getInternalName(HashMap.class), "<init>", "()V", false);
+                        ctor.visitVarInsn(ASTORE, 11);
+                    }
 
-                    // add group to collection
+                    // add to collection
                     ctor.visitVarInsn(ALOAD, 5);
                     ctor.visitTypeInsn(CHECKCAST, I_COLLECTION);
                     ctor.visitVarInsn(ALOAD, 11);
