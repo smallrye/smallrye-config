@@ -49,6 +49,7 @@ public class ConfigSourceUtil {
      * @param properties {@link Properties} object
      * @return {@link Map} object
      */
+    @SuppressWarnings("squid:S2445")
     public static Map<String, String> propertiesToMap(Properties properties) {
         Map<String, String> map = new HashMap<>();
         synchronized (properties) {

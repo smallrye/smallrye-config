@@ -724,6 +724,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
     }
 
+    @SuppressWarnings("squid:S1872")
     private static Method hasDefaultMethodImplementation(Method method) {
         Class<?> methodClass = method.getDeclaringClass();
         Class<?>[] memberClasses = methodClass.getClasses();
