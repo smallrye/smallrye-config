@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -450,5 +451,52 @@ public class ConfigMappingCollectionsTest {
         assertEquals(8081, mapping.origins().get(0).port());
         assertEquals("my-server", mapping.origins().get(1).host());
         assertEquals(80, mapping.origins().get(1).port());
+    }
+
+    @ConfigMapping(prefix = "servers")
+    public interface ServerCollectionMap {
+        @WithParentName
+        List<Map<String, String>> servers();
+
+        List<Map<String, Server>> moreServers();
+
+        Optional<List<Map<String, String>>> optional();
+
+        Optional<List<Map<String, String>>> present();
+
+        interface Server {
+            String host();
+
+            int port();
+        }
+    }
+
+    @Test
+    void mappingCollectionsMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerCollectionMap.class, "servers")
+                .withSources(config(
+                        "servers[0].localhost", "localhost",
+                        "servers[1].konoha", "konoha",
+                        "servers.more-servers[0].local.host", "localhost",
+                        "servers.more-servers[0].local.port", "8080",
+                        "servers.more-servers[1].kon.host", "konoha",
+                        "servers.more-servers[1].kon.port", "80",
+                        "servers.present[0].localhost", "localhost"))
+                .build();
+
+        ServerCollectionMap mapping = config.getConfigMapping(ServerCollectionMap.class);
+        assertEquals("localhost", mapping.servers().get(0).get("localhost"));
+        assertEquals("konoha", mapping.servers().get(1).get("konoha"));
+
+        assertEquals("localhost", mapping.moreServers().get(0).get("local").host());
+        assertEquals(8080, mapping.moreServers().get(0).get("local").port());
+        assertEquals("konoha", mapping.moreServers().get(1).get("kon").host());
+        assertEquals(80, mapping.moreServers().get(1).get("kon").port());
+
+        assertFalse(mapping.optional().isPresent());
+
+        assertTrue(mapping.present().isPresent());
+        assertEquals("localhost", mapping.present().get().get(0).get("localhost"));
     }
 }
