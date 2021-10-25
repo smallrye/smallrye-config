@@ -8,7 +8,7 @@ subscribe to updates to the configuration parameters.
 
 === Usage
 
-To use the HOCON Config Source, add the following to your Maven `pom.xml`:
+To use the Zookeeper Config Source, add the following to your Maven `pom.xml`:
 
 [source,xml,subs="verbatim,attributes"]
 ----
