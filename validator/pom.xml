@@ -28,7 +28,7 @@
     <name>SmallRye: MicroProfile Config Validator</name>
 
     <properties>
-        <version.jakarta.validation>2.0.2</version.jakarta.validation>
+        <version.jakarta.validation>3.0.1</version.jakarta.validation>
 
         <!-- Test -->
         <version.hibernate.validator>6.2.0.Final</version.hibernate.validator>
