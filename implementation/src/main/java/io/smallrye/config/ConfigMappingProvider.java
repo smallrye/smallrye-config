@@ -221,7 +221,7 @@ final class ConfigMappingProvider implements Serializable {
                 // process by property type
                 if (!property.isParentPropertyName()) {
                     NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
-                            : namingStrategy.apply(property.getPropertyName()));
+                            : propertyName(property, group, namingStrategy));
                     while (ni.hasNext()) {
                         propertyPath.add(ni.getNextSegment());
                         ni.next();
@@ -360,7 +360,7 @@ final class ConfigMappingProvider implements Serializable {
             Property property = group.getProperty(i);
             if (!property.isParentPropertyName()) {
                 NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
-                        : namingStrategy.apply(property.getPropertyName()));
+                        : propertyName(property, group, namingStrategy));
                 while (ni.hasNext()) {
                     currentPath.add(ni.getNextSegment());
                     ni.next();
@@ -617,6 +617,19 @@ final class ConfigMappingProvider implements Serializable {
         return name;
     }
 
+    private static String propertyName(final Property property, final ConfigMappingInterface group,
+            final NamingStrategy namingStrategy) {
+        return namingStrategy(namingStrategy, group.getNamingStrategy()).apply(property.getPropertyName());
+    }
+
+    private static NamingStrategy namingStrategy(NamingStrategy parent, NamingStrategy current) {
+        if (!current.isDefault()) {
+            return current;
+        } else {
+            return parent;
+        }
+    }
+
     static class GetRootAction implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> {
         private final Class<?> root;
         private final String rootPath;
@@ -655,7 +668,8 @@ final class ConfigMappingProvider implements Serializable {
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
             String key = indexName(enclosedGroup.getMethod().getName(), path, ni);
             ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType, key, ourEnclosing);
-            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
+            context.applyNamingStrategy(
+                    namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
             if (val == null) {
                 // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
@@ -698,7 +712,8 @@ final class ConfigMappingProvider implements Serializable {
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
             ConfigMappingObject val = (ConfigMappingObject) ourEnclosing.get(mapKey);
-            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
+            context.applyNamingStrategy(
+                    namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());

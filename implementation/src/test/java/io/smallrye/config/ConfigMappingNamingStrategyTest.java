@@ -64,7 +64,6 @@ public class ConfigMappingNamingStrategyTest {
     @Test
     void composedNamingStrategy() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withValidateUnknown(false)
                 .withMapping(ServerComposedSnakeNaming.class, "server")
                 .withMapping(ServerComposedVerbatimNaming.class, "server")
                 .withMapping(ServerComposedKebabNaming.class, "server")
@@ -174,5 +173,63 @@ public class ConfigMappingNamingStrategyTest {
         interface Form {
             String loginPage();
         }
+    }
+
+    // From https://github.com/quarkusio/quarkus/issues/21407
+    @ConfigMapping(prefix = "bugs", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
+    public interface NamingStrategyVerbatimOptionalGroup {
+        @WithParentName
+        Map<String, ClientConfiguration> bugs();
+
+        interface ClientConfiguration {
+            boolean hereVerbatimWorks();
+
+            Optional<Properties> properties();
+
+            Optional<OverrideNamingStrategyProperties> override();
+        }
+
+        interface Properties {
+            String feed();
+
+            String customerId();
+
+            String scriptSelector();
+        }
+
+        @ConfigMapping(namingStrategy = ConfigMapping.NamingStrategy.KEBAB_CASE)
+        interface OverrideNamingStrategyProperties {
+            String feed();
+
+            String customerId();
+
+            String scriptSelector();
+        }
+    }
+
+    @Test
+    void namingStrategyVerbatimOptionalGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NamingStrategyVerbatimOptionalGroup.class, "bugs")
+                .withSources(config("bugs.KEY1.hereVerbatimWorks", "true",
+                        "bugs.KEY1.properties.feed", "100103",
+                        "bugs.KEY1.properties.customerId", "36936471",
+                        "bugs.KEY1.properties.scriptSelector", "RoadRunner_Task1_AAR01",
+                        "bugs.KEY1.override.feed", "100103",
+                        "bugs.KEY1.override.customer-id", "36936471",
+                        "bugs.KEY1.override.script-selector", "RoadRunner_Task1_AAR01"))
+                .build();
+
+        NamingStrategyVerbatimOptionalGroup mapping = config.getConfigMapping(NamingStrategyVerbatimOptionalGroup.class);
+
+        assertTrue(mapping.bugs().get("KEY1").hereVerbatimWorks());
+        assertTrue(mapping.bugs().get("KEY1").properties().isPresent());
+        assertEquals("100103", mapping.bugs().get("KEY1").properties().get().feed());
+        assertEquals("36936471", mapping.bugs().get("KEY1").properties().get().customerId());
+        assertEquals("RoadRunner_Task1_AAR01", mapping.bugs().get("KEY1").properties().get().scriptSelector());
+        assertTrue(mapping.bugs().get("KEY1").override().isPresent());
+        assertEquals("100103", mapping.bugs().get("KEY1").override().get().feed());
+        assertEquals("36936471", mapping.bugs().get("KEY1").override().get().customerId());
+        assertEquals("RoadRunner_Task1_AAR01", mapping.bugs().get("KEY1").override().get().scriptSelector());
     }
 }
