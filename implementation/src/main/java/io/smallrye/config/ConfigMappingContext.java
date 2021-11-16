@@ -197,7 +197,9 @@ public final class ConfigMappingContext {
     }
 
     void applyNamingStrategy(final NamingStrategy namingStrategy) {
-        this.namingStrategy = namingStrategy;
+        if (!namingStrategy.isDefault()) {
+            this.namingStrategy = namingStrategy;
+        }
     }
 
     public String applyNamingStrategy(final String name) {

@@ -861,15 +861,18 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         }
 
-        return KEBAB_CASE_NAMING_STRATEGY;
+        return DEFAULT_NAMING_STRATEGY;
     }
 
+    private static final NamingStrategy DEFAULT_NAMING_STRATEGY = new KebabNamingStrategy();
     private static final NamingStrategy VERBATIM_NAMING_STRATEGY = new VerbatimNamingStrategy();
     private static final NamingStrategy KEBAB_CASE_NAMING_STRATEGY = new KebabNamingStrategy();
     private static final NamingStrategy SNAKE_CASE_NAMING_STRATEGY = new SnakeNamingStrategy();
 
     public interface NamingStrategy extends Function<String, String> {
-
+        default boolean isDefault() {
+            return this.equals(DEFAULT_NAMING_STRATEGY);
+        }
     }
 
     static class VerbatimNamingStrategy implements NamingStrategy {
