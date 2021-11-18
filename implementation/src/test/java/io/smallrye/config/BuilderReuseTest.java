@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Priority;
 
@@ -48,6 +51,50 @@ class BuilderReuseTest {
         assertTrue(it1.hasNext() || it2.hasNext());
         assertEquals(it1.next().getClass(), it2.next().getClass());
         assertFalse(it1.hasNext() || it2.hasNext());
+    }
+
+    @Test
+    void builderReuseExtreme() {
+        final SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
+        builder.addDefaultSources();
+        for (int i = 0; i < 5000; i++) {
+            final Config config1 = builder.withSources(new MySource("key" + i, "value" + i)).build();
+        }
+    }
+
+    static class MySource implements ConfigSource {
+
+        public ConcurrentMap<String, String> props = new ConcurrentHashMap<String, String>();
+        public int ordinal = 700;
+        public String id = "mySource";
+
+        public MySource(String key, String value) {
+            props.put(key, value);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String getValue(String propertyName) {
+            return props.get(propertyName);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int getOrdinal() {
+            return ordinal;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String getName() {
+            return id;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Set<String> getPropertyNames() {
+            return props.keySet();
+        }
     }
 
     @Test
