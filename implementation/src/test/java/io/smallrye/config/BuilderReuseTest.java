@@ -31,8 +31,10 @@ import javax.annotation.Priority;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 class BuilderReuseTest {
     @Test
     void builderReuse() {
