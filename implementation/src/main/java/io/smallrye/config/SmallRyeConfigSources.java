@@ -24,10 +24,11 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        for (final ConfigValueConfigSource configSource : configSources) {
+        for (int i = 0, configSourcesSize = configSources.size(); i < configSourcesSize; i++) {
+            final ConfigValueConfigSource configSource = configSources.get(i);
             final ConfigValue configValue = configSource.getConfigValue(name);
             if (configValue != null) {
-                return configValue;
+                return configValue.from().withConfigSourcePosition(i).build();
             }
         }
         return null;
