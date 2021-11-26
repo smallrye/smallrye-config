@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static java.util.stream.Collectors.toList;
@@ -9,10 +10,12 @@ import static java.util.stream.StreamSupport.stream;
 import static org.eclipse.microprofile.config.Config.PROFILE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -20,8 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -417,6 +422,65 @@ class ProfileConfigSourceInterceptorTest {
         assertTrue(config.getProfiles().isEmpty());
     }
 
+    @Test
+    void profileValueSameOrdinalDifferentSources(@TempDir Path tempDir) throws Exception {
+        JavaArchive jarOne = ShrinkWrap
+                .create(JavaArchive.class, "resources-child.jar")
+                .addAsResource(new StringAsset("my.prop=child\n"), "resources.properties");
+
+        Path filePathOne = tempDir.resolve("resources-child.jar");
+        jarOne.as(ZipExporter.class).exportTo(filePathOne.toFile());
+
+        JavaArchive jarTwo = ShrinkWrap
+                .create(JavaArchive.class, "resources-parent.jar")
+                .addAsResource(new StringAsset("%dev.my.prop=parent\n"), "resources.properties");
+
+        Path filePathTwo = tempDir.resolve("resources-parent.jar");
+        jarTwo.as(ZipExporter.class).exportTo(filePathTwo.toFile());
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+        try (URLClassLoader urlClassLoader = urlClassLoader(contextClassLoader, "jar:" + filePathOne.toUri() + "!/",
+                "jar:" + filePathTwo.toUri() + "!/")) {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
+
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .addDiscoveredSources()
+                    .addDefaultInterceptors()
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "resources.properties")
+                    .withProfile("dev")
+                    .build();
+
+            int index = 0;
+            int childSourceIndex = -1;
+            int parentSourceIndex = -1;
+            ConfigSource childSource = null;
+            ConfigSource parentSource = null;
+            for (ConfigSource source : config.getConfigSources()) {
+                if (source.getName().contains("child")) {
+                    childSourceIndex = index;
+                    childSource = source;
+                }
+                if (source.getName().contains("parent")) {
+                    parentSourceIndex = index;
+                    parentSource = source;
+                }
+                index++;
+            }
+
+            assertNotNull(childSource);
+            assertNotNull(parentSource);
+            assertTrue(childSourceIndex < parentSourceIndex);
+            assertEquals(childSource.getOrdinal(), parentSource.getOrdinal());
+
+            assertEquals("dev", config.getProfiles().get(0));
+            assertEquals("child", config.getRawValue("my.prop"));
+
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(config(keyValues))
@@ -424,5 +488,15 @@ class ProfileConfigSourceInterceptorTest {
                         new ProfileConfigSourceInterceptor("prof"),
                         new ExpressionConfigSourceInterceptor())
                 .build();
+    }
+
+    private static URLClassLoader urlClassLoader(ClassLoader parent, String... urls) {
+        return new URLClassLoader(Stream.of(urls).map(spec -> {
+            try {
+                return new URL(spec);
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }).toArray(URL[]::new), parent);
     }
 }

@@ -19,17 +19,13 @@ import javax.annotation.Priority;
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private static final long serialVersionUID = -6305289277993917313L;
-    private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (o1, o2) -> {
-        int res = Integer.compare(o2.getConfigSourceOrdinal(), o1.getConfigSourceOrdinal());
+    private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (profileValue, originalValue) -> {
+        int res = Integer.compare(originalValue.getConfigSourceOrdinal(), profileValue.getConfigSourceOrdinal());
         if (res != 0) {
             return res;
         }
 
-        if (o1.getConfigSourceName() != null && o2.getConfigSourceName() != null) {
-            return o2.getConfigSourceName().compareTo(o1.getConfigSourceName());
-        } else {
-            return res;
-        }
+        return Integer.compare(profileValue.getConfigSourcePosition(), originalValue.getConfigSourcePosition());
     };
 
     private final String[] profiles;

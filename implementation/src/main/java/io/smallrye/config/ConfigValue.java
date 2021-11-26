@@ -23,7 +23,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private final String rawValue;
     private final String configSourceName;
     private final int configSourceOrdinal;
-
+    private final int configSourcePosition;
     private final int lineNumber;
 
     private ConfigValue(final ConfigValueBuilder builder) {
@@ -32,6 +32,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.rawValue = builder.rawValue;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
+        this.configSourcePosition = builder.configSourcePosition;
         this.lineNumber = builder.lineNumber;
     }
 
@@ -68,6 +69,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return configSourceOrdinal;
     }
 
+    public int getConfigSourcePosition() {
+        return configSourcePosition;
+    }
+
     public int getLineNumber() {
         return lineNumber;
     }
@@ -90,6 +95,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withConfigSourceOrdinal(final int configSourceOrdinal) {
         return from().withConfigSourceOrdinal(configSourceOrdinal).build();
+    }
+
+    public ConfigValue withConfigSourcePosition(final int configSourcePosition) {
+        return from().withConfigSourcePosition(configSourcePosition).build();
     }
 
     public ConfigValue withLineNumber(final int lineNumber) {
@@ -148,6 +157,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private String rawValue;
         private String configSourceName;
         private int configSourceOrdinal;
+        private int configSourcePosition;
         private int lineNumber = -1;
 
         public ConfigValueBuilder withName(final String name) {
@@ -172,6 +182,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
         public ConfigValueBuilder withConfigSourceOrdinal(final int configSourceOrdinal) {
             this.configSourceOrdinal = configSourceOrdinal;
+            return this;
+        }
+
+        public ConfigValueBuilder withConfigSourcePosition(final int configSourcePosition) {
+            this.configSourcePosition = configSourcePosition;
             return this;
         }
 
