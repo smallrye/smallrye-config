@@ -2,7 +2,9 @@ package io.smallrye.config.inject;
 
 import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
@@ -21,6 +23,8 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithDefault;
+
+import java.util.Optional;
 
 @ExtendWith(WeldJunit5Extension.class)
 class ConfigMappingInjectionTest {
@@ -43,6 +47,8 @@ class ConfigMappingInjectionTest {
         assertNotNull(server);
         assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
+        assertTrue( server.name().isPresent());
+        assertEquals("server", server.name().get());
     }
 
     @Test
@@ -50,6 +56,8 @@ class ConfigMappingInjectionTest {
         assertNotNull(client);
         assertEquals("client", client.host());
         assertEquals(80, client.port());
+        assertTrue( client.name().isPresent());
+        assertEquals("defaultName", client.name().get());
     }
 
     @Test
@@ -57,6 +65,7 @@ class ConfigMappingInjectionTest {
         assertNotNull(cloud);
         assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
+        assertFalse(cloud.name().isPresent());
     }
 
     @Test
@@ -65,6 +74,8 @@ class ConfigMappingInjectionTest {
         assertNotNull(server);
         assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
+        assertTrue( server.name().isPresent());
+        assertEquals("server", server.name().get());
     }
 
     @ConfigMapping(prefix = "server")
@@ -72,6 +83,9 @@ class ConfigMappingInjectionTest {
         String theHost();
 
         int port();
+
+        Optional<String> name();
+
     }
 
     @ConfigMapping(prefix = "client")
@@ -81,6 +95,9 @@ class ConfigMappingInjectionTest {
 
         @WithDefault("80")
         int port();
+
+        @WithDefault("defaultName")
+        Optional<String> name();
     }
 
     @Inject
@@ -91,10 +108,13 @@ class ConfigMappingInjectionTest {
         Server cloud = configMappingBean.getCloud();
         assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
+        assertFalse(cloud.name().isPresent());
 
         Server client = configMappingBean.getClient();
         assertEquals("client", client.theHost());
         assertEquals(80, client.port());
+        assertTrue(client.name().isPresent());
+        assertEquals("defaultName", client.name().get());
     }
 
     public static class ConfigMappingBean {
@@ -123,7 +143,7 @@ class ConfigMappingInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.the-host", "localhost", "server.port", "8080"))
+                .withSources(config("server.the-host", "localhost", "server.port", "8080", "server.name", "server"))
                 .withSources(config("client.the-host", "client"))
                 .withSources(config("cloud.the-host", "cloud", "cloud.port", "9090"))
                 .addDefaultInterceptors()
