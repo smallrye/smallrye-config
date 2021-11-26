@@ -6,11 +6,11 @@ class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorC
     private static final long serialVersionUID = 6654406739008729337L;
 
     private final ConfigSourceInterceptor interceptor;
-    private final SmallRyeConfigSourceInterceptorContext next;
+    private final ConfigSourceInterceptorContext next;
 
     SmallRyeConfigSourceInterceptorContext(
             final ConfigSourceInterceptor interceptor,
-            final SmallRyeConfigSourceInterceptorContext next) {
+            final ConfigSourceInterceptorContext next) {
         this.interceptor = interceptor;
         this.next = next;
     }
