@@ -16,6 +16,7 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
 
 import java.lang.reflect.Type;
@@ -437,9 +438,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
     }
 
-    static class InterceptorWithPriority {
-        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt
-                .of(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+    static class InterceptorWithPriority implements Comparable<InterceptorWithPriority> {
+        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(DEFAULT_PRIORITY);
 
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
@@ -466,7 +466,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         private InterceptorWithPriority(ConfigSourceInterceptorFactory factory) {
             this.factory = factory;
-            this.priority = factory.getPriority().orElse(ConfigSourceInterceptorFactory.DEFAULT_PRIORITY);
+            this.priority = factory.getPriority().orElse(DEFAULT_PRIORITY);
         }
 
         ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
@@ -475,6 +475,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         int getPriority() {
             return priority;
+        }
+
+        @Override
+        public int compareTo(final InterceptorWithPriority other) {
+            return Integer.compare(this.priority, other.priority);
         }
     }
 }
