@@ -4,6 +4,7 @@ import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.enterprise.inject.spi.CDI;
@@ -25,6 +26,9 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithDefault;
 
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 @ExtendWith(WeldJunit5Extension.class)
 class ConfigMappingInjectionTest {
@@ -47,8 +51,10 @@ class ConfigMappingInjectionTest {
         assertNotNull(server);
         assertEquals("localhost", server.theHost());
         assertEquals(8080, server.port());
-        assertTrue( server.name().isPresent());
+        assertTrue(server.name().isPresent());
         assertEquals("server", server.name().get());
+        assertNotNull(server.location());
+        assertEquals("US", server.location().get());
     }
 
     @Test
@@ -56,8 +62,10 @@ class ConfigMappingInjectionTest {
         assertNotNull(client);
         assertEquals("client", client.host());
         assertEquals(80, client.port());
-        assertTrue( client.name().isPresent());
+        assertTrue(client.name().isPresent());
         assertEquals("defaultName", client.name().get());
+        assertNotNull(client.type());
+        assertEquals(2, client.type().getAsInt());
     }
 
     @Test
@@ -66,6 +74,8 @@ class ConfigMappingInjectionTest {
         assertEquals("cloud", cloud.theHost());
         assertEquals(9090, cloud.port());
         assertFalse(cloud.name().isPresent());
+        assertNotNull(cloud.location());
+        assertNull(cloud.location().get());
     }
 
     @Test
@@ -76,6 +86,8 @@ class ConfigMappingInjectionTest {
         assertEquals(8080, server.port());
         assertTrue( server.name().isPresent());
         assertEquals("server", server.name().get());
+        assertNotNull(server.location());
+        assertEquals("US", server.location().get());
     }
 
     @ConfigMapping(prefix = "server")
@@ -86,6 +98,7 @@ class ConfigMappingInjectionTest {
 
         Optional<String> name();
 
+        Supplier<String> location();
     }
 
     @ConfigMapping(prefix = "client")
@@ -98,6 +111,9 @@ class ConfigMappingInjectionTest {
 
         @WithDefault("defaultName")
         Optional<String> name();
+
+        @WithDefault("2")
+        IntSupplier type();
     }
 
     @Inject
@@ -143,7 +159,7 @@ class ConfigMappingInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.the-host", "localhost", "server.port", "8080", "server.name", "server"))
+                .withSources(config("server.the-host", "localhost", "server.port", "8080", "server.name", "server", "server.location", "US"))
                 .withSources(config("client.the-host", "client"))
                 .withSources(config("cloud.the-host", "cloud", "cloud.port", "9090"))
                 .addDefaultInterceptors()

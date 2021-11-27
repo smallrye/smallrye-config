@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -83,6 +84,7 @@ public class ConfigMappingGenerator {
     private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_OPTIONAL = getInternalName(Optional.class);
+    private static final String I_SUPPLIER = getInternalName(Supplier.class);
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
     private static final String I_SMALLRYE_CONFIG = getInternalName(SmallRyeConfig.class);
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
@@ -382,8 +384,11 @@ public class ConfigMappingGenerator {
             // now process the property
             final Property realProperty;
             final boolean optional = property.isOptional();
+            final boolean supplier = property.isSupplier();
             if (optional) {
                 realProperty = property.asOptional().getNestedProperty();
+            } else if (supplier) {
+                realProperty = property.asSupplier().getNestedProperty();
             } else {
                 realProperty = property;
             }
@@ -661,7 +666,7 @@ public class ConfigMappingGenerator {
                 if (restoreLength) {
                     restoreLength(ctor);
                 }
-            } else if (property.isLeaf() || property.isPrimitive() || property.isOptional() && property.isLeaf()) {
+            } else if (property.isLeaf() || property.isPrimitive() || property.isOptional() && property.isLeaf() || property.isSupplier() && property.isLeaf()) {
                 // stack: -
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 // stack: this
@@ -684,7 +689,7 @@ public class ConfigMappingGenerator {
                 Label _catch = new Label();
                 Label _continue = new Label();
                 ctor.visitLabel(_try);
-                if (property.isOptional()) {
+                if (property.isOptional() || property.isSupplier()) {
                     ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValue",
                             "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OPTIONAL + ';', false);
                 } else {
@@ -701,7 +706,7 @@ public class ConfigMappingGenerator {
                     ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, boxType, prim.getUnboxMethodName(),
                             prim.getUnboxMethodDescriptor(), false);
                     // stack: this value
-                } else if (!property.isOptional()) {
+                } else if (!property.isOptional() && !property.isSupplier()) {
                     assert property.isLeaf();
                     ctor.visitTypeInsn(Opcodes.CHECKCAST, fieldType);
                 }
@@ -767,6 +772,8 @@ public class ConfigMappingGenerator {
                 fio.visitInsn(Opcodes.POP);
                 // stack: -
                 fio.visitLabel(_done);
+            } else if (property.isSupplier()) {
+                // TODO: Supplier logic to generate a Supplier instance with get method that returns value if Optional.isPresent(), otherwise null if Optional.isEmpty()
             } else if (property.isDefaultMethod()) {
                 // Call default methods in fillInOptionals.
                 // We don't know the order in the constructor and the default method may require call to other

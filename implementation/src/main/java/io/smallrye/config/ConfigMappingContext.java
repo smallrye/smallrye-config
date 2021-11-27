@@ -95,9 +95,17 @@ public final class ConfigMappingContext {
 
     private Converter<?> getConverter(final Property property) {
         boolean optional = property.isOptional();
-        if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()) {
-            LeafProperty leafProperty = optional ? property.asOptional().getNestedProperty().asLeaf()
-                    : property.asLeaf();
+        boolean supplier = property.isSupplier();
+        if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()
+            || supplier && property.asSupplier().getNestedProperty().isLeaf()) {
+            LeafProperty leafProperty;
+            if (optional) {
+                leafProperty = property.asOptional().getNestedProperty().asLeaf();
+            } else if (supplier) {
+                leafProperty = property.asSupplier().getNestedProperty().asLeaf();
+            } else {
+                leafProperty = property.asLeaf();
+            }
             if (leafProperty.hasConvertWith()) {
                 Class<? extends Converter<?>> convertWith = leafProperty.getConvertWith();
                 // todo: generics

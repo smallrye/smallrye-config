@@ -5,4 +5,5 @@ package io.smallrye.config;
  */
 public interface ConfigMappingObject {
     void fillInOptionals(ConfigMappingContext context);
+    void fillInSuppliers(ConfigMappingContext context);
 }

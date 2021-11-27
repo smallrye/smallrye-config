@@ -19,6 +19,10 @@ import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -167,6 +171,34 @@ public class ConfigProducer {
     @Dependent
     @Produces
     @ConfigProperty
+    protected IntSupplier produceIntSupplierConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig());
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    protected LongSupplier produceLongSupplierConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig());
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    protected DoubleSupplier produceDoubleSupplierConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig());
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
+    protected BooleanSupplier produceBooleanSupplierConfigProperty(InjectionPoint ip) {
+        return ConfigProducerUtil.getValue(ip, getConfig());
+    }
+
+    @Dependent
+    @Produces
+    @ConfigProperty
     protected ConfigValue produceConfigValue(InjectionPoint ip) {
         return (ConfigValue) ConfigProducerUtil.getConfigValue(ip, getConfig());
     }
@@ -193,6 +225,10 @@ public class ConfigProducer {
                 || requiredType == OptionalLong.class
                 || requiredType == OptionalDouble.class
                 || requiredType == Supplier.class
+                || requiredType == IntSupplier.class
+                || requiredType == LongSupplier.class
+                || requiredType == DoubleSupplier.class
+                || requiredType == BooleanSupplier.class
                 || requiredType == ConfigValue.class
                 || requiredType == org.eclipse.microprofile.config.ConfigValue.class;
     }

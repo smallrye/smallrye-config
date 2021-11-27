@@ -35,6 +35,10 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
@@ -154,6 +158,10 @@ public class ConfigExtension implements Extension {
                     || type instanceof Class && OptionalInt.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalLong.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalDouble.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && IntSupplier.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && LongSupplier.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && DoubleSupplier.class.isAssignableFrom((Class<?>) type)
+                    || type instanceof Class && BooleanSupplier.class.isAssignableFrom((Class<?>) type)
                     || type instanceof ParameterizedType
                             && (Optional.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
                                     || Provider.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())

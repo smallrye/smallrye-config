@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.spi.CDI;
@@ -61,6 +62,7 @@ class ConfigPropertiesInjectionTest {
         assertEquals(1, server.array.length);
         assertEquals(1, server.list.size());
         assertEquals(1, server.set.size());
+        assertEquals("abc", server.stringSupplier.get());
         assertFalse(server.optionalArray.isPresent());
         assertFalse(server.optionalList.isPresent());
         assertFalse(server.optionalSet.isPresent());
@@ -71,6 +73,7 @@ class ConfigPropertiesInjectionTest {
         assertEquals(2, serverCloud.array.length);
         assertEquals(2, serverCloud.list.size());
         assertEquals(2, serverCloud.set.size());
+        assertNull(serverCloud.stringSupplier.get());
         assertTrue(serverCloud.optionalArray.isPresent());
         assertEquals(2, serverCloud.optionalArray.get().length);
         assertTrue(serverCloud.optionalList.isPresent());
@@ -88,6 +91,7 @@ class ConfigPropertiesInjectionTest {
         assertEquals(1, server.array.length);
         assertEquals(1, server.list.size());
         assertEquals(1, server.set.size());
+        assertEquals("abc", server.stringSupplier.get());
         assertFalse(server.optionalArray.isPresent());
         assertFalse(server.optionalList.isPresent());
         assertFalse(server.optionalSet.isPresent());
@@ -99,6 +103,7 @@ class ConfigPropertiesInjectionTest {
         assertEquals(2, cloud.array.length);
         assertEquals(2, cloud.list.size());
         assertEquals(2, cloud.set.size());
+        assertNull(cloud.stringSupplier.get());
         assertTrue(cloud.optionalArray.isPresent());
         assertEquals(2, cloud.optionalArray.get().length);
         assertTrue(cloud.optionalList.isPresent());
@@ -129,6 +134,7 @@ class ConfigPropertiesInjectionTest {
         public List<Integer> list;
         @ConfigProperty(defaultValue = "4")
         public Set<Integer> set;
+        public Supplier<String> stringSupplier;
         public Optional<Integer[]> optionalArray;
         public Optional<List<Integer>> optionalList;
         public Optional<Set<Integer>> optionalSet;
@@ -137,7 +143,7 @@ class ConfigPropertiesInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.theHost", "localhost", "server.port", "8080"))
+                .withSources(config("server.theHost", "localhost", "server.port", "8080", "server.stringSupplier", "abc"))
                 .withSources(config("cloud.theHost", "cloud", "cloud.port", "9090", "cloud.array", "2,3",
                         "cloud.list", "3,4", "cloud.set", "4,5", "cloud.optionalArray", "2,3",
                         "cloud.optionalList", "3,4", "cloud.optionalSet", "4,5"))

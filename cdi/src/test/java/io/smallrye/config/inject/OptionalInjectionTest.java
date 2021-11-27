@@ -4,6 +4,7 @@ import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -33,6 +34,10 @@ class OptionalInjectionTest {
             .build();
 
     @Inject
+    @ConfigProperty(name = "optional.value")
+    Optional<String> optional;
+
+    @Inject
     @ConfigProperty(name = "optional.int.value")
     OptionalInt optionalInt;
     @Inject
@@ -43,7 +48,10 @@ class OptionalInjectionTest {
     OptionalDouble optionalDouble;
 
     @Test
-    void optionalIntInjection() {
+    void optionalInjection() {
+        assertTrue(optional.isPresent());
+        assertEquals("present", optional.get());
+
         assertTrue(optionalInt.isPresent());
         assertEquals(1, optionalInt.getAsInt());
 
@@ -57,7 +65,7 @@ class OptionalInjectionTest {
     @BeforeAll
     static void beforeAll() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("optional.int.value", "1", "optional.long.value", "2", "optional.double.value", "3.3"))
+                .withSources(config("optional.value", "present", "optional.int.value", "1", "optional.long.value", "2", "optional.double.value", "3.3"))
                 .addDefaultInterceptors()
                 .build();
         ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());

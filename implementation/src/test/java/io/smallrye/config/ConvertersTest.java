@@ -31,6 +31,11 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.Config;
@@ -66,6 +71,11 @@ class ConvertersTest {
         assertFalse(config.getValue("missing.collection", conv3).isPresent());
         assertEquals(Collections.singletonList("foo"), config.getValue("one.collection", conv3).orElse(null));
         assertEquals(Arrays.asList("foo", "bar"), config.getValue("two.collection", conv3).orElse(null));
+        final Converter<Supplier<Collection<String>>> conv4 = Converters.newSupplierConverter(conv);
+        assertNull(config.getValue("empty.collection", conv4).get());
+        assertNull(config.getValue("missing.collection", conv4).get());
+        assertEquals(Collections.singletonList("foo"), config.getValue("one.collection", conv4).get());
+        assertEquals(Arrays.asList("foo", "bar"), config.getValue("two.collection", conv4).get());
     }
 
     @Test
@@ -95,6 +105,11 @@ class ConvertersTest {
         assertFalse(config.getValue("missing.collection", conv3).isPresent());
         assertArrayEquals(array("foo"), config.getValue("one.collection", conv3).orElse(null));
         assertArrayEquals(array("foo", "bar"), config.getValue("two.collection", conv3).orElse(null));
+        final Converter<Supplier<String[]>> conv4 = Converters.newSupplierConverter(conv);
+        assertNull(config.getValue("empty.collection", conv4).get());
+        assertNull(config.getValue("missing.collection", conv4).get());
+        assertArrayEquals(array("foo"), config.getValue("one.collection", conv4).get());
+        assertArrayEquals(array("foo", "bar"), config.getValue("two.collection", conv4).get());
     }
 
     @Test
@@ -305,6 +320,41 @@ class ConvertersTest {
     }
 
     @Test
+    void supplierConverters() {
+        SmallRyeConfig config = buildConfig(
+                "string.empty", "", "string", "abc",
+                "int.empty", "", "int", "1",
+                "long.empty", "", "long", "2",
+                "double.empty", "", "double", "3.0",
+                "boolean.empty", "", "boolean", "true");
+
+        final Converter<Supplier<String>> conv = Converters
+                .newSupplierConverter(Converters.getImplicitConverter(String.class));
+        assertNull(config.getValue("string.empty", conv).get());
+        assertEquals("abc", config.getValue("string", conv).get());
+
+        final Converter<IntSupplier> conv2 = Converters
+                .newIntSupplierConverter(Converters.getImplicitConverter(Integer.class));
+        assertEquals(0, config.getValue("int.empty", conv2).getAsInt());
+        assertEquals(1, config.getValue("int", conv2).getAsInt());
+
+        final Converter<LongSupplier> conv3 = Converters
+                .newLongSupplierConverter(Converters.getImplicitConverter(Long.class));
+        assertEquals(0L, config.getValue("long.empty", conv3).getAsLong());
+        assertEquals(2L, config.getValue("long", conv3).getAsLong());
+
+        final Converter<DoubleSupplier> conv4 = Converters
+                .newDoubleSupplierConverter(Converters.getImplicitConverter(Double.class));
+        assertEquals(0D, config.getValue("double.empty", conv4).getAsDouble());
+        assertEquals(3D, config.getValue("double", conv4).getAsDouble());
+
+        final Converter<BooleanSupplier> conv5 = Converters
+                .newBooleanSupplierConverter(Converters.getImplicitConverter(Boolean.class));
+        assertEquals(false, config.getValue("boolean.empty", conv5).getAsBoolean());
+        assertEquals(true, config.getValue("boolean", conv5).getAsBoolean());
+    }
+
+    @Test
     void shortValue() {
         final SmallRyeConfig config = buildConfig("simple.short", "2");
         final short expected = 2;
@@ -375,6 +425,11 @@ class ConvertersTest {
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalInt.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalLong.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalDouble.class));
+
+        assertThrows(NullPointerException.class, () -> convertNull(config, IntSupplier.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, LongSupplier.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, DoubleSupplier.class));
+        assertThrows(NullPointerException.class, () -> convertNull(config, BooleanSupplier.class));
     }
 
     @SafeVarargs

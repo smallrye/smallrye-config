@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -45,7 +47,9 @@ class SupplierInjectionTest {
         assertEquals("1234", supplierBean.getMyProp());
         assertEquals("1234", supplierBean.getSupplierMyProp().get());
         assertEquals(1234, supplierBean.getSupplierInteger().get().intValue());
+        assertEquals(1234, supplierBean.getIntSupplier().getAsInt());
         assertEquals(1234, supplierBean.getSupplierOptionalInteger().get().get().intValue());
+        assertEquals(1234, supplierBean.getSupplierOptionalInt().get().getAsInt());
     }
 
     @Test
@@ -70,6 +74,12 @@ class SupplierInjectionTest {
         @ConfigProperty(name = "my.prop")
         Supplier<Optional<Integer>> supplierOptionalInteger;
         @Inject
+        @ConfigProperty(name = "my.prop")
+        IntSupplier intSupplier;
+        @Inject
+        @ConfigProperty(name = "my.prop")
+        Supplier<OptionalInt> supplierOptionalInt;
+        @Inject
         @ConfigProperty(name = "my.counter")
         Supplier<Integer> supplierDynamic;
 
@@ -85,8 +95,16 @@ class SupplierInjectionTest {
             return supplierInteger;
         }
 
+        IntSupplier getIntSupplier() {
+            return intSupplier;
+        }
+
         Supplier<Optional<Integer>> getSupplierOptionalInteger() {
             return supplierOptionalInteger;
+        }
+
+        Supplier<OptionalInt> getSupplierOptionalInt() {
+            return supplierOptionalInt;
         }
 
         Supplier<Integer> getSupplierDynamic() {

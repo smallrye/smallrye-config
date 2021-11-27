@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import io.smallrye.common.constraint.Assert;
+import org.eclipse.microprofile.config.spi.Converter;
+
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
@@ -16,10 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-
-import org.eclipse.microprofile.config.spi.Converter;
-
-import io.smallrye.common.constraint.Assert;
+import java.util.function.Supplier;
 
 /**
  * Information about a configuration interface.
@@ -188,6 +188,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return false;
         }
 
+        public boolean isSupplier() {
+            return false;
+        }
+
         public boolean isGroup() {
             return false;
         }
@@ -201,6 +205,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public boolean isMayBeOptional() {
+            return false;
+        }
+
+        public boolean isMayBeSupplier() {
             return false;
         }
 
@@ -220,6 +228,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             throw new ClassCastException();
         }
 
+        public SupplierProperty asSupplier() {
+            throw new ClassCastException();
+        }
+
         public GroupProperty asGroup() {
             throw new ClassCastException();
         }
@@ -232,7 +244,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             throw new ClassCastException();
         }
 
-        public MayBeOptionalProperty asMayBeOptional() {
+        public MayBeLazyProperty asMayBeLazy() {
             throw new ClassCastException();
         }
 
@@ -245,8 +257,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    public static abstract class MayBeOptionalProperty extends Property {
-        MayBeOptionalProperty(final Method method, final String propertyName) {
+    public static abstract class MayBeLazyProperty extends Property {
+        MayBeLazyProperty(final Method method, final String propertyName) {
             super(method, propertyName);
         }
 
@@ -256,7 +268,12 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         @Override
-        public MayBeOptionalProperty asMayBeOptional() {
+        public boolean isMayBeSupplier() {
+            return true;
+        }
+
+        @Override
+        public MayBeLazyProperty asMayBeLazy() {
             return this;
         }
     }
@@ -376,9 +393,9 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     public static final class OptionalProperty extends Property {
-        private final MayBeOptionalProperty nestedProperty;
+        private final MayBeLazyProperty nestedProperty;
 
-        OptionalProperty(final Method method, final String propertyName, final MayBeOptionalProperty nestedProperty) {
+        OptionalProperty(final Method method, final String propertyName, final MayBeLazyProperty nestedProperty) {
             super(method, propertyName);
             this.nestedProperty = nestedProperty;
         }
@@ -398,12 +415,40 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return nestedProperty.isLeaf();
         }
 
-        public MayBeOptionalProperty getNestedProperty() {
+        public MayBeLazyProperty getNestedProperty() {
             return nestedProperty;
         }
     }
 
-    public static final class GroupProperty extends MayBeOptionalProperty {
+    public static final class SupplierProperty extends Property {
+        private final MayBeLazyProperty nestedProperty;
+
+        SupplierProperty(final Method method, final String propertyName, final MayBeLazyProperty nestedProperty) {
+            super(method, propertyName);
+            this.nestedProperty = nestedProperty;
+        }
+
+        @Override
+        public boolean isSupplier() {
+            return true;
+        }
+
+        @Override
+        public SupplierProperty asSupplier() {
+            return this;
+        }
+
+        @Override
+        public boolean isLeaf() {
+            return nestedProperty.isLeaf();
+        }
+
+        public MayBeLazyProperty getNestedProperty() {
+            return nestedProperty;
+        }
+    }
+
+    public static final class GroupProperty extends MayBeLazyProperty {
         private final ConfigMappingInterface groupType;
 
         GroupProperty(final Method method, final String propertyName, final ConfigMappingInterface groupType) {
@@ -426,7 +471,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    public static final class LeafProperty extends MayBeOptionalProperty {
+    public static final class LeafProperty extends MayBeLazyProperty {
         private final Type valueType;
         private final Class<? extends Converter<?>> convertWith;
         private final Class<?> rawType;
@@ -528,7 +573,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    public static final class CollectionProperty extends MayBeOptionalProperty {
+    public static final class CollectionProperty extends MayBeLazyProperty {
         private final Class<?> collectionRawType;
         private final Property element;
 
@@ -677,9 +722,17 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 // optional is special: it can contain a leaf or a group, but not a map (unless it has @ConvertWith)
                 Property nested = getPropertyDef(method, typeOfParameter(type, 0));
                 if (nested.isMayBeOptional()) {
-                    return new OptionalProperty(method, propertyName, nested.asMayBeOptional());
+                    return new OptionalProperty(method, propertyName, nested.asMayBeLazy());
                 }
                 throw new IllegalArgumentException("Property type " + type + " cannot be optional");
+            }
+            if (rawType == Supplier.class) {
+                // supplier is special: it can contain a leaf, but not a map (unless it has @ConvertWith)
+                Property nested = getPropertyDef(method, typeOfParameter(type, 0));
+                if (nested.isMayBeSupplier()) {
+                    return new SupplierProperty(method, propertyName, nested.asMayBeLazy());
+                }
+                throw new IllegalArgumentException("Property type " + type + " cannot be supplier");
             }
             if (rawType == Map.class) {
                 // it's a map...
@@ -805,6 +858,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                     getNested(group.properties, nested);
                 } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty) {
                     CollectionProperty collectionProperty = (CollectionProperty) optionalProperty.getNestedProperty();
+                    getNested(new Property[] { collectionProperty.element }, nested);
+                }
+            }
+
+            if (property instanceof SupplierProperty) {
+                SupplierProperty supplierProperty = property.asSupplier();
+                if (supplierProperty.getNestedProperty() instanceof CollectionProperty) {
+                    CollectionProperty collectionProperty = (CollectionProperty) supplierProperty.getNestedProperty();
                     getNested(new Property[] { collectionProperty.element }, nested);
                 }
             }

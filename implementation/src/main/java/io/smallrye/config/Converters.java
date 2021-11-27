@@ -36,7 +36,12 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.IntFunction;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -173,6 +178,18 @@ public final class Converters {
     static final Converter<Pattern> PATTERN_CONVERTER = BuiltInConverter.of(17,
             newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
 
+    static final Converter<IntSupplier> INT_SUPPLIER_CONVERTER = BuiltInConverter.of(18,
+            newIntSupplierConverter(INTEGER_CONVERTER));
+
+    static final Converter<LongSupplier> LONG_SUPPLIER_CONVERTER = BuiltInConverter.of(19,
+            newLongSupplierConverter(LONG_CONVERTER));
+
+    static final Converter<DoubleSupplier> DOUBLE_SUPPLIER_CONVERTER = BuiltInConverter.of(20,
+            newDoubleSupplierConverter(DOUBLE_CONVERTER));
+
+    static final Converter<BooleanSupplier> BOOLEAN_SUPPLIER_CONVERTER = BuiltInConverter.of(21,
+            newBooleanSupplierConverter(BOOLEAN_CONVERTER));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -198,6 +215,11 @@ public final class Converters {
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
+
+        ALL_CONVERTERS.put(IntSupplier.class, INT_SUPPLIER_CONVERTER);
+        ALL_CONVERTERS.put(LongSupplier.class, LONG_SUPPLIER_CONVERTER);
+        ALL_CONVERTERS.put(DoubleSupplier.class, DOUBLE_SUPPLIER_CONVERTER);
+        ALL_CONVERTERS.put(BooleanSupplier.class, BOOLEAN_SUPPLIER_CONVERTER);
 
         ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
 
@@ -361,6 +383,57 @@ public final class Converters {
      */
     public static Converter<OptionalDouble> newOptionalDoubleConverter(Converter<Double> delegateConverter) {
         return new OptionalDoubleConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code Supplier}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @param <T> the item type
+     * @return the new converter (not {@code null})
+     */
+    public static <T> Converter<Supplier<T>> newSupplierConverter(Converter<? extends T> delegateConverter) {
+        return new SupplierConverter<>(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code IntSupplier}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<IntSupplier> newIntSupplierConverter(Converter<Integer> delegateConverter) {
+        return new IntSupplierConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code LongSupplier}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<LongSupplier> newLongSupplierConverter(Converter<Long> delegateConverter) {
+        return new LongSupplierConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code DoubleSupplier}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<DoubleSupplier> newDoubleSupplierConverter(Converter<Double> delegateConverter) {
+        return new DoubleSupplierConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter which wraps another converter's result into an {@code BooleanSupplier}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @return the new converter (not {@code null})
+     */
+    public static Converter<BooleanSupplier> newBooleanSupplierConverter(Converter<Boolean> delegateConverter) {
+        return new BooleanSupplierConverter(delegateConverter);
     }
 
     /**
@@ -873,6 +946,110 @@ public final class Converters {
             } else {
                 final Double converted = getDelegate().convert(value);
                 return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted.doubleValue());
+            }
+        }
+    }
+
+    static final class SupplierConverter<T> extends AbstractDelegatingConverter<T, Supplier<T>> {
+        private static final long serialVersionUID = -2216857514816528854L;
+
+        SupplierConverter(final Converter<? extends T> delegate) {
+            super(delegate);
+        }
+
+        protected SupplierConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new SupplierConverter<T>(newDelegate);
+        }
+
+        public Supplier<T> convert(final String value) {
+            if (value.isEmpty()) {
+                try {
+                    return () -> getDelegate().convert(value);
+                } catch (IllegalArgumentException ignored) {
+                    return () -> null;
+                }
+            } else {
+                return () -> getDelegate().convert(value);
+            }
+        }
+    }
+
+    static final class IntSupplierConverter extends AbstractDelegatingConverter<Integer, IntSupplier> {
+        private static final long serialVersionUID = -777333687832177222L;
+
+        IntSupplierConverter(final Converter<? extends Integer> delegate) {
+            super(delegate);
+        }
+
+        protected IntSupplierConverter create(final Converter<? extends Integer> newDelegate) {
+            return new IntSupplierConverter(newDelegate);
+        }
+
+        public IntSupplier convert(final String value) {
+            if (value.isEmpty()) {
+                return () -> 0;
+            } else {
+                return () -> getDelegate().convert(value);
+            }
+        }
+    }
+
+    static final class LongSupplierConverter extends AbstractDelegatingConverter<Long, LongSupplier> {
+        private static final long serialVersionUID = -7009751166446724348L;
+
+        LongSupplierConverter(final Converter<? extends Long> delegate) {
+            super(delegate);
+        }
+
+        protected LongSupplierConverter create(final Converter<? extends Long> newDelegate) {
+            return new LongSupplierConverter(newDelegate);
+        }
+
+        public LongSupplier convert(final String value) {
+            if (value.isEmpty()) {
+                return () -> 0L;
+            } else {
+                return () -> getDelegate().convert(value);
+            }
+        }
+    }
+
+    static final class DoubleSupplierConverter extends AbstractDelegatingConverter<Double, DoubleSupplier> {
+        private static final long serialVersionUID = 7876200134707251719L;
+
+        DoubleSupplierConverter(final Converter<? extends Double> delegate) {
+            super(delegate);
+        }
+
+        protected DoubleSupplierConverter create(final Converter<? extends Double> newDelegate) {
+            return new DoubleSupplierConverter(newDelegate);
+        }
+
+        public DoubleSupplier convert(final String value) {
+            if (value.isEmpty()) {
+                return () -> 0D;
+            } else {
+                return () -> getDelegate().convert(value);
+            }
+        }
+    }
+
+    static final class BooleanSupplierConverter extends AbstractDelegatingConverter<Boolean, BooleanSupplier> {
+        private static final long serialVersionUID = -7381266434368902003L;
+
+        BooleanSupplierConverter(final Converter<? extends Boolean> delegate) {
+            super(delegate);
+        }
+
+        protected BooleanSupplierConverter create(final Converter<? extends Boolean> newDelegate) {
+            return new BooleanSupplierConverter(newDelegate);
+        }
+
+        public BooleanSupplier convert(final String value) {
+            if (value.isEmpty()) {
+                return () -> false;
+            } else {
+                return () -> getDelegate().convert(value);
             }
         }
     }
