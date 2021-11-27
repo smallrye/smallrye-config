@@ -16,6 +16,12 @@
 
 package io.smallrye.config;
 
+import io.smallrye.config.common.AbstractConverter;
+import io.smallrye.config.common.AbstractDelegatingConverter;
+import io.smallrye.config.common.AbstractSimpleDelegatingConverter;
+import io.smallrye.config.common.utils.StringUtil;
+import org.eclipse.microprofile.config.spi.Converter;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -44,13 +50,6 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import org.eclipse.microprofile.config.spi.Converter;
-
-import io.smallrye.config.common.AbstractConverter;
-import io.smallrye.config.common.AbstractDelegatingConverter;
-import io.smallrye.config.common.AbstractSimpleDelegatingConverter;
-import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * General converter utilities and constants.
@@ -1123,6 +1122,14 @@ public final class Converters {
                     return BITSET_CONVERTER;
                 case 17:
                     return PATTERN_CONVERTER;
+                case 18:
+                    return INT_SUPPLIER_CONVERTER;
+                case 19:
+                    return LONG_SUPPLIER_CONVERTER;
+                case 20:
+                    return DOUBLE_SUPPLIER_CONVERTER;
+                case 21:
+                    return BOOLEAN_SUPPLIER_CONVERTER;
                 default:
                     throw ConfigMessages.msg.unknownConverterId(id);
             }
