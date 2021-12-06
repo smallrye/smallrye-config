@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -127,6 +128,22 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
         synchronized (configsForClassLoader) {
             configsForClassLoader.values().removeIf(v -> v == config);
+            config.getConfigSources().forEach(SmallRyeConfigProviderResolver::closeConfigSource);
+        }
+    }
+
+    /**
+     * Attempt to close the {@link ConfigSource} if it implements {@link AutoCloseable}
+     *
+     * @param configSource the config source
+     */
+    private static void closeConfigSource(final ConfigSource configSource) {
+        if (configSource instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) configSource).close();
+            } catch (final Exception e) {
+                ConfigLogging.log.failedToCloseConfigSource(configSource.getName(), e);
+            }
         }
     }
 

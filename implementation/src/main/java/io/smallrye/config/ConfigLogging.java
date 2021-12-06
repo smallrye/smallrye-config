@@ -34,4 +34,9 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1005, value = "Could not find sources with %s in %s")
     void configLocationsNotFound(String name, String value);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1006, value = "Unable to close config source with name %s")
+    void failedToCloseConfigSource(String name, @Cause Throwable cause);
+
 }
