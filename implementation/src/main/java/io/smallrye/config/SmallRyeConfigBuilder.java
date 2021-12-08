@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;

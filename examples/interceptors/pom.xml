@@ -19,7 +19,7 @@
 
   <parent>
     <groupId>io.smallrye</groupId>
-    <artifactId>smallrye-parent</artifactId>
+    <artifactId>smallrye-jakarta-parent</artifactId>
     <version>34</version>
   </parent>
 
