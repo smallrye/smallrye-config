@@ -21,6 +21,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private final String name;
     private final String value;
     private final String rawValue;
+    private final String profile;
     private final String configSourceName;
     private final int configSourceOrdinal;
     private final int configSourcePosition;
@@ -30,6 +31,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.name = builder.name;
         this.value = builder.value;
         this.rawValue = builder.rawValue;
+        this.profile = builder.profile;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.configSourcePosition = builder.configSourcePosition;
@@ -41,6 +43,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return name;
     }
 
+    public String getNameProfiled() {
+        return profile != null ? "%" + profile + "." + name : name;
+    }
+
     @Override
     public String getValue() {
         return value;
@@ -49,6 +55,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     @Override
     public String getRawValue() {
         return rawValue;
+    }
+
+    public String getProfile() {
+        return profile;
     }
 
     @Override
@@ -87,6 +97,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withValue(final String value) {
         return from().withValue(value).build();
+    }
+
+    public ConfigValue withProfile(final String profile) {
+        return from().withProfile(profile).build();
     }
 
     public ConfigValue withConfigSourceName(final String configSourceName) {
@@ -131,8 +145,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 "name='" + name + '\'' +
                 ", value='" + value + '\'' +
                 ", rawValue='" + rawValue + '\'' +
+                ", profile='" + profile + '\'' +
                 ", configSourceName='" + configSourceName + '\'' +
                 ", configSourceOrdinal=" + configSourceOrdinal +
+                ", configSourcePosition=" + configSourcePosition +
                 ", lineNumber=" + lineNumber +
                 '}';
     }
@@ -142,8 +158,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 .withName(name)
                 .withValue(value)
                 .withRawValue(rawValue)
+                .withProfile(profile)
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
+                .withConfigSourcePosition(configSourcePosition)
                 .withLineNumber(lineNumber);
     }
 
@@ -155,6 +173,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private String name;
         private String value;
         private String rawValue;
+        private String profile;
         private String configSourceName;
         private int configSourceOrdinal;
         private int configSourcePosition;
@@ -172,6 +191,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
         public ConfigValueBuilder withRawValue(final String rawValue) {
             this.rawValue = rawValue;
+            return this;
+        }
+
+        public ConfigValueBuilder withProfile(final String profile) {
+            this.profile = profile;
             return this;
         }
 

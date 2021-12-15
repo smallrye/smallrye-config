@@ -4,7 +4,7 @@ import static io.smallrye.config.SecretKeys.doLocked;
 
 import javax.annotation.Priority;
 
-@Priority(Priorities.LIBRARY + 200)
+@Priority(Priorities.LIBRARY + 150)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 367246512037404779L;
 
