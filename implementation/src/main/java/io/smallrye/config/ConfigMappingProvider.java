@@ -519,8 +519,8 @@ final class ConfigMappingProvider implements Serializable {
                 sb.setLength(0);
                 sb.append(ni.getAllPreviousSegments());
                 String configKey = sb.toString();
-                Map<?, ?> map = getEnclosingMap.apply(mc, ni);
                 String rawMapKey = ni.getPreviousSegment();
+                Map<?, ?> map = getEnclosingMap.apply(mc, ni);
                 Converter<?> keyConv;
                 SmallRyeConfig config = mc.getConfig();
                 if (keyConvertWith != null) {
@@ -716,6 +716,13 @@ final class ConfigMappingProvider implements Serializable {
                     namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
+                while (ni.hasPrevious()) {
+                    if (!ni.previousSegmentEquals(mapKey)) {
+                        ni.previous();
+                        continue;
+                    }
+                    break;
+                }
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());
                 Object convertedKey = keyConverter.convert(mapKey);
                 ((Map) ourEnclosing).put(convertedKey,
