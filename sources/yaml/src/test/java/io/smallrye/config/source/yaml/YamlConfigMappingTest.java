@@ -240,14 +240,15 @@ class YamlConfigMappingTest {
     void yamlListMaps() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(MapConfig.class, "app")
-                .withSources(new YamlConfigSource("yaml", "app:\n" +
-                        "  config:\n" +
-                        "    - name: Bob\n" +
-                        "      foo: thing\n" +
-                        "      bar: false\n" +
-                        "    - name: Tim\n" +
-                        "      baz: stuff\n" +
-                        "      qux: 3"))
+                .withSources(new YamlConfigSource("yaml",
+                        "app:\n" +
+                                "  config:\n" +
+                                "    - name: Bob\n" +
+                                "      foo: thing\n" +
+                                "      bar: false\n" +
+                                "    - name: Tim\n" +
+                                "      baz: stuff\n" +
+                                "      qux: 3"))
                 .build();
 
         MapConfig mapping = config.getConfigMapping(MapConfig.class);
@@ -262,5 +263,63 @@ class YamlConfigMappingTest {
     @ConfigMapping(prefix = "app")
     interface MapConfig {
         List<Map<String, String>> config();
+    }
+
+    @Test
+    void yamlMapGroupMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Parent.class, "parent")
+                .withSources(new YamlConfigSource("yaml",
+                        "parent:\n" +
+                                "  goodchildren:\n" +
+                                "    child1:\n" +
+                                "      name: John\n" +
+                                "      attributes:\n" +
+                                "        somekey: somevalue\n" +
+                                "        anotherkey: anothervalue\n" +
+                                "    child2:\n" +
+                                "      name: James\n" +
+                                "      attributes:\n" +
+                                "        something: isbroken\n" +
+                                "  badchildren:\n" +
+                                "    child3:\n" +
+                                "      name: BadJohn\n" +
+                                "      attributes:\n" +
+                                "        somekeybad: somevaluebad\n" +
+                                "        anotherkeybad: anothervaluebad "))
+                .build();
+
+        Parent mapping = config.getConfigMapping(Parent.class);
+        assertEquals(2, mapping.goodChildren().size());
+        assertEquals("John", mapping.goodChildren().get("child1").name());
+        assertEquals(2, mapping.goodChildren().get("child1").attributes().size());
+        assertEquals("somevalue", mapping.goodChildren().get("child1").attributes().get("somekey"));
+        assertEquals("anothervalue", mapping.goodChildren().get("child1").attributes().get("anotherkey"));
+
+        assertEquals("James", mapping.goodChildren().get("child2").name());
+        assertEquals(1, mapping.goodChildren().get("child2").attributes().size());
+        assertEquals("isbroken", mapping.goodChildren().get("child2").attributes().get("something"));
+        assertEquals(1, mapping.badChildren().size());
+        assertEquals("BadJohn", mapping.badChildren().get("child3").name());
+        assertEquals(2, mapping.badChildren().get("child3").attributes().size());
+        assertEquals("somevaluebad", mapping.badChildren().get("child3").attributes().get("somekeybad"));
+        assertEquals("anothervaluebad", mapping.badChildren().get("child3").attributes().get("anotherkeybad"));
+    }
+
+    @ConfigMapping(prefix = "parent")
+    public interface Parent {
+        @WithName("goodchildren")
+        Map<String, GrandChild> goodChildren();
+
+        @WithName("badchildren")
+        Map<String, GrandChild> badChildren();
+
+        interface GrandChild {
+            @WithName("name")
+            String name();
+
+            @WithName("attributes")
+            Map<String, String> attributes();
+        }
     }
 }
