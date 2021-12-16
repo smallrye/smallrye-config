@@ -12,7 +12,7 @@ import org.eclipse.microprofile.config.Config;
 
 import io.smallrye.common.expression.Expression;
 
-@Priority(Priorities.LIBRARY + 800)
+@Priority(Priorities.LIBRARY + 300)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -539336551011916218L;
 

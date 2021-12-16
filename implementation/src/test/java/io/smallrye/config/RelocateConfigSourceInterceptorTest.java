@@ -1,10 +1,11 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -112,9 +113,9 @@ class RelocateConfigSourceInterceptorTest {
 
         assertEquals("Authorization", config.getValue("smallrye.jwt.token.header", String.class));
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
-        assertEquals(1, names.size());
+        assertEquals(2, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
-        assertFalse(names.contains("mp.jwt.token.header"));
+        assertTrue(names.contains("mp.jwt.token.header"));
 
         RelocateConfigSourceInterceptor relocateInterceptor = new RelocateConfigSourceInterceptor(
                 s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header"));
@@ -149,6 +150,38 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("Authorization", values.get("mp.jwt.token.header").getValue());
     }
 
+    @Test
+    void relocatePropertyNameToProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withInterceptors(new RelocateConfigSourceInterceptor(singletonMap("old", "new")))
+                .withSources(config("old", "0", "new", "1234", "%dev.new", "5678"))
+                .withProfile("dev")
+                .build();
+
+        ConfigValue value = config.getConfigValue("old");
+        assertEquals("5678", value.getValue());
+        assertEquals("new", value.getName());
+        assertEquals("dev", value.getProfile());
+        assertEquals("%dev.new", value.getNameProfiled());
+    }
+
+    @Test
+    void fallbackPropertyNameToProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withInterceptors(new FallbackConfigSourceInterceptor(singletonMap("new", "old")))
+                .withSources(config("old", "1234", "%dev.old", "5678"))
+                .withProfile("dev")
+                .build();
+
+        ConfigValue value = config.getConfigValue("new");
+        assertEquals("5678", value.getValue());
+        assertEquals("old", value.getName());
+        assertEquals("dev", value.getProfile());
+        assertEquals("%dev.old", value.getNameProfiled());
+    }
+
     private static Config buildConfig(String... keyValues) {
         return buildConfig(Collections.emptySet(), keyValues);
     }
@@ -156,7 +189,7 @@ class RelocateConfigSourceInterceptorTest {
     private static Config buildConfig(Set<String> secretKeys, String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config(keyValues))
+                .withSources(config(keyValues))
                 .withInterceptors(
                         new RelocateConfigSourceInterceptor(
                                 s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header")),

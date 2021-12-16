@@ -383,7 +383,7 @@ class ProfileConfigSourceInterceptorTest {
 
         properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(properties.contains(SMALLRYE_CONFIG_PROFILE));
-        assertFalse(properties.contains(PROFILE));
+        assertTrue(properties.contains(PROFILE));
         assertEquals("sr", config.getConfigValue(SMALLRYE_CONFIG_PROFILE).getValue());
         assertNull(config.getConfigValue(PROFILE).getValue());
     }
@@ -481,7 +481,17 @@ class ProfileConfigSourceInterceptorTest {
         }
     }
 
-    private static Config buildConfig(String... keyValues) {
+    @Test
+    void profileInConfigValue() {
+        SmallRyeConfig config = buildConfig("%prof.my.prop", "1234");
+
+        ConfigValue configValue = config.getConfigValue("my.prop");
+        assertEquals("1234", configValue.getValue());
+        assertEquals("prof", configValue.getProfile());
+        assertEquals("%prof.my.prop", configValue.getNameProfiled());
+    }
+
+    private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(config(keyValues))
                 .withInterceptors(

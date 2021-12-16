@@ -34,6 +34,21 @@ public class RelocateConfigSourceInterceptor implements ConfigSourceInterceptor 
     }
 
     @Override
+    public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
+        final Set<String> names = new HashSet<>();
+        final Iterator<String> namesIterator = context.iterateNames();
+        while (namesIterator.hasNext()) {
+            final String name = namesIterator.next();
+            names.add(name);
+            final String mappedName = mapping.apply(name);
+            if (mappedName != null) {
+                names.add(mappedName);
+            }
+        }
+        return names.iterator();
+    }
+
+    @Override
     public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
         final Set<ConfigValue> values = new HashSet<>();
         final Iterator<ConfigValue> valuesIterator = context.iterateValues();
@@ -46,7 +61,9 @@ public class RelocateConfigSourceInterceptor implements ConfigSourceInterceptor 
                         .withName(mappedName)
                         .withValue(value.getValue())
                         .withRawValue(value.getRawValue())
+                        .withProfile(value.getProfile())
                         .withConfigSourceName(value.getConfigSourceName())
+                        .withConfigSourcePosition(value.getConfigSourcePosition())
                         .withConfigSourceOrdinal(value.getConfigSourceOrdinal())
                         .withLineNumber(value.getLineNumber())
                         .build());
