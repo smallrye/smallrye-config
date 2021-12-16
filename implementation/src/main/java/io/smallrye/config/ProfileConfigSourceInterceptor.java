@@ -15,7 +15,7 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-@Priority(Priorities.LIBRARY + 600)
+@Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private static final long serialVersionUID = -6305289277993917313L;
@@ -69,7 +69,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         for (String profile : profiles) {
             final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
             if (profileValue != null) {
-                return profileValue;
+                return profileValue.withProfile(profile);
             }
         }
 
