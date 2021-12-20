@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.NAF;
+import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.SOS_DAH;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -1189,5 +1191,62 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.optional().isPresent());
         assertEquals("optional", mapping.optional().get());
         assertEquals(9, mapping.anotherPort());
+    }
+
+    @ConfigMapping(prefix = "clients", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
+    public interface MapKeyEnum {
+        enum ClientId {
+            SOS_DAH,
+            NAF
+        }
+
+        @WithParentName
+        Map<ClientId, ClientConfiguration> clients();
+
+        interface ClientConfiguration {
+            Optional<CreatedByProperties> app();
+
+            CreatedByProperties web();
+
+            MediumProperties medium();
+        }
+
+        interface CreatedByProperties {
+            String createdByApplication();
+        }
+
+        interface MediumProperties {
+            boolean web();
+
+            @WithDefault("false")
+            boolean app();
+        }
+    }
+
+    @Test
+    void mapKeyEnum() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapKeyEnum.class, "clients")
+                .withSources(config(
+                        "clients.SOS_DAH.web.createdByApplication", "RoadrunnerWeb",
+                        "clients.SOS_DAH.app.createdByApplication", "Roadrunner",
+                        "clients.SOS_DAH.medium.web", "true",
+                        "clients.SOS_DAH.medium.app", "true",
+                        "clients.NAF.web.createdByApplication", "RoadrunnerWebNAF",
+                        "clients.NAF.medium.web", "true"))
+                .build();
+
+        MapKeyEnum mapping = config.getConfigMapping(MapKeyEnum.class);
+
+        assertTrue(mapping.clients().get(SOS_DAH).app().isPresent());
+        assertEquals("Roadrunner", mapping.clients().get(SOS_DAH).app().get().createdByApplication());
+        assertEquals("RoadrunnerWeb", mapping.clients().get(SOS_DAH).web().createdByApplication());
+        assertTrue(mapping.clients().get(SOS_DAH).medium().web());
+        assertTrue(mapping.clients().get(SOS_DAH).medium().app());
+
+        assertFalse(mapping.clients().get(NAF).app().isPresent());
+        assertEquals("RoadrunnerWebNAF", mapping.clients().get(NAF).web().createdByApplication());
+        assertTrue(mapping.clients().get(NAF).medium().web());
+        assertFalse(mapping.clients().get(NAF).medium().app());
     }
 }
