@@ -711,7 +711,8 @@ final class ConfigMappingProvider implements Serializable {
             String mapKey = mapKey(ni);
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
-            ConfigMappingObject val = (ConfigMappingObject) ourEnclosing.get(mapKey);
+            Object convertedKey = keyConverter.convert(mapKey);
+            ConfigMappingObject val = (ConfigMappingObject) ourEnclosing.get(convertedKey);
             context.applyNamingStrategy(
                     namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
             if (val == null) {
@@ -724,7 +725,6 @@ final class ConfigMappingProvider implements Serializable {
                     break;
                 }
                 sb.replace(0, sb.length(), ni.getAllPreviousSegments());
-                Object convertedKey = keyConverter.convert(mapKey);
                 ((Map) ourEnclosing).put(convertedKey,
                         val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType()));
             }
