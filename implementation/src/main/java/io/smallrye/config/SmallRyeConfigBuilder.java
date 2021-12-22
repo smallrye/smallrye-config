@@ -439,12 +439,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     static class InterceptorWithPriority implements Comparable<InterceptorWithPriority> {
-        private static final OptionalInt OPTIONAL_DEFAULT_PRIORITY = OptionalInt.of(DEFAULT_PRIORITY);
-
         private final ConfigSourceInterceptorFactory factory;
         private final int priority;
 
-        private InterceptorWithPriority(ConfigSourceInterceptor interceptor) {
+        InterceptorWithPriority(ConfigSourceInterceptor interceptor) {
             this(new ConfigSourceInterceptorFactory() {
                 @Override
                 public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -458,13 +456,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                         return priority;
                     }
 
-                    final Priority priorityAnnotation = interceptor.getClass().getAnnotation(Priority.class);
-                    return priorityAnnotation != null ? OptionalInt.of(priorityAnnotation.value()) : OPTIONAL_DEFAULT_PRIORITY;
+                    return OptionalInt.of(InterceptorWithPriority.getPriority(interceptor.getClass()));
                 }
             });
         }
 
-        private InterceptorWithPriority(ConfigSourceInterceptorFactory factory) {
+        InterceptorWithPriority(ConfigSourceInterceptorFactory factory) {
             this.factory = factory;
             this.priority = factory.getPriority().orElse(DEFAULT_PRIORITY);
         }
@@ -480,6 +477,20 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         @Override
         public int compareTo(final InterceptorWithPriority other) {
             return Integer.compare(this.priority, other.priority);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static int getPriority(final Class<? extends ConfigSourceInterceptor> klass) {
+            Priority priorityAnnotation = klass.getAnnotation(Priority.class);
+            if (priorityAnnotation != null) {
+                return priorityAnnotation.value();
+            } else {
+                Class<?> parentClass = klass.getSuperclass();
+                if (ConfigSourceInterceptor.class.isAssignableFrom(parentClass)) {
+                    return getPriority((Class<? extends ConfigSourceInterceptor>) parentClass);
+                }
+                return DEFAULT_PRIORITY;
+            }
         }
     }
 }

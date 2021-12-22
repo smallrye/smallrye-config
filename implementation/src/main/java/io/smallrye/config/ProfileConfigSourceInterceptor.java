@@ -1,12 +1,12 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -17,17 +17,7 @@ import javax.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
-
     private static final long serialVersionUID = -6305289277993917313L;
-    private static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = (profileValue, originalValue) -> {
-        int res = Integer.compare(originalValue.getConfigSourceOrdinal(), profileValue.getConfigSourceOrdinal());
-        if (res != 0) {
-            return res;
-        }
-
-        return Integer.compare(profileValue.getConfigSourcePosition(), originalValue.getConfigSourcePosition());
-    };
-
     private final String[] profiles;
 
     public ProfileConfigSourceInterceptor(final String profile) {
@@ -52,7 +42,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
             if (profileValue != null) {
                 try {
                     final ConfigValue originalValue = context.proceed(normalizeName);
-                    if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(profileValue, originalValue) > 0) {
+                    if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
                         return originalValue;
                     }
                 } catch (final NoSuchElementException e) {

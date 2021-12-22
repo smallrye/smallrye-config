@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
+
 import java.util.Map;
 import java.util.function.Function;
 
@@ -20,12 +22,18 @@ public class FallbackConfigSourceInterceptor extends AbstractMappingConfigSource
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         ConfigValue configValue = context.proceed(name);
-        if (configValue == null || configValue.getValue().isEmpty()) {
-            final String map = getMapping().apply(name);
-            if (!name.equals(map)) {
-                configValue = context.proceed(map);
-            }
+        String map = getMapping().apply(name);
+
+        if (name.equals(map)) {
+            return configValue;
         }
-        return configValue;
+
+        ConfigValue fallbackValue = context.proceed(map);
+        // Check which one comes from a higher ordinal source
+        if (configValue != null && fallbackValue != null) {
+            return CONFIG_SOURCE_COMPARATOR.compare(configValue, fallbackValue) >= 0 ? configValue : fallbackValue;
+        } else {
+            return configValue != null ? configValue : fallbackValue;
+        }
     }
 }

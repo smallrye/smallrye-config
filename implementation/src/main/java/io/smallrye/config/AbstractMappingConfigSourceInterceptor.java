@@ -59,7 +59,7 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
         return values.iterator();
     }
 
-    Function<String, String> getMapping() {
+    protected Function<String, String> getMapping() {
         return mapping;
     }
 }

@@ -42,18 +42,18 @@ class RelocateConfigSourceInterceptorTest {
 
     @Test
     void fallback() {
-        Config config = buildConfig(
-                "smallrye.jwt.token.cookie", "jwt",
-                "mp.jwt.token.cookie", "Bearer");
+        Config config = builder()
+                .withSources(config("smallrye.jwt.token.cookie", "jwt", "config_ordinal", "1000"))
+                .withSources(config("mp.jwt.token.cookie", "Bearer")).build();
 
         assertEquals("jwt", config.getValue("smallrye.jwt.token.cookie", String.class));
     }
 
     @Test
     void fallbackEmpty() {
-        Config config = buildConfig(
-                "smallrye.jwt.token.header", "Authorization",
-                "mp.jwt.token.header", "");
+        Config config = builder()
+                .withSources(config("smallrye.jwt.token.header", "Authorization", "config_ordinal", "1000"))
+                .withSources(config("mp.jwt.token.header", "")).build();
 
         ConfigValue configValue = (ConfigValue) config.getConfigValue("smallrye.jwt.token.header");
         assertEquals("smallrye.jwt.token.header", configValue.getName());
@@ -225,10 +225,18 @@ class RelocateConfigSourceInterceptorTest {
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
-        return buildConfig(Collections.emptySet(), keyValues);
+        return builder(Collections.emptySet(), keyValues).build();
     }
 
     private static SmallRyeConfig buildConfig(Set<String> secretKeys, String... keyValues) {
+        return builder(secretKeys, keyValues).build();
+    }
+
+    private static SmallRyeConfigBuilder builder(String... keyValues) {
+        return builder(Collections.emptySet(), keyValues);
+    }
+
+    private static SmallRyeConfigBuilder builder(Set<String> secretKeys, String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(config(keyValues))
@@ -239,8 +247,6 @@ class RelocateConfigSourceInterceptorTest {
                                 s -> s.replaceAll("mp\\.jwt\\.token\\.header", "smallrye.jwt.token.header")),
                         new FallbackConfigSourceInterceptor(
                                 s -> s.replaceAll("smallrye\\.jwt", "mp.jwt")))
-                .withInterceptors(new LoggingConfigSourceInterceptor())
-                .withSecretKeys(secretKeys.toArray(new String[0]))
-                .build();
+                .withSecretKeys(secretKeys.toArray(new String[0]));
     }
 }
