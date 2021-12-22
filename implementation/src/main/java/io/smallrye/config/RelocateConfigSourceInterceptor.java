@@ -1,11 +1,13 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
+
 import java.util.Map;
 import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-@Priority(Priorities.LIBRARY + 1000)
+@Priority(Priorities.LIBRARY + 300)
 public class RelocateConfigSourceInterceptor extends AbstractMappingConfigSourceInterceptor {
     private static final long serialVersionUID = 3476637906383945843L;
 
@@ -19,11 +21,19 @@ public class RelocateConfigSourceInterceptor extends AbstractMappingConfigSource
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        final String map = getMapping().apply(name);
-        ConfigValue configValue = context.proceed(map);
-        if (configValue == null && !name.equals(map)) {
-            configValue = context.proceed(name);
+        String map = getMapping().apply(name);
+        ConfigValue relocateValue = context.proceed(map);
+
+        if (name.equals(map)) {
+            return relocateValue;
         }
-        return configValue;
+
+        ConfigValue configValue = context.proceed(name);
+        // Check which one comes from a higher ordinal source
+        if (relocateValue != null && configValue != null) {
+            return CONFIG_SOURCE_COMPARATOR.compare(relocateValue, configValue) >= 0 ? relocateValue : configValue;
+        } else {
+            return relocateValue != null ? relocateValue : configValue;
+        }
     }
 }

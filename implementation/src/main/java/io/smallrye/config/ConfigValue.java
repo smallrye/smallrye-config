@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import static java.util.Comparator.comparingInt;
+
+import java.util.Comparator;
 import java.util.Objects;
 
 import io.smallrye.common.annotation.Experimental;
@@ -223,4 +226,8 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             return new ConfigValue(this);
         }
     }
+
+    static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = comparingInt(ConfigValue::getConfigSourceOrdinal)
+            .thenComparing((original,
+                    candidate) -> Integer.compare(original.configSourcePosition, candidate.configSourcePosition) * -1);
 }

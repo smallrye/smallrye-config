@@ -17,6 +17,8 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+
 class ConfigSourceInterceptorTest {
     @Test
     void interceptor() {
@@ -157,6 +159,12 @@ class ConfigSourceInterceptorTest {
         assertEquals("8082", config.getRawValue("real.port"));
     }
 
+    @Test
+    void priorityInParentClass() {
+        InterceptorWithPriority interceptorWithPriority = new InterceptorWithPriority(new Child());
+        assertEquals(1, interceptorWithPriority.getPriority());
+    }
+
     private static class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
@@ -196,4 +204,15 @@ class ConfigSourceInterceptorTest {
         }
     }
 
+    @Priority(1)
+    private abstract static class Parent implements ConfigSourceInterceptor {
+
+    }
+
+    private static class Child extends Parent {
+        @Override
+        public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+            return context.proceed(name);
+        }
+    }
 }
