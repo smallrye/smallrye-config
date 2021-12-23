@@ -5,6 +5,7 @@ on:
     branches: 
       - main
       - 1.x
+      - jakarta
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
