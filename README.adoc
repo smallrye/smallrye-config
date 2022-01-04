@@ -20,21 +20,25 @@ Compile and test the project:
 mvn verify
 ----
 
-Generate the documentation (from the doc folder):
+Generate the documentation (from the documentation folder):
 
 [source,bash]
 ----
-antora generate antora-playbook.yml
+mvn package
+mkdocs serve
 ----
 
 === Project structure
 
+* link:cdi[] - CDI Extension
 * link:common[] - A set of reusable components to extend SmallRye Config
-* link:doc[] - Project documentation.
-* link:implementation[] - Implementation of the Eclipse MicroProfile Config API.
-* link:sources[] - Implementation of different Eclipse MicroProfile ConfigSources
-* link:testsuite[] - Test suite to run the implementation against the Eclipse MicroProfile Config TCK.
+* link:converters[] - Additional Converters
+* link:documentation[] - Project documentation.
+* link:implementation[] - Implementation of the MicroProfile Config API.
+* link:sources[] - Implementation of custom Config Sources
+* link:testsuite[] - Test suite to run the implementation against the MicroProfile Config TCK.
 * link:utils[] - A set of additional extensions to enhance MicroProfile Config
+* link:validator[] - Bean Validation integration
 
 === Contributing
 

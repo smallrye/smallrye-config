@@ -76,6 +76,7 @@
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
     <module>testsuite</module>
+    <module>documentation</module>
     <module>examples</module>
   </modules>
 

@@ -1,5 +1,0 @@
-name: smallrye-config
-title: SmallRye Config
-version: master
-nav:
-  - modules/ROOT/nav.adoc
