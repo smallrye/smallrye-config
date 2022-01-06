@@ -81,7 +81,7 @@ public final class ConfigMappingLoader {
         return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
     }
 
-    static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
+    static synchronized Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
         // Check if the interface implementation was already loaded. If not we will load it.
         try {
             final Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
