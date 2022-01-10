@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
@@ -13,6 +14,7 @@ import io.smallrye.common.classloader.ClassDefiner;
 
 public final class ConfigMappingLoader {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final ConcurrentHashMap<String, Object> classLoaderLocks = new ConcurrentHashMap<>();
 
     private static final ClassValue<ConfigMappingObjectHolder> CACHE = new ClassValue<ConfigMappingObjectHolder>() {
         @Override
@@ -82,20 +84,23 @@ public final class ConfigMappingLoader {
     }
 
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
-        // Check if the interface implementation was already loaded. If not we will load it.
-        try {
-            final Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
-            // Check if this is the right classloader class. If not we will load it.
-            if (parent.isAssignableFrom(klass)) {
-                return klass;
+        // acquire a lock on the class name to prevent race conditions in multithreaded use cases
+        synchronized (getClassLoaderLock(configMappingMetadata.getClassName())) {
+            // Check if the interface implementation was already loaded. If not we will load it.
+            try {
+                final Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
+                // Check if this is the right classloader class. If not we will load it.
+                if (parent.isAssignableFrom(klass)) {
+                    return klass;
+                }
+                // ConfigProperties should not have issues with classloader and interfaces.
+                if (configMappingMetadata instanceof ConfigMappingClass) {
+                    return klass;
+                }
+                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+            } catch (ClassNotFoundException e) {
+                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
             }
-            // ConfigProperties should not have issues with classloader and interfaces.
-            if (configMappingMetadata instanceof ConfigMappingClass) {
-                return klass;
-            }
-            return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
-        } catch (ClassNotFoundException e) {
-            return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
         }
     }
 
@@ -118,6 +123,10 @@ public final class ConfigMappingLoader {
      */
     private static Class<?> defineClass(final Class<?> parent, final String className, final byte[] classBytes) {
         return ClassDefiner.defineClass(LOOKUP, parent, className, classBytes);
+    }
+
+    private static Object getClassLoaderLock(String className) {
+        return classLoaderLocks.computeIfAbsent(className, c -> new Object());
     }
 
     private static final class ConfigMappingObjectHolder {

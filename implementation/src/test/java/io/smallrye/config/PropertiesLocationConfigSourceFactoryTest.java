@@ -79,7 +79,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(3, countSources(config));
+        assertEquals(4, countSources(config));
     }
 
     @Test
@@ -107,7 +107,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(4, countSources(config));
+        assertEquals(5, countSources(config));
     }
 
     @Test
