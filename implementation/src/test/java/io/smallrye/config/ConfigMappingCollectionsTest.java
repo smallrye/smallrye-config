@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -7,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -498,5 +500,47 @@ public class ConfigMappingCollectionsTest {
 
         assertTrue(mapping.present().isPresent());
         assertEquals("localhost", mapping.present().get().get(0).get("localhost"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapOfListWithConverter {
+        Map<@WithConverter(KeyConverter.class) String, @WithConverter(ListConverter.class) List<String>> list();
+
+        class KeyConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                if (value.equals("one")) {
+                    return "1";
+                } else if (value.equals("two")) {
+                    return "2";
+                } else {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        class ListConverter implements Converter<List<String>> {
+            static final Converter<List<String>> DELEGATE = newCollectionConverter(value -> value, ArrayList::new);
+
+            @Override
+            public List<String> convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return DELEGATE.convert(value);
+            }
+        }
+    }
+
+    @Test
+    void map() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapOfListWithConverter.class, "map")
+                .withSources(config("map.list.one", "one,1"))
+                .withSources(config("map.list.two", "two,2"))
+                .build();
+
+        MapOfListWithConverter mapping = config.getConfigMapping(MapOfListWithConverter.class);
+        assertEquals("one", mapping.list().get("1").get(0));
+        assertEquals("1", mapping.list().get("1").get(1));
+        assertEquals("two", mapping.list().get("2").get(0));
+        assertEquals("2", mapping.list().get("2").get(1));
     }
 }
