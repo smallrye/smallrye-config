@@ -403,6 +403,36 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDiscoveredValidator;
     }
 
+    public SmallRyeConfigBuilder setAddDefaultSources(final boolean addDefaultSources) {
+        this.addDefaultSources = addDefaultSources;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDefaultInterceptors(final boolean addDefaultInterceptors) {
+        this.addDefaultInterceptors = addDefaultInterceptors;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDiscoveredSources(final boolean addDiscoveredSources) {
+        this.addDiscoveredSources = addDiscoveredSources;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDiscoveredConverters(final boolean addDiscoveredConverters) {
+        this.addDiscoveredConverters = addDiscoveredConverters;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDiscoveredInterceptors(final boolean addDiscoveredInterceptors) {
+        this.addDiscoveredInterceptors = addDiscoveredInterceptors;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDiscoveredValidator(final boolean addDiscoveredValidator) {
+        this.addDiscoveredValidator = addDiscoveredValidator;
+        return this;
+    }
+
     @Override
     public SmallRyeConfig build() {
         for (ConfigSourceProvider sourceProvider : sourceProviders) {
