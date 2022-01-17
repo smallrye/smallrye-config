@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -645,13 +644,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         if (method.getReturnType() == void.class) {
             throw new IllegalArgumentException("Void config methods are not allowed");
         }
-        Property p = getPropertyDef(method, method.getAnnotatedReturnType());
+        Property p = getPropertyDef(method, method.getGenericReturnType());
         Property[] array = getProperties(methods, si + 1, ti + 1);
         array[ti] = p;
         return array;
     }
 
-    private static Property getPropertyDef(Method method, AnnotatedType type) {
+    private static Property getPropertyDef(Method method, Type type) {
         Method defaultMethod = hasDefaultMethodImplementation(method);
         if (defaultMethod != null) {
             return new DefaultMethodProperty(method, defaultMethod, getPropertyDef(defaultMethod, type));
@@ -666,7 +665,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         }
         String propertyName = getPropertyName(method);
-        Class<?> rawType = rawTypeOf(type.getType());
+        Class<?> rawType = rawTypeOf(type);
         if (rawType.isPrimitive()) {
             // primitive!
             WithDefault annotation = method.getAnnotation(WithDefault.class);
@@ -684,26 +683,25 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
             if (rawType == Map.class) {
                 // it's a map...
-                AnnotatedType keyType = typeOfParameter(type, 0);
+                Type keyType = typeOfParameter(type, 0);
                 Class<? extends Converter<?>> keyConvertWith = getConvertWith(keyType);
-                AnnotatedType valueType = typeOfParameter(type, 1);
-                return new MapProperty(method, propertyName, keyType.getType(), keyConvertWith,
-                        getPropertyDef(method, valueType));
+                Type valueType = typeOfParameter(type, 1);
+                return new MapProperty(method, propertyName, keyType, keyConvertWith, getPropertyDef(method, valueType));
             }
             if (rawType == List.class || rawType == Set.class) {
-                AnnotatedType elementType = typeOfParameter(type, 0);
+                Type elementType = typeOfParameter(type, 0);
 
-                if (rawTypeOf(elementType.getType()) == Map.class) {
+                if (rawTypeOf(elementType) == Map.class) {
                     return new CollectionProperty(rawType, getPropertyDef(method, elementType));
                 }
 
-                ConfigMappingInterface configurationInterface = getConfigurationInterface(rawTypeOf(elementType.getType()));
+                ConfigMappingInterface configurationInterface = getConfigurationInterface((Class<?>) elementType);
                 if (configurationInterface != null) {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
                 }
 
                 WithDefault annotation = method.getAnnotation(WithDefault.class);
-                return new CollectionProperty(rawType, new LeafProperty(method, propertyName, elementType.getType(), null,
+                return new CollectionProperty(rawType, new LeafProperty(method, propertyName, elementType, null,
                         annotation == null ? null : annotation.value()));
             }
             ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
@@ -715,17 +713,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         if (rawType == List.class || rawType == Set.class) {
-            Type elementType = typeOfParameter(type.getType(), 0);
+            Type elementType = typeOfParameter(type, 0);
             WithDefault annotation = method.getAnnotation(WithDefault.class);
             return new CollectionProperty(rawType,
-                    new LeafProperty(method, propertyName, elementType, convertWith,
-                            annotation == null ? null : annotation.value()));
+                    new LeafProperty(method, propertyName, elementType, null, annotation == null ? null : annotation.value()));
         }
 
         // otherwise it's a leaf
         WithDefault annotation = method.getAnnotation(WithDefault.class);
-        return new LeafProperty(method, propertyName, type.getType(), convertWith,
-                annotation == null ? null : annotation.value());
+        return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
     }
 
     @SuppressWarnings("squid:S1872")
@@ -749,10 +745,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return null;
     }
 
-    private static Class<? extends Converter<?>> getConvertWith(final AnnotatedType type) {
-        WithConverter annotation = type.getAnnotation(WithConverter.class);
-        if (annotation != null) {
-            return annotation.value();
+    private static Class<? extends Converter<?>> getConvertWith(final Type type) {
+        if (type instanceof AnnotatedType) {
+            WithConverter annotation = ((AnnotatedType) type).getAnnotation(WithConverter.class);
+            if (annotation != null) {
+                return annotation.value();
+            } else {
+                return null;
+            }
         } else {
             return null;
         }
@@ -824,14 +824,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static Type typeOfParameter(final Type type, final int index) {
         if (type instanceof ParameterizedType) {
             return ((ParameterizedType) type).getActualTypeArguments()[index];
-        } else {
-            return null;
-        }
-    }
-
-    static AnnotatedType typeOfParameter(final AnnotatedType type, final int index) {
-        if (type instanceof AnnotatedParameterizedType) {
-            return ((AnnotatedParameterizedType) type).getAnnotatedActualTypeArguments()[index];
         } else {
             return null;
         }
