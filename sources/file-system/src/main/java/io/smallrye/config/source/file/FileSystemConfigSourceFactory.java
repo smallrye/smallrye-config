@@ -2,6 +2,8 @@ package io.smallrye.config.source.file;
 
 import static io.smallrye.config.Converters.newArrayConverter;
 
+import java.io.File;
+import java.net.URI;
 import java.util.Collections;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -16,6 +18,7 @@ import io.smallrye.config.Converters;
 
 public class FileSystemConfigSourceFactory implements ConfigSourceFactory {
     public static final String SMALLRYE_CONFIG_SOURCE_FILE_LOCATIONS = "smallrye.config.source.file.locations";
+    private static final String WILDCARD_LOCATION_SUFFIX = "/*/";
 
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
@@ -26,8 +29,26 @@ public class FileSystemConfigSourceFactory implements ConfigSourceFactory {
 
         return Stream
                 .of(newArrayConverter(Converters.getImplicitConverter(String.class), String[].class)
-                        .convert(value.getValue()))
-                .map(location -> new FileSystemConfigSource(location))
+                            .convert(value.getValue()))
+                .flatMap(location -> {
+                             if (location.endsWith(WILDCARD_LOCATION_SUFFIX)) {
+                                 final URI rootUrl = URI.create(location.substring(0, location.length() - WILDCARD_LOCATION_SUFFIX.length()));
+                                 final String schema = rootUrl.getScheme();
+                                 if (schema != null && !"file".equalsIgnoreCase(schema)) {
+                                     throw new IllegalArgumentException("Wildcard source file location not supported for URL schema " + schema);
+                                 }
+                                 final File rootLocation = new File(rootUrl.getPath());
+                                 if (rootLocation.isDirectory()) {
+                                     return Stream.of(rootLocation.listFiles(pathname -> pathname.isDirectory()))
+                                                  .map(subLocation -> new FileSystemConfigSource(subLocation));
+                                 } else {
+                                     return Stream.empty();
+                                 }
+                             } else {
+                                 return Stream.of(new FileSystemConfigSource(location));
+                             }
+                         }
+                )
                 .collect(Collectors.toList());
     }
 

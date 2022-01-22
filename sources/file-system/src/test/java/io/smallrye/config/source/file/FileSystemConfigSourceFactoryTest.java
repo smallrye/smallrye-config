@@ -38,6 +38,26 @@ class FileSystemConfigSourceFactoryTest {
         assertEquals(2, StreamSupport.stream(configSources.spliterator(), false).count());
     }
 
+    @Test
+    void testWildcardLocationUri() throws URISyntaxException {
+        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
+
+        URL rootConfigDirURL = this.getClass().getResource(".");
+        Iterable<ConfigSource> configSources = factory.getConfigSources(
+                newConfigSourceContext(rootConfigDirURL.toURI() + "*/"));
+        assertEquals(2, StreamSupport.stream(configSources.spliterator(), false).count());
+    }
+
+    @Test
+    void testWildcardLocationPath() {
+        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
+
+        String rootConfigDirPath = this.getClass().getResource(".").getPath();
+        Iterable<ConfigSource> configSources = factory.getConfigSources(
+                newConfigSourceContext(rootConfigDirPath + "*/"));
+        assertEquals(2, StreamSupport.stream(configSources.spliterator(), false).count());
+    }
+
     private ConfigSourceContext newConfigSourceContext(String value) {
         return new ConfigSourceContext() {
 

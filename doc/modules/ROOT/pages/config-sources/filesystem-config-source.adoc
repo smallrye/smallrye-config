@@ -8,17 +8,27 @@ For example, if a directory structure looks like:
 
 [source]
 ----
-foo/
-|__num.max
-|__num.size
+conf
+|__foo/
+   |__num.max
+   |__num.size
+|__bar/
+   |__str.val
 ----
 
-A `new FileSystemConfigSource("foo")` will provide 2 properties:
+A `new FileSystemConfigSource("conf/foo")` will provide 2 properties:
 
 * num.max
 * num.size
 
 And their values is the file content.
+
+Wildcard locations at last path segment also supported. A `new FileSystemConfigSource("conf/*/")` will provide 3
+properties:
+
+* num.max
+* num.size
+* str.val
 
 Nested directories are not supported.
 
