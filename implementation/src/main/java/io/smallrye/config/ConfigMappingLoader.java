@@ -78,8 +78,11 @@ public final class ConfigMappingLoader {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
+    public static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
         final ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
+        if (mappingMetadata == null) {
+            throw ConfigMessages.msg.classIsNotAMapping(type);
+        }
         return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
     }
 
