@@ -315,4 +315,21 @@ class SmallRyeConfigTest {
                 .build();
         assertEquals("1234", config.getRawValue("my.prop"));
     }
+
+    @Test
+    void builderWithFlagSetters() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .setAddDefaultSources(true)
+                .setAddDefaultInterceptors(true)
+                .setAddDiscoveredSources(true)
+                .setAddDiscoveredConverters(true)
+                .setAddDiscoveredInterceptors(true)
+                .setAddDiscoveredValidator(true)
+                .withSources(config("my.prop", "${replacement}"))
+                .withSources(config("replacement", "1234"))
+                .build();
+
+        assertTrue(config.getConfigSource("EnvConfigSource").isPresent());
+        assertEquals("1234", config.getRawValue("my.prop"));
+    }
 }
