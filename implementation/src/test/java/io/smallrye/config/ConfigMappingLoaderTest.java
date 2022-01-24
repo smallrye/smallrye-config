@@ -4,6 +4,7 @@ import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterfac
 import static io.smallrye.config.ConfigMappingLoader.getImplementationClass;
 import static io.smallrye.config.ConfigMappingLoader.loadClass;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.junit.jupiter.api.Test;
 
 class ConfigMappingLoaderTest {
@@ -52,11 +54,25 @@ class ConfigMappingLoaderTest {
         assertTrue(types.contains(ServerNested.App.class));
     }
 
+    @Test
+    void noArgsConstructor() throws Exception {
+        assertTrue(getImplementationClass(Server.class).getDeclaredConstructor().newInstance() instanceof Server);
+        assertTrue(getImplementationClass(ServerNested.class).getDeclaredConstructor().newInstance() instanceof ServerNested);
+        assertThrows(IllegalArgumentException.class, () -> getImplementationClass(ServerProperties.class));
+    }
+
     @ConfigMapping(prefix = "server")
     public interface Server {
         String host();
 
         int port();
+    }
+
+    @ConfigProperties(prefix = "server")
+    public static class ServerProperties {
+        String host;
+
+        int port;
     }
 
     interface ServerManual {

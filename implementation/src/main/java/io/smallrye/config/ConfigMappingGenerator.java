@@ -111,6 +111,15 @@ public class ConfigMappingGenerator {
                         getInternalName(mapping.getInterfaceType())
                 });
         visitor.visitSource(null, null);
+
+        // No Args Constructor - To use for proxies
+        MethodVisitor noArgsCtor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        noArgsCtor.visitVarInsn(Opcodes.ALOAD, V_THIS);
+        noArgsCtor.visitMethodInsn(Opcodes.INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
+        noArgsCtor.visitInsn(Opcodes.RETURN);
+        noArgsCtor.visitEnd();
+        noArgsCtor.visitMaxs(0, 0);
+
         MethodVisitor ctor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
         ctor.visitParameter("context", Opcodes.ACC_FINAL);
         Label ctorStart = new Label();

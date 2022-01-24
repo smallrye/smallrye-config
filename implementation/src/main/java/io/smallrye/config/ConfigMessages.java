@@ -151,4 +151,7 @@ public interface ConfigMessages {
 
     @Message(id = 44, value = "The @ConfigProperties annotation can only be placed in classes, %s is an interface")
     IllegalStateException propertiesAnnotationNotSupportedInInterface(Class<?> type);
+
+    @Message(id = 45, value = "The %s class is not a ConfigMapping")
+    IllegalArgumentException classIsNotAMapping(Class<?> type);
 }
