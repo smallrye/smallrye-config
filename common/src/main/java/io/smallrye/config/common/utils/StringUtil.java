@@ -103,4 +103,87 @@ public class StringUtil {
         }
         return sb.toString();
     }
+
+    public static String skewer(String camelHumps) {
+        return skewer(camelHumps, '-');
+    }
+
+    public static String skewer(String camelHumps, char separator) {
+        return skewer(camelHumps, 0, camelHumps.length(), new StringBuilder(), separator);
+    }
+
+    public static String hyphenate(String camelHumps) {
+        return skewer(camelHumps).replaceAll("_", "-");
+    }
+
+    private static String skewer(String camelHumps, int start, int end, StringBuilder b, char separator) {
+        if (camelHumps.isEmpty()) {
+            throw new IllegalArgumentException("Method seems to have an empty name");
+        }
+        int cp = camelHumps.codePointAt(start);
+        b.appendCodePoint(Character.toLowerCase(cp));
+        start += Character.charCount(cp);
+        if (start == end) {
+            // a lonely character at the end of the string
+            return b.toString();
+        }
+        if (Character.isUpperCase(cp)) {
+            // all-uppercase words need one code point of lookahead
+            int nextCp = camelHumps.codePointAt(start);
+            if (Character.isUpperCase(nextCp)) {
+                // it's some kind of `WORD`
+                for (;;) {
+                    b.appendCodePoint(Character.toLowerCase(nextCp));
+                    start += Character.charCount(cp);
+                    cp = nextCp;
+                    if (start == end) {
+                        return b.toString();
+                    }
+                    nextCp = camelHumps.codePointAt(start);
+                    // combine non-letters in with this name
+                    if (Character.isLowerCase(nextCp)) {
+                        b.append(separator);
+                        return skewer(camelHumps, start, end, b, separator);
+                    }
+                }
+                // unreachable
+            } else {
+                // it was the start of a `Word`; continue until we hit the end or an uppercase.
+                b.appendCodePoint(nextCp);
+                start += Character.charCount(nextCp);
+                for (;;) {
+                    if (start == end) {
+                        return b.toString();
+                    }
+                    cp = camelHumps.codePointAt(start);
+                    // combine non-letters in with this name
+                    if (Character.isUpperCase(cp)) {
+                        b.append(separator);
+                        return skewer(camelHumps, start, end, b, separator);
+                    }
+                    b.appendCodePoint(cp);
+                    start += Character.charCount(cp);
+                }
+                // unreachable
+            }
+            // unreachable
+        } else {
+            // it's some kind of `word`
+            for (;;) {
+                cp = camelHumps.codePointAt(start);
+                // combine non-letters in with this name
+                if (Character.isUpperCase(cp)) {
+                    b.append(separator);
+                    return skewer(camelHumps, start, end, b, separator);
+                }
+                b.appendCodePoint(cp);
+                start += Character.charCount(cp);
+                if (start == end) {
+                    return b.toString();
+                }
+            }
+            // unreachable
+        }
+        // unreachable
+    }
 }

@@ -20,6 +20,7 @@ import java.util.function.Function;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * Information about a configuration interface.
@@ -885,14 +886,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static class KebabNamingStrategy implements NamingStrategy {
         @Override
         public String apply(final String s) {
-            return ConfigMappingProvider.skewer(s, '-');
+            return StringUtil.skewer(s, '-');
         }
     }
 
     static class SnakeNamingStrategy implements NamingStrategy {
         @Override
         public String apply(final String s) {
-            return ConfigMappingProvider.skewer(s, '_');
+            return StringUtil.skewer(s, '_');
         }
     }
 }
