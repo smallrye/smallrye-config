@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -16,6 +17,8 @@ import java.time.LocalDate;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.ImplicitConverters.HyphenateEnumConverter;
 
 class ImplicitConverterTest {
     @Test
@@ -60,6 +63,49 @@ class ImplicitConverterTest {
         assertEquals(converter.convert("/bad/path").getPath(),
                 ((File) ((Converter) readObject).convert("/bad/path")).getPath(),
                 "Converted values to have same file path");
+    }
+
+    enum MyEnum {
+        DISCARD,
+        READ_UNCOMMITTED,
+        SIGUSR1,
+        TrendBreaker,
+        MAKING_LifeDifficult,
+    }
+
+    enum MyOtherEnum {
+        makingLifeDifficult,
+        READ__UNCOMMITTED
+    }
+
+    @Test
+    public void convertMyEnum() {
+        HyphenateEnumConverter<MyEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyEnum.class);
+        assertEquals(hyphenateEnumConverter.convert("DISCARD"), MyEnum.DISCARD);
+        assertEquals(hyphenateEnumConverter.convert("discard"), MyEnum.DISCARD);
+        assertEquals(hyphenateEnumConverter.convert("READ_UNCOMMITTED"), MyEnum.READ_UNCOMMITTED);
+        assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyEnum.READ_UNCOMMITTED);
+        assertEquals(hyphenateEnumConverter.convert("SIGUSR1"), MyEnum.SIGUSR1);
+        assertEquals(hyphenateEnumConverter.convert("sigusr1"), MyEnum.SIGUSR1);
+        assertEquals(hyphenateEnumConverter.convert("TrendBreaker"), MyEnum.TrendBreaker);
+        assertEquals(hyphenateEnumConverter.convert("trend-breaker"), MyEnum.TrendBreaker);
+        assertEquals(hyphenateEnumConverter.convert("MAKING_LifeDifficult"), MyEnum.MAKING_LifeDifficult);
+        //assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyEnum.MAKING_LifeDifficult);
+    }
+
+    @Test
+    public void convertMyOtherEnum() {
+        HyphenateEnumConverter<MyOtherEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyOtherEnum.class);
+        assertEquals(hyphenateEnumConverter.convert("makingLifeDifficult"), MyOtherEnum.makingLifeDifficult);
+        assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyOtherEnum.makingLifeDifficult);
+        assertEquals(hyphenateEnumConverter.convert("READ__UNCOMMITTED"), MyOtherEnum.READ__UNCOMMITTED);
+        //assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyOtherEnum.READ__UNCOMMITTED);
+    }
+
+    @Test
+    public void testIllegalEnumConfigUtilConversion() {
+        HyphenateEnumConverter<MyEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyEnum.class);
+        assertThrows(IllegalArgumentException.class, () -> hyphenateEnumConverter.convert("READUNCOMMITTED"));
     }
 
     private static Config buildConfig(String... keyValues) {

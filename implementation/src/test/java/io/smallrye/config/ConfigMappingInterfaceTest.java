@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterfaceTest.HyphenatedEnumMapping.HyphenatedEnum.VALUE_ONE;
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.NAF;
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.SOS_DAH;
 import static io.smallrye.config.KeyValuesConfigSource.config;
@@ -1248,5 +1249,26 @@ class ConfigMappingInterfaceTest {
         assertEquals("RoadrunnerWebNAF", mapping.clients().get(NAF).web().createdByApplication());
         assertTrue(mapping.clients().get(NAF).medium().web());
         assertFalse(mapping.clients().get(NAF).medium().app());
+    }
+
+    @ConfigMapping
+    interface HyphenatedEnumMapping {
+        HyphenatedEnum hyphenatedEnum();
+
+        enum HyphenatedEnum {
+            VALUE_ONE
+        }
+    }
+
+    @Test
+    void hyphenateEnum() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(HyphenatedEnumMapping.class)
+                .withSources(config("hyphenated-enum", "value-one"))
+                .build();
+
+        HyphenatedEnumMapping mapping = config.getConfigMapping(HyphenatedEnumMapping.class);
+        assertEquals(VALUE_ONE, mapping.hyphenatedEnum());
+        assertEquals(VALUE_ONE, config.getValue("hyphenated-enum", HyphenatedEnumMapping.HyphenatedEnum.class));
     }
 }

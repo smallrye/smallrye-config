@@ -15,6 +15,8 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.common.utils.StringUtil.hyphenate;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -22,6 +24,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -35,7 +39,12 @@ class ImplicitConverters {
     private ImplicitConverters() {
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Converter<T> getConverter(Class<? extends T> clazz) {
+        if (clazz.isEnum()) {
+            return new HyphenateEnumConverter(clazz);
+        }
+
         // implicit converters required by the specification
         Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
         if (converter == null) {
@@ -190,6 +199,37 @@ class ImplicitConverters {
             Object readResolve() throws ObjectStreamException {
                 return getConverter(c);
             }
+        }
+    }
+
+    static class HyphenateEnumConverter<E extends Enum<E>> implements Converter<E>, Serializable {
+        private static final long serialVersionUID = -8298320652413719873L;
+
+        private final Class<E> enumType;
+        private final Map<String, E> values = new HashMap<>();
+
+        public HyphenateEnumConverter(final Class<E> enumType) {
+            this.enumType = enumType;
+            for (E enumValue : this.enumType.getEnumConstants()) {
+                values.put(hyphenate(enumValue.name()), enumValue);
+            }
+        }
+
+        @Override
+        public E convert(final String value) throws IllegalArgumentException, NullPointerException {
+            final String trimmedValue = value.trim();
+            if (trimmedValue.isEmpty()) {
+                return null;
+            }
+
+            final String hyphenatedValue = hyphenate(trimmedValue);
+            final Enum<?> enumValue = values.get(hyphenatedValue);
+
+            if (enumValue != null) {
+                return enumType.cast(enumValue);
+            }
+
+            throw new IllegalArgumentException(String.format("Cannot convert %s to enum %s", value, enumType));
         }
     }
 }

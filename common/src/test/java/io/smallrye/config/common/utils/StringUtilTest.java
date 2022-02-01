@@ -16,6 +16,7 @@
 package io.smallrye.config.common.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -91,5 +92,33 @@ class StringUtilTest {
         assertEquals("foo\\", split[0]);
         assertEquals("barx", split[1]);
         assertEquals("baz", split[2]);
+    }
+
+    @Test
+    void skewer() {
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer(""));
+        assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer("", '.'));
+
+        assertEquals("my-property", StringUtil.skewer("myProperty"));
+        assertEquals("my.property", StringUtil.skewer("myProperty", '.'));
+
+        assertEquals("a", StringUtil.skewer("a"));
+        assertEquals("a", StringUtil.skewer("a", '.'));
+
+        assertEquals("my-property-abc", StringUtil.skewer("myPropertyABC"));
+        assertEquals("my.property.abc", StringUtil.skewer("myPropertyABC", '.'));
+
+        assertEquals("my-property-abc-abc", StringUtil.skewer("myPropertyABCabc"));
+        assertEquals("my.property.abc.abc", StringUtil.skewer("myPropertyABCabc", '.'));
+    }
+
+    @Test
+    void hyphenate() {
+        assertEquals("my-property", StringUtil.hyphenate("MY_PROPERTY"));
+        assertEquals("my-property", StringUtil.hyphenate("myProperty"));
+        assertEquals("my-property-one", StringUtil.hyphenate("MY_PROPERTY_ONE"));
+        assertEquals("my-property-one", StringUtil.hyphenate("myPropertyOne"));
+        assertEquals("my-property-one", StringUtil.hyphenate("myPropertyONE"));
+
     }
 }
