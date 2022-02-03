@@ -136,7 +136,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         KeyMap<V> next = getOrDefault(seg, any);
         if (seg.endsWith("]")) {
             int begin = seg.lastIndexOf('[');
-            if (begin != -1) {
+            if (begin != -1 && isValidIndex(seg, begin)) {
                 next = getOrDefault(seg.substring(0, begin), any);
                 if (next != null) {
                     next = next.find("[");
@@ -150,6 +150,19 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             }
         }
         return next;
+    }
+
+    private boolean isValidIndex(final String seg, final int begin) {
+        try {
+            String index = seg.substring(begin + 1, seg.length() - 1);
+            if (index.equals("*")) {
+                return true;
+            }
+            Integer.parseInt(index);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     public KeyMap<V> findOrAdd(final String path) {
