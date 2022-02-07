@@ -29,6 +29,10 @@ public final class ConfigMappingLoader {
         if (configurationInterface != null) {
             mappings.add(configurationInterface);
             mappings.addAll(configurationInterface.getNested());
+            for (ConfigMappingInterface superType : configurationInterface.getSuperTypes()) {
+                mappings.add(superType);
+                mappings.addAll(superType.getNested());
+            }
         }
         final ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass != null) {
