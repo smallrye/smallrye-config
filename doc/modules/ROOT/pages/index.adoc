@@ -3,7 +3,7 @@
 
 SmallRye Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
 
-Runtimes that currently use it as their metrics implementation include:
+Runtimes that currently use it as their config implementation include:
 
 * https://quarkus.io/[Quarkus]
 * https://wildfly.org/[WildFly]
