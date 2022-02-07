@@ -65,6 +65,30 @@ jobs:
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml
 
+  docs:
+    needs: [build]
+    if: github.event_name == 'push' && github.repository_owner == 'smallrye'
+    runs-on: ubuntu-latest
+    name: docs
+
+    steps:
+      - uses: actions/checkout@v2
+        name: checkout
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: build docs
+        run: |
+          cd documentation
+          mvn package
+
+      - name: Deploy docs
+        uses: mhausenblas/mkdocs-deploy-gh-pages@master
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
   quality:
     needs: [build]
     if: github.event_name == 'push' && github.repository_owner == 'smallrye'

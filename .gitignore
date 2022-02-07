@@ -63,8 +63,8 @@ client/shade/dependency-reduced-pom.xml
 # Jenv
 .java-version
 
-# Antora
-build
+# MkDocs
+site
 
 # formatter cache directories
 .cache

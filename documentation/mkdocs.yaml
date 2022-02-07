@@ -1,0 +1,95 @@
+site_name: SmallRye Config
+site_url: https://smallrye.io/smallrye-config
+repo_url: https://github.com/smallrye/smallrye-config
+
+docs_dir: src/main/docs
+
+nav:
+  - Home: index.md
+
+  - Config:
+      - 'Getting Started': config/getting-started.md
+      - 'Expressions': config/expressions.md
+      - 'Profiles': config/profiles.md
+      - 'Indexed Properties': config/indexed-properties.md
+      - 'ConfigValue': config/config-value.md
+      - 'Mappings': config/mappings.md
+      - 'Map Support': config/map-support.md
+      - 'Secret Keys': config/secret-keys.md
+  - Config Sources:
+      - 'Custom': config-sources/custom.md
+      - 'Locations': config-sources/locations.md
+      - 'YAML': config-sources/yaml.md
+      - 'FileSystem': config-sources/filesystem.md
+      - 'ZooKeeper': config-sources/zookeeper.md
+      - 'HOCON': config-sources/hocon.md
+  - Converters:
+      - 'Custom': converters/custom.md
+      - 'JSON': converters/json.md
+  - Extensions:
+      - 'Interceptors': extensions/interceptors.md
+      - 'Fallback': extensions/fallback.md
+      - 'Relocate': extensions/relocate.md
+      - 'Logging': extensions/logging.md
+      #- 'Events': extensions/config-events.md
+      #- 'Config Source Injection': extensions/config-source-injection.md
+
+plugins:
+  - search
+  - macros:
+      module_name: src/main/macros/docissimo
+      include_dir: src/main/macros
+  - mike:
+      version_selector: true
+      css_dir: css
+      javascript_dir: javascript
+
+copyright: >-
+  Sponsored by <a href="https://www.redhat.com"><img style="vertical-align: middle; height: 2.5em;" alt="Red Hat" src="https://github.com/jbossorg/website/raw/master/docs/img/redhat_reversed.svg"/></a> <br/>
+  <a href="https://creativecommons.org/licenses/by/3.0/">CC by 3.0</a> |
+  <a href="https://www.redhat.com/en/about/privacy-policy">Privacy Policy</a>
+
+theme:
+  name: material
+  logo: images/logo.png
+  favicon: images/favicon.png
+  palette:
+    primary: blue grey
+    accent: blue
+  font:
+    text: Red Hat Text
+    code: Ubuntu Mono
+  features:
+    - navigation.sections
+    - navigation.tracking
+    #    - navigation.expand
+    - navigation.indexes
+
+markdown_extensions:
+  - toc:
+      toc_depth: 3
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - tables
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.highlight:
+      linenums: true
+      anchor_linenums: true
+
+extra_css:
+  - css/smallrye.css
+
+extra:
+  version:
+    provider: mike
+  snippet_dir: src/main/java
+  attributes_path: target/classes/attributes.yaml
