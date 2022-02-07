@@ -1,6 +1,7 @@
 site_name: SmallRye Config
 site_url: https://smallrye.io/smallrye-config
 repo_url: https://github.com/smallrye/smallrye-config
+edit_uri: edit/main/documentation/src/main/docs
 
 docs_dir: src/main/docs
 
