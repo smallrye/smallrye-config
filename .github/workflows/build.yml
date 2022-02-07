@@ -79,15 +79,23 @@ jobs:
         with:
           java-version: 11
 
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
       - name: build docs
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           cd documentation
           mvn package
-
-      - name: Deploy docs
-        uses: mhausenblas/mkdocs-deploy-gh-pages@master
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
+          pipx install pipenv
+          pipenv install
+          git fetch origin gh-pages --depth=1
+          git config --global user.name "SmallRye CI"
+          git config --global user.email "smallrye@googlegroups.com"
+          pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${VERSION}" latest
 
   quality:
     needs: [build]
