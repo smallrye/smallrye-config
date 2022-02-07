@@ -198,4 +198,32 @@ class ConfigMappingLoaderTest {
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
+
+    interface ServerParent {
+        String parent();
+
+        ServerParentNested parentNested();
+
+        interface ServerParentNested {
+
+        }
+    }
+
+    interface ServerChild extends ServerParent {
+        ServerChildNested childNested();
+
+        interface ServerChildNested {
+
+        }
+    }
+
+    @Test
+    void parentNested() {
+        List<ConfigMappingMetadata> mappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerChild.class);
+        List<Class<?>> mappings = mappingsMetadata.stream().map(ConfigMappingMetadata::getInterfaceType).collect(toList());
+        assertTrue(mappings.contains(ServerChild.class));
+        assertTrue(mappings.contains(ServerChild.ServerChildNested.class));
+        assertTrue(mappings.contains(ServerParent.class));
+        assertTrue(mappings.contains(ServerParent.ServerParentNested.class));
+    }
 }
