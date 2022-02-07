@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://smallrye.io/smallrye-config/2.8.2-SNAPSHOT/config/mappings/">
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.d6be258b.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
@@ -1094,11 +1094,11 @@ behaviour can be disabled with the configuration <code>smallrye.config.mapping.v
 <span class="normal"><a href="#__codelineno-5-2">2</a></span>
 <span class="normal"><a href="#__codelineno-5-3">3</a></span>
 <span class="normal"><a href="#__codelineno-5-4">4</a></span>
-<span class="normal"><a href="#__codelineno-5-5">5</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="na">server.log.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="na">server.log.suffix</span><span class="o">=</span><span class="s">.log</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="na">server.log.rotate</span><span class="o">=</span><span class="s">false</span>
+<span class="normal"><a href="#__codelineno-5-5">5</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-5-2" name="__codelineno-5-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
+<a id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="na">server.log.enabled</span><span class="o">=</span><span class="s">true</span><span class="w"></span>
+<a id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="na">server.log.suffix</span><span class="o">=</span><span class="s">.log</span><span class="w"></span>
+<a id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="na">server.log.rotate</span><span class="o">=</span><span class="s">false</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>The method name of a mapping group acts as a sub-prefix in the property name. In this case the matching property to
@@ -1123,8 +1123,8 @@ override the method name mapping and use the name supplied in the annotation.</p
 </code></pre></div>
 </td></tr></table>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span>
-<span class="normal"><a href="#__codelineno-7-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="na">server.name</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span>
+<span class="normal"><a href="#__codelineno-7-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="na">server.name</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <h3 id="withparentname"><code>@WithParentName</code></h3>
@@ -1169,9 +1169,9 @@ simplifying the configuration property name required to match the mapping.</p>
 </td></tr></table>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
 <span class="normal"><a href="#__codelineno-9-2">2</a></span>
-<span class="normal"><a href="#__codelineno-9-3">3</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="na">server.name</span><span class="o">=</span><span class="s">konoha</span>
+<span class="normal"><a href="#__codelineno-9-3">3</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
+<a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="na">server.name</span><span class="o">=</span><span class="s">konoha</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>Without the <code>@WithParentName</code> the method <code>ServerInfo#name</code> maps the configuration property <code>server.info.name</code>. With
@@ -1193,8 +1193,8 @@ the property <code>server.name</code> instead.</p>
 </code></pre></div>
 </td></tr></table>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span>
-<span class="normal"><a href="#__codelineno-11-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="na">server.the-host</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="na">server.the-port</span><span class="o">=</span><span class="s">8080</span>
+<span class="normal"><a href="#__codelineno-11-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="na">server.the-host</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="na">server.the-port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>The mapping strategy can be adjusted by setting <code>namingStrategy</code> value in the <code>@ConfigMapping</code> annotation.</p>
@@ -1212,8 +1212,8 @@ the property <code>server.name</code> instead.</p>
 </code></pre></div>
 </td></tr></table>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-13-1">1</a></span>
-<span class="normal"><a href="#__codelineno-13-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="na">server.theHost</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2"></a><span class="na">server.thePort</span><span class="o">=</span><span class="s">8080</span>
+<span class="normal"><a href="#__codelineno-13-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="na">server.theHost</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-13-2" name="__codelineno-13-2"></a><span class="na">server.thePort</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>The <code>@ConfigMapping</code> annotation support the following naming stategies:</p>
@@ -1306,12 +1306,12 @@ the property <code>server.name</code> instead.</p>
 <span class="normal"><a href="#__codelineno-15-3">3</a></span>
 <span class="normal"><a href="#__codelineno-15-4">4</a></span>
 <span class="normal"><a href="#__codelineno-15-5">5</a></span>
-<span class="normal"><a href="#__codelineno-15-6">6</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1"></a><span class="na">int</span><span class="o">=</span><span class="s">9</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2"></a><span class="na">long</span><span class="o">=</span><span class="s">9999999999</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3"></a><span class="na">float</span><span class="o">=</span><span class="s">99.9</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4"></a><span class="na">double</span><span class="o">=</span><span class="s">99.99</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5"></a><span class="na">char</span><span class="o">=</span><span class="s">c</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6"></a><span class="na">boolean</span><span class="o">=</span><span class="s">true</span>
+<span class="normal"><a href="#__codelineno-15-6">6</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1"></a><span class="na">int</span><span class="o">=</span><span class="s">9</span><span class="w"></span>
+<a id="__codelineno-15-2" name="__codelineno-15-2"></a><span class="na">long</span><span class="o">=</span><span class="s">9999999999</span><span class="w"></span>
+<a id="__codelineno-15-3" name="__codelineno-15-3"></a><span class="na">float</span><span class="o">=</span><span class="s">99.9</span><span class="w"></span>
+<a id="__codelineno-15-4" name="__codelineno-15-4"></a><span class="na">double</span><span class="o">=</span><span class="s">99.99</span><span class="w"></span>
+<a id="__codelineno-15-5" name="__codelineno-15-5"></a><span class="na">char</span><span class="o">=</span><span class="s">c</span><span class="w"></span>
+<a id="__codelineno-15-6" name="__codelineno-15-6"></a><span class="na">boolean</span><span class="o">=</span><span class="s">true</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>This is also valid for <code>Optional</code> and friends.</p>
@@ -1374,7 +1374,7 @@ the property <code>server.name</code> instead.</p>
 <a id="__codelineno-17-12" name="__codelineno-17-12"></a><span class="p">}</span>
 </code></pre></div>
 </td></tr></table>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-18-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1"></a><span class="na">foo</span><span class="o">=</span><span class="s">foo</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-18-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1"></a><span class="na">foo</span><span class="o">=</span><span class="s">foo</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>A call to <code>Converters.foo()</code> results in the value <code>bar</code>.</p>
@@ -1422,12 +1422,12 @@ the property <code>server.name</code> instead.</p>
 <span class="normal"><a href="#__codelineno-20-3">3</a></span>
 <span class="normal"><a href="#__codelineno-20-4">4</a></span>
 <span class="normal"><a href="#__codelineno-20-5">5</a></span>
-<span class="normal"><a href="#__codelineno-20-6">6</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1"></a><span class="na">server.environments[0].name</span><span class="o">=</span><span class="s">dev</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2"></a><span class="na">server.environments[0].apps[0].name</span><span class="o">=</span><span class="s">rest</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3"></a><span class="na">server.environments[0].apps[0].services</span><span class="o">=</span><span class="s">bookstore,registration</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4"></a><span class="na">server.environments[0].apps[0].databases</span><span class="o">=</span><span class="s">pg,h2</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5"></a><span class="na">server.environments[0].apps[1].name</span><span class="o">=</span><span class="s">batch</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6"></a><span class="na">server.environments[0].apps[1].services</span><span class="o">=</span><span class="s">stock,warehouse</span>
+<span class="normal"><a href="#__codelineno-20-6">6</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1"></a><span class="na">server.environments[0].name</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-20-2" name="__codelineno-20-2"></a><span class="na">server.environments[0].apps[0].name</span><span class="o">=</span><span class="s">rest</span><span class="w"></span>
+<a id="__codelineno-20-3" name="__codelineno-20-3"></a><span class="na">server.environments[0].apps[0].services</span><span class="o">=</span><span class="s">bookstore,registration</span><span class="w"></span>
+<a id="__codelineno-20-4" name="__codelineno-20-4"></a><span class="na">server.environments[0].apps[0].databases</span><span class="o">=</span><span class="s">pg,h2</span><span class="w"></span>
+<a id="__codelineno-20-5" name="__codelineno-20-5"></a><span class="na">server.environments[0].apps[1].name</span><span class="o">=</span><span class="s">batch</span><span class="w"></span>
+<a id="__codelineno-20-6" name="__codelineno-20-6"></a><span class="na">server.environments[0].apps[1].services</span><span class="o">=</span><span class="s">stock,warehouse</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>The <code>List</code> and <code>Set</code> mappings can use <a href="../indexed-properties/">Indexed Properties</a> to map configuration values in 
@@ -1455,11 +1455,11 @@ mapping groups.</p>
 <span class="normal"><a href="#__codelineno-22-2">2</a></span>
 <span class="normal"><a href="#__codelineno-22-3">3</a></span>
 <span class="normal"><a href="#__codelineno-22-4">4</a></span>
-<span class="normal"><a href="#__codelineno-22-5">5</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3"></a><span class="na">server.form.login-page</span><span class="o">=</span><span class="s">login.html</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4"></a><span class="na">server.form.error-page</span><span class="o">=</span><span class="s">error.html</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5"></a><span class="na">server.form.landing-page</span><span class="o">=</span><span class="s">index.html</span>
+<span class="normal"><a href="#__codelineno-22-5">5</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
+<a id="__codelineno-22-2" name="__codelineno-22-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
+<a id="__codelineno-22-3" name="__codelineno-22-3"></a><span class="na">server.form.login-page</span><span class="o">=</span><span class="s">login.html</span><span class="w"></span>
+<a id="__codelineno-22-4" name="__codelineno-22-4"></a><span class="na">server.form.error-page</span><span class="o">=</span><span class="s">error.html</span><span class="w"></span>
+<a id="__codelineno-22-5" name="__codelineno-22-5"></a><span class="na">server.form.landing-page</span><span class="o">=</span><span class="s">index.html</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>The configuration property name needs to specify an additional segment to act as the map key. The <code>server.form</code> matches 
@@ -1580,10 +1580,10 @@ values do not follow the contraints defined in <code>Server</code>. </p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.tracking", "navigation.indexes"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.0bbba5b5.min.js", "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.tracking", "navigation.indexes"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.092fa1f6.min.js", "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>

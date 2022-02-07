@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://smallrye.io/smallrye-config/2.8.2-SNAPSHOT/config/profiles/">
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.d6be258b.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
@@ -849,8 +849,8 @@ in the same file or separate files and select between them via a profile name.</
 <p>To be able to set properties with the same name, each property needs to be prefixed with a percentage sign <code>%</code> followed 
 by the profile name and a dot <code>.</code> in the syntax <code>%{profile-name}.config.name</code>:</p>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
-<span class="normal"><a href="#__codelineno-0-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="na">%dev.http.port</span><span class="o">=</span><span class="s">8181</span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="na">%dev.http.port</span><span class="o">=</span><span class="s">8181</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>To activate the profile <code>dev</code>, the configuration <code>smallrye.config.profile=dev</code> has to be set into any valid 
@@ -862,11 +862,11 @@ active, yields the value <code>8181</code>.</p>
 <p>Properties for a specific profile may reside in a <code>microprofile-config-{profile}.properties</code> named file. The previous 
 example can be expressed as:</p>
 <p><em>microprofile-config.properties</em>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <p><em>microprofile-config-dev.properties</em>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8181</span>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8181</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <p>In this style, the property names in the profile aware file do not need to be prefixed with the profile name.</p>
@@ -879,14 +879,14 @@ example can be expressed as:</p>
 name. Consider:</p>
 <p><em>main.properties</em>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span>
-<span class="normal"><a href="#__codelineno-3-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="na">config_ordinal</span><span class="o">=</span><span class="s">1000</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span>
+<span class="normal"><a href="#__codelineno-3-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="na">config_ordinal</span><span class="o">=</span><span class="s">1000</span><span class="w"></span>
+<a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="na">http.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <p><em>profile.properties</em>
 <table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
-<span class="normal"><a href="#__codelineno-4-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="na">config_ordinal</span><span class="o">=</span><span class="s">100</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a><span class="na">%dev.http.port</span><span class="o">=</span><span class="s">8181</span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="na">config_ordinal</span><span class="o">=</span><span class="s">100</span><span class="w"></span>
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a><span class="na">%dev.http.port</span><span class="o">=</span><span class="s">8181</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table></p>
 <p>Even with the profile <code>dev</code> active, the lookup value for <code>my.prop</code> is <code>1234</code>. This prevents lower ordinal sources to 
@@ -904,15 +904,15 @@ configuration, then the last listed profile has priority. Consider:</p>
 <span class="normal"><a href="#__codelineno-5-6">6</a></span>
 <span class="normal"><a href="#__codelineno-5-7">7</a></span>
 <span class="normal"><a href="#__codelineno-5-8">8</a></span>
-<span class="normal"><a href="#__codelineno-5-9">9</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">common,dev</span>
+<span class="normal"><a href="#__codelineno-5-9">9</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">common,dev</span><span class="w"></span>
 <a id="__codelineno-5-2" name="__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
+<a id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span><span class="w"></span>
+<a id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
 <a id="__codelineno-5-6" name="__codelineno-5-6"></a>
-<a id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
+<a id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>Then</p>
@@ -936,16 +936,16 @@ fallbacks to the Parent Profile. Consider:</p>
 <span class="normal"><a href="#__codelineno-6-7"> 7</a></span>
 <span class="normal"><a href="#__codelineno-6-8"> 8</a></span>
 <span class="normal"><a href="#__codelineno-6-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-6-10">10</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">dev</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="na">smallrye.config.profile.parent</span><span class="o">=</span><span class="s">common</span>
+<span class="normal"><a href="#__codelineno-6-10">10</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="na">smallrye.config.profile.parent</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
 <a id="__codelineno-6-3" name="__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
+<a id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span><span class="w"></span>
+<a id="__codelineno-6-6" name="__codelineno-6-6"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
 <a id="__codelineno-6-7" name="__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
+<a id="__codelineno-6-9" name="__codelineno-6-9"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-6-10" name="__codelineno-6-10"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span><span class="w"></span>
 </code></pre></div>
 </td></tr></table>
 <p>Then</p>
@@ -1024,10 +1024,10 @@ fallbacks to the Parent Profile. Consider:</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.tracking", "navigation.indexes"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.0bbba5b5.min.js", "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.tracking", "navigation.indexes"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.092fa1f6.min.js", "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>
