@@ -499,4 +499,24 @@ public class ConfigMappingCollectionsTest {
         assertTrue(mapping.present().isPresent());
         assertEquals("localhost", mapping.present().get().get(0).get("localhost"));
     }
+
+    public interface MapKeyWithIndexedSyntax {
+        Map<String, String> map();
+    }
+
+    @Test
+    void mapKeyWithIndexedSyntax() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapKeyWithIndexedSyntax.class)
+                .withSources(config("map.key", "value"))
+                .withSources(config("map.key[x]", "value"))
+                .withSources(config("map.key[0-9]", "value"))
+                .build();
+
+        MapKeyWithIndexedSyntax mapping = config.getConfigMapping(MapKeyWithIndexedSyntax.class);
+
+        assertEquals("value", mapping.map().get("key"));
+        assertEquals("value", mapping.map().get("key[x]"));
+        assertEquals("value", mapping.map().get("key[0-9]"));
+    }
 }

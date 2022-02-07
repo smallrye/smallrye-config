@@ -657,17 +657,19 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         private String mapKey(final NameIterator ni) {
-            NameIterator mapPath = new NameIterator(normalizeIfIndexed(this.mapPath));
-            NameIterator mapKey = new NameIterator(normalizeIfIndexed(ni.getName()));
-            while (mapPath.hasNext() && mapKey.hasNext()) {
-                if (mapPath.getNextSegment().equals(mapKey.getNextSegment()) || mapPath.getNextSegment().equals("*")) {
+            NameIterator mapPath = new NameIterator(this.mapPath);
+            NameIterator mapPathKey = new NameIterator(anyIfIndexed(ni.getName()));
+            NameIterator mapRealKey = new NameIterator(ni.getName());
+            while (mapPath.hasNext() && mapPathKey.hasNext()) {
+                if (mapPath.getNextSegment().equals(mapPathKey.getNextSegment()) || mapPath.getNextSegment().equals("*")) {
                     mapPath.next();
-                    mapKey.next();
+                    mapPathKey.next();
+                    mapRealKey.next();
                 } else {
                     break;
                 }
             }
-            return mapKey.hasNext() ? mapKey.getNextSegment() : ni.getPreviousSegment();
+            return mapRealKey.hasNext() ? mapRealKey.getNextSegment() : ni.getPreviousSegment();
         }
     }
 
@@ -857,6 +859,25 @@ final class ConfigMappingProvider implements Serializable {
             return propertyName.substring(0, indexStart);
         }
         return propertyName;
+    }
+
+    private static String anyIfIndexed(final String propertyName) {
+        StringBuilder builder = new StringBuilder();
+
+        int pos = 0;
+        for (int i = 0; i < propertyName.length(); i++) {
+            if (propertyName.charAt(i) == '[') {
+                builder.append(propertyName, pos, i + 1);
+                pos = i;
+            } else if (propertyName.charAt(i) == ']') {
+                builder.append("*");
+                builder.append(propertyName, i, i + 1);
+                pos = i + 1;
+            }
+        }
+        builder.append(propertyName, pos, propertyName.length());
+
+        return builder.toString();
     }
 
     private static boolean validateUnknown(final boolean validateUnknown, final SmallRyeConfig config) {
