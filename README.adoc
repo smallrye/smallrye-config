@@ -33,10 +33,11 @@ mkdocs serve
 * link:cdi[] - CDI Extension
 * link:common[] - A set of reusable components to extend SmallRye Config
 * link:converters[] - Additional Converters
-* link:documentation[] - Project documentation.
-* link:implementation[] - Implementation of the MicroProfile Config API.
+* link:documentation[] - Project documentation
+* link:examples[] - Examples projects to demonstrate SmallRye Config features
+* link:implementation[] - Implementation of the MicroProfile Config API
 * link:sources[] - Implementation of custom Config Sources
-* link:testsuite[] - Test suite to run the implementation against the MicroProfile Config TCK.
+* link:testsuite[] - Test suite to run the implementation against the MicroProfile Config TCK
 * link:utils[] - A set of additional extensions to enhance MicroProfile Config
 * link:validator[] - Bean Validation integration
 
@@ -48,4 +49,4 @@ Please refer to our Wiki for the https://github.com/smallrye/smallrye/[Contribut
 
 * http://github.com/smallrye/smallrye-config/[Project Homepage]
 * {microprofile-config}[Eclipse MicroProfile Config]
-* https://smallrye.io/docs/smallrye-config/index.html[Documentation]
+* https://smallrye.io/smallrye-config[Documentation]
