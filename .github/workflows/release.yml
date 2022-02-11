@@ -28,7 +28,11 @@ jobs:
 
       - uses: actions/setup-java@v1
         with:
-          java-version: 8
+          java-version: 11
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
 
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
@@ -45,6 +49,19 @@ jobs:
           mvn -B release:perform -Prelease -s maven-settings.xml
           git push
           git push --tags
+
+      - name: docs release ${{steps.metadata.outputs.current-version}}
+        run: |
+          git checkout -b ${{steps.metadata.outputs.current-version}} ${{steps.metadata.outputs.current-version}}
+          cd documentation
+          mvn package
+          VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
+          pipx install pipenv
+          pipenv install
+          git fetch origin gh-pages --depth=1
+          git config --global user.name "SmallRye CI"
+          git config --global user.email "smallrye@googlegroups.com"
+          pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${VERSION}" latest
 
       - uses: radcortez/milestone-release-action@main
         name: milestone release
