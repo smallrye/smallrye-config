@@ -52,7 +52,6 @@ copyright: >-
 
 theme:
   name: material
-  logo: images/logo.png
   favicon: images/favicon.png
   palette:
     primary: blue grey
