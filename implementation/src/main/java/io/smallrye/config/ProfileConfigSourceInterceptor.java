@@ -4,6 +4,8 @@ import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -107,14 +109,21 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private static List<String> convertProfile(final ConfigSourceInterceptorContext context) {
         final List<String> profiles = new ArrayList<>();
-        final ConfigValue profile = context.proceed(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE);
+        final ConfigValue profile = context.proceed(SMALLRYE_CONFIG_PROFILE);
         if (profile != null) {
-            final ConfigValue parentProfile = context.proceed(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT);
+            final ConfigValue parentProfile = context.proceed(SMALLRYE_CONFIG_PROFILE_PARENT);
             if (parentProfile != null) {
                 profiles.add(parentProfile.getValue());
             }
             final List<String> convertedProfiles = convertProfile(profile.getValue());
             if (convertedProfiles != null) {
+                final ProfileConfigSourceInterceptor profileConfigSourceInterceptor = new ProfileConfigSourceInterceptor(
+                        convertedProfiles);
+                final ConfigValue parentProfileInActiveProfile = profileConfigSourceInterceptor.getValue(context,
+                        SMALLRYE_CONFIG_PROFILE_PARENT);
+                if (parentProfileInActiveProfile != null) {
+                    profiles.add(parentProfileInActiveProfile.getValue());
+                }
                 profiles.addAll(convertedProfiles);
             }
         }

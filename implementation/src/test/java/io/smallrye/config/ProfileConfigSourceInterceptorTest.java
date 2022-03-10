@@ -21,7 +21,9 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -399,6 +401,86 @@ class ProfileConfigSourceInterceptorTest {
 
         assertEquals("1234", config.getRawValue("common.prop"));
         assertEquals("5678", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void parentProfileInActiveProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "custom"))
+                .withSources(config("my.config1", "prod",
+                        "my.config2", "prod",
+                        "%dev.my.config1", "dev",
+                        "%custom.smallrye.config.profile.parent", "dev",
+                        "%custom.my.config2", "custom"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("custom", config.getRawValue("my.config2"));
+        assertEquals("dev", config.getRawValue("my.config1"));
+        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
+    }
+
+    @Test
+    void multipleProfilesSingleParent() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "another,custom"))
+                .withSources(config("my.config1", "prod",
+                        "my.config2", "prod",
+                        "%dev.my.config1", "dev",
+                        "%custom.my.config2", "custom"))
+                .withSources(config("config_ordinal", "1000",
+                        "%custom.smallrye.config.profile.parent", "dev"))
+                .withSources(config("config_ordinal", "0",
+                        "%another.smallrye.config.profile.parent", "prod"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("custom", config.getRawValue("my.config2"));
+        assertEquals("dev", config.getRawValue("my.config1"));
+        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
+    }
+
+    @Test
+    void parentProfileInActiveProfileWithRelocate() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        Map<String, String> relocations = new HashMap<>();
+                        relocations.put(SMALLRYE_CONFIG_PROFILE_PARENT, "quarkus.config.profile.parent");
+
+                        ConfigValue profileValue = context.proceed(SMALLRYE_CONFIG_PROFILE);
+                        if (profileValue != null) {
+                            List<String> profiles = ProfileConfigSourceInterceptor.convertProfile(profileValue.getValue());
+                            for (String profile : profiles) {
+                                relocations.put("%" + profile + "." + SMALLRYE_CONFIG_PROFILE_PARENT,
+                                        "%" + profile + "." + "quarkus.config.profile.parent");
+                            }
+                        }
+
+                        return new RelocateConfigSourceInterceptor(relocations);
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        // Profile is 200, needs to execute before
+                        return OptionalInt.of(Priorities.LIBRARY + 200 - 5);
+                    }
+                })
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "custom"))
+                .withSources(config(
+                        "my.config1", "prod",
+                        "my.config2", "prod",
+                        "%dev.my.config1", "dev",
+                        "%custom.quarkus.config.profile.parent", "dev",
+                        "%custom.my.config2", "custom"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
+        assertEquals("dev", config.getRawValue("quarkus.config.profile.parent"));
+        assertEquals("dev", config.getRawValue("my.config1"));
+        assertEquals("custom", config.getRawValue("my.config2"));
     }
 
     @Test
