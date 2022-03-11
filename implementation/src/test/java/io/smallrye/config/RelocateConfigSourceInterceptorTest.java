@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
@@ -68,6 +69,32 @@ class RelocateConfigSourceInterceptorTest {
                 SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("Cookie", config.getValue("smallrye.jwt.token.header", String.class));
+    }
+
+    @Test
+    void relocateWithProfileWithMappingProperties() {
+        Map<String, String> relocations = new HashMap<>();
+        relocations.put("original.name", "relocated.name");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new RelocateConfigSourceInterceptor(relocations);
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Priorities.LIBRARY + 300);
+                    }
+                })
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "custom"))
+                .withSources(config("%custom.original.name", "original", "%custom.relocated.name", "relocated"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("relocated", config.getRawValue("original.name"));
+        assertEquals("relocated", config.getRawValue("relocated.name"));
     }
 
     @Test
