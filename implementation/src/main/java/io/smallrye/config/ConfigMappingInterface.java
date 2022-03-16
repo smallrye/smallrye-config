@@ -717,7 +717,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             Type elementType = typeOfParameter(type, 0);
             WithDefault annotation = method.getAnnotation(WithDefault.class);
             return new CollectionProperty(rawType,
-                    new LeafProperty(method, propertyName, elementType, null, annotation == null ? null : annotation.value()));
+                    new LeafProperty(method, propertyName, elementType, convertWith,
+                            annotation == null ? null : annotation.value()));
         }
 
         // otherwise it's a leaf

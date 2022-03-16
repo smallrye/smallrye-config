@@ -1271,4 +1271,56 @@ class ConfigMappingInterfaceTest {
         assertEquals(VALUE_ONE, mapping.hyphenatedEnum());
         assertEquals(VALUE_ONE, config.getValue("hyphenated-enum", HyphenatedEnumMapping.HyphenatedEnum.class));
     }
+
+    @ConfigMapping
+    interface ListConverter {
+        @WithConverter(RangeConverter.class)
+        Range range();
+
+        @WithConverter(RangeConverter.class)
+        List<Range> list();
+
+        class Range {
+            private final Integer min;
+            private final Integer max;
+
+            public Range(final Integer min, final Integer max) {
+                this.min = min;
+                this.max = max;
+            }
+
+            public Integer getMin() {
+                return min;
+            }
+
+            public Integer getMax() {
+                return max;
+            }
+        }
+
+        class RangeConverter implements Converter<Range> {
+            @Override
+            public Range convert(final String value) throws IllegalArgumentException, NullPointerException {
+                String[] split = value.split("-");
+                return new Range(Integer.valueOf(split[0]), Integer.valueOf(split[1]));
+            }
+        }
+    }
+
+    @Test
+    void listElementConverter() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ListConverter.class)
+                .withSources(config("range", "1-10", "list", "1-10,2-20"))
+                .build();
+
+        ListConverter mapping = config.getConfigMapping(ListConverter.class);
+        assertEquals(1, mapping.range().getMin());
+        assertEquals(10, mapping.range().getMax());
+
+        assertEquals(1, mapping.list().get(0).getMin());
+        assertEquals(10, mapping.list().get(0).getMax());
+        assertEquals(2, mapping.list().get(1).getMin());
+        assertEquals(20, mapping.list().get(1).getMax());
+    }
 }
