@@ -104,6 +104,38 @@ public class StringUtil {
         return sb.toString();
     }
 
+    public static String toLowerCaseAndDotted(final String name) {
+        int length = name.length();
+        boolean quotesOpen = false;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char c = name.charAt(i);
+            if ('_' == c) {
+                int j = i + 1;
+                if (j < length) {
+                    if ('_' == name.charAt(j) && !quotesOpen) {
+                        sb.append(".");
+                        sb.append("\"");
+                        i = j;
+                        quotesOpen = true;
+                    } else if ('_' == name.charAt(j) && quotesOpen) {
+                        sb.append("\"");
+                        sb.append(".");
+                        i = j;
+                        quotesOpen = false;
+                    } else {
+                        sb.append(".");
+                    }
+                } else {
+                    sb.append(".");
+                }
+            } else {
+                sb.append(Character.toLowerCase(c));
+            }
+        }
+        return sb.toString();
+    }
+
     public static String skewer(String camelHumps) {
         return skewer(camelHumps, '-');
     }
