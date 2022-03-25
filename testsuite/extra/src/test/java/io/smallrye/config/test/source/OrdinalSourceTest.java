@@ -2,7 +2,7 @@ package io.smallrye.config.test.source;
 
 import static org.testng.Assert.assertEquals;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;

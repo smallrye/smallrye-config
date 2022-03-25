@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.9.3-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>smallrye-config-validator</artifactId>
@@ -28,11 +28,11 @@
     <name>SmallRye: MicroProfile Config Validator</name>
 
     <properties>
-        <version.jakarta.validation>2.0.2</version.jakarta.validation>
+        <version.jakarta.validation>3.0.1</version.jakarta.validation>
 
         <!-- Test -->
-        <version.hibernate.validator>6.2.3.Final</version.hibernate.validator>
-        <version.jakarta.el>3.0.4</version.jakarta.el>
+        <version.hibernate.validator>8.0.0.Alpha2</version.hibernate.validator>
+        <version.jakarta.el>5.0.0-M1</version.jakarta.el>
     </properties>
 
     <dependencies>
@@ -56,6 +56,12 @@
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
             <version>${version.hibernate.validator}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
+            <version>5.0.0-RC1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

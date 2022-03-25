@@ -6,7 +6,7 @@ import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 
 import java.util.Optional;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
 
