@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -22,6 +23,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -1322,5 +1325,66 @@ class ConfigMappingInterfaceTest {
         assertEquals(10, mapping.list().get(0).getMax());
         assertEquals(2, mapping.list().get(1).getMin());
         assertEquals(20, mapping.list().get(1).getMax());
+    }
+
+    @ConfigMapping(prefix = "my-app.rest-config.my-client")
+    public interface MyRestClientConfig {
+        @WithParentName
+        Optional<RestClientConfig> client();
+
+        interface RestClientConfig {
+            URI baseUri();
+
+            KeystoreConfig keystore();
+
+            //List<Endpoint> endpoints();
+
+            interface KeystoreConfig {
+                Optional<String> type();
+
+                Path path();
+
+                String password();
+            }
+
+            interface Endpoint {
+                String path();
+            }
+        }
+    }
+
+    @Test
+    void envPropertiesWithoutDottedProperties() {
+        Map<String, String> env = new HashMap<String, String>() {
+            {
+                put("MY_APP_REST_CONFIG_MY_CLIENT_BASE_URI", "http://localhost:8080");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_KEYSTORE_PATH", "config/keystores/my-keys.p12");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_KEYSTORE_PASSWORD", "p@ssw0rd");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_1_PATH", "/hello");
+                //put("my-app.rest-config.my-client.endpoints[1].path", "/hello");
+            }
+        };
+
+        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
+        assertNotNull(envConfigSource.getValue("my-app.rest-config.my-client.base-uri"));
+        assertNotNull(envConfigSource.getValue("my-app.rest-config.my-client.keystore.password"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MyRestClientConfig.class)
+                .withSources(envConfigSource)
+                .withConverter(Path.class, 100, (Converter<Path>) Paths::get)
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertTrue(properties.contains("my-app.rest-config.my-client.base-uri"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.keystore.path"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.keystore.password"));
+
+        MyRestClientConfig mapping = config.getConfigMapping(MyRestClientConfig.class);
+        assertTrue(mapping.client().isPresent());
+        assertEquals(URI.create("http://localhost:8080"), mapping.client().get().baseUri());
+        assertEquals(Paths.get("config/keystores/my-keys.p12"), mapping.client().get().keystore().path());
+        assertEquals("p@ssw0rd", mapping.client().get().keystore().password());
+        //assertFalse(mapping.client().get().endpoints().isEmpty());
     }
 }

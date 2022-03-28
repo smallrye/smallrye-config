@@ -758,6 +758,7 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
 
+        config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), config));
         mapConfiguration(config, config.getConfigMappings());
     }
 
@@ -850,6 +851,32 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         return false;
+    }
+
+    private static Set<String> additionalMappedProperties(final Set<String> mappedProperties, final SmallRyeConfig config) {
+        // Collect EnvSource properties
+        Set<String> envProperties = new HashSet<>();
+        for (ConfigSource source : config.getConfigSources(EnvConfigSource.class)) {
+            envProperties.addAll(source.getPropertyNames());
+        }
+
+        // Remove properties that we know that already exist
+        for (String propertyName : config.getPropertyNames()) {
+            mappedProperties.remove(propertyName);
+        }
+
+        Set<String> additionalMappedProperties = new HashSet<>();
+        // Look for unmatched properties if we can find one in the Env ones and add it
+        for (String mappedProperty : mappedProperties) {
+            for (String envProperty : envProperties) {
+                // TODO - handled indexed.
+                if (envProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(mappedProperty))) {
+                    additionalMappedProperties.add(mappedProperty);
+                }
+            }
+        }
+
+        return additionalMappedProperties;
     }
 
     private static String normalizeIfIndexed(final String propertyName) {
