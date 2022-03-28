@@ -2,122 +2,122 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/config-value/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/expressions/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/getting-started/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/indexed-properties/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/map-support/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/mappings/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/profiles/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config/secret-keys/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/custom/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/factory/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/filesystem/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/hocon/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/locations/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/yaml/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/config-sources/zookeeper/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/converters/custom/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/converters/json/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/config-events/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/config-source-injection/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/fallback/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/interceptors/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/logging/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/3.0.0-SNAPSHOT/extensions/relocate/</loc>
-         <lastmod>2022-03-25</lastmod>
+         <lastmod>2022-03-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
