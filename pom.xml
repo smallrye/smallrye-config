@@ -38,7 +38,7 @@
     <version.smallrye.common>1.11.0</version.smallrye.common>
     <version.asm>9.2</version.asm>
 
-    <version.smallrye.testing.utilities>1.0.0</version.smallrye.testing.utilities>
+    <version.smallrye.testing>1.0.0</version.smallrye.testing>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
@@ -106,19 +106,7 @@
       <dependency>
         <groupId>io.smallrye.testing</groupId>
         <artifactId>smallrye-testing-utilities</artifactId>
-        <version>${version.smallrye.testing.utilities}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.microprofile.config</groupId>
-        <artifactId>microprofile-config-tck</artifactId>
-        <version>${version.eclipse.microprofile.config}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.arquillian.testng</groupId>
-        <artifactId>arquillian-testng-container</artifactId>
-        <version>${version.org.jboss.arquillian}</version>
+        <version>${version.smallrye.testing}</version>
         <scope>test</scope>
       </dependency>
 
