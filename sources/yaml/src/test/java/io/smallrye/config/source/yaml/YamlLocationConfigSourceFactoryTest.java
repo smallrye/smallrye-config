@@ -7,19 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Path;
 import java.util.logging.Level;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -92,69 +84,6 @@ class YamlLocationConfigSourceFactoryTest {
         SmallRyeConfig config = buildConfig("./src/test/resources/random.properties");
 
         assertEquals(0, countSources(config));
-    }
-
-    @Test
-    void multipleResourcesInClassPath(@TempDir Path tempDir) throws Exception {
-        JavaArchive jarOne = ShrinkWrap
-                .create(JavaArchive.class, "resources-one.jar")
-                .addAsResource(new StringAsset("my:\n" +
-                        "  prop:\n" +
-                        "    one: 1234\n"), "resources.yml");
-
-        Path filePathOne = tempDir.resolve("resources-one.jar");
-        jarOne.as(ZipExporter.class).exportTo(filePathOne.toFile());
-
-        JavaArchive jarTwo = ShrinkWrap
-                .create(JavaArchive.class, "resources-two.jar")
-                .addAsResource(new StringAsset("my:\n" +
-                        "  prop:\n" +
-                        "    two: 5678\n"), "resources.yml");
-
-        Path filePathTwo = tempDir.resolve("resources-two.jar");
-        jarTwo.as(ZipExporter.class).exportTo(filePathTwo.toFile());
-
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:" + filePathOne.toUri() + "!/"),
-                new URL("jar:" + filePathTwo.toUri() + "!/"),
-        }, contextClassLoader)) {
-            Thread.currentThread().setContextClassLoader(urlClassLoader);
-
-            SmallRyeConfig config = buildConfig("resources.yml");
-
-            assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals("5678", config.getRawValue("my.prop.two"));
-            assertEquals(2, countSources(config));
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
-    }
-
-    @Test
-    void jar(@TempDir Path tempDir) throws Exception {
-        JavaArchive jarOne = ShrinkWrap
-                .create(JavaArchive.class, "resources-one.jar")
-                .addAsResource(new StringAsset("my:\n" +
-                        "  prop:\n" +
-                        "    one: 1234\n"), "resources.yml");
-
-        Path filePathOne = tempDir.resolve("resources-one.jar");
-        jarOne.as(ZipExporter.class).exportTo(filePathOne.toFile());
-
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
-                new URL("jar:" + filePathOne.toUri() + "!/")
-        }, contextClassLoader)) {
-            Thread.currentThread().setContextClassLoader(urlClassLoader);
-
-            SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.yml");
-
-            assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals(1, countSources(config));
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
     }
 
     @Test
