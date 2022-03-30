@@ -323,9 +323,19 @@ final class ConfigMappingProvider implements Serializable {
 
         if (optional && property.asOptional().getNestedProperty().isGroup()) {
             GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
+            // To recursively create Optional nested groups
+            BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate = new BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject>() {
+                @SuppressWarnings("unchecked")
+                @Override
+                public ConfigMappingObject apply(ConfigMappingContext configMappingContext, NameIterator nameIterator) {
+                    if (matchAction instanceof BiFunction) {
+                        return (ConfigMappingObject) ((BiFunction) matchAction).apply(configMappingContext, nameIterator);
+                    }
+                    return null;
+                }
+            };
             GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
-                    property.isParentPropertyName() ? getEnclosingFunction
-                            : new ConsumeOneAndThenFn<>(getEnclosingFunction),
+                    property.isParentPropertyName() ? delegate : new ConsumeOneAndThenFn<>(delegate),
                     group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
                     nestedMatchAction,
@@ -727,10 +737,10 @@ final class ConfigMappingProvider implements Serializable {
             this.memberName = memberName;
         }
 
-        public ConfigMappingObject apply(final ConfigMappingContext mc, final NameIterator ni) {
-            ConfigMappingObject outer = getEnclosingFunction.apply(mc, ni);
+        public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
+            ConfigMappingObject outer = getEnclosingFunction.apply(context, ni);
             // eagerly populated groups will always exist
-            return (ConfigMappingObject) mc.getEnclosedField(type, memberName, outer);
+            return (ConfigMappingObject) context.getEnclosedField(type, memberName, outer);
         }
     }
 
