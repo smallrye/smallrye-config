@@ -1387,4 +1387,31 @@ class ConfigMappingInterfaceTest {
         assertEquals("p@ssw0rd", mapping.client().get().keystore().password());
         //assertFalse(mapping.client().get().endpoints().isEmpty());
     }
+
+    @ConfigMapping(prefix = "optionals")
+    interface NestedOptionals {
+        Optional<First> first();
+
+        interface First {
+            Optional<Second> second();
+
+            interface Second {
+                String value();
+            }
+        }
+    }
+
+    @Test
+    void nestedOptionals() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedOptionals.class)
+                .withSources(config("optionals.first.second.value", "value"))
+                .build();
+
+        NestedOptionals mapping = config.getConfigMapping(NestedOptionals.class);
+
+        assertTrue(mapping.first().isPresent());
+        assertTrue(mapping.first().get().second().isPresent());
+        assertEquals("value", mapping.first().get().second().get().value());
+    }
 }
