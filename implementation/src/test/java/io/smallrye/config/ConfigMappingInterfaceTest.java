@@ -1402,7 +1402,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void nestedOptionals() throws Exception {
+    void nestedOptionals() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(NestedOptionals.class)
                 .withSources(config("optionals.first.second.value", "value"))
@@ -1413,5 +1413,34 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.first().isPresent());
         assertTrue(mapping.first().get().second().isPresent());
         assertEquals("value", mapping.first().get().second().get().value());
+    }
+
+    @ConfigMapping(prefix = "optionals")
+    interface NestedOptionalMap {
+        Optional<First> first();
+
+        interface First {
+            Map<String, Second> second();
+        }
+
+        interface Second {
+            Optional<String> value();
+        }
+    }
+
+    @Test
+    void nestedOptionalMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedOptionalMap.class)
+                .withSources(config("optionals.first.second.key.value", "value"))
+                .build();
+
+        NestedOptionalMap mapping = config.getConfigMapping(NestedOptionalMap.class);
+
+        assertTrue(mapping.first().isPresent());
+        assertEquals(1, mapping.first().get().second().size());
+        assertNotNull(mapping.first().get().second().get("key"));
+        assertTrue(mapping.first().get().second().get("key").value().isPresent());
+        assertEquals("value", mapping.first().get().second().get("key").value().get());
     }
 }

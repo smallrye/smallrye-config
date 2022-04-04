@@ -323,23 +323,12 @@ final class ConfigMappingProvider implements Serializable {
 
         if (optional && property.asOptional().getNestedProperty().isGroup()) {
             GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
-            // To recursively create Optional nested groups
-            BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate = new BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject>() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public ConfigMappingObject apply(ConfigMappingContext configMappingContext, NameIterator nameIterator) {
-                    if (matchAction instanceof BiFunction) {
-                        return (ConfigMappingObject) ((BiFunction) matchAction).apply(configMappingContext, nameIterator);
-                    }
-                    return null;
-                }
-            };
             GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
-                    property.isParentPropertyName() ? delegate : new ConsumeOneAndThenFn<>(delegate),
+                    property.isParentPropertyName() ? new GetNestedEnclosing(matchAction)
+                            : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
                     group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    nestedMatchAction,
-                    nestedMatchAction, new HashSet<>());
+                    nestedMatchAction, nestedMatchAction, new HashSet<>());
         } else if (property.isGroup()) {
             GroupProperty asGroup = property.asGroup();
             GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
@@ -397,8 +386,9 @@ final class ConfigMappingProvider implements Serializable {
                 }
             }
         } else if (property.isMap()) {
-            processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), getEnclosingFunction,
-                    namingStrategy, group);
+            GetNestedEnclosing nestedMatchAction = new GetNestedEnclosing(matchAction);
+            processLazyMapInGroup(currentPath, matchActions, defaultValues, property.asMap(), nestedMatchAction, namingStrategy,
+                    group);
         } else if (property.isCollection() || optional && property.asOptional().getNestedProperty().isCollection()) {
             CollectionProperty collectionProperty = optional ? property.asOptional().getNestedProperty().asCollection()
                     : property.asCollection();
@@ -412,7 +402,8 @@ final class ConfigMappingProvider implements Serializable {
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final KeyMap<String> defaultValues,
-            final MapProperty property, BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingGroup,
+            final MapProperty property,
+            final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingGroup,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface enclosingGroup) {
 
@@ -741,6 +732,24 @@ final class ConfigMappingProvider implements Serializable {
             ConfigMappingObject outer = getEnclosingFunction.apply(context, ni);
             // eagerly populated groups will always exist
             return (ConfigMappingObject) context.getEnclosedField(type, memberName, outer);
+        }
+    }
+
+    // To recursively create Optional nested groups
+    static class GetNestedEnclosing implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> {
+        private final BiConsumer<ConfigMappingContext, NameIterator> matchAction;
+
+        public GetNestedEnclosing(final BiConsumer<ConfigMappingContext, NameIterator> matchAction) {
+            this.matchAction = matchAction;
+        }
+
+        @Override
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        public ConfigMappingObject apply(final ConfigMappingContext configMappingContext, final NameIterator nameIterator) {
+            if (matchAction instanceof BiFunction) {
+                return (ConfigMappingObject) ((BiFunction) matchAction).apply(configMappingContext, nameIterator);
+            }
+            return null;
         }
     }
 
