@@ -1443,4 +1443,40 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.first().get().second().get("key").value().isPresent());
         assertEquals("value", mapping.first().get().second().get("key").value().get());
     }
+
+    @ConfigMapping(prefix = "optionals")
+    interface NestedOptionalsGroupMap {
+        Optional<First> first();
+
+        interface First {
+            Optional<Second> second();
+        }
+
+        interface Second {
+            Optional<Third> third();
+        }
+
+        interface Third {
+            Map<String, String> properties();
+
+            String value();
+        }
+    }
+
+    @Test
+    void nestedOptionalsGroupMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedOptionalsGroupMap.class)
+                .withSources(config("optionals.first.second.third.properties.key", "value"))
+                .withSources(config("optionals.first.second.third.value", "value"))
+                .build();
+
+        NestedOptionalsGroupMap mapping = config.getConfigMapping(NestedOptionalsGroupMap.class);
+
+        assertTrue(mapping.first().isPresent());
+        assertTrue(mapping.first().get().second().isPresent());
+        assertTrue(mapping.first().get().second().get().third().isPresent());
+        assertEquals("value", mapping.first().get().second().get().third().get().properties().get("key"));
+        assertEquals("value", mapping.first().get().second().get().third().get().value());
+    }
 }

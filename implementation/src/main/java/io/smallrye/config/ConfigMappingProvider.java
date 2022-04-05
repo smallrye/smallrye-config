@@ -417,7 +417,8 @@ final class ConfigMappingProvider implements Serializable {
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final KeyMap<String> defaultValues,
-            final MapProperty property, BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
+            final MapProperty property,
+            final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface enclosingGroup) {
 
@@ -462,9 +463,7 @@ final class ConfigMappingProvider implements Serializable {
         } else if (valueProperty.isMap()) {
             currentPath.addLast("*");
             processLazyMap(currentPath, matchActions, defaultValues, valueProperty.asMap(), (mc, ni) -> {
-                ni.previous();
                 Map<?, ?> enclosingMap = getEnclosingMap.apply(mc, ni);
-                ni.next();
                 String rawMapKey = ni.getPreviousSegment();
                 Converter<?> keyConv;
                 SmallRyeConfig config = mc.getConfig();
@@ -627,9 +626,7 @@ final class ConfigMappingProvider implements Serializable {
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
-            ni.previous();
             Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, ni);
-            ni.next();
             String mapKey = mapKey(ni);
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
@@ -696,7 +693,23 @@ final class ConfigMappingProvider implements Serializable {
             boolean consumeName = !enclosedGroup.isParentPropertyName();
             if (consumeName)
                 ni.previous();
+
+            // We may need to reset the StringBuilder because the delegate may not be a Map
+            boolean restore = false;
+            StringBuilder sb = context.getStringBuilder();
+            if (ni.getPosition() != -1) {
+                restore = true;
+                ni.previous();
+                sb.setLength(0);
+                sb.append(ni.getAllPreviousSegments());
+            }
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
+            // Restore
+            if (restore) {
+                ni.next();
+                sb.setLength(0);
+                sb.append(ni.getAllPreviousSegments());
+            }
             if (consumeName)
                 ni.next();
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
