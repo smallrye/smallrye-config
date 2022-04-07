@@ -106,11 +106,30 @@ public class StringUtil {
 
     public static String toLowerCaseAndDotted(final String name) {
         int length = name.length();
+        int beginSegment = 0;
         boolean quotesOpen = false;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
             if ('_' == c) {
+                String segment = sb.substring(beginSegment, i);
+                try {
+                    Integer.parseInt(segment);
+                    sb.replace(beginSegment - 1, beginSegment, "[").append("]");
+
+                    int j = i + 1;
+                    if (j < length) {
+                        if ('_' == name.charAt(j)) {
+                            sb.append(".");
+                            i = j;
+                        }
+                    }
+
+                    continue;
+                } catch (NumberFormatException e) {
+                    // Ignore
+                }
+
                 int j = i + 1;
                 if (j < length) {
                     if ('_' == name.charAt(j) && !quotesOpen) {
@@ -129,6 +148,7 @@ public class StringUtil {
                 } else {
                     sb.append(".");
                 }
+                beginSegment = j;
             } else {
                 sb.append(Character.toLowerCase(c));
             }

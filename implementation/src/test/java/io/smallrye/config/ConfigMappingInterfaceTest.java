@@ -1337,7 +1337,7 @@ class ConfigMappingInterfaceTest {
 
             KeystoreConfig keystore();
 
-            //List<Endpoint> endpoints();
+            List<Endpoint> endpoints();
 
             interface KeystoreConfig {
                 Optional<String> type();
@@ -1349,6 +1349,8 @@ class ConfigMappingInterfaceTest {
 
             interface Endpoint {
                 String path();
+
+                List<String> methods();
             }
         }
     }
@@ -1360,8 +1362,9 @@ class ConfigMappingInterfaceTest {
                 put("MY_APP_REST_CONFIG_MY_CLIENT_BASE_URI", "http://localhost:8080");
                 put("MY_APP_REST_CONFIG_MY_CLIENT_KEYSTORE_PATH", "config/keystores/my-keys.p12");
                 put("MY_APP_REST_CONFIG_MY_CLIENT_KEYSTORE_PASSWORD", "p@ssw0rd");
-                put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_1_PATH", "/hello");
-                //put("my-app.rest-config.my-client.endpoints[1].path", "/hello");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__PATH", "/hello");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__METHODS_0_", "GET");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__METHODS_1_", "POST");
             }
         };
 
@@ -1379,13 +1382,19 @@ class ConfigMappingInterfaceTest {
         assertTrue(properties.contains("my-app.rest-config.my-client.base-uri"));
         assertTrue(properties.contains("my-app.rest-config.my-client.keystore.path"));
         assertTrue(properties.contains("my-app.rest-config.my-client.keystore.password"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.endpoints[0].path"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.endpoints[0].methods[0]"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.endpoints[0].methods[1]"));
 
         MyRestClientConfig mapping = config.getConfigMapping(MyRestClientConfig.class);
         assertTrue(mapping.client().isPresent());
         assertEquals(URI.create("http://localhost:8080"), mapping.client().get().baseUri());
         assertEquals(Paths.get("config/keystores/my-keys.p12"), mapping.client().get().keystore().path());
         assertEquals("p@ssw0rd", mapping.client().get().keystore().password());
-        //assertFalse(mapping.client().get().endpoints().isEmpty());
+        assertFalse(mapping.client().get().endpoints().isEmpty());
+        assertEquals("/hello", mapping.client().get().endpoints().get(0).path());
+        assertEquals("GET", mapping.client().get().endpoints().get(0).methods().get(0));
+        assertEquals("POST", mapping.client().get().endpoints().get(0).methods().get(1));
     }
 
     @ConfigMapping(prefix = "optionals")
