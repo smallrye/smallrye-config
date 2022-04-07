@@ -900,12 +900,64 @@ final class ConfigMappingProvider implements Serializable {
         Set<String> additionalMappedProperties = new HashSet<>();
         // Look for unmatched properties if we can find one in the Env ones and add it
         for (String mappedProperty : mappedProperties) {
+            Set<String> matchedEnvProperties = new HashSet<>();
             for (String envProperty : envProperties) {
-                // TODO - handled indexed.
                 if (envProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(mappedProperty))) {
                     additionalMappedProperties.add(mappedProperty);
+                    matchedEnvProperties.add(envProperty);
+                    break;
+                }
+
+                NameIterator ni = new NameIterator(mappedProperty);
+                StringBuilder sb = new StringBuilder();
+                while (ni.hasNext()) {
+                    String propertySegment = ni.getNextSegment();
+                    if (isIndexed(propertySegment)) {
+                        // A mapped index property is represented as foo.bar[*] or foo.bar[*].baz
+                        // The env property is represented as FOO_BAR_0_ or FOO_BAR_0__BAZ
+                        // We need to match these somehow
+                        int position = ni.getPosition();
+                        int indexStart = propertySegment.indexOf("[") + position + 1;
+                        // If the segment is indexed, we try to match all previous segments with the env candidates
+                        if (envProperty.length() >= indexStart
+                                && envProperty.toLowerCase().startsWith(replaceNonAlphanumericByUnderscores(
+                                        sb + propertySegment.substring(0, indexStart - position - 1) + "_"))) {
+
+                            // Search for the ending _ to retrieve the possible index
+                            int indexEnd = -1;
+                            for (int i = indexStart + 1; i < envProperty.length(); i++) {
+                                if (envProperty.charAt(i) == '_') {
+                                    indexEnd = i;
+                                    break;
+                                }
+                            }
+
+                            // Extract the index from the env property
+                            // We don't care if this is numeric, it will be validated on the mapping retrieval
+                            String index = envProperty.substring(indexStart + 1, indexEnd);
+                            sb.append(propertySegment, 0, propertySegment.indexOf("[") + 1)
+                                    .append(index)
+                                    .append("]");
+                        }
+                    } else {
+                        sb.append(propertySegment);
+                    }
+
+                    ni.next();
+
+                    if (ni.hasNext()) {
+                        sb.append(".");
+                    }
+                }
+
+                String mappedPropertyToMatch = sb.toString();
+                if (envProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(mappedPropertyToMatch))) {
+                    additionalMappedProperties.add(mappedPropertyToMatch);
+                    matchedEnvProperties.add(envProperty);
+                    // We cannot break here because if there are indexed properties they may match multiple envs
                 }
             }
+            envProperties.removeAll(matchedEnvProperties);
         }
 
         return additionalMappedProperties;
@@ -937,6 +989,23 @@ final class ConfigMappingProvider implements Serializable {
         builder.append(propertyName, pos, propertyName.length());
 
         return builder.toString();
+    }
+
+    private static boolean isIndexed(final String propertyName) {
+        int indexStart = propertyName.indexOf("[");
+        int indexEnd = propertyName.indexOf("]");
+        if (indexStart != -1 && indexEnd != -1) {
+            String index = propertyName.substring(indexStart + 1, indexEnd);
+            if (index.equals("*")) {
+                return true;
+            }
+            try {
+                Integer.parseInt(index);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static boolean validateUnknown(final boolean validateUnknown, final SmallRyeConfig config) {

@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.StreamSupport;
 
@@ -94,5 +97,27 @@ class EnvConfigSourceTest {
 
         assertTrue(configSource instanceof EnvConfigSource);
         assertEquals(configSource.getOrdinal(), 301);
+    }
+
+    @Test
+    void indexed() {
+        Map<String, String> env = new HashMap<String, String>() {
+            {
+                put("INDEXED_0_", "foo");
+                put("INDEXED_0__PROP", "bar");
+                put("INDEXED_0__PROPS_0_", "0");
+                put("INDEXED_0__PROPS_1_", "1");
+            }
+        };
+
+        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(envConfigSource)
+                .build();
+
+        assertTrue(config.getValues("indexed", String.class, ArrayList::new).contains("foo"));
+        assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("0"));
+        assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("1"));
     }
 }
