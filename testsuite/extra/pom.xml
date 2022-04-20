@@ -30,7 +30,7 @@
   <name>SmallRye: MicroProfile Config Test Suite - Extra</name>
 
   <properties>
-    <kotlin.version>1.6.20</kotlin.version>
+    <kotlin.version>1.6.21</kotlin.version>
   </properties>
 
   <dependencies>
