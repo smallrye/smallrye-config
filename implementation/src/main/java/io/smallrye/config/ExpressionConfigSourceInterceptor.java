@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.common.expression.Expression.Flag.ESCAPES;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
 import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
@@ -51,8 +52,8 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return null;
         }
 
-        final Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
-                NO_SMART_BRACES);
+        final Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), ESCAPES, LENIENT_SYNTAX,
+                NO_TRIM, NO_SMART_BRACES);
         final String expanded = expression.evaluate((resolveContext, stringBuilder) -> {
             final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
             if (resolve != null) {
