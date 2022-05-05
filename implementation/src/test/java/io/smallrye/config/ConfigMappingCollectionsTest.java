@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import javax.management.relation.Role;
+
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -500,6 +502,7 @@ public class ConfigMappingCollectionsTest {
         assertEquals("localhost", mapping.present().get().get(0).get("localhost"));
     }
 
+    @ConfigMapping
     public interface MapKeyWithIndexedSyntax {
         Map<String, String> map();
     }
@@ -518,5 +521,168 @@ public class ConfigMappingCollectionsTest {
         assertEquals("value", mapping.map().get("key"));
         assertEquals("value", mapping.map().get("key[x]"));
         assertEquals("value", mapping.map().get("key[0-9]"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapWithCollections {
+        Map<String, List<String>> roles();
+
+        Map<String, Set<String>> alias();
+    }
+
+    @Test
+    void mapWithColllections() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithCollections.class)
+                .withSources(config("map.roles.user[0]", "p1"))
+                .withSources(config("map.roles.admin[0]", "p2", "map.roles.admin[1]", "p3"))
+                .withSources(config("map.alias.user[0]", "p1"))
+                .withSources(config("map.alias.admin[0]", "p2", "map.roles.admin[1]", "p2"))
+                .build();
+
+        MapWithCollections mapping = config.getConfigMapping(MapWithCollections.class);
+
+        assertEquals("p1", mapping.roles().get("user").get(0));
+        assertEquals("p2", mapping.roles().get("admin").get(0));
+        assertEquals("p3", mapping.roles().get("admin").get(1));
+
+        assertEquals(1, mapping.alias().get("user").size());
+        assertTrue(mapping.alias().get("user").contains("p1"));
+        assertEquals(1, mapping.alias().get("admin").size());
+        assertTrue(mapping.alias().get("admin").contains("p2"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapWithListsGroup {
+        Map<String, List<Role>> roles();
+
+        interface Role {
+            String name();
+
+            List<String> aliases();
+
+            Map<String, List<String>> permissions();
+        }
+    }
+
+    @Test
+    void mapWithListsGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithListsGroup.class)
+                .withSources(config(
+                        "map.roles.user[0].name", "p1",
+                        "map.roles.user[0].aliases[0]", "user-role-p1",
+                        "map.roles.user[0].permissions.read[0]", "read"))
+                .withSources(config(
+                        "map.roles.admin[0].name", "p2",
+                        "map.roles.admin[0].aliases", "admin-role-p2,administrator-role-p2",
+                        "map.roles.admin[0].permissions.read[0]", "read",
+                        "map.roles.admin[1].name", "p3",
+                        "map.roles.admin[1].aliases", "admin-role-p3,administrator-role-p3",
+                        "map.roles.admin[1].permissions.write[0]", "create",
+                        "map.roles.admin[1].permissions.write[1]", "update"))
+                .build();
+
+        MapWithListsGroup mapping = config.getConfigMapping(MapWithListsGroup.class);
+
+        assertEquals(1, mapping.roles().get("user").size());
+        assertEquals("p1", mapping.roles().get("user").get(0).name());
+        assertEquals("user-role-p1", mapping.roles().get("user").get(0).aliases().get(0));
+        assertEquals("read", mapping.roles().get("user").get(0).permissions().get("read").get(0));
+        assertEquals(2, mapping.roles().get("admin").size());
+        assertEquals("p2", mapping.roles().get("admin").get(0).name());
+        assertEquals("admin-role-p2", mapping.roles().get("admin").get(0).aliases().get(0));
+        assertEquals("administrator-role-p2", mapping.roles().get("admin").get(0).aliases().get(1));
+        assertEquals("read", mapping.roles().get("admin").get(0).permissions().get("read").get(0));
+        assertEquals("p3", mapping.roles().get("admin").get(1).name());
+        assertEquals("admin-role-p3", mapping.roles().get("admin").get(1).aliases().get(0));
+        assertEquals("administrator-role-p3", mapping.roles().get("admin").get(1).aliases().get(1));
+        assertEquals("create", mapping.roles().get("admin").get(1).permissions().get("write").get(0));
+        assertEquals("update", mapping.roles().get("admin").get(1).permissions().get("write").get(1));
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapWithListsAndParentName {
+        Map<String, Roles> roles();
+
+        Map<String, Aliases> aliases();
+
+        interface Roles {
+            @WithParentName
+            List<String> roles();
+        }
+
+        interface Aliases {
+            List<String> alias();
+        }
+    }
+
+    @Test
+    void mapWithListsAndParentName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithListsAndParentName.class)
+                .withSources(config("map.roles.user", "p1"))
+                .withSources(config("map.roles.admin", "p2,p3"))
+                .build();
+
+        MapWithListsAndParentName mapping = config.getConfigMapping(MapWithListsAndParentName.class);
+
+        assertEquals("p1", mapping.roles().get("user").roles().get(0));
+        assertEquals("p2", mapping.roles().get("admin").roles().get(0));
+        assertEquals("p3", mapping.roles().get("admin").roles().get(1));
+
+        config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithListsAndParentName.class)
+                .withSources(config("map.roles.user[0]", "p1"))
+                .withSources(config("map.roles.admin[0]", "p2", "map.roles.admin[1]", "p3"))
+                .withSources(config("map.aliases.user.alias[0]", "username", "map.aliases.user.alias[1]", "login"))
+                .withSources(config("map.aliases.admin.alias[0]", "administrator", "map.aliases.admin.alias[1]", "root"))
+                .build();
+
+        mapping = config.getConfigMapping(MapWithListsAndParentName.class);
+
+        assertEquals("p1", mapping.roles().get("user").roles().get(0));
+        assertEquals("p2", mapping.roles().get("admin").roles().get(0));
+        assertEquals("p3", mapping.roles().get("admin").roles().get(1));
+        assertEquals("username", mapping.aliases().get("user").alias().get(0));
+        assertEquals("login", mapping.aliases().get("user").alias().get(1));
+        assertEquals("administrator", mapping.aliases().get("admin").alias().get(0));
+        assertEquals("root", mapping.aliases().get("admin").alias().get(1));
+    }
+
+    @ConfigMapping(prefix = "maps")
+    public interface NestedMaps {
+        Map<String, Map<String, String>> values();
+
+        Map<String, Map<String, List<String>>> roles();
+
+        Map<String, Map<String, List<Aliases>>> aliases();
+
+        interface Aliases {
+            String name();
+        }
+    }
+
+    @Test
+    void nestedMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedMaps.class)
+                .withSources(config(
+                        "maps.values.key1.nested-key1", "value"))
+                .withSources(config(
+                        "maps.roles.user.crud[0]", "read",
+                        "maps.roles.user.crud[1]", "write"))
+                .withSources(config(
+                        "maps.aliases.user.system[0].name", "username",
+                        "maps.aliases.user.system[1].name", "login"))
+                .build();
+
+        NestedMaps configMapping = config.getConfigMapping(NestedMaps.class);
+
+        assertEquals("value", configMapping.values().get("key1").get("nested-key1"));
+        assertEquals("read", configMapping.roles().get("user").get("crud").get(0));
+        assertEquals("write", configMapping.roles().get("user").get("crud").get(1));
+        assertEquals("username", configMapping.aliases().get("user").get("system").get(0).name());
+        assertEquals("login", configMapping.aliases().get("user").get("system").get(1).name());
     }
 }

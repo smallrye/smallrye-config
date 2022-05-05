@@ -220,6 +220,21 @@ class SmallRyeConfigTest {
     }
 
     @Test
+    void nestedIndexes() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "map.roles.admin[0].name", "",
+                        "map.roles.admin[1].name", "",
+                        "map.roles.admin[0].address", ""))
+                .build();
+
+        List<Integer> indexes = config.getIndexedPropertiesIndexes("map.roles.admin");
+        assertEquals(2, indexes.size());
+        assertTrue(indexes.contains(0));
+        assertTrue(indexes.contains(1));
+    }
+
+    @Test
     void overrideIndexedValues() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config(

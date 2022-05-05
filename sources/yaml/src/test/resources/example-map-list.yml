@@ -1,0 +1,40 @@
+map:
+  roles:
+    hokage:
+      -
+        name: Senju Hashirama
+        nature: Earth,Water
+      -
+        name: Senju Tobirama
+        nature: Water
+      -
+        name: Sarotobi Hiruzen
+        nature: Fire
+      -
+        name: Namikaze Minato
+        nature: Fire,Wind,Lightning
+      -
+        name: Tsunade
+        nature: Lightning
+      -
+        name: Hatake Kakashi
+        nature: Lightning
+      -
+        name: Uzumaki Naruto
+        nature: Wind
+        jutsus:
+          -
+            name: Rasengan
+            rank: A
+          -
+            name: Bijūdama
+            rank: S
+        teams:
+          "Team Kakashi":
+            - Hatake Kakashi
+            - Uchiha Sasuke
+            - Haruno Sakura
+          "Kazekage Rescue Team":
+            - Hatake Kakashi
+            - Chiyo
+            - Haruno Sakura
