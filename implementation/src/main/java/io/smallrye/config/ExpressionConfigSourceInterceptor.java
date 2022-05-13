@@ -5,12 +5,14 @@ import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import javax.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
 
 import io.smallrye.common.expression.Expression;
+import io.smallrye.common.expression.ResolveContext;
 
 @Priority(Priorities.LIBRARY + 300)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
@@ -53,14 +55,18 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
         final Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
                 NO_SMART_BRACES);
-        final String expanded = expression.evaluate((resolveContext, stringBuilder) -> {
-            final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
-            if (resolve != null) {
-                stringBuilder.append(resolve.getValue());
-            } else if (resolveContext.hasDefault()) {
-                resolveContext.expandDefault();
-            } else {
-                throw ConfigMessages.msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName());
+        final String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
+            @Override
+            public void accept(ResolveContext<RuntimeException> resolveContext,
+                    StringBuilder stringBuilder) {
+                final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
+                if (resolve != null) {
+                    stringBuilder.append(resolve.getValue());
+                } else if (resolveContext.hasDefault()) {
+                    resolveContext.expandDefault();
+                } else {
+                    throw ConfigMessages.msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName());
+                }
             }
         });
 
