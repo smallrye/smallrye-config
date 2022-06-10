@@ -22,8 +22,9 @@ import static java.util.Collections.unmodifiableMap;
 
 import java.io.Serializable;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
+import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Set;
 
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -80,7 +81,21 @@ public class EnvConfigSource extends MapBackedConfigSource {
      * instantiated in the heap.
      */
     private static Map<String, String> getEnvProperties() {
-        return unmodifiableMap(doPrivileged((PrivilegedAction<Map<String, String>>) () -> new HashMap<>(System.getenv())));
+        Map<String, String> wrapEnv = new AbstractMap<String, String>() {
+            /** {@inheritDoc} */
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv).entrySet();
+            }
+
+            /** {@inheritDoc} */
+            @Override
+            public String get(Object key) {
+                // overriding get for performance to prevent full iteration that AbstractMap.get does
+                return doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv).get(key);
+            }
+        };
+        return unmodifiableMap(wrapEnv);
     }
 
     private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {
