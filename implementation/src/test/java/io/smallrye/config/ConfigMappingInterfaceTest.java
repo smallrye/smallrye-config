@@ -1488,4 +1488,47 @@ class ConfigMappingInterfaceTest {
         assertEquals("value", mapping.first().get().second().get().third().get().properties().get("key"));
         assertEquals("value", mapping.first().get().second().get().third().get().value());
     }
+
+    @ConfigMapping(prefix = "optional-map")
+    public interface NestedOptionalMapGroup {
+        Optional<Boolean> enable();
+
+        Map<String, Map<String, MessageUtilConfiguration>> map();
+
+        interface MessageUtilConfiguration {
+            Optional<Boolean> enable();
+        }
+    }
+
+    @Test
+    void nestedOptionalAndMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedOptionalMapGroup.class)
+                .withSources(config("optional-map.enable", "true"))
+                .withSources(config("optional-map.map.filter.default.enable", "false",
+                        "optional-map.map.filter.get-jokes-uni.enable", "true"))
+                .withSources(config("optional-map.map.client.reaction-api.enable", "true",
+                        "optional-map.map.client.setup-api.enable", "true"))
+                .build();
+
+        NestedOptionalMapGroup mapping = config.getConfigMapping(NestedOptionalMapGroup.class);
+        assertTrue(mapping.enable().isPresent());
+        assertTrue(mapping.enable().get());
+
+        assertEquals(2, mapping.map().size());
+        assertTrue(mapping.map().containsKey("filter"));
+        assertTrue(mapping.map().get("filter").containsKey("default"));
+        assertTrue(mapping.map().get("filter").containsKey("get-jokes-uni"));
+        assertTrue(mapping.map().containsKey("client"));
+        assertTrue(mapping.map().get("client").containsKey("reaction-api"));
+        assertTrue(mapping.map().get("client").containsKey("setup-api"));
+        assertTrue(mapping.map().get("filter").get("default").enable().isPresent());
+        assertFalse(mapping.map().get("filter").get("default").enable().get());
+        assertTrue(mapping.map().get("filter").get("get-jokes-uni").enable().isPresent());
+        assertTrue(mapping.map().get("filter").get("get-jokes-uni").enable().get());
+        assertTrue(mapping.map().get("client").get("reaction-api").enable().isPresent());
+        assertTrue(mapping.map().get("client").get("reaction-api").enable().get());
+        assertTrue(mapping.map().get("client").get("setup-api").enable().isPresent());
+        assertTrue(mapping.map().get("client").get("setup-api").enable().get());
+    }
 }
