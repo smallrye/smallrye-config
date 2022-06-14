@@ -12,6 +12,7 @@ nav:
       - 'Getting Started': config/getting-started.md
       - 'Expressions': config/expressions.md
       - 'Profiles': config/profiles.md
+      - 'Environment Variables': config/environment-variables.md
       - 'Indexed Properties': config/indexed-properties.md
       - 'ConfigValue': config/config-value.md
       - 'Mappings': config/mappings.md
