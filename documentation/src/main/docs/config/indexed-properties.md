@@ -26,8 +26,3 @@ indexed and unindexed format, the unindexed value has priority.
 The indexed property is sorted by its index before being added to the target `Collection`. Any gaps in the indexes do 
 not resolve to the target `Collection`, which means that the `Collection` result will store all values without empty 
 elements.
-
-!!! danger
-
-    Indexed Properties are not supported in Environment Variables.
-
