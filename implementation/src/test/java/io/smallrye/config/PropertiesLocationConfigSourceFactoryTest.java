@@ -9,14 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -24,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.sun.net.httpserver.HttpServer;
 
+import io.smallrye.config.common.MapBackedConfigSource;
 import io.smallrye.testing.logging.LogCapture;
 
 class PropertiesLocationConfigSourceFactoryTest {
@@ -279,6 +286,67 @@ class PropertiesLocationConfigSourceFactoryTest {
         }
         builder.build();
         assertTrue(logCapture.records().isEmpty());
+    }
+
+    @Test
+    void profileSourcesInContext(@TempDir Path tempDir) throws Exception {
+        Properties mainProperties = new Properties();
+        mainProperties.setProperty("config_ordinal", "150");
+        mainProperties.setProperty("my.prop.main", "main");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config.properties").toFile())) {
+            mainProperties.store(out, null);
+        }
+
+        Properties devProperties = new Properties();
+        devProperties.setProperty("my.prop.dev", "dev");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("config-dev.properties").toFile())) {
+            devProperties.store(out, null);
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDiscoveredSources()
+                .addDefaultInterceptors()
+                .withProfile("dev")
+                .withSources(new ConfigSourceProvider() {
+                    @Override
+                    public Iterable<ConfigSource> getConfigSources(final ClassLoader forClassLoader) {
+                        AbstractLocationConfigSourceLoader configSourceLoader = new AbstractLocationConfigSourceLoader() {
+                            @Override
+                            protected String[] getFileExtensions() {
+                                return new String[] { "properties" };
+                            }
+
+                            @Override
+                            protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
+                                return new PropertiesConfigSource(url, ordinal);
+                            }
+                        };
+
+                        return configSourceLoader.loadConfigSources(tempDir.resolve("config.properties").toUri().toString(),
+                                250);
+                    }
+                })
+                .withSources(new ConfigSourceFactory() {
+                    @Override
+                    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+                        Map<String, String> values = new HashMap<>();
+                        values.put("context.main", context.getValue("my.prop.main").getRawValue());
+                        values.put("context.dev", context.getValue("my.prop.dev").getRawValue());
+                        return Collections.singletonList(new MapBackedConfigSource("map", values) {
+                        });
+                    }
+                })
+                .build();
+
+        assertEquals("main", config.getRawValue("my.prop.main"));
+        assertEquals("dev", config.getRawValue("my.prop.dev"));
+        assertEquals("main", config.getRawValue("context.main"));
+        assertEquals("dev", config.getRawValue("context.dev"));
+
+        for (final ConfigSource configSource : config.getConfigSources()) {
+            System.out.println("configSource = " + configSource);
+        }
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

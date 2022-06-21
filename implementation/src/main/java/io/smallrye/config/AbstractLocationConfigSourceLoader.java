@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -188,14 +189,22 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     protected List<ConfigSource> tryProfiles(final URI uri, final ConfigSource mainSource) {
         final List<ConfigSource> configSources = new ArrayList<>();
-        configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
-            final List<ConfigSource> profileSources = new ArrayList<>();
-            for (int i = profiles.size() - 1; i >= 0; i--) {
-                final int ordinal = mainSource.getOrdinal() + profiles.size() - i;
-                final URI profileUri = addProfileName(uri, profiles.get(i));
-                addProfileConfigSource(toURL(profileUri), ordinal, profileSources);
+        configSources.add(new ConfigurableConfigSource(new ProfileConfigSourceFactory() {
+            @Override
+            public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
+                final List<ConfigSource> profileSources = new ArrayList<>();
+                for (int i = profiles.size() - 1; i >= 0; i--) {
+                    final int ordinal = mainSource.getOrdinal() + profiles.size() - i;
+                    final URI profileUri = addProfileName(uri, profiles.get(i));
+                    AbstractLocationConfigSourceLoader.this.addProfileConfigSource(toURL(profileUri), ordinal, profileSources);
+                }
+                return profileSources;
             }
-            return profileSources;
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(mainSource.getOrdinal());
+            }
         }));
         return configSources;
     }
@@ -315,19 +324,5 @@ public abstract class AbstractLocationConfigSourceLoader {
         } else {
             return uri;
         }
-    }
-
-    interface ProfileConfigSourceFactory extends ConfigSourceFactory {
-        @Override
-        default Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-            final List<String> profiles = context.getProfiles();
-            if (profiles.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            return getProfileConfigSources(profiles);
-        }
-
-        Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles);
     }
 }
