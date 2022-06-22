@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,21 @@ class ConfigValueTest {
         assertEquals("1234", configValue.getRawValue());
         assertEquals("ConfigValueConfigSource", configValue.getSourceName());
         assertEquals(1000, configValue.getSourceOrdinal());
+    }
+
+    @Test
+    void configValueEquals() {
+        ConfigValue o1 = io.smallrye.config.ConfigValue.builder().withName("my.prop").build();
+        ConfigValue o2 = io.smallrye.config.ConfigValue.builder().withName("my.prop").build();
+        assertEquals(o2, o1);
+
+        o1 = io.smallrye.config.ConfigValue.builder().withName("my.prop").withValue("value").build();
+        o2 = io.smallrye.config.ConfigValue.builder().withName("my.prop").build();
+        assertNotEquals(o2, o1);
+
+        o1 = io.smallrye.config.ConfigValue.builder().withName("my.prop").withLineNumber(1).build();
+        o2 = io.smallrye.config.ConfigValue.builder().withName("my.prop").withLineNumber(2).build();
+        assertEquals(o2, o1);
     }
 
     public static class ConfigValueConfigSource implements ConfigSource {
