@@ -56,6 +56,6 @@ Will map to `foo.bar-baz` and value `value`.
 
 !!! note
 
-The property name in dotted format needs to exist somewhere to provide this additional information. It can be set in a 
-low ordinal source, even without value. The Environment Variables source will override the value and map the correct 
-configuration name.
+    The property name in dotted format needs to exist somewhere to provide this additional information. It can be set in a 
+    low ordinal source, even without value. The Environment Variables source will override the value and map the correct 
+    configuration name.
