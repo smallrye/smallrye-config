@@ -538,15 +538,14 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Init all late sources
             List<String> profiles = getProfiles(interceptors);
-            List<ConfigSourceWithPriority> sourcesWithPriorities = mapLateSources(current, sources, profiles,
-                    builder.isAddDiscoveredSources());
+            List<ConfigSourceWithPriority> sourcesWithPriorities = mapLateSources(sources, interceptors, current, profiles,
+                    builder);
 
             // Rebuild the chain with the late sources and new instances of the interceptors
             // The new instance will ensure that we get rid of references to factories and other stuff and keep only
             // the resolved final source or interceptor to use.
             current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
-            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities),
-                    current);
+            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current);
             for (ConfigSourceInterceptor interceptor : interceptors) {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
             }
@@ -612,71 +611,88 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         private static List<ConfigSourceWithPriority> mapLateSources(
-                final SmallRyeConfigSourceInterceptorContext initChain,
                 final List<ConfigSource> sources,
+                final List<ConfigSourceInterceptor> interceptors,
+                final ConfigSourceInterceptorContext current,
                 final List<String> profiles,
-                final boolean addDiscoveredSources) {
+                final SmallRyeConfigBuilder builder) {
 
             ConfigSourceWithPriority.resetLoadPriority();
+            List<ConfigSourceWithPriority> currentSources = new ArrayList<>();
 
-            List<ConfigurableConfigSource> lateSources = new ArrayList<>();
-            for (ConfigSource source : sources) {
-                if (source instanceof ConfigurableConfigSource) {
-                    lateSources.add((ConfigurableConfigSource) source);
+            // Init all profile sources first
+            List<ConfigSource> profileSources = new ArrayList<>();
+            ConfigSourceContext mainContext = new SmallRyeConfigSourceContext(current, profiles);
+            for (ConfigurableConfigSource profileSource : getConfigurableSources(sources)) {
+                if (profileSource.getFactory() instanceof ProfileConfigSourceFactory) {
+                    profileSources.addAll(profileSource.getConfigSources(mainContext));
                 }
             }
-            lateSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal));
 
+            // Sort the profiles sources with the main sources
+            currentSources.addAll(mapSources(profileSources));
+            currentSources.addAll(mapSources(sources));
+            currentSources.sort(null);
+            Collections.reverse(currentSources);
+
+            // Rebuild the chain with the profiles sources, so profiles values are also available in factories
+            ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
+            context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources), context);
+            for (ConfigSourceInterceptor interceptor : interceptors) {
+                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context);
+            }
+
+            // Init remaining sources, coming from SmallRyeConfig
             int countSourcesFromLocations = 0;
-            List<ConfigSourceWithPriority> sourcesWithPriority = new ArrayList<>();
-            for (ConfigurableConfigSource configurableSource : lateSources) {
-                final List<ConfigSource> configSources = configurableSource.getConfigSources(new ConfigSourceContext() {
-                    @Override
-                    public ConfigValue getValue(final String name) {
-                        ConfigValue value = initChain.proceed(name);
-                        return value != null ? value : ConfigValue.builder().withName(name).build();
+            List<ConfigSource> lateSources = new ArrayList<>();
+            ConfigSourceContext profileContext = new SmallRyeConfigSourceContext(context, profiles);
+            for (ConfigurableConfigSource lateSource : getConfigurableSources(sources)) {
+                if (!(lateSource.getFactory() instanceof ProfileConfigSourceFactory)) {
+                    List<ConfigSource> configSources = lateSource.getConfigSources(profileContext);
+
+                    if (lateSource.getFactory() instanceof AbstractLocationConfigSourceFactory) {
+                        countSourcesFromLocations = countSourcesFromLocations + configSources.size();
                     }
 
-                    @Override
-                    public List<String> getProfiles() {
-                        return profiles;
-                    }
-
-                    @Override
-                    public Iterator<String> iterateNames() {
-                        return initChain.iterateNames();
-                    }
-                });
-
-                if (configurableSource.getFactory() instanceof AbstractLocationConfigSourceFactory) {
-                    countSourcesFromLocations = countSourcesFromLocations + configSources.size();
-                }
-
-                for (ConfigSource configSource : configSources) {
-                    sourcesWithPriority.add(new ConfigSourceWithPriority(configSource));
+                    lateSources.addAll(configSources);
                 }
             }
 
-            if (countSourcesFromLocations == 0 && addDiscoveredSources) {
-                ConfigValue locations = initChain.proceed(SMALLRYE_CONFIG_LOCATIONS);
+            if (countSourcesFromLocations == 0 && builder.isAddDiscoveredSources()) {
+                ConfigValue locations = profileContext.getValue(SMALLRYE_CONFIG_LOCATIONS);
                 if (locations != null && locations.getValue() != null) {
                     ConfigLogging.log.configLocationsNotFound(SMALLRYE_CONFIG_LOCATIONS, locations.getValue());
                 }
             }
 
-            sourcesWithPriority.addAll(mapSources(sources));
-            sourcesWithPriority.sort(null);
-            Collections.reverse(sourcesWithPriority);
+            // Sort the final sources
+            currentSources.clear();
+            currentSources.addAll(mapSources(lateSources));
+            currentSources.addAll(mapSources(profileSources));
+            currentSources.addAll(mapSources(sources));
+            currentSources.sort(null);
+            Collections.reverse(currentSources);
 
-            return sourcesWithPriority;
+            return currentSources;
         }
 
         private static List<ConfigSource> getSources(final List<ConfigSourceWithPriority> sourceWithPriorities) {
-            final List<ConfigSource> configSources = new ArrayList<>();
+            List<ConfigSource> configSources = new ArrayList<>();
             for (ConfigSourceWithPriority configSourceWithPriority : sourceWithPriorities) {
                 configSources.add(configSourceWithPriority.getSource());
             }
             return Collections.unmodifiableList(configSources);
+        }
+
+        private static List<ConfigurableConfigSource> getConfigurableSources(final List<ConfigSource> sources) {
+            List<ConfigurableConfigSource> configurableConfigSources = new ArrayList<>();
+            for (ConfigSource source : sources) {
+                if (source instanceof ConfigurableConfigSource) {
+                    configurableConfigSources.add((ConfigurableConfigSource) source);
+                }
+            }
+            configurableConfigSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal).reversed());
+            return Collections.unmodifiableList(configurableConfigSources);
         }
 
         /**
