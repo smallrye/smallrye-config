@@ -129,15 +129,18 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             return false;
         }
         final ConfigValue that = (ConfigValue) o;
-        return name.equals(that.name) &&
-                value.equals(that.value) &&
-                rawValue.equals(that.rawValue) &&
-                configSourceName.equals(that.configSourceName);
+        return configSourceOrdinal == that.configSourceOrdinal &&
+                configSourcePosition == that.configSourcePosition &&
+                name.equals(that.name) &&
+                Objects.equals(value, that.value) &&
+                Objects.equals(rawValue, that.rawValue) &&
+                Objects.equals(profile, that.profile) &&
+                Objects.equals(configSourceName, that.configSourceName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, value, configSourceName);
+        return Objects.hash(name, value, rawValue, profile, configSourceName, configSourceOrdinal, configSourcePosition);
     }
 
     @Override
