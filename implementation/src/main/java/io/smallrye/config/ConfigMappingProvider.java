@@ -790,7 +790,7 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), config));
-        mapConfiguration(config, config.getConfigMappings());
+        SecretKeys.doUnlocked(() -> mapConfiguration(config, config.getConfigMappings()));
     }
 
     private void mapConfiguration(SmallRyeConfig config, ConfigMappings mappings) throws ConfigValidationException {
