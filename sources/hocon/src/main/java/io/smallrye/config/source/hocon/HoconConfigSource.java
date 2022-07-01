@@ -6,11 +6,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -27,12 +25,6 @@ public class HoconConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -458821383311704657L;
 
     static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 5;
-
-    @Deprecated
-    public HoconConfigSource(Config config, String source, int ordinal) {
-        super("HoconConfigSource[source=" + source + "]", Collections.unmodifiableMap(config.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> config.getString(entry.getKey())))), ordinal);
-    }
 
     public HoconConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
@@ -55,7 +47,7 @@ public class HoconConfigSource extends MapBackedConfigSource {
     private static Map<String, String> streamToMap(InputStream inputStream) throws IOException {
         final Map<String, String> input = new TreeMap<>();
         try (Reader reader = new InputStreamReader(inputStream)) {
-            Config config = ConfigFactory.parseReader(reader);
+            Config config = ConfigFactory.parseReader(reader).resolve();
             input.putAll(configToMap(config));
         }
         return input;

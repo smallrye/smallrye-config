@@ -1,6 +1,7 @@
 package io.smallrye.config.source.hocon;
 
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
+import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +13,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithParentName;
@@ -46,6 +48,21 @@ class HoconConfigSourceTest {
         assertEquals(2, source.getProperties().entrySet().size());
         assertEquals("1", source.getProperties().get("hello.world"));
         assertEquals("Hell yeah!", source.getProperties().get("hello.foo.bar"));
+    }
+
+    @Test
+    void expressions() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(new PropertiesConfigSource(singletonMap("foo", "baz"), "properties", 1000))
+                .withSources(new HoconConfigSource(HoconConfigSource.class.getResource("/expressions.conf")))
+                .build();
+
+        assertEquals("baz", config.getRawValue("foo"));
+        // Resolved by internally by HOCON
+        assertEquals("bar", config.getRawValue("expression"));
+        // Resolved by config interceptor
+        assertEquals("baz", config.getRawValue("interceptor"));
     }
 
     @Test

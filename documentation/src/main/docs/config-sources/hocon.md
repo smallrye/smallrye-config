@@ -14,3 +14,26 @@ The following dependency is required in the classpath to use the HOCON Config So
     <version>{{attributes['version']}}</version>
 </dependency>
 ```
+
+Expressions defined as `${value}` (unquoted) are resolved internally by the HOCON Config Source as described in the
+[HOCON Substitutions](https://github.com/lightbend/config/blob/main/HOCON.md#substitutions) documentation. Quoted 
+Expressions defined as `"${value}"` are resolved by [SmallRye Config Property Expressions](../config/expressions.md).
+
+Consider:
+
+**hocon.conf**
+```conf
+{
+   foo: "bar",
+   hocon: ${foo},
+   config: "${foo}" 
+}
+```
+
+**application.properties**
+```properties
+config_ordinal=1000
+foo=baz
+```
+
+The value of `hocon` is `bar` and the value of `config` is `baz` (if the properties source has a higher ordinal).
