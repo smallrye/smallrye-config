@@ -765,8 +765,8 @@
 with <code>_</code>: <code>FOO__BAR__BAZ</code></li>
 <li>A property with dashes <code>foo.bar-baz</code>, replace each character that is neither alphanumeric nor <code>_</code>
   with <code>_</code>: <code>FOO_BAR_BAZ</code></li>
-<li>An indexed property <code>foo.bar[0]</code>, replace each character that is neither alphanumeric nor <code>_</code>
-  with <code>_</code>: <code>FOO_BAR_0_</code></li>
+<li>An indexed property <code>foo.bar[0]</code> or <code>foo.bar[0].baz</code>, replace each character that is neither alphanumeric nor <code>_</code>
+  with <code>_</code>: <code>FOO_BAR_0_</code> or <code>FOO_BAR_0__BAZ</code>.</li>
 </ul>
 <div class="admonition danger">
 <p class="admonition-title">Danger</p>
