@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.annotation.Priority;
@@ -20,6 +22,38 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
             throw ConfigMessages.msg.notAllowed(name);
         }
         return context.proceed(name);
+    }
+
+    @Override
+    public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
+        if (SecretKeys.isLocked()) {
+            Set<String> names = new HashSet<>();
+            Iterator<String> namesIterator = context.iterateNames();
+            while (namesIterator.hasNext()) {
+                String name = namesIterator.next();
+                if (!secrets.contains(name)) {
+                    names.add(name);
+                }
+            }
+            return names.iterator();
+        }
+        return context.iterateNames();
+    }
+
+    @Override
+    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
+        if (SecretKeys.isLocked()) {
+            Set<ConfigValue> values = new HashSet<>();
+            Iterator<ConfigValue> valuesIterator = context.iterateValues();
+            while (valuesIterator.hasNext()) {
+                ConfigValue value = valuesIterator.next();
+                if (!secrets.contains(value.getName())) {
+                    values.add(value);
+                }
+            }
+            return values.iterator();
+        }
+        return context.iterateValues();
     }
 
     private boolean isSecret(final String name) {
