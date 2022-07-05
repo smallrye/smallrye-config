@@ -89,13 +89,12 @@ jobs:
         run: |
           cd documentation
           mvn package
-          VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
           pipx install pipenv
           pipenv install
           git fetch origin gh-pages --depth=1
           git config --global user.name "SmallRye CI"
           git config --global user.email "smallrye@googlegroups.com"
-          pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${VERSION}" latest
+          pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases Main SNAPSHOT
 
   quality:
     needs: [build]
