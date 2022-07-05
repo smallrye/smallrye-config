@@ -8,8 +8,8 @@ SmallRye Config specifies additional conversion rules:
 with `_`: `FOO__BAR__BAZ`
 - A property with dashes `foo.bar-baz`, replace each character that is neither alphanumeric nor `_`
   with `_`: `FOO_BAR_BAZ`
-- An indexed property `foo.bar[0]`, replace each character that is neither alphanumeric nor `_`
-  with `_`: `FOO_BAR_0_`
+- An indexed property `foo.bar[0]` or `foo.bar[0].baz`, replace each character that is neither alphanumeric nor `_`
+  with `_`: `FOO_BAR_0_` or `FOO_BAR_0__BAZ`.
 
 !!! danger
 
