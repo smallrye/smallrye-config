@@ -164,10 +164,6 @@ public class StringUtil {
         return skewer(camelHumps, 0, camelHumps.length(), new StringBuilder(), separator);
     }
 
-    public static String hyphenate(String camelHumps) {
-        return skewer(camelHumps).replaceAll("_", "-");
-    }
-
     private static String skewer(String camelHumps, int start, int end, StringBuilder b, char separator) {
         if (camelHumps.isEmpty()) {
             throw new IllegalArgumentException("Method seems to have an empty name");
