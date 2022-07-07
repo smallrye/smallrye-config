@@ -682,6 +682,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_3">
@@ -704,6 +706,20 @@
     <li class="md-nav__item">
       <a href="../../config-sources/custom/" class="md-nav__link">
         Custom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config-sources/factories/" class="md-nav__link">
+        Factories
       </a>
     </li>
   
@@ -1150,7 +1166,7 @@ the <code>@ConfigMapping</code> is completely optional (but recommendeded to set
 <p>In non-CDI environments, use the API <code>io.smallrye.config.SmallRyeConfig#getConfigMapping</code> to retrieve the config 
 mapping instance:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">().</span><span class="na">unwrap</span><span class="p">(</span><span class="n">SmallRyeConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span><span class="w"></span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">Server</span><span class="w"> </span><span class="n">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getConfigMapping</span><span class="p">(</span><span class="n">Server</span><span class="p">.</span><span class="na">class</span><span class="p">);</span><span class="w"></span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">Server</span><span class="w"> </span><span class="n">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getConfigMapping</span><span class="p">(</span><span class="n">Server</span><span class="p">.</span><span class="na">class</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>

@@ -56,7 +56,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://smallrye.io/smallrye-config/Main/config-sources/factory/</loc>
+         <loc>https://smallrye.io/smallrye-config/Main/config-sources/factories/</loc>
          <lastmod>2022-07-07</lastmod>
          <changefreq>daily</changefreq>
     </url>

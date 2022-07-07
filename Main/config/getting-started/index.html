@@ -440,8 +440,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#env-properties" class="md-nav__link">
-    Env Properties
+  <a href="#environment-variables" class="md-nav__link">
+    Environment Variables
   </a>
   
 </li>
@@ -489,6 +489,13 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#override-config" class="md-nav__link">
+    Override Config
+  </a>
   
 </li>
       
@@ -661,6 +668,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_3">
@@ -683,6 +692,20 @@
     <li class="md-nav__item">
       <a href="../../config-sources/custom/" class="md-nav__link">
         Custom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config-sources/factories/" class="md-nav__link">
+        Factories
       </a>
     </li>
   
@@ -975,8 +998,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#env-properties" class="md-nav__link">
-    Env Properties
+  <a href="#environment-variables" class="md-nav__link">
+    Environment Variables
   </a>
   
 </li>
@@ -1028,6 +1051,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#override-config" class="md-nav__link">
+    Override Config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#config-vs-smallryeconfig" class="md-nav__link">
     Config vs SmallRyeConfig
   </a>
@@ -1063,23 +1093,23 @@
 <h2 id="config-sources">Config Sources<a class="headerlink" href="#config-sources" title="Permanent link">#</a></h2>
 <p>By default, SmallRye Config reads configuration properties from multiple configuration sources (by descending ordinal):</p>
 <ol>
-<li>(400) System properties</li>
-<li>(300) Environment variables</li>
-<li>(100) MicroProfile Config configuration file <code>META-INF/microprofile-config.properties</code> in the classpath</li>
+<li>(<code>400</code>) System properties</li>
+<li>(<code>300</code>) Environment variables</li>
+<li>(<code>100</code>) MicroProfile Config configuration file <code>META-INF/microprofile-config.properties</code> in the classpath</li>
 </ol>
 <p>A configuration source is handled by a <code>ConfigSource</code>. A <code>ConfigSource</code> provides configuration values from a specific
 place.  </p>
 <p>The final configuration is the aggregation of the properties defined by all these sources. A configuration property 
 lookup starts by the highest ordinal configuration source available and works it way down to other sources until a 
 match is found. This means that any configuration property may override a value just by setting a different value in a 
-higher ordinal config source. For example, a property configured using an environment property overrides the value 
+higher ordinal config source. For example, a property configured using an Environment Variable overrides the value 
 provided using the <code>microprofile-config.properties</code> file.</p>
 <h3 id="system-properties">System Properties<a class="headerlink" href="#system-properties" title="Permanent link">#</a></h3>
 <p>System properties can be handed to the application through the <code>-D</code> flag during startup. For instance, 
 <code>java -Dmy.prop -jar my.jar</code>.</p>
-<h3 id="env-properties">Env Properties<a class="headerlink" href="#env-properties" title="Permanent link">#</a></h3>
+<h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">#</a></h3>
 <p>Environment variables are set directly in the host operating system. Environment variables names follow the conversion 
-rules specified by <a href="https://github.com/eclipse/microprofile-config/">MicroProfile Config</a>.</p>
+rules detailed by <a href="../environment-variables/">Environment Variables</a>.</p>
 <h3 id="microprofile-config-configuration-file">MicroProfile Config configuration file<a class="headerlink" href="#microprofile-config-configuration-file" title="Permanent link">#</a></h3>
 <p>The MicroProfile Config configuration file <code>META-INF/microprofile-config.properties</code> in the classpath. It follows the 
 standard convention for <code>properties</code> files.</p>
@@ -1094,7 +1124,7 @@ standard convention for <code>properties</code> files.</p>
 <li><a href="../../config-sources/zookeeper/">ZooKeeper</a></li>
 <li><a href="../../config-sources/hocon/">HOCON</a></li>
 </ul>
-<p>It is also possible to create a Custom Config Source.</p>
+<p>It is also possible to create a <a href="../../config-sources/custom/">Custom ConfigSource</a>.</p>
 <h2 id="retrieving-the-configuration">Retrieving the Configuration<a class="headerlink" href="#retrieving-the-configuration" title="Permanent link">#</a></h2>
 <h3 id="programmatically">Programmatically<a class="headerlink" href="#programmatically" title="Permanent link">#</a></h3>
 <p>The <code>org.eclipse.microprofile.config.ConfigProvider.getConfig()</code> API allows to access the 
@@ -1128,14 +1158,20 @@ the <code>org.eclipse.microprofile.config.inject.ConfigProperty</code> qualifier
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="nd">@Inject</span><span class="w"></span>
 <a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nd">@ConfigProperty</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;greeting.name&quot;</span><span class="p">)</span><span class="w"></span>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">Optional</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">name</span><span class="p">;</span><span class="w"> </span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="nd">@Inject</span><span class="w"></span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <ul>
 <li>If a value if not provided for this <code>greeting.message</code>, the application startup fails with a 
 <code>javax.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message</code>.</li>
 <li>The default value <code>!</code> is injected if the configuration does not provide a value for <code>greeting.suffix</code>.</li>
 <li>The property <code>greeting.name</code> is optional - an empty Optional is injected if the configuration does not provide a 
-value for it.   </li>
+value for it.</li>
 </ul>
+<h2 id="override-config">Override Config<a class="headerlink" href="#override-config" title="Permanent link">#</a></h2>
+<p>It is possible to override <code>Config</code> default initialization <code>ConfigProvider.getConfig()</code>, by extending 
+<code>io.smallrye.config.SmallRyeConfigFactory</code> and registering the implementation with the <code>ServiceLoader</code> mechanism.  </p>
 <h2 id="config-vs-smallryeconfig">Config vs SmallRyeConfig<a class="headerlink" href="#config-vs-smallryeconfig" title="Permanent link">#</a></h2>
 <p>The <code>io.smallrye.config.SmallRyeConfig</code> is an implementation of <code>org.eclipse.microprofile.config.Config</code> and provides 
 additional APIs and helper methods not available in <code>org.eclipse.microprofile.config.Config</code>. To obtain an instance of 

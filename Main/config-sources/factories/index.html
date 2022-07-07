@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/config-sources/factory/">
+        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/config-sources/factories/">
       
       <link rel="icon" href="../../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.9">
     
     
       
-        <title>Config Source Factory - SmallRye Config</title>
+        <title>Factories - SmallRye Config</title>
       
     
     
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config Source Factory
+              Factories
             
           </span>
         </div>
@@ -224,13 +224,15 @@
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../custom/" class="md-tabs__link">
+      <a href="../custom/" class="md-tabs__link md-tabs__link--active">
         Config Sources
       </a>
     </li>
@@ -519,15 +521,19 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       
       
+        
+          
         
           
         
@@ -564,6 +570,30 @@
       <a href="../custom/" class="md-nav__link">
         Custom
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Factories
+      </a>
+      
     </li>
   
 
@@ -843,31 +873,83 @@
             <article class="md-content__inner md-typeset">
               
                 
-  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config-sources/factory.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config-sources/factories.md" title="Edit this page" class="md-content__button md-icon">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
 
 <h1 id="config-source-factory">Config Source Factory<a class="headerlink" href="#config-source-factory" title="Permanent link">#</a></h1>
-<p>Another way to create a <code>ConfigSource</code> is via the <code>ConfigSourceFactory</code>. The difference between the SmallRye Factory
-and the standard way to create a <code>ConfigSource</code> as specified in MicroProfile Config, is the Factory ability to provide
-a context with access to the available configuration. With the <code>ConfigSourceFactory</code> it is possible to bootstrap a
-<code>ConfigSource</code> that configures itself with previously initialized <code>ConfigSources</code>.</p>
-<p>By implementing https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/ConfigSourceFactory.java[ConfigSourceFactory],
-a list of <code>ConfigSources</code> may be provided via the <code>Iterable&lt;ConfigSource&gt; getConfigSources(ConfigSourceContext context)</code>
-method. The <code>ConfigSourceFactory</code> may also assign a priority by overriding the default method
-<code>OptionalInt getPriority()</code>. This is only used to sort multiple factories during initialization. Once all the factories
-are initialized, the provided <code>ConfigSources</code> will use their own ordinal and be sorted with all <code>ConfigSources</code>
-available in the <code>Config</code> instance.</p>
-<p>When the Factory is initializing, the provided <code>ConfigSourceContext</code> may call the method
-<code>ConfigValue getValue(String name)</code>. This method lookups configuration names in all <code>ConfigSources</code> that were already
-initialized by the <code>Config</code> instance, including sources with lower ordinals than the ones defined in the
-<code>ConfigSourceFactory</code>. <code>ConfigSources</code> provided by a <code>ConfigSourceFactory</code> is not taken into account to configure other
-sources produced by a lower priority <code>ConfigSourceFactory</code>.</p>
+<p>Another way to create a <code>ConfigSource</code> is via the <code>ConfigSourceFactory</code>. The difference between the SmallRye Config 
+Factory and the standard way to make a <code>ConfigSource</code> as specified in MicroProfile Config is the Factory&rsquo;s ability to 
+provide a context with access to the available configuration. With the <code>ConfigSourceFactory</code> it is possible to 
+bootstrap a <code>ConfigSource</code> that configures itself with previously initialized <code>ConfigSource's</code>.</p>
+<p>By implementing 
+<a href="https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/ConfigSourceFactory.java">ConfigSourceFactory</a>, 
+a list of <code>ConfigSource's</code> may be provided via the <code>Iterable&lt;ConfigSource&gt; getConfigSources(ConfigSourceContext context)</code> method. The <code>ConfigSourceFactory</code> may also 
+assign a priority by overriding the default method <code>OptionalInt getPriority()</code>. The priority only sorts the factories 
+during initialization. After initialization, the provided <code>ConfigSources</code> will use their own ordinal and sorted with 
+all <code>ConfigSources</code> available in the <code>Config</code> instance.</p>
+<p>When the Factory initializes, the provided <code>ConfigSourceContext</code> may call the method 
+<code>ConfigValue getValue(String name)</code>. This method looks up configuration names in all <code>ConfigSource's</code> already 
+initialized by the <code>Config</code> instance, including sources with lower ordinals than the ones defined in the 
+<code>ConfigSourceFactory</code>. The <code>ConfigSourceFactory</code> does not consider <code>ConfigSources's</code> provided by other 
+<code>ConfigSourceFactory's</code> (the priority does not matter).</p>
 <p>Registration of a <code>ConfigSourceFactory</code> is done via the <code>ServiceLoader</code> mechanism by providing the
 implementation classes in a <code>META-INF/services/io.smallrye.config.ConfigSourceFactory</code> file. Alternatively, factories
 may be registered via the Programmatic API in <code>SmallRyeConfigBuilder#withSources</code>.</p>
+<p>A <code>ConfigSourceFactory</code> requires an implementation of <code>io.smallrye.config.ConfigSourceFactory</code>. Each implementation 
+requires registration via the <code>ServiceLoader</code> mechanism in the 
+<code>META-INF/services/io.smallrye.config.ConfigSourceFactory</code> file. Alternatively, interceptors may be registered via the 
+Programmatic API in <code>SmallRyeConfigBuilder#withSources</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.io.IOException</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.net.MalformedURLException</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.net.URI</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.net.URISyntaxException</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.net.URL</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Collections</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.eclipse.microprofile.config.spi.ConfigSource</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigMessages</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.PropertiesConfigSource</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceContext</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceFactory</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigValue</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">FileSystemConfigSourceFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceFactory</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="nd">@Override</span><span class="w"></span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">ConfigSource</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getConfigSources</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigValue</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;org.acme.config.file.locations&quot;</span><span class="p">);</span><span class="w"></span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">value</span><span class="p">.</span><span class="na">getValue</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">Collections</span><span class="p">.</span><span class="na">emptyList</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">        </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">PropertiesConfigSource</span><span class="p">(</span><span class="n">toURL</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="na">getValue</span><span class="p">()),</span><span class="w"> </span><span class="mi">250</span><span class="p">));</span><span class="w"></span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">IOException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">Collections</span><span class="p">.</span><span class="na">emptyList</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">        </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">URL</span><span class="w"> </span><span class="nf">toURL</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">URI</span><span class="p">(</span><span class="n">value</span><span class="p">).</span><span class="na">toURL</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">URISyntaxException</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">MalformedURLException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">ConfigMessages</span><span class="p">.</span><span class="na">msg</span><span class="p">.</span><span class="na">uriSyntaxInvalid</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p">);</span><span class="w"></span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="w">        </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p>And registration in:
+<em>META-INF/services/io.smallrye.config.ConfigSourceFactory</em>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.FileSystemConfigSourceFactory</span><span class="w"></span>
+</code></pre></div></p>
+<p>The <code>FileSystemConfigSourceFactory</code> look ups the configuration value for <code>org.acme.config.file.locations</code>, and uses it 
+to set up an additional <code>ConfigSource</code>.</p>
 
               
             </article>
@@ -878,6 +960,42 @@ may be registered via the Programmatic API in <code>SmallRyeConfigBuilder#withSo
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../custom/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Custom" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Custom
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../locations/" class="md-footer__link md-footer__link--next" aria-label="Next: Locations" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Locations
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
