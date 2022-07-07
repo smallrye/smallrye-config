@@ -15,8 +15,6 @@
  */
 package io.smallrye.config;
 
-import static io.smallrye.config.common.utils.StringUtil.hyphenate;
-
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -28,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.Converter;
+
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * Based on GERONIMO-6595 support implicit converters.
@@ -230,6 +230,11 @@ class ImplicitConverters {
             }
 
             throw new IllegalArgumentException(String.format("Cannot convert %s to enum %s", value, enumType));
+        }
+
+        private static String hyphenate(String value) {
+            // We cannot be sure about the format of the enum names
+            return StringUtil.skewer(value).replaceAll("_-", "-").replaceAll("_", "-");
         }
     }
 }

@@ -93,6 +93,7 @@ class ConfigInjectionTest {
 
         assertEquals("1234", configBean.getConfig().getValue("my.prop", String.class));
         assertEquals("1234", configBean.getSmallRyeConfig().getRawValue("my.prop"));
+        assertEquals(HyphenatedEnum.A_B, configBean.getHyphenatedEnum());
     }
 
     @Test
@@ -191,6 +192,9 @@ class ConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "converted")
         Optional<ConvertedValue> convertedValueOptional;
+        @Inject
+        @ConfigProperty(name = "hyphenated.enum")
+        HyphenatedEnum hyphenatedEnum;
 
         Optional<Map<Integer, String>> getReasonsOptional() {
             return reasonsOptional;
@@ -275,6 +279,10 @@ class ConfigInjectionTest {
         Optional<ConvertedValue> getConvertedValueOptional() {
             return convertedValueOptional;
         }
+
+        HyphenatedEnum getHyphenatedEnum() {
+            return hyphenatedEnum;
+        }
     }
 
     @BeforeAll
@@ -288,7 +296,8 @@ class ConfigInjectionTest {
                         "lnums.even", "2,4,6,8", "lnums.odd", "1,3,5,7,9",
                         "snums.even", "2,4,6,8", "snums.odd", "1,3,5,7,9",
                         "anums.even", "2,4,6,8", "anums.odd", "1,3,5,7,9",
-                        "nums.one", "1", "nums.two", "2", "nums.three", "3"))
+                        "nums.one", "1", "nums.two", "2", "nums.three", "3",
+                        "hyphenated.enum", "a-b"))
                 .withSecretKeys("secret")
                 .withConverter(ConvertedValue.class, 100, new ConvertedValueConverter())
                 .withConverter(Version.class, 100, new VersionConverter())
@@ -372,5 +381,9 @@ class ConfigInjectionTest {
             }
             return new ConvertedValue("out");
         }
+    }
+
+    enum HyphenatedEnum {
+        A_B
     }
 }

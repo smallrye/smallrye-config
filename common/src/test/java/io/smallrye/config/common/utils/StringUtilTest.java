@@ -111,14 +111,4 @@ class StringUtilTest {
         assertEquals("my-property-abc-abc", StringUtil.skewer("myPropertyABCabc"));
         assertEquals("my.property.abc.abc", StringUtil.skewer("myPropertyABCabc", '.'));
     }
-
-    @Test
-    void hyphenate() {
-        assertEquals("my-property", StringUtil.hyphenate("MY_PROPERTY"));
-        assertEquals("my-property", StringUtil.hyphenate("myProperty"));
-        assertEquals("my-property-one", StringUtil.hyphenate("MY_PROPERTY_ONE"));
-        assertEquals("my-property-one", StringUtil.hyphenate("myPropertyOne"));
-        assertEquals("my-property-one", StringUtil.hyphenate("myPropertyONE"));
-
-    }
 }

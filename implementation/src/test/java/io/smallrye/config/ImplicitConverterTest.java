@@ -67,6 +67,7 @@ class ImplicitConverterTest {
 
     enum MyEnum {
         DISCARD,
+        A_B,
         READ_UNCOMMITTED,
         SIGUSR1,
         TrendBreaker,
@@ -84,6 +85,7 @@ class ImplicitConverterTest {
         assertEquals(hyphenateEnumConverter.convert("DISCARD"), MyEnum.DISCARD);
         assertEquals(hyphenateEnumConverter.convert("discard"), MyEnum.DISCARD);
         assertEquals(hyphenateEnumConverter.convert("READ_UNCOMMITTED"), MyEnum.READ_UNCOMMITTED);
+        assertEquals(hyphenateEnumConverter.convert("a-b"), MyEnum.A_B);
         assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyEnum.READ_UNCOMMITTED);
         assertEquals(hyphenateEnumConverter.convert("SIGUSR1"), MyEnum.SIGUSR1);
         assertEquals(hyphenateEnumConverter.convert("sigusr1"), MyEnum.SIGUSR1);
