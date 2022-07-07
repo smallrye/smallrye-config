@@ -83,7 +83,8 @@ def loadAttributes(env):
         file = open(path)
         var = yaml.load(file, Loader=yaml.FullLoader)
         file.close()
-        env.variables['attributes'] = var['attributes']
+        if var is not None:
+            env.variables['attributes'] = var['attributes']
     else:
         print("Unable to import attributes - " + path  + " does not exists")
 

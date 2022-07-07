@@ -1,3 +1,9 @@
+---
+hide:
+- navigation
+- toc
+---
+
 # SmallRye Config
 
 **SmallRye Config** is a library that provides a way to configure applications, frameworks and containers. It is used 

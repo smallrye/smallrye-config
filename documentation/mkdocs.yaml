@@ -53,41 +53,65 @@ copyright: >-
 
 theme:
   name: material
-  favicon: images/favicon.png
-  palette:
-    primary: blue grey
-    accent: blue
+  logo: assets/smallrye-icon.svg
   font:
-    text: Red Hat Text
-    code: Ubuntu Mono
+    text: Roboto
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.ico
   features:
+    - navigation.instant
+    - navigation.indexes
     - navigation.sections
     - navigation.tracking
-    #    - navigation.expand
-    - navigation.indexes
+    - navigation.tabs
+    - navigation.tabs.sticky
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue-grey
+      accent: red
+      toggle:
+        icon: material/lightbulb-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: orange
+      toggle:
+        icon: material/lightbulb-on
+        name: Switch to light mode
 
 markdown_extensions:
   - toc:
-      toc_depth: 3
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - pymdownx.superfences
-  - pymdownx.snippets
+      permalink: '#'
   - admonition
-  - abbr
+  - smarty
   - attr_list
-  - def_list
+  - md_in_html
+  - meta
   - tables
-  - pymdownx.betterem
-  - pymdownx.caret
-  - pymdownx.mark
-  - pymdownx.tilde
   - pymdownx.highlight:
-      linenums: true
       anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - pymdownx.details
+  - pymdownx.smartsymbols
+  - pymdownx.betterem
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
 
 extra_css:
-  - css/smallrye.css
+  - assets/extra.css
 
 extra:
   version:

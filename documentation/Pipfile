@@ -4,13 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-mkdocs = ">=1.2.3"
-mkdocs-macros-plugin = ">=0.6.3"
-pyyaml = ">=6.0"
-mike = ">=1.1.2"
-mkdocs-material = ">=8.1.4"
+mkdocs = "*"
+mkdocs-material = "*"
+mkdocs-macros-plugin = "*"
+mike = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3"
