@@ -63,7 +63,7 @@ mapping instance:
 
 ```java
 SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-    Server server = config.getConfigMapping(Server.class);
+Server server = config.getConfigMapping(Server.class);
 ```
 
 !!! info

@@ -4,9 +4,9 @@
 
 By default, SmallRye Config reads configuration properties from multiple configuration sources (by descending ordinal):
 
-1. (400) System properties
-2. (300) Environment variables
-3. (100) MicroProfile Config configuration file `META-INF/microprofile-config.properties` in the classpath
+1. (`400`) System properties
+2. (`300`) Environment variables
+3. (`100`) MicroProfile Config configuration file `META-INF/microprofile-config.properties` in the classpath
 
 A configuration source is handled by a `ConfigSource`. A `ConfigSource` provides configuration values from a specific
 place.  
@@ -14,7 +14,7 @@ place.
 The final configuration is the aggregation of the properties defined by all these sources. A configuration property 
 lookup starts by the highest ordinal configuration source available and works it way down to other sources until a 
 match is found. This means that any configuration property may override a value just by setting a different value in a 
-higher ordinal config source. For example, a property configured using an environment property overrides the value 
+higher ordinal config source. For example, a property configured using an Environment Variable overrides the value 
 provided using the `microprofile-config.properties` file.
 
 ### System Properties
@@ -22,10 +22,10 @@ provided using the `microprofile-config.properties` file.
 System properties can be handed to the application through the `-D` flag during startup. For instance, 
 `java -Dmy.prop -jar my.jar`.
 
-### Env Properties
+### Environment Variables
 
 Environment variables are set directly in the host operating system. Environment variables names follow the conversion 
-rules specified by [MicroProfile Config](https://github.com/eclipse/microprofile-config/).
+rules detailed by [Environment Variables](environment-variables.md).
  
 ### MicroProfile Config configuration file
 
@@ -46,7 +46,7 @@ SmallRye Config provides additional extensions which cover other configuration f
 - [ZooKeeper](../config-sources/zookeeper.md)
 - [HOCON](../config-sources/hocon.md)
 
-It is also possible to create a Custom Config Source.
+It is also possible to create a [Custom ConfigSource](../config-sources/custom.md).
 
 ## Retrieving the Configuration
 
@@ -93,13 +93,21 @@ String suffix;
 @Inject
 @ConfigProperty(name = "greeting.name")
 Optional<String> name; 
+
+@Inject
+SmallRyeConfig config;
 ```
 
 - If a value if not provided for this `greeting.message`, the application startup fails with a 
 `javax.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message`.
 - The default value `!` is injected if the configuration does not provide a value for `greeting.suffix`.
 - The property `greeting.name` is optional - an empty Optional is injected if the configuration does not provide a 
-value for it.   
+value for it.
+
+## Override Config
+
+It is possible to override `Config` default initialization `ConfigProvider.getConfig()`, by extending 
+`io.smallrye.config.SmallRyeConfigFactory` and registering the implementation with the `ServiceLoader` mechanism.  
 
 ## Config vs SmallRyeConfig
 

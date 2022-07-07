@@ -20,6 +20,7 @@ nav:
       - 'Secret Keys': config/secret-keys.md
   - Config Sources:
       - 'Custom': config-sources/custom.md
+      - 'Factories': config-sources/factories.md
       - 'Locations': config-sources/locations.md
       - 'YAML': config-sources/yaml.md
       - 'FileSystem': config-sources/filesystem.md

@@ -24,5 +24,7 @@ Expression expansion may be selectively disabled with `io.smallrye.config.Expres
 
 ```java
 Config config = ConfigProvider.getConfig();
-String url = Expressions.withoutExpansion(() -> config.getValue("callable.url", String.class));
+
+String url = Expressions.withoutExpansion(() -> 
+    config.getValue("callable.url", String.class));
 ```
