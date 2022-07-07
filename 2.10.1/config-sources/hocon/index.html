@@ -875,22 +875,6 @@ configuration from the file <code>META-INF/microprofile-config.conf</code>. It h
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="nt">&lt;version&gt;</span>2.10.0<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
-<p>Expressions defined as <code>${value}</code> (unquoted) are resolved internally by the HOCON Config Source as described in the
-<a href="https://github.com/lightbend/config/blob/main/HOCON.md#substitutions">HOCON Substitutions</a> documentation. Quoted 
-Expressions defined as <code>"${value}"</code> are resolved by <a href="../../config/expressions/">SmallRye Config Property Expressions</a>.</p>
-<p>Consider:</p>
-<p><strong>hocon.conf</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>   foo: &quot;bar&quot;,
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>   hocon: ${foo},
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>   config: &quot;${foo}&quot; 
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>}
-</code></pre></div></p>
-<p><strong>application.properties</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">config_ordinal</span><span class="o">=</span><span class="s">1000</span><span class="w"></span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">foo</span><span class="o">=</span><span class="s">baz</span><span class="w"></span>
-</code></pre></div></p>
-<p>The value of <code>hocon</code> is <code>bar</code> and the value of <code>config</code> is <code>baz</code> (if the properties source has a higher ordinal).</p>
 
               
             </article>
