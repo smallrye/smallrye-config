@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://smallrye.io/smallrye-config/2.10.0/config/config-value/">
+        <link rel="canonical" href="https://smallrye.io/smallrye-config/2.10.0/config/environment-variables/">
       
       <link rel="icon" href="../../images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.9">
     
     
       
-        <title>ConfigValue - SmallRye Config</title>
+        <title>Environment Variables - SmallRye Config</title>
       
     
     
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config-value" class="md-skip">
+        <a href="#environment-variables" class="md-skip">
           Skip to content
         </a>
       
@@ -107,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ConfigValue
+              Environment Variables
             
           </span>
         </div>
@@ -322,11 +322,21 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../environment-variables/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Environment Variables
       </a>
+      
     </li>
   
 
@@ -350,21 +360,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../config-value/" class="md-nav__link">
         ConfigValue
       </a>
-      
     </li>
   
 
@@ -754,17 +754,41 @@
             <article class="md-content__inner md-typeset">
               
                 
-  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config/config-value.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config/environment-variables.md" title="Edit this page" class="md-content__button md-icon">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
 
-<h1 id="config-value">Config Value</h1>
-<p>The <code>io.smallrye.config.ConfigValue</code> is a metadata object that holds additional information after the lookup of a 
-configuration property. It is able to hold information of configuration property name, value, profile, the 
-<code>ConfigSource</code> from where the configuration was loaded, the ordinal of the <code>ConfigSource</code> and a line number from where 
-the configuration was loaded if exists.</p>
+<h1 id="environment-variables">Environment Variables</h1>
+<p>Environment variable names follow the conversion rules specified by <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources">MicroProfile Config</a>.</p>
+<p>SmallRye Config specifies additional conversion rules:</p>
+<ul>
+<li>A property with double quotes <code>foo."bar".baz</code>, replace each character that is neither alphanumeric nor <code>_</code> 
+with <code>_</code>: <code>FOO__BAR__BAZ</code></li>
+<li>A property with dashes <code>foo.bar-baz</code>, replace each character that is neither alphanumeric nor <code>_</code>
+  with <code>_</code>: <code>FOO_BAR_BAZ</code></li>
+<li>An indexed property <code>foo.bar[0]</code>, replace each character that is neither alphanumeric nor <code>_</code>
+  with <code>_</code>: <code>FOO_BAR_0_</code></li>
+</ul>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>Environment variables format cannot represent the entire spectrum of common property names.</p>
+</div>
+<p>By default, the underscore <code>_</code> of an environment variable name always maps to a dot <code>.</code>. If the property name
+contains a dash or some other special character, that property name needs to be specified in one of the Config 
+sources. It will provide additional information to SmallRye Config on converting the environment variable name.</p>
+<p>For instance:</p>
+<p><em>Config A</em>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
+</code></pre></div></td></tr></table></div></p>
+<p>Will map to <code>foo.bar.baz</code> and value <code>value</code>.</p>
+<p><em>Config B</em>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
+</code></pre></div></td></tr></table></div>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="na">foo.bar-baz</span><span class="o">=</span><span class="s">default</span><span class="w"></span>
+</code></pre></div></td></tr></table></div></p>
+<p>Will map to <code>foo.bar-baz</code> and value <code>value</code>.</p>
 
               
             </article>
@@ -780,7 +804,7 @@ the configuration was loaded if exists.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../indexed-properties/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Indexed Properties" rel="prev">
+        <a href="../profiles/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Profiles" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -789,20 +813,20 @@ the configuration was loaded if exists.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Indexed Properties
+              Profiles
             </div>
           </div>
         </a>
       
       
         
-        <a href="../mappings/" class="md-footer__link md-footer__link--next" aria-label="Next: Mappings" rel="next">
+        <a href="../indexed-properties/" class="md-footer__link md-footer__link--next" aria-label="Next: Indexed Properties" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Mappings
+              Indexed Properties
             </div>
           </div>
           <div class="md-footer__button md-icon">
