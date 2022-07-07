@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.eclipse.microprofile.config.Config.PROFILE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -443,6 +444,40 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("1234", configValue.getValue());
         assertEquals("prof", configValue.getProfile());
         assertEquals("%prof.my.prop", configValue.getNameProfiled());
+    }
+
+    @Test
+    void hierarchicalParentProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("%child." + SMALLRYE_CONFIG_PROFILE_PARENT, "parent", "%child.child", "Goten"))
+                .withSources(config("%parent." + SMALLRYE_CONFIG_PROFILE_PARENT, "grandparent", "%parent.parent", "Goku"))
+                .withSources(config("%grandparent." + SMALLRYE_CONFIG_PROFILE_PARENT, "greatgrandparent",
+                        "%grandparent.grandparent", "Bardock"))
+                .withSources(config("%greatgrandparent." + SMALLRYE_CONFIG_PROFILE_PARENT, "end",
+                        "%greatgrandparent.greatgrandparent", "Gohan"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "child"))
+                .build();
+
+        assertArrayEquals(new String[] { "child", "parent", "grandparent", "greatgrandparent", "end" },
+                config.getProfiles().toArray(new String[5]));
+
+        assertEquals("Goten", config.getRawValue("child"));
+        assertEquals("Goku", config.getRawValue("parent"));
+        assertEquals("Bardock", config.getRawValue("grandparent"));
+        assertEquals("Gohan", config.getRawValue("greatgrandparent"));
+    }
+
+    @Test
+    void hierarchicalParentProfileMultiple() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "a,b",
+                        SMALLRYE_CONFIG_PROFILE_PARENT, "c,d",
+                        "%a." + SMALLRYE_CONFIG_PROFILE_PARENT, "1,2"))
+                .build();
+
+        assertArrayEquals(new String[] { "b", "a", "2", "1", "d", "c" }, config.getProfiles().toArray(new String[6]));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
