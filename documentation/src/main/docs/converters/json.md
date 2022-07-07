@@ -9,7 +9,6 @@ The following dependency is required in the classpath to use the JSON Converter:
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-converter-json</artifactId>
     <version>{{attributes['version']}}</version>
-    <scope>runtime</scope>
 </dependency>
 ```
 
