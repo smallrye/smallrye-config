@@ -33,7 +33,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
-        this(convertProfile(context));
+        this(getProfile(context));
     }
 
     @Override
@@ -104,27 +104,25 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public static List<String> convertProfile(final String profile) {
-        return newCollectionConverter(newTrimmingConverter(STRING_CONVERTER), ArrayList::new).convert(profile);
+        List<String> profiles = newCollectionConverter(newTrimmingConverter(STRING_CONVERTER), ArrayList::new).convert(profile);
+        return profiles != null ? profiles : Collections.emptyList();
     }
 
-    private static List<String> convertProfile(final ConfigSourceInterceptorContext context) {
+    private static List<String> getProfile(final ConfigSourceInterceptorContext context) {
         final List<String> profiles = new ArrayList<>();
-        final ConfigValue profile = context.proceed(SMALLRYE_CONFIG_PROFILE);
-        if (profile != null) {
-            final ConfigValue parentProfile = context.proceed(SMALLRYE_CONFIG_PROFILE_PARENT);
-            if (parentProfile != null) {
-                profiles.add(parentProfile.getValue());
-            }
-            final List<String> convertedProfiles = convertProfile(profile.getValue());
-            if (convertedProfiles != null) {
-                final ProfileConfigSourceInterceptor profileConfigSourceInterceptor = new ProfileConfigSourceInterceptor(
-                        convertedProfiles);
-                final ConfigValue parentProfileInActiveProfile = profileConfigSourceInterceptor.getValue(context,
-                        SMALLRYE_CONFIG_PROFILE_PARENT);
-                if (parentProfileInActiveProfile != null) {
-                    profiles.add(parentProfileInActiveProfile.getValue());
-                }
-                profiles.addAll(convertedProfiles);
+        profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE_PARENT));
+        profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE));
+        return profiles;
+    }
+
+    private static List<String> getProfiles(final ConfigSourceInterceptorContext context, final String propertyName) {
+        final List<String> profiles = new ArrayList<>();
+        final ConfigValue profileValue = context.proceed(propertyName);
+        if (profileValue != null) {
+            final List<String> convertProfiles = convertProfile(profileValue.getValue());
+            for (String profile : convertProfiles) {
+                profiles.addAll(getProfiles(context, "%" + profile + "." + SMALLRYE_CONFIG_PROFILE_PARENT));
+                profiles.add(profile);
             }
         }
         return profiles;
