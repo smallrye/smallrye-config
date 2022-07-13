@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -119,5 +121,28 @@ class EnvConfigSourceTest {
         assertTrue(config.getValues("indexed", String.class, ArrayList::new).contains("foo"));
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("0"));
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("1"));
+    }
+
+    @Test
+    void numbers() {
+        Map<String, String> env = new HashMap<String, String>() {
+            {
+                put("999_MY_VALUE", "foo");
+                put("_999_MY_VALUE", "bar");
+            }
+        };
+
+        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(envConfigSource)
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertEquals(4, properties.size());
+        assertTrue(properties.contains("999_MY_VALUE"));
+        assertTrue(properties.contains("999.my.value"));
+        assertTrue(properties.contains("_999_MY_VALUE"));
+        assertTrue(properties.contains("%999.my.value"));
     }
 }

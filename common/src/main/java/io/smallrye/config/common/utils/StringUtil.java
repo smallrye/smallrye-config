@@ -112,22 +112,31 @@ public class StringUtil {
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
             if ('_' == c) {
-                String segment = sb.substring(beginSegment, i);
-                try {
-                    Integer.parseInt(segment);
-                    sb.replace(beginSegment - 1, beginSegment, "[").append("]");
-
-                    int j = i + 1;
-                    if (j < length) {
-                        if ('_' == name.charAt(j)) {
-                            sb.append(".");
-                            i = j;
-                        }
-                    }
-
+                if (i == 0) {
+                    // leading _ can only mean a profile
+                    sb.append("%");
                     continue;
-                } catch (NumberFormatException e) {
-                    // Ignore
+                }
+
+                // Do not convert to index if the first segment is a number
+                if (beginSegment > 0) {
+                    try {
+                        String segment = sb.substring(beginSegment, i);
+                        Integer.parseInt(segment);
+                        sb.replace(beginSegment - 1, beginSegment, "[").append("]");
+
+                        int j = i + 1;
+                        if (j < length) {
+                            if ('_' == name.charAt(j)) {
+                                sb.append(".");
+                                i = j;
+                            }
+                        }
+
+                        continue;
+                    } catch (NumberFormatException e) {
+                        // Ignore, it is not an indexed number
+                    }
                 }
 
                 int j = i + 1;
