@@ -389,6 +389,15 @@ public interface Defaults {
 No configuration properties are required. The `Defaults#foo()` will return the value `foo` and `Defaults#bar()` will 
 return the value `bar`.
 
+## ToString
+
+If the config mapping contains a `toString` method declaration, the config mapping instance will include a proper 
+implementation of the `toString` method.
+
+!!! caution
+
+    Do not include a `toString` declaration in a config mapping with sensitive information
+
 ## Validation
 
 A config mapping may combine annotations from [Bean Validation](https://beanvalidation.org/) to validate configuration 
@@ -408,7 +417,7 @@ interface Server {
 The application startup fails with a `io.smallrye.config.ConfigValidationException` if the configuration properties 
 values do not follow the contraints defined in `Server`. 
 
-!!! caution
+!!! info
     
     For validation to work, the `smallrye-config-validator` dependency is required in the classpath.
 

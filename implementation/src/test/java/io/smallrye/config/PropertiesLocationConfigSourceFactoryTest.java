@@ -343,10 +343,6 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("dev", config.getRawValue("my.prop.dev"));
         assertEquals("main", config.getRawValue("context.main"));
         assertEquals("dev", config.getRawValue("context.dev"));
-
-        for (final ConfigSource configSource : config.getConfigSources()) {
-            System.out.println("configSource = " + configSource);
-        }
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

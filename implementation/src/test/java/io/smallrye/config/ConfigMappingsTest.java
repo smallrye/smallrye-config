@@ -161,6 +161,40 @@ public class ConfigMappingsTest {
     }
 
     @ConfigMapping(prefix = "server")
+    interface ToStringMapping {
+        String host();
+
+        int port();
+
+        List<Alias> aliases();
+
+        String toString();
+
+        interface Alias {
+            String name();
+
+            String toString();
+        }
+    }
+
+    @Test
+    void generateToString() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ToStringMapping.class)
+                .withSources(config(
+                        "server.host", "localhost",
+                        "server.port", "8080",
+                        "server.aliases[0].name", "prod-1",
+                        "server.aliases[1].name", "prod-2"))
+                .withConverter(Version.class, 100, new VersionConverter())
+                .build();
+
+        ToStringMapping mapping = config.getConfigMapping(ToStringMapping.class);
+        assertEquals("ToStringMapping{host=localhost, port=8080, aliases=[Alias{name=prod-1}, Alias{name=prod-2}]}",
+                mapping.toString());
+    }
+
+    @ConfigMapping(prefix = "server")
     interface Server {
         String host();
 
