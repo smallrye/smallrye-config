@@ -18,6 +18,7 @@ nav:
       - 'Mappings': config/mappings.md
       - 'Map Support': config/map-support.md
       - 'Secret Keys': config/secret-keys.md
+      - 'Configuration Reference': config/configuration.md
   - Config Sources:
       - 'Custom': config-sources/custom.md
       - 'Factories': config-sources/factories.md
