@@ -580,22 +580,22 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#collection" class="md-nav__link">
-    Collection
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map" class="md-nav__link">
-    Map
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#collections" class="md-nav__link">
+    Collections
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maps" class="md-nav__link">
+    Maps
+  </a>
   
 </li>
       
@@ -1082,22 +1082,22 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#collection" class="md-nav__link">
-    Collection
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map" class="md-nav__link">
-    Map
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#collections" class="md-nav__link">
+    Collections
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maps" class="md-nav__link">
+    Maps
+  </a>
   
 </li>
       
@@ -1375,7 +1375,7 @@ the property <code>server.name</code> instead.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="na">foo</span><span class="o">=</span><span class="s">foo</span><span class="w"></span>
 </code></pre></div>
 <p>A call to <code>Converters.foo()</code> results in the value <code>bar</code>.</p>
-<h3 id="collection">Collection<a class="headerlink" href="#collection" title="Permanent link">#</a></h3>
+<h2 id="collections">Collections<a class="headerlink" href="#collections" title="Permanent link">#</a></h2>
 <p>A config mapping is also able to map the collections types <code>List</code> and <code>Set</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span><span class="w"></span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ServerCollections</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1405,7 +1405,7 @@ the property <code>server.name</code> instead.</p>
 </code></pre></div>
 <p>The <code>List</code> and <code>Set</code> mappings can use <a href="../indexed-properties/">Indexed Properties</a> to map configuration values in 
 mapping groups.</p>
-<h3 id="map">Map<a class="headerlink" href="#map" title="Permanent link">#</a></h3>
+<h2 id="maps">Maps<a class="headerlink" href="#maps" title="Permanent link">#</a></h2>
 <p>A config mapping is also able to map a <code>Map</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span><span class="w"></span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1414,17 +1414,28 @@ mapping groups.</p>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">port</span><span class="p">();</span><span class="w"></span>
 <a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
 <a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">form</span><span class="p">();</span><span class="w"></span>
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Alias</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="nf">aliases</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">    </span><span class="kd">interface</span> <span class="nc">Alias</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span><span class="w"></span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="na">server.host</span><span class="o">=</span><span class="s">localhost</span><span class="w"></span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="na">server.port</span><span class="o">=</span><span class="s">8080</span><span class="w"></span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="na">server.form.login-page</span><span class="o">=</span><span class="s">login.html</span><span class="w"></span>
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="na">server.form.error-page</span><span class="o">=</span><span class="s">error.html</span><span class="w"></span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="na">server.form.landing-page</span><span class="o">=</span><span class="s">index.html</span><span class="w"></span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="na">server.aliases.localhost[0].name</span><span class="o">=</span><span class="s">prod</span><span class="w"></span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="na">server.aliases.localhost[1].name</span><span class="o">=</span><span class="s">127.0.0.1</span><span class="w"></span>
 </code></pre></div>
 <p>The configuration property name needs to specify an additional segment to act as the map key. The <code>server.form</code> matches 
 the <code>Server#form</code> <code>Map</code> and the segments <code>login-page</code>, <code>error-page</code> and <code>landing-page</code> represent the <code>Map</code> 
 keys.</p>
+<p>For collection types, the key requires the indexed format. The configuration name <code>server.aliases.localhost[0].name</code> 
+maps to the <code>Map&lt;String, List&lt;Alias&gt;&gt; aliases()</code> member, where <code>localhost</code> is the <code>Map</code> key, <code>[0]</code> is the index of the 
+<code>List&lt;Alias&gt;</code> where the <code>Alias</code> element will be stored, containing the name <code>prod</code>.</p>
 <h2 id="defaults">Defaults<a class="headerlink" href="#defaults" title="Permanent link">#</a></h2>
 <p>The <code>io.smallrye.config.WithDefault</code> annotation allows to set a default property value into a mapping (and prevent 
 errors if the configuration value is not available in any <code>ConfigSource</code>).</p>
