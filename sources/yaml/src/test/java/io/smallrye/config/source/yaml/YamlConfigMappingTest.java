@@ -322,4 +322,121 @@ class YamlConfigMappingTest {
             Map<String, String> attributes();
         }
     }
+
+    @Test
+    void yamlMapCollections() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapListDouble.class)
+                .withSources(new YamlConfigSource("yaml",
+                        "some:\n" +
+                                "  prop:\n" +
+                                "    value:    \n" +
+                                "      - 0.9\n" +
+                                "      - 0.99"))
+                .build();
+
+        MapListDouble mapping = config.getConfigMapping(MapListDouble.class);
+        assertEquals(0.9d, mapping.prop().get("value").get(0));
+        assertEquals(0.99d, mapping.prop().get("value").get(1));
+    }
+
+    @ConfigMapping(prefix = "some")
+    public interface MapListDouble {
+        Map<String, List<Double>> prop();
+    }
+
+    @Test
+    void yamlMapListsGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(PermissionsConfig.class)
+                .withSources(new YamlConfigSource("yaml",
+                        "channelsuite:\n" +
+                                "  permissions:\n" +
+                                "    anonymous:\n" +
+                                "      - \"p1\"\n" +
+                                "    internal-call:\n" +
+                                "      - \"p2\"\n" +
+                                "      - \"p3\"\n" +
+                                "    roles:\n" +
+                                "      user:\n" +
+                                "        - \"p1\"\n" +
+                                "      administrator:\n" +
+                                "        - \"p2\"\n" +
+                                "        - \"p3\"\n"))
+                .build();
+
+        PermissionsConfig configMapping = config.getConfigMapping(PermissionsConfig.class);
+
+        assertEquals("p1", configMapping.anonymous().get(0));
+        assertEquals("p2", configMapping.internalCall().get(0));
+        assertEquals("p3", configMapping.internalCall().get(1));
+        assertEquals("p1", configMapping.roles().get("user").get(0));
+        assertEquals("p2", configMapping.roles().get("administrator").get(0));
+        assertEquals("p3", configMapping.roles().get("administrator").get(1));
+    }
+
+    @ConfigMapping(prefix = "channelsuite.permissions")
+    interface PermissionsConfig {
+        List<String> anonymous();
+
+        List<String> internalCall();
+
+        Map<String, List<String>> roles();
+    }
+
+    @Test
+    void yamlMapLists() throws Exception {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithListsGroup.class)
+                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-map-list.yml")))
+                .build();
+
+        MapWithListsGroup mapping = config.getConfigMapping(MapWithListsGroup.class);
+
+        MapWithListsGroup.User fourth = mapping.roles().get("hokage").get(3);
+        assertEquals("Namikaze Minato", fourth.name());
+
+        MapWithListsGroup.User seventh = mapping.roles().get("hokage").get(6);
+        assertEquals("Uzumaki Naruto", seventh.name());
+        assertEquals("Wind", seventh.nature().get(0));
+        assertEquals("Rasengan", seventh.jutsus().get(0).name());
+        assertEquals(MapWithListsGroup.User.Jutsu.Rank.A, seventh.jutsus().get(0).rank());
+        assertEquals("Bijūdama", seventh.jutsus().get(1).name());
+        assertEquals(MapWithListsGroup.User.Jutsu.Rank.S, seventh.jutsus().get(1).rank());
+        assertEquals("Hatake Kakashi", seventh.teams().get("Team Kakashi").get(0));
+        assertEquals("Uchiha Sasuke", seventh.teams().get("Team Kakashi").get(1));
+        assertEquals("Haruno Sakura", seventh.teams().get("Team Kakashi").get(2));
+        assertEquals("Hatake Kakashi", seventh.teams().get("Kazekage Rescue Team").get(0));
+        assertEquals("Chiyo", seventh.teams().get("Kazekage Rescue Team").get(1));
+        assertEquals("Haruno Sakura", seventh.teams().get("Kazekage Rescue Team").get(2));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapWithListsGroup {
+        Map<String, List<User>> roles();
+
+        interface User {
+            String name();
+
+            List<String> nature();
+
+            List<Jutsu> jutsus();
+
+            Map<String, List<String>> teams();
+
+            interface Jutsu {
+                String name();
+
+                Rank rank();
+
+                enum Rank {
+                    S,
+                    A,
+                    B,
+                    C,
+                    D;
+                }
+            }
+        }
+    }
 }

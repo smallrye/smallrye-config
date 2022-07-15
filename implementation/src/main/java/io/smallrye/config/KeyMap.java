@@ -213,7 +213,13 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             int begin = seg.lastIndexOf('[');
             if (begin != -1) {
                 String index = seg.substring(begin + 1, seg.length() - 1);
-                KeyMap<V> next = computeIfAbsent(seg.substring(0, begin), k -> new KeyMap<>());
+                String name = seg.substring(0, begin);
+                KeyMap<V> next;
+                if (name.equals("*")) {
+                    next = getOrCreateAny();
+                } else {
+                    next = computeIfAbsent(name, k -> new KeyMap<>());
+                }
                 next = next.computeIfAbsent("[", k -> new KeyMap<>());
                 next = index.equals("*") ? next.getOrCreateAny() : next.computeIfAbsent(index, k -> new KeyMap<>());
                 next = next.computeIfAbsent("]", k -> new KeyMap<>());

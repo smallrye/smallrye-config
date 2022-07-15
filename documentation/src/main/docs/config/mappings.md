@@ -307,7 +307,7 @@ foo=foo
 
 A call to `Converters.foo()` results in the value `bar`.
 
-### Collection
+## Collections
 
 A config mapping is also able to map the collections types `List` and `Set`:
 
@@ -344,7 +344,7 @@ server.environments[0].apps[1].services=stock,warehouse
 The `List` and `Set` mappings can use [Indexed Properties](indexed-properties.md) to map configuration values in 
 mapping groups.
 
-### Map
+## Maps
 
 A config mapping is also able to map a `Map`:
 
@@ -356,6 +356,12 @@ public interface Server {
     int port();
 
     Map<String, String> form();
+
+    Map<String, List<Alias>> aliases();
+    
+    interface Alias {
+        String name();
+    }
 }
 ```
 
@@ -365,11 +371,17 @@ server.port=8080
 server.form.login-page=login.html
 server.form.error-page=error.html
 server.form.landing-page=index.html
+server.aliases.localhost[0].name=prod
+server.aliases.localhost[1].name=127.0.0.1
 ```
 
 The configuration property name needs to specify an additional segment to act as the map key. The `server.form` matches 
 the `Server#form` `Map` and the segments `login-page`, `error-page` and `landing-page` represent the `Map` 
 keys.
+
+For collection types, the key requires the indexed format. The configuration name `server.aliases.localhost[0].name` 
+maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is the `Map` key, `[0]` is the index of the 
+`List<Alias>` where the `Alias` element will be stored, containing the name `prod`.
 
 ## Defaults
 

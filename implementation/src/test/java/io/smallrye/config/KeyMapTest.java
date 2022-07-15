@@ -197,4 +197,12 @@ class KeyMapTest {
         assertEquals("foo", map.findRootValue("root[0].foo"));
         assertEquals("bars", map.findRootValue("root[0].bars[0]"));
     }
+
+    @Test
+    void map() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("map.roles.*[*]").putRootValue("foo");
+
+        assertEquals("foo", map.findRootValue("map.roles.user[0]"));
+    }
 }
