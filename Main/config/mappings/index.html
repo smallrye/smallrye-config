@@ -607,6 +607,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#tostring" class="md-nav__link">
+    ToString
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validation" class="md-nav__link">
     Validation
   </a>
@@ -1109,6 +1116,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#tostring" class="md-nav__link">
+    ToString
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validation" class="md-nav__link">
     Validation
   </a>
@@ -1449,6 +1463,13 @@ errors if the configuration value is not available in any <code>ConfigSource</co
 </code></pre></div>
 <p>No configuration properties are required. The <code>Defaults#foo()</code> will return the value <code>foo</code> and <code>Defaults#bar()</code> will 
 return the value <code>bar</code>.</p>
+<h2 id="tostring">ToString<a class="headerlink" href="#tostring" title="Permanent link">#</a></h2>
+<p>If the config mapping contains a <code>toString</code> method declaration, the config mapping instance will include a proper 
+implementation of the <code>toString</code> method.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Do not include a <code>toString</code> declaration in a config mapping with sensitive information</p>
+</div>
 <h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">#</a></h2>
 <p>A config mapping may combine annotations from <a href="https://beanvalidation.org/">Bean Validation</a> to validate configuration 
 properties values.</p>
@@ -1463,8 +1484,8 @@ properties values.</p>
 </code></pre></div>
 <p>The application startup fails with a <code>io.smallrye.config.ConfigValidationException</code> if the configuration properties 
 values do not follow the contraints defined in <code>Server</code>. </p>
-<div class="admonition caution">
-<p class="admonition-title">Caution</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
 <p>For validation to work, the <code>smallrye-config-validator</code> dependency is required in the classpath.</p>
 </div>
 
