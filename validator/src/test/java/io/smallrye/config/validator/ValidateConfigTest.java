@@ -47,7 +47,10 @@ public class ValidateConfigTest {
                         "server.info.name", "Bond",
                         "server.info.code", "007",
                         "server.info.alias[0]", "James",
-                        "server.info.admins.root.username", "root"))
+                        "server.info.admins.root[0].username", "root",
+                        "server.info.admins.root[1].username", "admin",
+                        "server.info.firewall.accepted[0]", "127.0.0.1",
+                        "server.info.firewall.accepted[1]", "8.8.8"))
                 .withMapping(Server.class, "server")
                 .build();
 
@@ -57,6 +60,7 @@ public class ValidateConfigTest {
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
         }
+        assertEquals(14, validations.size());
         assertTrue(validations.contains("server.port must be less than or equal to 10"));
         assertTrue(validations.contains("server.log.days must be less than or equal to 15"));
         assertTrue(validations.contains("server.proxy.timeout must be less than or equal to 10"));
@@ -69,7 +73,8 @@ public class ValidateConfigTest {
         assertTrue(validations.contains("server.info.name size must be between 0 and 3"));
         assertTrue(validations.contains("server.info.code must be less than or equal to 3"));
         assertTrue(validations.contains("server.info.alias[0] size must be between 0 and 3"));
-        assertTrue(validations.contains("server.info.admins.root.username size must be between 0 and 3"));
+        assertTrue(validations.contains("server.info.admins.root[1].username size must be between 0 and 4"));
+        assertTrue(validations.contains("server.info.firewall.accepted[1] size must be between 8 and 15"));
     }
 
     @Test
@@ -173,10 +178,12 @@ public class ValidateConfigTest {
 
             Optional<List<@Size(max = 3) String>> alias();
 
-            Map<String, Admin> admins();
+            Map<String, List<Admin>> admins();
+
+            Map<String, List<@Size(min = 8, max = 15) String>> firewall();
 
             interface Admin {
-                @Size(max = 3)
+                @Size(max = 4)
                 String username();
             }
         }

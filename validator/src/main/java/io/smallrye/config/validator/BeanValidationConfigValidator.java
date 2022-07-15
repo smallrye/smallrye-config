@@ -152,6 +152,35 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                         throw new UndeclaredThrowableException(t2);
                     }
                 }
+            } else if (mapProperty.getValueProperty().isCollection()) {
+                try {
+                    CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
+                    if (collectionProperty.getElement().isGroup()) {
+                        Map<?, ?> map = (Map<?, ?>) property.getMethod().invoke(mappingObject);
+                        for (Map.Entry<?, ?> entry : map.entrySet()) {
+                            Collection<?> elements = (Collection<?>) entry.getValue();
+                            int i = 0;
+                            for (Object element : elements) {
+                                validateMappingInterface(collectionProperty.getElement().asGroup().getGroupType(),
+                                        appendPropertyName(currentPath, property) + "." + entry.getKey() + "[" + i + "]",
+                                        namingStrategy, element, problems);
+                                i++;
+                            }
+                        }
+                    } else if (collectionProperty.getElement().isLeaf()) {
+                        validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                } catch (InvocationTargetException e) {
+                    try {
+                        throw e.getCause();
+                    } catch (RuntimeException | Error e2) {
+                        throw e2;
+                    } catch (Throwable t2) {
+                        throw new UndeclaredThrowableException(t2);
+                    }
+                }
             } else if (mapProperty.getValueProperty().isLeaf()) {
                 validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
             }
@@ -224,6 +253,6 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                 }
             }
         }
-        return propertyName.toString() + " " + violation.getMessage();
+        return propertyName + " " + violation.getMessage();
     }
 }
