@@ -8,6 +8,7 @@ import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
@@ -22,6 +23,7 @@ import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
@@ -116,7 +118,7 @@ public class ConfigMappingGenerator {
         MethodVisitor noArgsCtor = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         noArgsCtor.visitVarInsn(Opcodes.ALOAD, V_THIS);
         noArgsCtor.visitMethodInsn(Opcodes.INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
-        noArgsCtor.visitInsn(Opcodes.RETURN);
+        noArgsCtor.visitInsn(RETURN);
         noArgsCtor.visitEnd();
         noArgsCtor.visitMaxs(0, 0);
 
@@ -163,13 +165,17 @@ public class ConfigMappingGenerator {
         // stack: -
         addProperties(visitor, ctor, fio, new HashSet<>(), mapping, mapping.getClassInternalName());
         // stack: -
+        if (mapping.getToStringMethod().generate()) {
+            addToString(visitor, mapping);
+        }
+        // stack: -
         fio.visitInsn(Opcodes.RETURN);
         fio.visitLabel(fioEnd);
         fio.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, fioStart, fioEnd, V_MAPPING_CONTEXT);
         fio.visitEnd();
         fio.visitMaxs(0, 0);
         // stack: -
-        ctor.visitInsn(Opcodes.RETURN);
+        ctor.visitInsn(RETURN);
         ctor.visitLabel(ctorEnd);
         ctor.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, ctorStart, ctorEnd, V_MAPPING_CONTEXT);
         ctor.visitLocalVariable("sb", 'L' + I_STRING_BUILDER + ';', null, ctorSbStart, ctorEnd, V_STRING_BUILDER);
@@ -662,7 +668,7 @@ public class ConfigMappingGenerator {
                 ctor.visitLdcInsn(memberName);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
-                ctor.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
+                ctor.visitFieldInsn(GETFIELD, className, memberName, fieldDesc);
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "registerEnclosedField",
                         "(L" + I_CLASS + ";L" + I_STRING + ";L" + I_OBJECT + ";L" + I_OBJECT + ";)V",
                         false);
@@ -793,7 +799,7 @@ public class ConfigMappingGenerator {
             // stack: -
             mv.visitVarInsn(Opcodes.ALOAD, V_THIS);
             // stack: this
-            mv.visitFieldInsn(Opcodes.GETFIELD, className, memberName, fieldDesc);
+            mv.visitFieldInsn(GETFIELD, className, memberName, fieldDesc);
             // stack: obj
             mv.visitInsn(getReturnInstruction(property));
 
@@ -900,6 +906,53 @@ public class ConfigMappingGenerator {
         }
 
         return null;
+    }
+
+    private static void addToString(final ClassVisitor visitor, final ConfigMappingInterface mapping) {
+        MethodVisitor ts = visitor.visitMethod(ACC_PUBLIC, "toString", "()L" + I_STRING + ";", null, null);
+        ts.visitCode();
+        ts.visitTypeInsn(NEW, I_STRING_BUILDER);
+        ts.visitInsn(DUP);
+        ts.visitMethodInsn(INVOKESPECIAL, I_STRING_BUILDER, "<init>", "()V", false);
+        ts.visitLdcInsn(mapping.getInterfaceType().getSimpleName() + "{");
+        ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
+
+        Property[] properties = mapping.getProperties();
+        for (int i = 0, propertiesLength = properties.length; i < propertiesLength; i++) {
+            Property property = properties[i];
+            if (property.isDefaultMethod()) {
+                property = property.asDefaultMethod().getDefaultProperty();
+            }
+
+            String member = property.getMethod().getName();
+            ts.visitLdcInsn(member + "=");
+            ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";",
+                    false);
+            ts.visitVarInsn(ALOAD, V_THIS);
+            ts.visitFieldInsn(GETFIELD, mapping.getClassInternalName(), member,
+                    getDescriptor(property.getMethod().getReturnType()));
+            if (property.isPrimitive()) {
+                ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                        "(" + getDescriptor(property.asPrimitive().getPrimitiveType()) + ")L" + I_STRING_BUILDER + ";", false);
+            } else {
+                ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_OBJECT + ";)L" + I_STRING_BUILDER + ";",
+                        false);
+            }
+
+            if (i + 1 < propertiesLength) {
+                ts.visitLdcInsn(", ");
+                ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";",
+                        false);
+            }
+        }
+
+        ts.visitLdcInsn("}");
+        ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
+        ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ";", false);
+
+        ts.visitInsn(ARETURN);
+        ts.visitEnd();
+        ts.visitMaxs(0, 0);
     }
 
     private static boolean hasDefaultValue(final Class<?> klass, final Object value) {

@@ -40,15 +40,33 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final Property[] properties;
     private final Map<String, Property> propertiesByName;
     private final NamingStrategy namingStrategy;
+    private final ToStringMethod toStringMethod;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
         this.interfaceType = interfaceType;
         this.className = interfaceType.getName() + interfaceType.getName().hashCode() + "Impl";
         this.superTypes = superTypes;
-        this.properties = properties;
-        this.propertiesByName = toPropertiesMap(properties);
+
+        List<Property> filteredProperties = new ArrayList<>();
+        Map<String, Property> propertiesByName = new HashMap<>();
+        ToStringMethod toStringMethod = null;
+        for (Property property : properties) {
+            if (!property.isToStringMethod()) {
+                filteredProperties.add(property);
+                propertiesByName.put(property.getMethod().getName(), property);
+            } else {
+                toStringMethod = (ToStringMethod) property;
+            }
+        }
+        if (toStringMethod == null) {
+            toStringMethod = ToStringMethod.NONE;
+        }
+
+        this.properties = filteredProperties.toArray(new Property[0]);
+        this.propertiesByName = propertiesByName;
         this.namingStrategy = getNamingStrategy(interfaceType);
+        this.toStringMethod = toStringMethod;
     }
 
     /**
@@ -135,6 +153,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return namingStrategy;
     }
 
+    ToStringMethod getToStringMethod() {
+        return toStringMethod;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -210,6 +232,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public boolean isDefaultMethod() {
+            return false;
+        }
+
+        public boolean isToStringMethod() {
             return false;
         }
 
@@ -590,6 +616,31 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
+    public static final class ToStringMethod extends Property {
+        private final boolean generate;
+
+        ToStringMethod() {
+            super(null, null);
+            this.generate = false;
+        }
+
+        ToStringMethod(final Method method) {
+            super(method, null);
+            this.generate = true;
+        }
+
+        @Override
+        public boolean isToStringMethod() {
+            return true;
+        }
+
+        public boolean generate() {
+            return generate;
+        }
+
+        static final ToStringMethod NONE = new ToStringMethod();
+    }
+
     private static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
@@ -652,6 +703,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     private static Property getPropertyDef(Method method, Type type) {
+        if (isToStringMethod(method)) {
+            return new ToStringMethod(method);
+        }
+
         Method defaultMethod = hasDefaultMethodImplementation(method);
         if (defaultMethod != null) {
             return new DefaultMethodProperty(method, defaultMethod, getPropertyDef(defaultMethod, type));
@@ -726,6 +781,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return new LeafProperty(method, propertyName, type, convertWith, annotation == null ? null : annotation.value());
     }
 
+    private static boolean isToStringMethod(Method method) {
+        return method.getName().equals("toString") &&
+                method.getParameterCount() == 0 &&
+                method.getReturnType().equals(String.class) &&
+                !method.isDefault();
+    }
+
     @SuppressWarnings("squid:S1872")
     private static Method hasDefaultMethodImplementation(Method method) {
         Class<?> methodClass = method.getDeclaringClass();
@@ -779,14 +841,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         } else {
             return null;
         }
-    }
-
-    private static Map<String, Property> toPropertiesMap(final Property[] properties) {
-        Map<String, Property> map = new HashMap<>();
-        for (Property p : properties) {
-            map.put(p.getMethod().getName(), p);
-        }
-        return map;
     }
 
     private static void getNested(final Property[] properties, final List<ConfigMappingInterface> nested) {
