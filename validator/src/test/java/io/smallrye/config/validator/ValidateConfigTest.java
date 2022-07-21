@@ -1,16 +1,25 @@
 package io.smallrye.config.validator;
 
 import static io.smallrye.config.validator.KeyValuesConfigSource.config;
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import javax.validation.Constraint;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.Payload;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
@@ -60,7 +69,7 @@ public class ValidateConfigTest {
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
         }
-        assertEquals(14, validations.size());
+        assertEquals(15, validations.size());
         assertTrue(validations.contains("server.port must be less than or equal to 10"));
         assertTrue(validations.contains("server.log.days must be less than or equal to 15"));
         assertTrue(validations.contains("server.proxy.timeout must be less than or equal to 10"));
@@ -75,6 +84,7 @@ public class ValidateConfigTest {
         assertTrue(validations.contains("server.info.alias[0] size must be between 0 and 3"));
         assertTrue(validations.contains("server.info.admins.root[1].username size must be between 0 and 4"));
         assertTrue(validations.contains("server.info.firewall.accepted[1] size must be between 8 and 15"));
+        assertTrue(validations.contains("server is not prod"));
     }
 
     @Test
@@ -128,6 +138,7 @@ public class ValidateConfigTest {
     }
 
     @ConfigMapping(prefix = "server")
+    @Prod
     public interface Server {
         String host();
 
@@ -186,6 +197,24 @@ public class ValidateConfigTest {
                 @Size(max = 4)
                 String username();
             }
+        }
+    }
+
+    @Target({ TYPE, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    @Constraint(validatedBy = { ServerValidator.class })
+    public @interface Prod {
+        String message() default "server is not prod";
+
+        Class<?>[] groups() default {};
+
+        Class<? extends Payload>[] payload() default {};
+    }
+
+    public static class ServerValidator implements ConstraintValidator<Prod, Server> {
+        @Override
+        public boolean isValid(final Server value, final ConstraintValidatorContext context) {
+            return value.host().equals("prod");
         }
     }
 
