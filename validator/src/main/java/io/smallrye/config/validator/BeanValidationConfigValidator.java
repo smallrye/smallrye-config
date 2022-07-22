@@ -56,6 +56,8 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
         for (Property property : mappingInterface.getProperties()) {
             validateProperty(property, currentPath, namingStrategy, mappingObject, false, problems);
         }
+
+        validateMappingClass(mappingObject, problems);
     }
 
     default void validateProperty(
@@ -217,7 +219,8 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
     default void validateMappingClass(final Object mappingObject, final List<Problem> problems) {
         final Set<ConstraintViolation<Object>> violations = getValidator().validate(mappingObject);
         for (ConstraintViolation<Object> violation : violations) {
-            problems.add(new Problem(violation.getPropertyPath() + " " + violation.getMessage()));
+            problems.add(violation.getPropertyPath().toString().isEmpty() ? new Problem(violation.getMessage())
+                    : new Problem(violation.getPropertyPath() + " " + violation.getMessage()));
         }
     }
 
