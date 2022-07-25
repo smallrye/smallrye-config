@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11, 17]
+        java: [11, 17]
     name: build with jdk ${{matrix.java}}
 
     steps:
@@ -50,7 +50,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        java: [8, 11, 17]
+        java: [11, 17]
     name: build with jdk ${{matrix.java}} windows
 
     steps:

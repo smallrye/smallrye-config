@@ -15,7 +15,7 @@
  */
 package io.smallrye.config.test.converter;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.spi.Converter;
 

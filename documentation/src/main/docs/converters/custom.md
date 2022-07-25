@@ -59,14 +59,14 @@ Config config = ConfigProvider.getConfig();
 CustomValue value = config.getValue("custom.value", CustomValue.class);
 ````
 
-The `javax.annotation.Priority` annotation overrides the `Converter` priority and change converters precedence to fine 
+The `jakarta.annotation.Priority` annotation overrides the `Converter` priority and change converters precedence to fine 
 tune the execution order. By default, if no `@Priority` is specified by the `Converter`, the converter is registered 
 with a priority of `100`. Consider:
 
 ```java
 package org.acme.config;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.Converter;
 
 @Priority(150)
