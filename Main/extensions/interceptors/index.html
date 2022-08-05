@@ -917,7 +917,7 @@ origin and ordinal.</p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.annotation.Priority</span><span class="p">;</span><span class="w"></span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">javax.annotation.Priority</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptor</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigLogging</span><span class="p">;</span><span class="w"></span>
@@ -951,7 +951,7 @@ be registered via the Programmatic API in <code>SmallRyeConfigBuilder#withInterc
 <p>The <code>ConfigSourceInterceptorFactory</code> can initialize an interceptor with access to the current chain 
 (so it can be used to configure the interceptor and retrieve configuration values) and set the priority.</p>
 <p>A <code>ConfigSourceInterceptor</code> implementation class can specify a priority by way of the standard 
-<code>jakarta.annotation.Priority</code> annotation. If no priority is explicitly assigned, the default priority value of 
+<code>javax.annotation.Priority</code> annotation. If no priority is explicitly assigned, the default priority value of 
 <code>io.smallrye.config.Priorities.APPLICATION</code> is assumed. If multiple interceptors are registered with the same priority, 
 then their execution order may be non-deterministic.</p>
 <p>A collection of built-in priority constants can be found in <code>io.smallrye.config.Priorities</code>. It is recommended to 
