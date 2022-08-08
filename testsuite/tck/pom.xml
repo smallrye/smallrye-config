@@ -27,6 +27,10 @@
 
   <name>SmallRye: MicroProfile Config TCK</name>
 
+  <properties>
+    <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -82,16 +86,7 @@
     </dependency>
 
     <!-- Test Dependencies -->
-    <dependency>
-      <groupId>org.jboss.weld</groupId>
-      <artifactId>weld-core-impl</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.arquillian.container</groupId>
-      <artifactId>arquillian-weld-embedded</artifactId>
-      <scope>test</scope>
-    </dependency>
+
     <dependency>
       <groupId>org.eclipse.microprofile.config</groupId>
       <artifactId>microprofile-config-tck</artifactId>
@@ -99,5 +94,49 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>weld</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.weld</groupId>
+          <artifactId>weld-core-impl</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.arquillian.container</groupId>
+          <artifactId>arquillian-weld-embedded</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>owb</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.openwebbeans</groupId>
+          <artifactId>openwebbeans-spi</artifactId>
+          <version>${dependency.version.openwebbeans}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.openwebbeans</groupId>
+          <artifactId>openwebbeans-impl</artifactId>
+          <version>${dependency.version.openwebbeans}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.openwebbeans.arquillian</groupId>
+          <artifactId>owb-arquillian-standalone</artifactId>
+          <version>${dependency.version.openwebbeans}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
 </project>
