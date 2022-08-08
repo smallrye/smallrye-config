@@ -72,38 +72,29 @@ public final class ConfigProducerUtil {
         if (name == null) {
             return null;
         }
+
+        final SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
+        final io.smallrye.config.ConfigValue configValue = getConfigValue(name, smallRyeConfig);
+        final io.smallrye.config.ConfigValue configValueWithDefault = configValue
+                .withValue(resolveDefault(configValue.getValue(), defaultValue));
+
         if (hasCollection(type)) {
-            return convertValues(name, type, getRawValue(name, config), defaultValue, config);
+            return convertValues(configValueWithDefault, type, smallRyeConfig);
         } else if (hasMap(type)) {
-            return convertValues(name, type, defaultValue, config);
+            return smallRyeConfig.convertValue(configValueWithDefault,
+                    resolveConverter(type, smallRyeConfig,
+                            (kC, vC) -> new StaticMapConverter<>(configValueWithDefault.getName(),
+                                    configValueWithDefault.getValue(), config, kC, vC)));
         }
 
-        return ((SmallRyeConfig) config).convertValue(name, resolveDefault(getRawValue(name, config), defaultValue),
-                resolveConverter(type, config));
+        return smallRyeConfig.convertValue(configValueWithDefault, resolveConverter(type, smallRyeConfig));
     }
 
-    /**
-     * Converts the direct sub properties of the given parent property as a Map.
-     *
-     * @param name the name of the parent property for which we want the direct sub properties as a Map.
-     * @param type the {@link Type} of the configuration value to convert.
-     * @param defaultValue the default value to convert in case no sub properties could be found.
-     * @param config the configuration from which the values are retrieved.
-     * @param <T> the expected type of the configuration value to convert.
-     *
-     * @return the converted configuration value.
-     */
-    private static <T> T convertValues(String name, Type type, String defaultValue, Config config) {
-        return ((SmallRyeConfig) config).convertValue(name, null,
-                resolveConverter(type, config, (kC, vC) -> new StaticMapConverter<>(name, defaultValue, config, kC, vC)));
-    }
-
-    private static <T> T convertValues(String name, Type type, String rawValue, String defaultValue, Config config) {
-        List<String> indexedProperties = ((SmallRyeConfig) config).getIndexedProperties(name);
+    private static <T> T convertValues(io.smallrye.config.ConfigValue configValue, Type type, SmallRyeConfig config) {
+        List<String> indexedProperties = config.getIndexedProperties(configValue.getName());
         // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
-        if (rawValue != null || indexedProperties.isEmpty()) {
-            return ((SmallRyeConfig) config).convertValue(name, resolveDefault(rawValue, defaultValue),
-                    resolveConverter(type, config));
+        if (configValue.getRawValue() != null || indexedProperties.isEmpty()) {
+            return config.convertValue(configValue, resolveConverter(type, config));
         }
 
         BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
@@ -111,9 +102,7 @@ public final class ConfigProducerUtil {
             Collection<T> collection = collectionFactory.apply(indexedProperties.size());
             for (String indexedProperty : indexedProperties) {
                 // Never null by the rules of converValue
-                collection.add(
-                        ((SmallRyeConfig) config).convertValue(indexedProperty, getRawValue(indexedProperty, config),
-                                itemConverter));
+                collection.add(config.convertValue(getConfigValue(indexedProperty, config), itemConverter));
             }
             return collection;
         };
@@ -121,37 +110,38 @@ public final class ConfigProducerUtil {
         return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
     }
 
-    static ConfigValue getConfigValue(InjectionPoint injectionPoint, Config config) {
+    static ConfigValue getConfigValue(InjectionPoint injectionPoint, SmallRyeConfig config) {
         String name = getName(injectionPoint);
         if (name == null) {
             return null;
         }
 
-        ConfigValue configValue = config.getConfigValue(name);
+        io.smallrye.config.ConfigValue configValue = config.getConfigValue(name);
         if (configValue.getRawValue() == null) {
-            if (configValue instanceof io.smallrye.config.ConfigValue) {
-                configValue = ((io.smallrye.config.ConfigValue) configValue).withValue(getDefaultValue(injectionPoint));
-            }
+            configValue = configValue.withValue(getDefaultValue(injectionPoint));
         }
 
         return configValue;
     }
 
-    static String getRawValue(String name, Config config) {
-        return SecretKeys.doUnlocked(() -> config.getConfigValue(name).getValue());
+    static io.smallrye.config.ConfigValue getConfigValue(String name, SmallRyeConfig config) {
+        return SecretKeys.doUnlocked(() -> config.getConfigValue(name));
     }
 
     private static String resolveDefault(String rawValue, String defaultValue) {
         return rawValue != null ? rawValue : defaultValue;
     }
 
-    private static <T> Converter<T> resolveConverter(final Type type, final Config config) {
+    private static <T> Converter<T> resolveConverter(final Type type, final SmallRyeConfig config) {
         return resolveConverter(type, config, Converters::newMapConverter);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverter(final Type type, final Config config,
+    private static <T> Converter<T> resolveConverter(
+            final Type type,
+            final SmallRyeConfig config,
             final BiFunction<Converter<Object>, Converter<Object>, Converter<Map<Object, Object>>> mapConverterFactory) {
+
         Class<T> rawType = rawTypeOf(type);
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
@@ -179,7 +169,7 @@ public final class ConfigProducerUtil {
 
     /**
      * We need to handle indexed properties in a special way, since a Collection may be wrapped in other converters.
-     * The issue is that in the original code the value was retrieve by calling the first converter that will delegate
+     * The issue is that in the original code the value was retrieved by calling the first converter that will delegate
      * to all the wrapped types until it finally gets the result. For indexed properties, because it requires
      * additional key lookups, a special converter is added to perform the work. This is mostly a workaround, since
      * converters do not have the proper API, and probably should not have to handle this type of logic.
@@ -189,7 +179,7 @@ public final class ConfigProducerUtil {
     @SuppressWarnings("unchecked")
     private static <T> Converter<T> resolveConverterForIndexed(
             final Type type,
-            final Config config,
+            final SmallRyeConfig config,
             final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter) {
 
         Class<T> rawType = rawTypeOf(type);

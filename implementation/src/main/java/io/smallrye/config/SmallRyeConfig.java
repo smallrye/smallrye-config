@@ -209,8 +209,9 @@ public class SmallRyeConfig implements Config, Serializable {
                     // Ignore sub namespaces
                     continue;
                 }
-                result.put(convertValue(propertyName + "#key", key, keyConverter),
-                        convertValue(propertyName + "#value", getRawValue(propertyName), valueConverter));
+                ConfigValue configValueKey = ConfigValue.builder().withName(propertyName + "#key").withValue(key).build();
+                ConfigValue configValue = getConfigValue(propertyName).withName(propertyName + "#value");
+                result.put(convertValue(configValueKey, keyConverter), convertValue(configValue, valueConverter));
             }
         }
         return result.isEmpty() ? null : result;
@@ -222,25 +223,22 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
-        final ConfigValue configValue = getConfigValue(name);
+        ConfigValue configValue = getConfigValue(name);
         if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(converter)) {
-            return (T) configValue;
+            return (T) configValue.noProblems();
         }
 
         if (converter instanceof Converters.OptionalConverter<?>) {
             if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(
                     ((Converters.OptionalConverter<?>) converter).getDelegate())) {
-                return (T) Optional.of(configValue);
+                return (T) Optional.of(configValue.noProblems());
             }
         }
 
-        final String value = configValue.getValue(); // Can return the empty String (which is not considered as null)
-
-        return convertValue(name, value, converter);
+        return convertValue(configValue, converter);
     }
 
     /**
-     * 
      * This method handles converting values for both CDI injections and programatical calls.<br>
      * <br>
      * 
@@ -258,32 +256,46 @@ public class SmallRyeConfig implements Config, Serializable {
      * should only throw an {@link Exception} for #1 ({@link IllegalArgumentException} when the property cannot be converted to
      * the specified type).
      */
-    public <T> T convertValue(String name, String value, Converter<T> converter) {
+    public <T> T convertValue(ConfigValue configValue, Converter<T> converter) {
+        List<ConfigValidationException.Problem> problems = configValue.getProblems();
+        if (!problems.isEmpty()) {
+            // TODO - Maybe it will depend on the problem, but we only get the expression NoSuchElement here for now
+            if (Converters.isOptionalConverter(converter)) {
+                configValue = configValue.noProblems();
+            } else {
+                ConfigValidationException.Problem problem = problems.get(0);
+                if (problem.getException().isPresent()) {
+                    throw problem.getException().get();
+                }
+            }
+        }
 
         final T converted;
 
-        if (value != null) {
+        if (configValue.getValue() != null) {
             try {
-                converted = converter.convert(value);
+                converted = converter.convert(configValue.getValue());
             } catch (IllegalArgumentException e) {
-                throw ConfigMessages.msg.converterException(e, name, value, e.getLocalizedMessage()); // 1
+                throw ConfigMessages.msg.converterException(e, configValue.getName(), configValue.getValue(),
+                        e.getLocalizedMessage()); // 1
             }
         } else {
             try {
                 // See if the Converter is designed to handle a missing (null) value i.e. Optional Converters
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 2
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getName())); // 2
             }
         }
 
         if (converted == null) {
-            if (value == null) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name)); // 2
-            } else if (value.length() == 0) {
-                throw ConfigMessages.msg.propertyEmptyString(name, converter.getClass().getTypeName()); // 3
+            if (configValue.getValue() == null) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getName())); // 2
+            } else if (configValue.getValue().length() == 0) {
+                throw ConfigMessages.msg.propertyEmptyString(configValue.getName(), converter.getClass().getTypeName()); // 3
             } else {
-                throw ConfigMessages.msg.converterReturnedNull(name, value, converter.getClass().getTypeName()); // 4
+                throw ConfigMessages.msg.converterReturnedNull(configValue.getName(), configValue.getValue(),
+                        converter.getClass().getTypeName()); // 4
             }
         }
 
@@ -405,11 +417,11 @@ public class SmallRyeConfig implements Config, Serializable {
 
     /**
      * Checks if a property is present in the {@link Config} instance.
-     *
+     * <br>
      * Because {@link ConfigSource#getPropertyNames()} may not include all available properties, it is not possible to
-     * reliable determine if the property is present in the properties list. The property needs to be retrieved to make
+     * reliably determine if the property is present in the properties list. The property needs to be retrieved to make
      * sure it exists. The lookup is done without expression expansion, because the expansion value may not be
-     * available and it not relevant for the final check.
+     * available, and it is not relevant for the final check.
      *
      * @param name the property name.
      * @return true if the property is present or false otherwise.
@@ -697,18 +709,18 @@ public class SmallRyeConfig implements Config, Serializable {
 
         /**
          * Generate dotted properties from Env properties.
-         *
+         * <br>
          * These are required when a consumer relies on the list of properties to find additional
          * configurations. The list of properties is not normalized due to environment variables, which follow specific
          * naming rules. The MicroProfile Config specification defines a set of conversion rules to look up and find
          * values from environment variables even when using their dotted version, but this does not apply to the
          * properties list.
-         *
+         * <br>
          * Because an environment variable name may only be represented by a subset of characters, it is not possible
          * to represent exactly a dotted version name from an environment variable name. Additional dotted properties
          * mapped from environment variables are only added if a relationship cannot be found between all properties
          * using the conversions look up rules of the MicroProfile Config specification. Example:
-         *
+         * <br>
          * If <code>foo.bar</code> is present and <code>FOO_BAR</code> is also present, no property is required.
          * If <code>foo-bar</code> is present and <code>FOO_BAR</code> is also present, no property is required.
          * If <code>FOO_BAR</code> is present a property <code>foo.bar</code> is required.

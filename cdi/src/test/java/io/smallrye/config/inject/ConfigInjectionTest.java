@@ -90,10 +90,12 @@ class ConfigInjectionTest {
         assertEquals("5678", configBean.getMyPropProfile());
         assertThrows(SecurityException.class, () -> configBean.getConfig().getValue("secret", String.class),
                 "Not allowed to access secret key secret");
-
         assertEquals("1234", configBean.getConfig().getValue("my.prop", String.class));
         assertEquals("1234", configBean.getSmallRyeConfig().getRawValue("my.prop"));
         assertEquals(HyphenatedEnum.A_B, configBean.getHyphenatedEnum());
+        assertNull(configBean.getMissingExpression().getValue());
+        assertFalse(configBean.getMissingExpressionOptional().isPresent());
+        assertFalse(configBean.getMissingExpressionOptionalInt().isPresent());
     }
 
     @Test
@@ -195,6 +197,15 @@ class ConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "hyphenated.enum")
         HyphenatedEnum hyphenatedEnum;
+        @Inject
+        @ConfigProperty(name = "missing.expression")
+        ConfigValue missingExpression;
+        @Inject
+        @ConfigProperty(name = "missing.expression")
+        Optional<String> missingExpressionOptional;
+        @Inject
+        @ConfigProperty(name = "missing.expression")
+        Optional<String> missingExpressionOptionalInt;
 
         Optional<Map<Integer, String>> getReasonsOptional() {
             return reasonsOptional;
@@ -283,6 +294,18 @@ class ConfigInjectionTest {
         HyphenatedEnum getHyphenatedEnum() {
             return hyphenatedEnum;
         }
+
+        ConfigValue getMissingExpression() {
+            return missingExpression;
+        }
+
+        Optional<String> getMissingExpressionOptional() {
+            return missingExpressionOptional;
+        }
+
+        Optional<String> getMissingExpressionOptionalInt() {
+            return missingExpressionOptionalInt;
+        }
     }
 
     @BeforeAll
@@ -290,7 +313,7 @@ class ConfigInjectionTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("my.prop", "1234", "expansion", "${my.prop}", "secret", "12345678", "empty", "",
                         "mp.config.profile", "prof", "my.prop.profile", "1234", "%prof.my.prop.profile", "5678",
-                        "bad.property.expression.prop", "${missing.prop}", "reasons.200", "OK", "reasons.201", "Created",
+                        "missing.expression", "${missing.prop}", "reasons.200", "OK", "reasons.201", "Created",
                         "versions.v1", "1.The version 1.2.3", "versions.v1.2", "1.The version 1.2.0", "versions.v2",
                         "2.The version 2.0.0",
                         "lnums.even", "2,4,6,8", "lnums.odd", "1,3,5,7,9",

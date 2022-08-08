@@ -617,6 +617,13 @@ public final class Converters {
         return patternValidatingConverter(delegate, Pattern.compile(pattern));
     }
 
+    static <T> boolean isOptionalConverter(Converter<T> converter) {
+        return converter instanceof Converters.OptionalConverter<?> ||
+                converter.equals(Converters.OPTIONAL_INT_CONVERTER) ||
+                converter.equals(Converters.OPTIONAL_LONG_CONVERTER) ||
+                converter.equals(Converters.OPTIONAL_DOUBLE_CONVERTER);
+    }
+
     static final class PatternCheckConverter<T> implements Converter<T>, Serializable {
         private static final long serialVersionUID = 358813973126582008L;
 
@@ -709,7 +716,7 @@ public final class Converters {
             this.collectionFactory = collectionFactory;
         }
 
-        protected Converter<C> create(final Converter<? extends T> newDelegate) {
+        Converter<C> create(final Converter<? extends T> newDelegate) {
             return new CollectionConverter<>(newDelegate, collectionFactory);
         }
 
@@ -742,7 +749,7 @@ public final class Converters {
             this.arrayType = arrayType;
         }
 
-        protected ArrayConverter<T, A> create(final Converter<? extends T> newDelegate) {
+        ArrayConverter<T, A> create(final Converter<? extends T> newDelegate) {
             return new ArrayConverter<>(newDelegate, arrayType);
         }
 
@@ -797,8 +804,8 @@ public final class Converters {
             super(delegate);
         }
 
-        protected OptionalConverter<T> create(final Converter<? extends T> newDelegate) {
-            return new OptionalConverter<T>(newDelegate);
+        OptionalConverter<T> create(final Converter<? extends T> newDelegate) {
+            return new OptionalConverter<>(newDelegate);
         }
 
         public Optional<T> convert(final String value) {
@@ -817,11 +824,11 @@ public final class Converters {
     static final class OptionalIntConverter extends AbstractDelegatingConverter<Integer, OptionalInt> {
         private static final long serialVersionUID = 4331039532024222756L;
 
-        protected OptionalIntConverter(final Converter<? extends Integer> delegate) {
+        OptionalIntConverter(final Converter<? extends Integer> delegate) {
             super(delegate);
         }
 
-        protected OptionalIntConverter create(final Converter<? extends Integer> newDelegate) {
+        OptionalIntConverter create(final Converter<? extends Integer> newDelegate) {
             return new OptionalIntConverter(newDelegate);
         }
 
@@ -830,7 +837,7 @@ public final class Converters {
                 return OptionalInt.empty();
             } else {
                 final Integer converted = getDelegate().convert(value);
-                return converted == null ? OptionalInt.empty() : OptionalInt.of(converted.intValue());
+                return converted == null ? OptionalInt.empty() : OptionalInt.of(converted);
             }
         }
     }
@@ -838,11 +845,11 @@ public final class Converters {
     static final class OptionalLongConverter extends AbstractDelegatingConverter<Long, OptionalLong> {
         private static final long serialVersionUID = 140937551800590852L;
 
-        protected OptionalLongConverter(final Converter<? extends Long> delegate) {
+        OptionalLongConverter(final Converter<? extends Long> delegate) {
             super(delegate);
         }
 
-        protected OptionalLongConverter create(final Converter<? extends Long> newDelegate) {
+        OptionalLongConverter create(final Converter<? extends Long> newDelegate) {
             return new OptionalLongConverter(newDelegate);
         }
 
@@ -851,7 +858,7 @@ public final class Converters {
                 return OptionalLong.empty();
             } else {
                 final Long converted = getDelegate().convert(value);
-                return converted == null ? OptionalLong.empty() : OptionalLong.of(converted.longValue());
+                return converted == null ? OptionalLong.empty() : OptionalLong.of(converted);
             }
         }
     }
@@ -863,7 +870,7 @@ public final class Converters {
             super(delegate);
         }
 
-        protected OptionalDoubleConverter create(final Converter<? extends Double> newDelegate) {
+        OptionalDoubleConverter create(final Converter<? extends Double> newDelegate) {
             return new OptionalDoubleConverter(newDelegate);
         }
 
@@ -872,7 +879,7 @@ public final class Converters {
                 return OptionalDouble.empty();
             } else {
                 final Double converted = getDelegate().convert(value);
-                return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted.doubleValue());
+                return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted);
             }
         }
     }

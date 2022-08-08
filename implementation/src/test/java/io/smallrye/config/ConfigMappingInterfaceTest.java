@@ -1490,7 +1490,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "optional-map")
-    public interface NestedOptionalMapGroup {
+    interface NestedOptionalMapGroup {
         Optional<Boolean> enable();
 
         Map<String, Map<String, MessageUtilConfiguration>> map();
@@ -1530,5 +1530,27 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.map().get("client").get("reaction-api").enable().get());
         assertTrue(mapping.map().get("client").get("setup-api").enable().isPresent());
         assertTrue(mapping.map().get("client").get("setup-api").enable().get());
+    }
+
+    @ConfigMapping(prefix = "optional")
+    interface OptionalExpressions {
+        Optional<String> expression();
+
+        OptionalInt expressionInt();
+    }
+
+    @Test
+    void optionalExpressions() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(OptionalExpressions.class)
+                .withSources(config("optional.expression", "${expression}"))
+                .withSources(config("optional.expression-int", "${expression}"))
+                .build();
+
+        OptionalExpressions mapping = config.getConfigMapping(OptionalExpressions.class);
+
+        assertFalse(mapping.expression().isPresent());
+        assertFalse(mapping.expressionInt().isPresent());
     }
 }
