@@ -52,7 +52,6 @@ import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Provider;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -144,7 +143,7 @@ public class ConfigExtension implements Extension {
     }
 
     protected void validate(@Observes AfterDeploymentValidation adv) {
-        Config config = ConfigProvider.getConfig(getContextClassLoader());
+        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();
@@ -176,7 +175,7 @@ public class ConfigExtension implements Extension {
             // Since properties can be a subset, then search for the actual property for a value.
             // Check if it is a map
             // Finally also check if the property is indexed (might be a Collection with indexed properties).
-            if ((!configNames.contains(name) && ConfigProducerUtil.getRawValue(name, config) == null)
+            if ((!configNames.contains(name) && ConfigProducerUtil.getConfigValue(name, config).getValue() == null)
                     && !isMap(type) && !isIndexed(type, name, config)) {
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(
@@ -200,8 +199,8 @@ public class ConfigExtension implements Extension {
                 configPropertiesInjectionPoints);
 
         try {
-            registerConfigMappings(config.unwrap(SmallRyeConfig.class), configMappingsWithPrefix);
-            registerConfigProperties(config.unwrap(SmallRyeConfig.class), configPropertiesWithPrefix);
+            registerConfigMappings(config, configMappingsWithPrefix);
+            registerConfigProperties(config, configPropertiesWithPrefix);
         } catch (ConfigValidationException e) {
             adv.addDeploymentProblem(e);
         }
@@ -227,12 +226,11 @@ public class ConfigExtension implements Extension {
         return configMappingsWithPrefix;
     }
 
-    private static boolean isIndexed(Type type, String name, Config config) {
+    private static boolean isIndexed(Type type, String name, SmallRyeConfig config) {
         return type instanceof ParameterizedType &&
                 (List.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()) ||
                         Set.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType()))
-                &&
-                !((SmallRyeConfig) config).getIndexedPropertiesIndexes(name).isEmpty();
+                && !config.getIndexedPropertiesIndexes(name).isEmpty();
     }
 
     /**

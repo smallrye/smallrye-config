@@ -2,11 +2,14 @@ package io.smallrye.config;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -77,7 +80,7 @@ class ExpressionConfigSourceInterceptorTest {
     void noExpressionComposed() {
         SmallRyeConfig config = buildConfig("expression", "${my.prop${compose}}");
 
-        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getValue("expression", String.class));
         assertEquals("SRCFG00011: Could not expand value compose in property expression", exception.getMessage());
     }
@@ -108,8 +111,6 @@ class ExpressionConfigSourceInterceptorTest {
         assertEquals("1234", config.getValue("expression", String.class));
 
         Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
-        Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
-        Expressions.withoutExpansion(() -> assertEquals("${my.prop}", config.getValue("expression", String.class)));
 
         assertEquals("1234", config.getValue("expression", String.class));
     }
@@ -132,35 +133,73 @@ class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void expressionMissing() {
-        final SmallRyeConfig config = buildConfig("my.prop", "${expression}", "my.prop.partial", "${expression}partial");
+        SmallRyeConfig config = buildConfig("my.prop", "${expression}", "my.prop.partial", "${expression}partial");
 
         assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
         assertThrows(Exception.class, () -> config.getValue("my.prop.partial", String.class));
     }
 
     @Test
+    void expressionMissingOptional() {
+        SmallRyeConfig config = buildConfig("my.prop", "${expression}",
+                "my.prop.partial", "${expression}partial",
+                "my.prop.anotherPartial", "par${expression}tial",
+                "my.prop.dependent", "${my.prop.partial}");
+
+        assertEquals(Optional.empty(), config.getOptionalValue("my.prop", String.class));
+        assertEquals(Optional.empty(), config.getOptionalValue("my.prop.partial", String.class));
+        assertEquals(Optional.empty(), config.getOptionalValue("my.prop.anotherPartial", String.class));
+        assertEquals(Optional.empty(), config.getOptionalValue("my.prop.dependent", String.class));
+
+        ConfigValue noExpression = config.getConfigValue("my.prop");
+        assertNotNull(noExpression);
+        assertEquals(noExpression.getName(), "my.prop");
+        assertNull(noExpression.getValue());
+
+        ConfigValue noExpressionPartial = config.getConfigValue("my.prop.partial");
+        assertNotNull(noExpressionPartial);
+        assertEquals(noExpressionPartial.getName(), "my.prop.partial");
+        assertNull(noExpressionPartial.getValue());
+
+        ConfigValue noExpressionAnotherPartial = config.getConfigValue("my.prop.anotherPartial");
+        assertNotNull(noExpressionAnotherPartial);
+        assertEquals(noExpressionAnotherPartial.getName(), "my.prop.anotherPartial");
+        assertNull(noExpressionAnotherPartial.getValue());
+
+        ConfigValue noExpressionDependent = config.getConfigValue("my.prop.dependent");
+        assertNotNull(noExpressionDependent);
+        assertEquals(noExpressionDependent.getName(), "my.prop.dependent");
+        assertNull(noExpressionDependent.getValue());
+
+        assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
+        assertThrows(Exception.class, () -> config.getValue("my.prop.partial", String.class));
+        assertThrows(Exception.class, () -> config.getValue("my.prop.anotherPartial", String.class));
+        assertThrows(Exception.class, () -> config.getValue("my.prop.dependent", String.class));
+    }
+
+    @Test
     void arrayEscapes() {
-        final SmallRyeConfig config = buildConfig("list", "cat,dog,${mouse},sea\\,turtle", "mouse", "mouse");
-        final List<String> list = config.getValues("list", String.class, ArrayList::new);
+        SmallRyeConfig config = buildConfig("list", "cat,dog,${mouse},sea\\,turtle", "mouse", "mouse");
+        List<String> list = config.getValues("list", String.class, ArrayList::new);
         assertEquals(4, list.size());
         assertEquals(list, Stream.of("cat", "dog", "mouse", "sea,turtle").collect(toList()));
     }
 
     @Test
     void escapeDollar() {
-        final SmallRyeConfig config = buildConfig("my.prop", "\\${value\\${another}end:value}");
+        SmallRyeConfig config = buildConfig("my.prop", "\\${value\\${another}end:value}");
         assertEquals("${value${another}end:value}", config.getRawValue("my.prop"));
     }
 
     @Test
     void escapeBraces() {
-        final SmallRyeConfig config = buildConfig("my.prop", "${value:111{111}");
+        SmallRyeConfig config = buildConfig("my.prop", "${value:111{111}");
         assertEquals("111{111", config.getRawValue("my.prop"));
     }
 
     @Test
     void windowPath() {
-        final SmallRyeConfig config = buildConfig("window.path", "C:\\Some\\Path");
+        SmallRyeConfig config = buildConfig("window.path", "C:\\Some\\Path");
         assertEquals("C:\\Some\\Path", config.getRawValue("window.path"));
     }
 
