@@ -27,6 +27,10 @@
 
   <name>SmallRye: MicroProfile Config TCK</name>
 
+  <properties>
+    <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -51,6 +55,33 @@
             <config_ordinal>120</config_ordinal>
           </systemProperties>
         </configuration>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <classpathDependencyExcludes>
+                <exclude>org.apache.openwebbeans:openwebbeans-spi</exclude>
+                <exclude>org.apache.openwebbeans:openwebbeans-impl</exclude>
+                <exclude>org.apache.openwebbeans.arquillian:owb-arquillian-standalone</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>owb</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <classpathDependencyExcludes>
+                <exclude>org.jboss.weld:weld-core-impl</exclude>
+                <exclude>org.jboss.arquillian.container:arquillian-weld-embedded</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -83,6 +114,14 @@
 
     <!-- Test Dependencies -->
     <dependency>
+      <groupId>org.eclipse.microprofile.config</groupId>
+      <artifactId>microprofile-config-tck</artifactId>
+      <version>${version.eclipse.microprofile.config}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Weld -->
+    <dependency>
       <groupId>org.jboss.weld</groupId>
       <artifactId>weld-core-impl</artifactId>
       <scope>test</scope>
@@ -92,12 +131,27 @@
       <artifactId>arquillian-weld-embedded</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- OWB -->
     <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-tck</artifactId>
-      <version>${version.eclipse.microprofile.config}</version>
+      <groupId>org.apache.openwebbeans</groupId>
+      <artifactId>openwebbeans-spi</artifactId>
+      <version>${dependency.version.openwebbeans}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.openwebbeans</groupId>
+      <artifactId>openwebbeans-impl</artifactId>
+      <version>${dependency.version.openwebbeans}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.openwebbeans.arquillian</groupId>
+      <artifactId>owb-arquillian-standalone</artifactId>
+      <version>${dependency.version.openwebbeans}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
 </project>

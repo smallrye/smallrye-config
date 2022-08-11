@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -113,9 +112,8 @@ class ConfigPropertiesInjectionTest {
         assertNull(config.getConfigValue("theHost").getValue());
         assertNull(config.getConfigValue("port").getValue());
 
-        assertThrows(NoSuchElementException.class,
-                () -> CDI.current().select(Server.class, ConfigProperties.Literal.of("")).get(),
-                () -> ConfigMessages.msg.mappingNotFound(Server.class.getName()).getMessage());
+        assertThrows(UnsatisfiedResolutionException.class,
+                () -> CDI.current().select(Server.class, ConfigProperties.Literal.of("")).get());
     }
 
     @Dependent

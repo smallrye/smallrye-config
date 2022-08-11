@@ -9,24 +9,22 @@ import java.util.Set;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionPoint;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 
-import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappings.ConfigClassWithPrefix;
 import io.smallrye.config.SmallRyeConfig;
 
-public class ConfigMappingInjectionBean<T> implements Bean<T> {
-    private final BeanManager bm;
+public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
     private final ConfigClassWithPrefix configClassWithPrefix;
+    private final Set<Annotation> qualifiers;
 
-    public ConfigMappingInjectionBean(final ConfigClassWithPrefix configClassWithPrefix, final BeanManager bm) {
-        this.bm = bm;
+    ConfigPropertiesInjectionBean(final ConfigClassWithPrefix configClassWithPrefix) {
         this.configClassWithPrefix = configClassWithPrefix;
+        this.qualifiers = Collections.singleton(ConfigProperties.Literal.of(configClassWithPrefix.getPrefix()));
     }
 
     @Override
@@ -46,14 +44,11 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public T create(final CreationalContext<T> creationalContext) {
-        InjectionPoint injectionPoint = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(),
-                creationalContext);
-
         String prefix = configClassWithPrefix.getPrefix();
-        if (injectionPoint != null && injectionPoint.getAnnotated() != null) {
-            ConfigMapping configMapping = injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class);
-            if (configMapping != null) {
-                prefix = configMapping.prefix();
+        if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
+            prefix = configClassWithPrefix.getKlass().getAnnotation(ConfigProperties.class).prefix();
+            if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
+                prefix = "";
             }
         }
 
@@ -73,7 +68,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public Set<Annotation> getQualifiers() {
-        return Collections.singleton(Default.Literal.INSTANCE);
+        return qualifiers;
     }
 
     @Override
@@ -83,7 +78,8 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName() + "_" + configClassWithPrefix.getKlass().getName();
+        return this.getClass().getSimpleName() + "_" + configClassWithPrefix.getKlass().getName() + "_"
+                + configClassWithPrefix.getPrefix();
     }
 
     @Override
