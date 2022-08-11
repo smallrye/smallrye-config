@@ -7,6 +7,7 @@ import static java.lang.Boolean.TRUE;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,6 +136,23 @@ public final class ConfigMappings implements Serializable {
 
         public String getPrefix() {
             return prefix;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final ConfigClassWithPrefix that = (ConfigClassWithPrefix) o;
+            return klass.equals(that.klass) && prefix.equals(that.prefix);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(klass, prefix);
         }
 
         public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass, final String prefix) {

@@ -20,9 +20,11 @@ import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.InjectionPoint;
+import javax.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -55,7 +57,19 @@ public final class ConfigProducerUtil {
      * @return the converted configuration value.
      */
     public static <T> T getValue(InjectionPoint injectionPoint, Config config) {
-        return getValue(getName(injectionPoint), injectionPoint.getType(), getDefaultValue(injectionPoint), config);
+        return getValue(getName(injectionPoint), getType(injectionPoint), getDefaultValue(injectionPoint), config);
+    }
+
+    private static Type getType(InjectionPoint injectionPoint) {
+        Type type = injectionPoint.getType();
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            if (parameterizedType.getRawType().equals(Provider.class)
+                    || parameterizedType.getRawType().equals(Instance.class)) {
+                return parameterizedType.getActualTypeArguments()[0];
+            }
+        }
+        return type;
     }
 
     /**
