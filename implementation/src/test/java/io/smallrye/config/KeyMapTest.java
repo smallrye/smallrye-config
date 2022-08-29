@@ -202,7 +202,9 @@ class KeyMapTest {
     void map() {
         KeyMap<String> map = new KeyMap<>();
         map.findOrAdd("map.roles.*[*]").putRootValue("foo");
+        map.findOrAdd("map.threadpool.config[customPool].id").putRootValue("customPool");
 
         assertEquals("foo", map.findRootValue("map.roles.user[0]"));
+        assertEquals("customPool", map.findRootValue("map.threadpool.config[customPool].id"));
     }
 }

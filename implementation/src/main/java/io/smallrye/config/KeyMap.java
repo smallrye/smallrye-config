@@ -211,7 +211,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return getOrCreateAny();
         } else if (seg.endsWith("]")) {
             int begin = seg.lastIndexOf('[');
-            if (begin != -1) {
+            if (begin != -1 && isValidIndex(seg, begin)) {
                 String index = seg.substring(begin + 1, seg.length() - 1);
                 String name = seg.substring(0, begin);
                 KeyMap<V> next;
