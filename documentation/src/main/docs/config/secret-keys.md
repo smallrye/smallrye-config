@@ -30,5 +30,5 @@ String secretValue = SecretKeys.doUnlocked(() -> {
 });
 ```
 
-Secret Keyes are only unlocked in the context of `doUnlocked`. Once the execution completes, the secrets become locked 
+Secret Keys are only unlocked in the context of `doUnlocked`. Once the execution completes, the secrets become locked 
 again.
