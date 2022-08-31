@@ -29,6 +29,7 @@
 
   <properties>
     <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>
+    <tck.skip.owb>false</tck.skip.owb>
   </properties>
 
   <build>
@@ -75,6 +76,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${tck.skip.owb}</skip>
               <classpathDependencyExcludes>
                 <exclude>org.jboss.weld:weld-core-impl</exclude>
                 <exclude>org.jboss.arquillian.container:arquillian-weld-embedded</exclude>

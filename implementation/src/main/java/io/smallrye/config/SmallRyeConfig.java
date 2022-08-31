@@ -264,8 +264,9 @@ public class SmallRyeConfig implements Config, Serializable {
                 configValue = configValue.noProblems();
             } else {
                 ConfigValidationException.Problem problem = problems.get(0);
-                if (problem.getException().isPresent()) {
-                    throw problem.getException().get();
+                Optional<RuntimeException> exception = problem.getException();
+                if (exception.isPresent()) {
+                    throw exception.get();
                 }
             }
         }
@@ -276,7 +277,7 @@ public class SmallRyeConfig implements Config, Serializable {
             try {
                 converted = converter.convert(configValue.getValue());
             } catch (IllegalArgumentException e) {
-                throw ConfigMessages.msg.converterException(e, configValue.getName(), configValue.getValue(),
+                throw ConfigMessages.msg.converterException(e, configValue.getNameProfiled(), configValue.getValue(),
                         e.getLocalizedMessage()); // 1
             }
         } else {
@@ -284,17 +285,17 @@ public class SmallRyeConfig implements Config, Serializable {
                 // See if the Converter is designed to handle a missing (null) value i.e. Optional Converters
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getName())); // 2
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled())); // 2
             }
         }
 
         if (converted == null) {
             if (configValue.getValue() == null) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getName())); // 2
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled())); // 2
             } else if (configValue.getValue().length() == 0) {
-                throw ConfigMessages.msg.propertyEmptyString(configValue.getName(), converter.getClass().getTypeName()); // 3
+                throw ConfigMessages.msg.propertyEmptyString(configValue.getNameProfiled(), converter.getClass().getTypeName()); // 3
             } else {
-                throw ConfigMessages.msg.converterReturnedNull(configValue.getName(), configValue.getValue(),
+                throw ConfigMessages.msg.converterReturnedNull(configValue.getNameProfiled(), configValue.getValue(),
                         converter.getClass().getTypeName()); // 4
             }
         }
