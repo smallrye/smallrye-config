@@ -18,5 +18,5 @@ mvn -ntp versions:update-property -Dproperty=version.eclipse.microprofile.config
 sed -i'' -e 's/validation>2.0.2</validation>3.0.1</g' validator/pom.xml
 mvn -ntp versions:update-property -Dproperty=version.hibernate.validator -DnewVersion=7.0.1.Final
 mvn -ntp versions:update-property -Dproperty=version.jakarta.el -DnewVersion=4.0
-mvn -ntp versions:update-property -Dproperty=version.smallrye.common -DnewVersion=2.0.0-RC1
-mvn -ntp versions:update-property -Dproperty=version.smallrye.testing.utilities -DnewVersion=2.0.0-RC1
+mvn -ntp versions:update-property -Dproperty=version.smallrye.common -DnewVersion=2.0.0
+mvn -ntp versions:update-property -Dproperty=version.smallrye.testing.utilities -DnewVersion=2.0.0
