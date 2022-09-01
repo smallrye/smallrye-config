@@ -1553,4 +1553,32 @@ class ConfigMappingInterfaceTest {
         assertFalse(mapping.expression().isPresent());
         assertFalse(mapping.expressionInt().isPresent());
     }
+
+    @Test
+    void defaultsBuilderAndMapping() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(DefaultsBuilderAndMapping.class)
+                .withDefaultValue("server.host", "localhost")
+                .build();
+
+        DefaultsBuilderAndMapping mapping = config.getConfigMapping(DefaultsBuilderAndMapping.class);
+
+        assertEquals("localhost", config.getRawValue("server.host"));
+        assertEquals(443, mapping.ssl().port());
+        assertEquals(2, mapping.ssl().protocols().size());
+    }
+
+    @ConfigMapping(prefix = "server")
+    interface DefaultsBuilderAndMapping {
+        Ssl ssl();
+
+        interface Ssl {
+            @WithDefault("443")
+            int port();
+
+            @WithDefault("TLSv1.3,TLSv1.2")
+            List<String> protocols();
+        }
+    }
 }
