@@ -21,21 +21,21 @@
 
   <parent>
     <groupId>io.smallrye</groupId>
-    <artifactId>smallrye-parent</artifactId>
+    <artifactId>smallrye-jakarta-parent</artifactId>
     <version>36</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
   <artifactId>smallrye-config-parent</artifactId>
-  <version>2.12.1-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye: MicroProfile Config Parent</name>
   <url>http://smallrye.io</url>
 
   <properties>
-    <version.eclipse.microprofile.config>2.0.1</version.eclipse.microprofile.config>
-    <version.smallrye.common>1.13.1</version.smallrye.common>
+    <version.eclipse.microprofile.config>3.0.1</version.eclipse.microprofile.config>
+    <version.smallrye.common>2.0.0</version.smallrye.common>
     <version.asm>9.3</version.asm>
 
     <version.smallrye.testing>1.0.0</version.smallrye.testing>

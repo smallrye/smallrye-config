@@ -19,8 +19,8 @@ package io.smallrye.config.test.collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 

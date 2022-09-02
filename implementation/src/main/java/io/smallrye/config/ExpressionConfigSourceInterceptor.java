@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
 

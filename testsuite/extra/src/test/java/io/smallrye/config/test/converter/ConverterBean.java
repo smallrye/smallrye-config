@@ -15,7 +15,7 @@
  */
 package io.smallrye.config.test.converter;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
