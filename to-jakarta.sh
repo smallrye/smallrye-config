@@ -20,3 +20,5 @@ mvn -ntp versions:update-property -Dproperty=version.hibernate.validator -DnewVe
 mvn -ntp versions:update-property -Dproperty=version.jakarta.el -DnewVersion=4.0
 mvn -ntp versions:update-property -Dproperty=version.smallrye.common -DnewVersion=2.0.0
 mvn -ntp versions:update-property -Dproperty=version.smallrye.testing.utilities -DnewVersion=2.0.0
+
+mvn versions:set-property -Dproperty=tck.skip.owb -DnewVersion=true
