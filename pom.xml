@@ -38,7 +38,7 @@
     <version.smallrye.common>1.13.1</version.smallrye.common>
     <version.asm>9.3</version.asm>
 
-    <version.smallrye.testing>1.0.0</version.smallrye.testing>
+    <version.smallrye.testing>2.0.0</version.smallrye.testing>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
