@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.validation.Constraint;
 import javax.validation.ConstraintValidator;
@@ -296,7 +298,7 @@ public class ValidateConfigTest {
 
     private static void assertValidationsEqual(List<String> validations, String... expectedProblemMessages) {
         List<String> remainingActual = new ArrayList<>(validations);
-        List<String> remainingExpected = new ArrayList<>(List.of(expectedProblemMessages));
+        List<String> remainingExpected = Stream.of(expectedProblemMessages).collect(Collectors.toList());
         computeListDifference(remainingActual, remainingExpected);
         StringBuilder failureMessage = new StringBuilder();
         addFailureToMessage("The following validation problems are missing:", remainingExpected, failureMessage);
