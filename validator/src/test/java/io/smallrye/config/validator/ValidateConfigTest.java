@@ -12,6 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -25,6 +26,8 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
@@ -34,6 +37,25 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithParentName;
 
 public class ValidateConfigTest {
+
+    private static Locale oldDefaultLocale = Locale.getDefault();
+
+    /**
+     * Set the default locale to ROOT before the tests as the validation problem messages are locale-sensitive.
+     */
+    @BeforeAll
+    static void setupMessageLocale() {
+        Locale.setDefault(Locale.ROOT);
+    }
+
+    /**
+     * Restore the old default locale just in case it is needed elsewhere outside this test class.
+     */
+    @AfterAll
+    static void restoreMessageLocale() {
+        Locale.setDefault(oldDefaultLocale);
+    }
+
     @Test
     void validateConfigMapping() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
