@@ -99,6 +99,9 @@ public class StringUtil {
                 sb.append(c);
             } else {
                 sb.append('_');
+                if (c == '"' && i + 1 == length) {
+                    sb.append('_');
+                }
             }
         }
         return sb.toString();
@@ -148,7 +151,10 @@ public class StringUtil {
                         quotesOpen = true;
                     } else if ('_' == name.charAt(j) && quotesOpen) {
                         sb.append("\"");
-                        sb.append(".");
+                        // Ending
+                        if (j + 1 < length) {
+                            sb.append(".");
+                        }
                         i = j;
                         quotesOpen = false;
                     } else {

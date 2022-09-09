@@ -204,11 +204,15 @@ public class SmallRyeConfig implements Config, Serializable {
         final Map<K, V> result = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
             if (propertyName.startsWith(prefix)) {
-                final String key = propertyName.substring(prefix.length());
-                if (key.indexOf('.') >= 0) {
-                    // Ignore sub namespaces
-                    continue;
+                NameIterator nameIterator = new NameIterator(propertyName, prefix.length() - 1);
+                if (nameIterator.hasNext()) {
+                    nameIterator.next();
+                    if (nameIterator.hasNext()) {
+                        continue;
+                    }
+                    nameIterator.previous();
                 }
+                final String key = nameIterator.getNextSegment();
                 ConfigValue configValueKey = ConfigValue.builder().withName(propertyName + "#key").withValue(key).build();
                 ConfigValue configValue = getConfigValue(propertyName).withName(propertyName + "#value");
                 result.put(convertValue(configValueKey, keyConverter), convertValue(configValue, valueConverter));
