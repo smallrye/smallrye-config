@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -346,5 +348,17 @@ class SmallRyeConfigTest {
 
         assertTrue(config.getConfigSource("EnvConfigSource").isPresent());
         assertEquals("1234", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void getValuesAsMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("my.prop.key", "value", "my.prop.key.nested", "value"))
+                .build();
+
+        Map<String, String> map = config.getValuesAsMap("my.prop", STRING_CONVERTER, STRING_CONVERTER);
+        assertEquals(1, map.size());
+        assertEquals("value", map.get("key"));
     }
 }

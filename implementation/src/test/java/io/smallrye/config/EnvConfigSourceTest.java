@@ -15,6 +15,8 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.STRING_CONVERTER;
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,5 +146,26 @@ class EnvConfigSourceTest {
         assertTrue(properties.contains("999.my.value"));
         assertTrue(properties.contains("_999_MY_VALUE"));
         assertTrue(properties.contains("%999.my.value"));
+    }
+
+    @Test
+    void map() {
+        Map<String, String> env = new HashMap<String, String>() {
+            {
+                put("TEST_LANGUAGE__DE_ETR__", "Einfache Sprache");
+                put("TEST_LANGUAGE_PT_BR", "FROM ENV");
+            }
+        };
+
+        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("test.language.pt-br", "value"))
+                .withSources(envConfigSource)
+                .build();
+
+        Map<String, String> map = config.getValuesAsMap("test.language", STRING_CONVERTER, STRING_CONVERTER);
+        assertEquals(map.get("de.etr"), "Einfache Sprache");
+        assertEquals(map.get("pt-br"), "FROM ENV");
     }
 }

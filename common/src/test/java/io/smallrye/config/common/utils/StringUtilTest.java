@@ -111,4 +111,15 @@ class StringUtilTest {
         assertEquals("my-property-abc-abc", StringUtil.skewer("myPropertyABCabc"));
         assertEquals("my.property.abc.abc", StringUtil.skewer("myPropertyABCabc", '.'));
     }
+
+    @Test
+    void replaceNonAlphanumericByUnderscores() {
+        assertEquals("TEST_LANGUAGE__DE_ETR__",
+                StringUtil.replaceNonAlphanumericByUnderscores("test.language.\"de.etr\"".toUpperCase()));
+    }
+
+    @Test
+    void toLowerCaseAndDotted() {
+        assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
+    }
 }
