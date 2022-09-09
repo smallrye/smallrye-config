@@ -325,34 +325,24 @@ final class ConfigMappingProvider implements Serializable {
 
         if (optional && property.asOptional().getNestedProperty().isGroup()) {
             GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
-            GetOrCreateEnclosingGroupInGroup nestedMatchAction = new GetOrCreateEnclosingGroupInGroup(
+            GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
                     property.isParentPropertyName() ? new GetNestedEnclosing(matchAction)
                             : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
                     group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    nestedMatchAction, nestedMatchAction, new HashSet<>());
+                    nestedEnclosingFunction, nestedEnclosingFunction, new HashSet<>());
         } else if (property.isGroup()) {
             GroupProperty asGroup = property.asGroup();
             GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
-                    property.isParentPropertyName() ? getEnclosingFunction
-                            : new ConsumeOneAndThenFn<>(getEnclosingFunction),
+                    property.isParentPropertyName() ? new GetNestedEnclosing(matchAction)
+                            : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
                     group, asGroup, currentPath);
-            BiConsumer<ConfigMappingContext, NameIterator> nestedMatchAction;
-            nestedMatchAction = matchAction;
-            if (!property.isParentPropertyName()) {
-                nestedMatchAction = new ConsumeOneAndThen(nestedMatchAction);
-            }
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, asGroup.getGroupType(),
-                    nestedEnclosingFunction,
-                    nestedMatchAction, usedProperties);
+                    nestedEnclosingFunction, nestedEnclosingFunction, usedProperties);
         } else if (property.isLeaf() || property.isPrimitive()
                 || optional && property.asOptional().getNestedProperty().isLeaf()) {
-            BiConsumer<ConfigMappingContext, NameIterator> actualAction;
-            if (!property.isParentPropertyName()) {
-                actualAction = new ConsumeOneAndThen(matchAction);
-            } else {
-                actualAction = matchAction;
-            }
+            BiConsumer<ConfigMappingContext, NameIterator> actualAction = property.isParentPropertyName() ? matchAction
+                    : new ConsumeOneAndThen(matchAction);
             addAction(currentPath, property, actualAction);
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
