@@ -439,4 +439,53 @@ class YamlConfigMappingTest {
             }
         }
     }
+
+    @Test
+    void yamlNestedMaps() {
+        String yaml = "eventStaff:\n"
+                + "    phones:\n"
+                + "        home: \"1\"\n"
+                + "    coordinators:\n"
+                + "        tim:\n"
+                + "            contactInfo:\n"
+                + "                address: \"a\"\n"
+                + "                phones:\n"
+                + "                    home: \"1\"\n"
+                + "                    cell: \"2\"\n";
+
+        YamlConfigSource yamlConfigSource = new YamlConfigSource("Yaml", yaml);
+
+        assertEquals("a", yamlConfigSource.getValue("eventStaff.coordinators.tim.contactInfo.address"));
+        assertEquals("1", yamlConfigSource.getValue("eventStaff.coordinators.tim.contactInfo.phones.home"));
+        assertEquals("2", yamlConfigSource.getValue("eventStaff.coordinators.tim.contactInfo.phones.cell"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(EventStaff.class, "eventStaff")
+                .withSources(yamlConfigSource)
+                .build();
+
+        EventStaff eventStaff = config.getConfigMapping(EventStaff.class);
+
+        assertEquals("1", eventStaff.phones().get("home"));
+        assertEquals("a", eventStaff.coordinators().get("tim").contactInfo().address());
+        assertEquals("1", eventStaff.coordinators().get("tim").contactInfo().phones().get("home"));
+        assertEquals("2", eventStaff.coordinators().get("tim").contactInfo().phones().get("cell"));
+    }
+
+    @ConfigMapping(prefix = "eventStaff", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
+    public interface EventStaff {
+        Map<String, String> phones();
+
+        Map<String, Coordinator> coordinators();
+
+        interface Coordinator {
+            ContactInfo contactInfo();
+
+            interface ContactInfo {
+                String address();
+
+                Map<String, String> phones();
+            }
+        }
+    }
 }
