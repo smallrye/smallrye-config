@@ -47,6 +47,8 @@ final class ConfigMappingProvider implements Serializable {
     static {
         final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> map = new KeyMap<>();
         map.putRootValue(DO_NOTHING);
+        //noinspection CollectionAddedToSelf
+        map.putAny(map);
         IGNORE_EVERYTHING = map;
     }
 
@@ -89,11 +91,23 @@ final class ConfigMappingProvider implements Serializable {
             if (ignoredPath[len - 1].equals("**")) {
                 found = matchActions.findOrAdd(ignoredPath, 0, len - 1);
                 found.putRootValue(DO_NOTHING);
-                found.putAny(IGNORE_EVERYTHING);
+                ignoreRecursively(found);
             } else {
                 found = matchActions.findOrAdd(ignoredPath);
                 found.putRootValue(DO_NOTHING);
             }
+        }
+    }
+
+    static void ignoreRecursively(KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> root) {
+        if (root.getAny() == null) {
+            root.putAny(IGNORE_EVERYTHING);
+        } else {
+            ignoreRecursively(root.getAny());
+        }
+
+        for (final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> value : root.values()) {
+            ignoreRecursively(value);
         }
     }
 
@@ -932,6 +946,9 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
 
+        boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class)
+                .orElse(this.validateUnknown);
+
         // lazily sweep
         Set<String> unknownProperties = new HashSet<>();
         for (String name : config.getPropertyNames()) {
@@ -945,7 +962,7 @@ final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                if (validateUnknown(validateUnknown, config)) {
+                if (validateUnknown) {
                     unknownProperties.add(name);
                 }
             }
@@ -1116,11 +1133,6 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
         return false;
-    }
-
-    private static boolean validateUnknown(final boolean validateUnknown, final SmallRyeConfig config) {
-        return config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
-                .orElse(validateUnknown);
     }
 
     private static void unknownProperties(Set<String> properties, ConfigMappingContext context) {

@@ -1581,4 +1581,45 @@ class ConfigMappingInterfaceTest {
             List<String> protocols();
         }
     }
+
+    @Test
+    void ignoreNestedUnknown() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(IgnoreNestedUnknown.class)
+                .withSources(config("ignore.nested.value", "value", "ignore.nested.ignore", "ignore"))
+                .withSources(config("ignore.nested.nested.value", "value", "ignore.nested.nested.ignore", "ignore"))
+                .withSources(config("ignore.nested.optional.value", "value", "ignore.nested.optional.ignore", "ignore"))
+                .withSources(config("ignore.nested.list[0].value", "value", "ignore.nested.list[0].ignore", "ignore"))
+                .withSources(config("ignore.nested.map.key", "value", "ignore.nested.map.ignored.ignored", "ignore"))
+                .withSources(config("ignore.nested.ignore.ignore", "ignore"))
+                .withMappingIgnore("ignore.nested.**")
+                .build();
+
+        IgnoreNestedUnknown mapping = config.getConfigMapping(IgnoreNestedUnknown.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals("value", mapping.nested().value());
+        assertTrue(mapping.optional().isPresent());
+        assertEquals("value", mapping.optional().get().value());
+        assertEquals("value", mapping.list().get(0).value());
+        assertEquals("value", mapping.map().get("key"));
+    }
+
+    @ConfigMapping(prefix = "ignore.nested")
+    interface IgnoreNestedUnknown {
+        String value();
+
+        Nested nested();
+
+        Optional<Nested> optional();
+
+        List<Nested> list();
+
+        Map<String, String> map();
+
+        interface Nested {
+            String value();
+        }
+    }
 }
