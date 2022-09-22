@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.NameIterator.Flag.INCLUDE_QUOTES;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -106,7 +108,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public KeyMap<V> find(final String path) {
-        return find(new NameIterator(path));
+        return find(new NameIterator(path, INCLUDE_QUOTES));
     }
 
     public KeyMap<V> find(final NameIterator ni) {
@@ -166,7 +168,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public KeyMap<V> findOrAdd(final String path) {
-        return findOrAdd(new NameIterator(path));
+        return findOrAdd(new NameIterator(path, INCLUDE_QUOTES));
     }
 
     public KeyMap<V> findOrAdd(final NameIterator ni) {
@@ -233,7 +235,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public V findRootValue(final String path) {
-        return findRootValue(new NameIterator(path));
+        return findRootValue(new NameIterator(path, INCLUDE_QUOTES));
     }
 
     public V findRootValue(final NameIterator ni) {
@@ -242,7 +244,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public boolean hasRootValue(final String path) {
-        return hasRootValue(new NameIterator(path));
+        return hasRootValue(new NameIterator(path, INCLUDE_QUOTES));
     }
 
     public boolean hasRootValue(final NameIterator ni) {
@@ -310,7 +312,6 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder b) {
         b.append("KeyMap(");
         V rootValue = this.rootValue;

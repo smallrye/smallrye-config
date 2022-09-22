@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.NameIterator.Flag.INCLUDE_QUOTES;
+
+import java.util.EnumSet;
 import java.util.NoSuchElementException;
 
 import io.smallrye.common.constraint.Assert;
@@ -17,10 +20,15 @@ public final class NameIterator {
     private static final int SE_SHIFT = 32 - POS_BITS;
 
     private final String name;
+    private final EnumSet<Flag> flags;
     private int pos;
 
     public NameIterator(final String name) {
         this(name, false);
+    }
+
+    public NameIterator(final String name, final Flag... flags) {
+        this(name, -1, flags);
     }
 
     public NameIterator(final String name, final boolean startAtEnd) {
@@ -28,6 +36,10 @@ public final class NameIterator {
     }
 
     public NameIterator(final String name, final int pos) {
+        this(name, pos, new Flag[0]);
+    }
+
+    public NameIterator(final String name, final int pos, final Flag... flags) {
         Assert.checkNotNullParam("name", name);
         if (name.length() > MAX_LENGTH)
             throw new IllegalArgumentException("Name is too long");
@@ -36,6 +48,7 @@ public final class NameIterator {
         if (pos != -1 && pos != name.length() && name.charAt(pos) != '.')
             throw new IllegalArgumentException("Position is not located at a delimiter");
         this.name = name;
+        this.flags = flags == null || flags.length == 0 ? Flag.NO_FLAGS : EnumSet.of(flags[0], flags);
         this.pos = pos;
     }
 
@@ -128,7 +141,7 @@ public final class NameIterator {
             if (state == FS_INITIAL) {
                 if (ch == '.') {
                     return cookieOf(state, pos);
-                } else if (ch == '"') {
+                } else if (ch == '"' && !flags.contains(INCLUDE_QUOTES)) {
                     state = FS_QUOTE;
                 } else if (ch == '\\') {
                     state = FS_BACKSLASH;
@@ -173,7 +186,7 @@ public final class NameIterator {
                     return cookieOf(state, pos);
                 } else if (ch == '.') {
                     return cookieOf(state, pos);
-                } else if (ch == '"') {
+                } else if (ch == '"' && !flags.contains(INCLUDE_QUOTES)) {
                     state = FS_QUOTE;
                 } else if (ch == '\\') {
                     // skip
@@ -346,5 +359,11 @@ public final class NameIterator {
 
     public void appendTo(final StringBuilder sb) {
         sb.append(getAllPreviousSegments());
+    }
+
+    public enum Flag {
+        INCLUDE_QUOTES;
+
+        private static final EnumSet<Flag> NO_FLAGS = EnumSet.noneOf(Flag.class);
     }
 }

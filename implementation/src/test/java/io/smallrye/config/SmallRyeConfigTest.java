@@ -361,4 +361,22 @@ class SmallRyeConfigTest {
         assertEquals(1, map.size());
         assertEquals("value", map.get("key"));
     }
+
+    @Test
+    void quotedKeys() {
+        KeyMap<String> keyMap = new KeyMap<>();
+        keyMap.findOrAdd("env.\"quoted-key\".value").putRootValue("key-map");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(new EnvConfigSource(Collections.singletonMap("ENV__QUOTED_KEY__VALUE", "env"), 300))
+                .withSources(new KeyMapBackedConfigSource("", 100, keyMap))
+                .build();
+
+        config.isPropertyPresent("ENV__QUOTED_KEY__VALUE");
+        config.isPropertyPresent("env.\"quoted-key\".value");
+
+        assertNull(config.getRawValue("env.quoted-key.value"));
+        assertEquals("env", config.getRawValue("env.\"quoted-key\".value"));
+    }
 }
