@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.AbstractConfigSource;
@@ -360,5 +361,22 @@ class SmallRyeConfigTest {
         Map<String, String> map = config.getValuesAsMap("my.prop", STRING_CONVERTER, STRING_CONVERTER);
         assertEquals(1, map.size());
         assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    void quotedKeysInEnv() {
+        KeyMap<String> keyMap = new KeyMap<>();
+        keyMap.findOrAdd("env.\"quoted-key\".value").putRootValue("key-map");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(new EnvConfigSource(Collections.singletonMap("ENV__QUOTED_KEY__VALUE", "env"), 300))
+                .withSources(new KeyMapBackedConfigSource("key-map", 100, keyMap))
+                .build();
+
+        assertEquals("env", config.getRawValue("env.\"quoted-key\".value"));
+
+        ConfigSource keymap = config.getConfigSource("key-map").get();
+        assertEquals("key-map", keymap.getValue("env.\"quoted-key\".value"));
     }
 }

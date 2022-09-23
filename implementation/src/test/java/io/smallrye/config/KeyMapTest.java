@@ -207,4 +207,65 @@ class KeyMapTest {
         assertEquals("foo", map.findRootValue("map.roles.user[0]"));
         assertEquals("customPool", map.findRootValue("map.threadpool.config[customPool].id"));
     }
+
+    @Test
+    void findOrAdd() {
+        KeyMap<String> varArgs = new KeyMap<>();
+        varArgs.findOrAdd("foo", "bar", "baz").putRootValue("value");
+
+        KeyMap<String> array = new KeyMap<>();
+        array.findOrAdd(new String[] { "foo", "bar", "baz" }, 0, 3).putRootValue("value");
+
+        KeyMap<String> string = new KeyMap<>();
+        string.findOrAdd("foo.bar.baz").putRootValue("value");
+
+        KeyMap<String> nameIterator = new KeyMap<>();
+        nameIterator.findOrAdd(new NameIterator("foo.bar.baz")).putRootValue("value");
+
+        KeyMap<String> iterator = new KeyMap<>();
+        iterator.findOrAdd(Stream.of("foo", "bar", "baz").collect(toList()).iterator()).putRootValue("value");
+
+        KeyMap<String> iterable = new KeyMap<>();
+        iterable.findOrAdd(Stream.of("foo", "bar", "baz").collect(toList())).putRootValue("value");
+
+        assertEquals("value", varArgs.findRootValue("foo.bar.baz"));
+        assertEquals("value", array.findRootValue("foo.bar.baz"));
+        assertEquals("value", string.findRootValue("foo.bar.baz"));
+        assertEquals("value", nameIterator.findRootValue("foo.bar.baz"));
+        assertEquals("value", iterator.findRootValue("foo.bar.baz"));
+        assertEquals("value", iterable.findRootValue("foo.bar.baz"));
+    }
+
+    @Test
+    void findOrAddDotted() {
+        //        KeyMap<String> map = new KeyMap<>();
+        //        map.findOrAdd("map.\"quoted.key\".value").putRootValue("value");
+        //        assertEquals("value", map.findRootValue("map.\"quoted.key\".value"));
+        //        assertNull(map.findRootValue("map.quoted.key.value"));
+
+        KeyMap<String> varArgs = new KeyMap<>();
+        varArgs.findOrAdd("foo", "bar.bar", "baz").putRootValue("value");
+
+        KeyMap<String> array = new KeyMap<>();
+        array.findOrAdd(new String[] { "foo", "bar.bar", "baz" }, 0, 3).putRootValue("value");
+
+        KeyMap<String> string = new KeyMap<>();
+        string.findOrAdd("foo.\"bar.bar\".baz").putRootValue("value");
+
+        KeyMap<String> nameIterator = new KeyMap<>();
+        nameIterator.findOrAdd(new NameIterator("foo.\"bar.bar\".baz")).putRootValue("value");
+
+        KeyMap<String> iterator = new KeyMap<>();
+        iterator.findOrAdd(Stream.of("foo", "bar.bar", "baz").collect(toList()).iterator()).putRootValue("value");
+
+        KeyMap<String> iterable = new KeyMap<>();
+        iterable.findOrAdd(Stream.of("foo", "bar.bar", "baz").collect(toList())).putRootValue("value");
+
+        assertEquals("value", varArgs.findRootValue("foo.\"bar.bar\".baz"));
+        assertEquals("value", array.findRootValue("foo.\"bar.bar\".baz"));
+        assertEquals("value", string.findRootValue("foo.\"bar.bar\".baz"));
+        assertEquals("value", nameIterator.findRootValue("foo.\"bar.bar\".baz"));
+        assertEquals("value", iterator.findRootValue("foo.\"bar.bar\".baz"));
+        assertEquals("value", iterable.findRootValue("foo.\"bar.bar\".baz"));
+    }
 }
