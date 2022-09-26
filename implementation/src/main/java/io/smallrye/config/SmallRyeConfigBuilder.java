@@ -17,6 +17,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
 import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
 
 import java.lang.reflect.Type;
@@ -189,14 +190,67 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                final Map<String, String> relocations = new HashMap<>();
+                Map<String, String> relocations = new HashMap<>();
                 relocations.put(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, Config.PROFILE);
+
+                List<MultipleProfileProperty> multipleProfileProperties = new ArrayList<>();
+                Iterator<String> names = context.iterateNames();
+                while (names.hasNext()) {
+                    String name = names.next();
+                    if (name.charAt(0) == '%') {
+                        NameIterator ni = new NameIterator(name);
+                        String profileSegment = ni.getNextSegment();
+                        List<String> profiles = convertProfile(profileSegment.substring(1));
+                        if (profiles.size() > 1) {
+                            multipleProfileProperties
+                                    .add(new MultipleProfileProperty(name, name.substring(profileSegment.length()), profiles));
+                        }
+                    }
+                }
+
+                // Ordered properties by least number of profiles. Priority to the ones with most specific profiles.
+                for (MultipleProfileProperty multipleProfileProperty : multipleProfileProperties) {
+                    for (String profile : multipleProfileProperty.getProfiles()) {
+                        relocations.putIfAbsent("%" + profile + multipleProfileProperty.getRelocateName(),
+                                multipleProfileProperty.getName());
+                    }
+                }
+
                 return new RelocateConfigSourceInterceptor(relocations);
             }
 
             @Override
             public OptionalInt getPriority() {
                 return OptionalInt.of(Priorities.LIBRARY + 200 - 1);
+            }
+
+            class MultipleProfileProperty implements Comparable<MultipleProfileProperty> {
+                private final String name;
+                private final String relocateName;
+                private final List<String> profiles;
+
+                public MultipleProfileProperty(final String name, final String relocateName, final List<String> profiles) {
+                    this.name = name;
+                    this.relocateName = relocateName;
+                    this.profiles = profiles;
+                }
+
+                public String getName() {
+                    return name;
+                }
+
+                public String getRelocateName() {
+                    return relocateName;
+                }
+
+                public List<String> getProfiles() {
+                    return profiles;
+                }
+
+                @Override
+                public int compareTo(final MultipleProfileProperty o) {
+                    return Integer.compare(this.getProfiles().size(), o.getProfiles().size());
+                }
             }
         }));
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
@@ -260,7 +314,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withProfile(String profile) {
         addDefaultInterceptors();
-        this.profiles.addAll(ProfileConfigSourceInterceptor.convertProfile(profile));
+        this.profiles.addAll(convertProfile(profile));
         return this;
     }
 
