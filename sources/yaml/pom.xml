@@ -13,7 +13,7 @@
     <name>SmallRye: MicroProfile Config Source - Yaml</name>
 
     <properties>
-        <snakeyaml.version>1.32</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
     </properties>
 
     <dependencies>
