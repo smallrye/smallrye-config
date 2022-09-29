@@ -257,7 +257,13 @@ public abstract class AbstractLocationConfigSourceLoader {
     }
 
     private boolean validExtension(final String resourceName) {
-        for (String s : getFileExtensions()) {
+        String[] fileExtensions = getFileExtensions();
+
+        if (fileExtensions.length == 0) {
+            return true;
+        }
+
+        for (String s : fileExtensions) {
             if (resourceName.endsWith(s)) {
                 return true;
             }
