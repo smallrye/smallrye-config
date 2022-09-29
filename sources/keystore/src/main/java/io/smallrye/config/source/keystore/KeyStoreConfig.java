@@ -1,0 +1,31 @@
+package io.smallrye.config.source.keystore;
+
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithParentName;
+
+import java.util.Map;
+import java.util.Optional;
+
+@ConfigMapping(prefix = "io.smallrye.config.source.keystore")
+public interface KeyStoreConfig {
+    @WithParentName
+    Map<String, KeyStore> keystores();
+
+    interface KeyStore {
+        String path();
+
+        @WithDefault("PKCS12")
+        String type();
+
+        String password();
+
+        Map<String, Alias> aliases();
+
+        interface Alias {
+            Optional<String> name();
+
+            Optional<String> password();
+        }
+    }
+}
