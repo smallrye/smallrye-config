@@ -1085,7 +1085,7 @@ configuration, then the last listed profile has priority. Consider:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">common,dev</span><span class="w"></span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span><span class="w"></span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
@@ -1100,6 +1100,24 @@ configuration, then the last listed profile has priority. Consider:</p>
 <li><code>my.prop</code> value is <code>5678</code></li>
 <li><code>test.prop</code> does not have a value</li>
 </ul>
+<p>It is also possible to define multiple profile properties, with a comma-separated list of profile names:</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="na">%prod,dev.my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
+</code></pre></div>
+</div>
+<p>The property name <code>common.prop</code> is active in both <code>dev</code> and <code>prod</code> profile. If the same property name exists in 
+multiple profile properties then, the property name with the most specific profile wins:</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="na">%prod,dev.my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
+</code></pre></div>
+</div>
+<p>Then <code>my.prop</code> value is <code>5678</code>.</p>
 <h2 id="parent-profile">Parent Profile<a class="headerlink" href="#parent-profile" title="Permanent link">#</a></h2>
 <p>A Parent Profile adds multiple levels of hierarchy to the current profile. The configuration 
 <code>smallrye.config.profile.parent</code> also acccepts a comma-separated list of profile names.</p>
@@ -1107,16 +1125,16 @@ configuration, then the last listed profile has priority. Consider:</p>
 fallbacks to the Parent Profile. Consider:</p>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">smallrye.config.profile.parent</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span><span class="w"></span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">smallrye.config.profile.parent</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="na">my.prop</span><span class="o">=</span><span class="s">1234</span><span class="w"></span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="na">%common.my.prop</span><span class="o">=</span><span class="s">0</span><span class="w"></span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="na">%dev.my.prop</span><span class="o">=</span><span class="s">5678</span><span class="w"></span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="na">%common.commom.prop</span><span class="o">=</span><span class="s">common</span><span class="w"></span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="na">%dev.dev.prop</span><span class="o">=</span><span class="s">dev</span><span class="w"></span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="na">%test.test.prop</span><span class="o">=</span><span class="s">test</span><span class="w"></span>
 </code></pre></div>
 </div>
 <p>Then</p>
@@ -1135,11 +1153,11 @@ the profile is required in advance to load the profile aware files.</p>
 <p>The Parent Profile also supports multiple levels of hierarchies:</p>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">child</span><span class="w"></span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">%child.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">parent</span><span class="w"></span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="na">%parent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">grandparent</span><span class="w"></span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="na">%grandparent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">greatgrandparent</span><span class="w"></span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="na">%greatgrandparent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">end</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">child</span><span class="w"></span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">%child.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">parent</span><span class="w"></span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="na">%parent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">grandparent</span><span class="w"></span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">%grandparent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">greatgrandparent</span><span class="w"></span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="na">%greatgrandparent.smallrye.config.profile.parent</span><span class="o">=</span><span class="s">end</span><span class="w"></span>
 </code></pre></div>
 </div>
 <p>Will load the following profiles in order: <code>child</code>, <code>parent</code>, <code>grandparent</code>, <code>greatgrandparent</code>, <code>end</code> </p>
