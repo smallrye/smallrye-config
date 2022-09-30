@@ -25,7 +25,7 @@
 
   <artifactId>smallrye-config-core</artifactId>
 
-  <name>SmallRye: MicroProfile Config Core Implementation</name>
+  <name>SmallRye Config: Core</name>
 
   <dependencies>
     <dependency>

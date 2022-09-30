@@ -11,7 +11,7 @@
     
     <artifactId>smallrye-config-events</artifactId>
         
-    <name>SmallRye: MicroProfile Config Events</name>
+    <name>SmallRye Config: CDI Events</name>
 
     <dependencies>
         <dependency>

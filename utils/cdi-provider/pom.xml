@@ -11,7 +11,7 @@
     
     <artifactId>smallrye-config-source-injection</artifactId>
         
-    <name>SmallRye: MicroProfile Config Source Injection</name>
+    <name>SmallRye Config: CDI ConfigSource Injection</name>
 
     <dependencies>
         <dependency>

@@ -26,7 +26,7 @@
 
   <artifactId>smallrye-config</artifactId>
 
-  <name>SmallRye: MicroProfile Config CDI Implementation</name>
+  <name>SmallRye Config: CDI</name>
 
   <dependencies>
     <dependency>

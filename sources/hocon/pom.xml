@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>smallrye-config-source-hocon</artifactId>
-    <name>SmallRye: HOCON ConfigSource</name>
+    <name>SmallRye Config: ConfigSource - HOCON</name>
 
     <properties>
         <lightbend-config.version>1.4.2</lightbend-config.version>

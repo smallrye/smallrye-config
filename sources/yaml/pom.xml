@@ -10,7 +10,7 @@
 
     <artifactId>smallrye-config-source-yaml</artifactId>
 
-    <name>SmallRye: MicroProfile Config Source - Yaml</name>
+    <name>SmallRye Config: ConfigSource - YAML</name>
 
     <properties>
         <snakeyaml.version>1.33</snakeyaml.version>
