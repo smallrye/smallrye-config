@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -275,7 +277,19 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             if (result != 0) {
                 return result;
             }
-            return Integer.compare(original.configSourcePosition, candidate.configSourcePosition) * -1;
+            result = Integer.compare(original.configSourcePosition, candidate.configSourcePosition) * -1;
+            if (result != 0) {
+                return result;
+            }
+            // If both properties are profiled, prioritize the one with the most specific profile.
+            if (original.getName().charAt(0) == '%' && candidate.getName().charAt(0) == '%') {
+                List<String> originalProfiles = convertProfile(
+                        new NameIterator(original.getName()).getNextSegment().substring(1));
+                List<String> candidateProfiles = convertProfile(
+                        new NameIterator(candidate.getName()).getNextSegment().substring(1));
+                return Integer.compare(originalProfiles.size(), candidateProfiles.size()) * -1;
+            }
+            return result;
         }
     };
 }

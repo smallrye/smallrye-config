@@ -84,7 +84,7 @@ configuration, then the last listed profile has priority. Consider:
     smallrye.config.profile=common,dev
     
     my.prop=1234
-    %common.my.prop=0
+    %common.my.prop=1234
     %dev.my.prop=5678
     
     %common.commom.prop=common
@@ -98,6 +98,29 @@ Then
 - `dev.prop` value is `dev`
 - `my.prop` value is `5678`
 - `test.prop` does not have a value
+
+It is also possible to define multiple profile properties, with a comma-separated list of profile names:
+
+!!! example
+
+    ```properties
+    %prod,dev.my.prop=1234
+    ```
+
+The property name `common.prop` is active in both `dev` and `prod` profile. If the same property name exists in 
+multiple profile properties then, the property name with the most specific profile wins:
+
+!!! example
+
+    ```properties
+    smallrye.config.profile=dev
+    
+    %prod,dev.my.prop=1234
+
+    %dev.my.prop=5678
+    ```
+
+Then `my.prop` value is `5678`.
 
 ## Parent Profile
 
