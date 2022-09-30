@@ -76,6 +76,7 @@
     <module>converters/json</module>
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
+    <module>utils/crypto</module>
     <module>testsuite</module>
     <module>documentation</module>
     <module>examples</module>
