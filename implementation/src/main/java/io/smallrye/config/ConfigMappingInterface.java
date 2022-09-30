@@ -718,6 +718,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             WithConverter withConverter = method.getAnnotation(WithConverter.class);
             if (withConverter != null) {
                 convertWith = withConverter.value();
+                validateConverter(type, convertWith);
             }
         }
         String propertyName = getPropertyName(method);
@@ -819,6 +820,19 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         } else {
             return null;
+        }
+    }
+
+    private static void validateConverter(final Type type, final Class<? extends Converter<?>> convertWith) {
+        if (type instanceof Class) {
+            try {
+                Method convertMethod = convertWith.getMethod("convert", String.class);
+                if (!((Class<?>) type).isAssignableFrom(convertMethod.getReturnType())) {
+                    throw new IllegalArgumentException();
+                }
+            } catch (NoSuchMethodException e) {
+                // Ignore
+            }
         }
     }
 
