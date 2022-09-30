@@ -25,7 +25,7 @@
 
     <artifactId>smallrye-config-validator</artifactId>
 
-    <name>SmallRye: MicroProfile Config Validator</name>
+    <name>SmallRye Config: Validator</name>
 
     <properties>
         <version.jakarta.validation>2.0.2</version.jakarta.validation>

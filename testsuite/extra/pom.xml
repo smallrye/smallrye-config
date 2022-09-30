@@ -27,7 +27,7 @@
 
   <artifactId>smallrye-config-test-extra</artifactId>
 
-  <name>SmallRye: MicroProfile Config Test Suite - Extra</name>
+  <name>SmallRye Config: Test Suite - Extra</name>
 
   <properties>
     <kotlin.version>1.7.20</kotlin.version>

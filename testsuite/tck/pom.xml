@@ -25,7 +25,7 @@
 
   <artifactId>smallrye-config-tck</artifactId>
 
-  <name>SmallRye: MicroProfile Config TCK</name>
+  <name>SmallRye Config: MicroProfile Config TCK</name>
 
   <properties>
     <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>

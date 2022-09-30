@@ -11,7 +11,7 @@
     
     <artifactId>smallrye-config-converter-json</artifactId>
     
-    <name>SmallRye: MicroProfile Config Converter - Json</name>
+    <name>SmallRye Config: Converter - Json</name>
 
     <dependencies>
         <dependency>

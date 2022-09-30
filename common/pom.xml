@@ -10,7 +10,7 @@
 
   <artifactId>smallrye-config-common</artifactId>
 
-  <name>SmallRye: Common classes</name>
+  <name>SmallRye Config: Common</name>
 
   <dependencies>
     <dependency>

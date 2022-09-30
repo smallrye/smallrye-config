@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>smallrye-config-source-file-system</artifactId>
-    <name>SmallRye: FileSystem ConfigSource</name>
+    <name>SmallRye Config: ConfigSource - FileSystem</name>
 
     <dependencies>
         <dependency>

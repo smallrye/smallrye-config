@@ -28,7 +28,7 @@
   <artifactId>smallrye-config-testsuite</artifactId>
   <packaging>pom</packaging>
 
-  <name>SmallRye: MicroProfile Config Test Suite</name>
+  <name>SmallRye Config: Test Suite</name>
 
   <modules>
     <module>extra</module>

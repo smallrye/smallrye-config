@@ -30,8 +30,8 @@
   <version>2.12.3-SNAPSHOT</version>
 
   <packaging>pom</packaging>
-  <name>SmallRye: MicroProfile Config Parent</name>
-  <url>http://smallrye.io</url>
+  <name>SmallRye Config: Parent</name>
+  <url>https://smallrye.io</url>
 
   <properties>
     <version.eclipse.microprofile.config>2.0.1</version.eclipse.microprofile.config>
