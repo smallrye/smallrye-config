@@ -1,15 +1,6 @@
 package io.smallrye.config.source.keystore;
 
-import io.smallrye.config.AbstractLocationConfigSourceFactory;
-import io.smallrye.config.ConfigSourceContext;
-import io.smallrye.config.ConfigSourceFactory;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.ConfigurableConfigSource;
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigBuilder;
-import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,15 +20,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import io.smallrye.config.AbstractLocationConfigSourceFactory;
+import io.smallrye.config.ConfigSourceContext;
+import io.smallrye.config.ConfigSourceFactory;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigurableConfigSource;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
 
 public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-            .withSources(new ContextConfigSource(context))
-            .withMapping(KeyStoreConfig.class)
-            .build();
+                .withSources(new ContextConfigSource(context))
+                .withMapping(KeyStoreConfig.class)
+                .build();
 
         KeyStoreConfig keyStoreConfig = config.getConfigMapping(KeyStoreConfig.class);
 
@@ -123,17 +124,30 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
                         public Optional<String> password() {
                             return Optional.of(keyStoreConfig.password());
                         }
+
+                        @Override
+                        public Optional<String> algorithm() {
+                            return keyStoreConfig.algorithm();
+                        }
                     });
 
                     if (keyStore.isKeyEntry(alias)) {
-                        Key key = keyStore.getKey(alias, aliasConfig.password().orElse(keyStoreConfig.password()).toCharArray());
-                        properties.put(aliasConfig.name().orElse(alias), new String(key.getEncoded(), UTF_8));
+                        Key key = keyStore.getKey(alias,
+                                aliasConfig.password().orElse(keyStoreConfig.password()).toCharArray());
+                        String encoded;
+                        if (aliasConfig.algorithm().isPresent()) {
+                            encoded = "${" + aliasConfig.algorithm().get() + "::" + new String(key.getEncoded(), UTF_8) + "}";
+                        } else {
+                            encoded = new String(key.getEncoded(), UTF_8);
+                        }
+                        properties.put(aliasConfig.name().orElse(alias), encoded);
                     } else if (keyStore.isCertificateEntry(alias)) {
                         // TODO
                     }
                 }
                 return new PropertiesConfigSource(properties, this.getName(), this.getOrdinal());
-            } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+            } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException
+                    | UnrecoverableKeyException e) {
                 throw new RuntimeException(e);
             }
         }

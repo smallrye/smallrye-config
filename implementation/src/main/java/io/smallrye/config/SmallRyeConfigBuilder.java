@@ -293,7 +293,22 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 300);
             }
         }));
-        interceptors.add(new InterceptorWithPriority(new SecretKeysConfigSourceInterceptor(secretKeys)));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                Map<String, SecretKeysHandler> discoveredHandlers = new HashMap<>();
+                ServiceLoader<SecretKeysHandler> secretKeysHandlers = ServiceLoader.load(SecretKeysHandler.class, classLoader);
+                for (SecretKeysHandler secretKeysHandler : secretKeysHandlers) {
+                    discoveredHandlers.put(secretKeysHandler.getName(), secretKeysHandler);
+                }
+                return new SecretKeysConfigSourceInterceptor(secretKeys, discoveredHandlers);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 100);
+            }
+        }));
 
         return interceptors;
     }
