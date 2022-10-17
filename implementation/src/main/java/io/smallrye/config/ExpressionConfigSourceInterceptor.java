@@ -3,7 +3,10 @@ package io.smallrye.config;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
 import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
+import static io.smallrye.config.ConfigMessages.msg;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
@@ -13,6 +16,7 @@ import org.eclipse.microprofile.config.Config;
 
 import io.smallrye.common.expression.Expression;
 import io.smallrye.common.expression.ResolveContext;
+import io.smallrye.config.ConfigValidationException.Problem;
 
 @Priority(Priorities.LIBRARY + 300)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
@@ -40,10 +44,10 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
     private ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name, final int depth) {
         if (depth == MAX_DEPTH) {
-            throw ConfigMessages.msg.expressionExpansionTooDepth(name);
+            throw msg.expressionExpansionTooDepth(name);
         }
 
-        final ConfigValue configValue = context.proceed(name);
+        ConfigValue configValue = context.proceed(name);
 
         if (!Expressions.isEnabled() || !enabled) {
             return configValue;
@@ -53,30 +57,31 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return null;
         }
 
-        final Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
+        List<Problem> problems = new ArrayList<>();
+        Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
                 NO_SMART_BRACES);
-        final String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
+        String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
             @Override
-            public void accept(ResolveContext<RuntimeException> resolveContext,
-                    StringBuilder stringBuilder) {
-                final ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
+            public void accept(ResolveContext<RuntimeException> resolveContext, StringBuilder stringBuilder) {
+                ConfigValue resolve = getValue(context, resolveContext.getKey(), depth + 1);
                 if (resolve != null) {
                     stringBuilder.append(resolve.getValue());
+                    problems.addAll(resolve.getProblems());
                 } else if (resolveContext.hasDefault()) {
                     resolveContext.expandDefault();
                 } else {
-                    throw ConfigMessages.msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName());
+                    problems.add(new Problem(msg.expandingElementNotFound(resolveContext.getKey(), configValue.getName())));
                 }
             }
         });
 
-        return configValue.withValue(expanded);
+        return problems.isEmpty() ? configValue.withValue(expanded) : configValue.withValue(null).withProblems(problems);
     }
 
     /**
      * MicroProfile Config defines the backslash escape for dollar to retrieve the raw expression. We don't want to
      * turn {@link Expression.Flag#ESCAPES} on because it may break working configurations.
-     *
+     * <br>
      * This will replace the expected escape in MicroProfile Config by the escape used in {@link Expression}, a double
      * dollar.
      */

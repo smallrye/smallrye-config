@@ -480,6 +480,35 @@ class ProfileConfigSourceInterceptorTest {
         assertArrayEquals(new String[] { "b", "a", "2", "1", "d", "c" }, config.getProfiles().toArray(new String[6]));
     }
 
+    @Test
+    void multipleProfileProperty() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("%prod.my.override", "override", "config_ordinal", "1000"))
+                .withSources(config("%prod,dev.my.prop", "value", "%prod,dev.my.override", "value", "config_ordinal", "100"))
+                .withSources(config("%dev.my.prop", "minimal", "config_ordinal", "0"))
+                .withSources(config("%prod,dev.another.prop", "multi", "%prod.another.prop", "single"))
+                .withSources(config("%common,prod,dev.triple.prop", "triple", "%common,prod.triple.prop", "double"));
+
+        SmallRyeConfig prod = builder.withProfile("prod").build();
+        assertEquals("value", prod.getRawValue("my.prop"));
+        assertEquals("value", prod.getRawValue("%prod.my.prop"));
+        assertEquals("override", prod.getRawValue("my.override"));
+        assertEquals("override", prod.getRawValue("%prod.my.override"));
+        assertEquals("single", prod.getRawValue("another.prop"));
+        assertEquals("double", prod.getRawValue("triple.prop"));
+
+        SmallRyeConfig dev = builder.withProfile("dev").build();
+        assertEquals("value", dev.getRawValue("my.prop"));
+        assertEquals("value", dev.getRawValue("%dev.my.prop"));
+        assertEquals("value", dev.getRawValue("my.override"));
+        assertEquals("value", dev.getRawValue("%dev.my.override"));
+        assertEquals("triple", dev.getRawValue("triple.prop"));
+
+        SmallRyeConfig common = builder.withProfile("common").build();
+        assertEquals("double", common.getRawValue("triple.prop"));
+    }
+
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .withSources(config(keyValues))

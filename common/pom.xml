@@ -5,12 +5,12 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
-    <version>2.11.2-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config-common</artifactId>
 
-  <name>SmallRye: Common classes</name>
+  <name>SmallRye Config: Common</name>
 
   <dependencies>
     <dependency>

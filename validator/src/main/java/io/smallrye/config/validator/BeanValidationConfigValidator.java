@@ -127,10 +127,8 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                         throw new UndeclaredThrowableException(t2);
                     }
                 }
-            } else if (collectionProperty.getElement().isLeaf()) {
-                validateProperty(collectionProperty.getElement(), currentPath, namingStrategy, mappingObject, optional,
-                        problems);
             }
+            validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
         }
 
         if (property.isMap()) {
@@ -169,8 +167,6 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                                 i++;
                             }
                         }
-                    } else if (collectionProperty.getElement().isLeaf()) {
-                        validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
                     }
                 } catch (IllegalAccessException e) {
                     throw new IllegalAccessError(e.getMessage());
@@ -183,9 +179,8 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                         throw new UndeclaredThrowableException(t2);
                     }
                 }
-            } else if (mapProperty.getValueProperty().isLeaf()) {
-                validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
             }
+            validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
         }
     }
 

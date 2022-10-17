@@ -1490,7 +1490,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "optional-map")
-    public interface NestedOptionalMapGroup {
+    interface NestedOptionalMapGroup {
         Optional<Boolean> enable();
 
         Map<String, Map<String, MessageUtilConfiguration>> map();
@@ -1530,5 +1530,157 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.map().get("client").get("reaction-api").enable().get());
         assertTrue(mapping.map().get("client").get("setup-api").enable().isPresent());
         assertTrue(mapping.map().get("client").get("setup-api").enable().get());
+    }
+
+    @ConfigMapping(prefix = "optional")
+    interface OptionalExpressions {
+        Optional<String> expression();
+
+        OptionalInt expressionInt();
+    }
+
+    @Test
+    void optionalExpressions() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(OptionalExpressions.class)
+                .withSources(config("optional.expression", "${expression}"))
+                .withSources(config("optional.expression-int", "${expression}"))
+                .build();
+
+        OptionalExpressions mapping = config.getConfigMapping(OptionalExpressions.class);
+
+        assertFalse(mapping.expression().isPresent());
+        assertFalse(mapping.expressionInt().isPresent());
+    }
+
+    @Test
+    void defaultsBuilderAndMapping() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(DefaultsBuilderAndMapping.class)
+                .withDefaultValue("server.host", "localhost")
+                .build();
+
+        DefaultsBuilderAndMapping mapping = config.getConfigMapping(DefaultsBuilderAndMapping.class);
+
+        assertEquals("localhost", config.getRawValue("server.host"));
+        assertEquals(443, mapping.ssl().port());
+        assertEquals(2, mapping.ssl().protocols().size());
+    }
+
+    @ConfigMapping(prefix = "server")
+    interface DefaultsBuilderAndMapping {
+        Ssl ssl();
+
+        interface Ssl {
+            @WithDefault("443")
+            int port();
+
+            @WithDefault("TLSv1.3,TLSv1.2")
+            List<String> protocols();
+        }
+    }
+
+    @Test
+    void ignoreNestedUnknown() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(IgnoreNestedUnknown.class)
+                .withSources(config("ignore.nested.value", "value", "ignore.nested.ignore", "ignore"))
+                .withSources(config("ignore.nested.nested.value", "value", "ignore.nested.nested.ignore", "ignore"))
+                .withSources(config("ignore.nested.optional.value", "value", "ignore.nested.optional.ignore", "ignore"))
+                .withSources(config("ignore.nested.list[0].value", "value", "ignore.nested.list[0].ignore", "ignore"))
+                .withSources(config("ignore.nested.map.key", "value", "ignore.nested.map.ignored.ignored", "ignore"))
+                .withSources(config("ignore.nested.ignore.ignore", "ignore"))
+                .withMappingIgnore("ignore.nested.**")
+                .build();
+
+        IgnoreNestedUnknown mapping = config.getConfigMapping(IgnoreNestedUnknown.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals("value", mapping.nested().value());
+        assertTrue(mapping.optional().isPresent());
+        assertEquals("value", mapping.optional().get().value());
+        assertEquals("value", mapping.list().get(0).value());
+        assertEquals("value", mapping.map().get("key"));
+    }
+
+    @ConfigMapping(prefix = "ignore.nested")
+    interface IgnoreNestedUnknown {
+        String value();
+
+        Nested nested();
+
+        Optional<Nested> optional();
+
+        List<Nested> list();
+
+        Map<String, String> map();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void withNameDotted() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(WithNameDotted.class)
+                .withSources(config("with.name.dotted.name", "value"))
+                .withSources(config("with.name.nested.dotted.name", "value"))
+                .withSources(config(
+                        "with.name.map.key.dotted.name", "value",
+                        "with.name.map.key.name", "value",
+                        "with.name.map.key.dotted.description", "value"))
+                .withSources(config(
+                        "with.name.nested.map.key.nested-key.dotted.name", "value",
+                        "with.name.nested.map.key.nested-key.name", "value",
+                        "with.name.nested.map.key.nested-key.dotted.description", "value"))
+                .build();
+
+        WithNameDotted mapping = config.getConfigMapping(WithNameDotted.class);
+
+        assertEquals("value", mapping.dottedName());
+        assertEquals("value", mapping.nested().dottedName());
+        assertEquals("value", mapping.map().get("key").dottedName());
+        assertEquals("value", mapping.map().get("key").name());
+        assertEquals("value", mapping.map().get("key").dotted().description());
+        assertEquals("value", mapping.map().get("key").dotted().name());
+        assertEquals("value", mapping.nestedMap().get("key").get("nested-key").name());
+        assertEquals("value", mapping.nestedMap().get("key").get("nested-key").dotted().description());
+        assertEquals("value", mapping.nestedMap().get("key").get("nested-key").dotted().name());
+    }
+
+    @ConfigMapping(prefix = "with.name")
+    interface WithNameDotted {
+        @WithName("dotted.name")
+        String dottedName();
+
+        Nested nested();
+
+        Map<String, Nested> map();
+
+        @WithName("nested.map")
+        Map<String, Map<String, Nested>> nestedMap();
+
+        interface Nested {
+            @WithName("dotted.name")
+            String dottedName();
+
+            @WithDefault("default")
+            String name();
+
+            Dotted dotted();
+
+            interface Dotted {
+                @WithDefault("default")
+                String name();
+
+                @WithDefault("default")
+                String description();
+            }
+        }
     }
 }

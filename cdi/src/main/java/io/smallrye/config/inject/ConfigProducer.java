@@ -111,14 +111,14 @@ public class ConfigProducer {
     @Dependent
     @Produces
     @ConfigProperty
-    protected <T> Optional<T> produceOptionalConfigValue(InjectionPoint ip) {
+    protected <T> Optional<T> produceOptionalConfigProperty(InjectionPoint ip) {
         return ConfigProducerUtil.getValue(ip, getConfig());
     }
 
     @Dependent
     @Produces
     @ConfigProperty
-    protected <T> Supplier<T> produceSupplierConfigValue(InjectionPoint ip) {
+    protected <T> Supplier<T> produceSupplierConfigProperty(InjectionPoint ip) {
         return () -> ConfigProducerUtil.getValue(ip, getConfig());
     }
 

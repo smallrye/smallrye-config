@@ -5,13 +5,13 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.11.2-SNAPSHOT</version>
+        <version>2.12.2-SNAPSHOT</version>
         <relativePath>../../</relativePath>
     </parent>
     
     <artifactId>smallrye-config-source-injection</artifactId>
         
-    <name>SmallRye: MicroProfile Config Source Injection</name>
+    <name>SmallRye Config: CDI ConfigSource Injection</name>
 
     <dependencies>
         <dependency>

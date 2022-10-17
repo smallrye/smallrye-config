@@ -21,12 +21,12 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
-    <version>2.11.2-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config</artifactId>
 
-  <name>SmallRye: MicroProfile Config CDI Implementation</name>
+  <name>SmallRye Config: CDI</name>
 
   <dependencies>
     <dependency>

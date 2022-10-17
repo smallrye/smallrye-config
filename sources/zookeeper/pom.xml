@@ -20,13 +20,13 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.11.2-SNAPSHOT</version>
+        <version>2.12.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>smallrye-config-source-zookeeper</artifactId>
 
-    <name>SmallRye: ZooKeeper ConfigSource</name>
+    <name>SmallRye Config: ConfigSource - ZooKeeper</name>
 
     <properties>
         <version.curator>5.3.0</version.curator>

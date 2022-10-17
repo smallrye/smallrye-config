@@ -5,13 +5,13 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.11.2-SNAPSHOT</version>
+        <version>2.12.2-SNAPSHOT</version>
         <relativePath>../../</relativePath>
     </parent>
     
     <artifactId>smallrye-config-events</artifactId>
         
-    <name>SmallRye: MicroProfile Config Events</name>
+    <name>SmallRye Config: CDI Events</name>
 
     <dependencies>
         <dependency>

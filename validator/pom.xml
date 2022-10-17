@@ -20,18 +20,18 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.11.2-SNAPSHOT</version>
+        <version>2.12.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>smallrye-config-validator</artifactId>
 
-    <name>SmallRye: MicroProfile Config Validator</name>
+    <name>SmallRye Config: Validator</name>
 
     <properties>
         <version.jakarta.validation>2.0.2</version.jakarta.validation>
 
         <!-- Test -->
-        <version.hibernate.validator>6.2.3.Final</version.hibernate.validator>
+        <version.hibernate.validator>6.2.5.Final</version.hibernate.validator>
         <version.jakarta.el>3.0.4</version.jakarta.el>
     </properties>
 

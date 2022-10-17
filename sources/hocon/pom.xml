@@ -4,12 +4,12 @@
     <parent>
         <artifactId>smallrye-config-parent</artifactId>
         <groupId>io.smallrye.config</groupId>
-        <version>2.11.2-SNAPSHOT</version>
+        <version>2.12.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>smallrye-config-source-hocon</artifactId>
-    <name>SmallRye: HOCON ConfigSource</name>
+    <name>SmallRye Config: ConfigSource - HOCON</name>
 
     <properties>
         <lightbend-config.version>1.4.2</lightbend-config.version>

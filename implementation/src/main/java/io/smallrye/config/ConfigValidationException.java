@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 import io.smallrye.common.constraint.Assert;
 
@@ -18,13 +19,13 @@ public class ConfigValidationException extends RuntimeException {
      * @param problems the reported problems
      */
     public ConfigValidationException(final Problem[] problems) {
-        super(list("Configuration validation failed", problems));
+        super(list(problems));
         this.problems = problems;
     }
 
-    private static String list(String msg, Problem[] problems) {
+    private static String list(Problem[] problems) {
         StringBuilder b = new StringBuilder();
-        b.append(msg).append(':');
+        b.append("Configuration validation failed").append(':');
         for (int i = 0; i < problems.length; i++) {
             Problem problem = problems[i];
             Assert.checkNotNullArrayParam("problems", i, problem);
@@ -48,13 +49,24 @@ public class ConfigValidationException extends RuntimeException {
         private static final long serialVersionUID = 5984436393578154541L;
 
         private final String message;
+        transient private final RuntimeException exception;
 
         public Problem(final String message) {
             this.message = message;
+            this.exception = null;
+        }
+
+        Problem(final RuntimeException exception) {
+            this.message = exception.getMessage();
+            this.exception = exception;
         }
 
         public String getMessage() {
             return message;
+        }
+
+        Optional<RuntimeException> getException() {
+            return Optional.ofNullable(exception);
         }
     }
 }

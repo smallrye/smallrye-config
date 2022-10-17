@@ -22,15 +22,15 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-testsuite</artifactId>
-    <version>2.11.2-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config-test-extra</artifactId>
 
-  <name>SmallRye: MicroProfile Config Test Suite - Extra</name>
+  <name>SmallRye Config: Test Suite - Extra</name>
 
   <properties>
-    <kotlin.version>1.7.10</kotlin.version>
+    <kotlin.version>1.7.20</kotlin.version>
   </properties>
 
   <dependencies>

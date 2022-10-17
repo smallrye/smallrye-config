@@ -20,12 +20,12 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-parent</artifactId>
-    <version>2.11.2-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config-core</artifactId>
 
-  <name>SmallRye: MicroProfile Config Core Implementation</name>
+  <name>SmallRye Config: Core</name>
 
   <dependencies>
     <dependency>

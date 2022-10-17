@@ -1,9 +1,15 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 
 import io.smallrye.common.annotation.Experimental;
+import io.smallrye.config.ConfigValidationException.Problem;
 
 /**
  * The ConfigValue is a metadata object that holds additional information after the lookup of a configuration.
@@ -28,6 +34,8 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private final int configSourcePosition;
     private final int lineNumber;
 
+    private final List<Problem> problems;
+
     private ConfigValue(final ConfigValueBuilder builder) {
         this.name = builder.name;
         this.value = builder.value;
@@ -37,6 +45,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.configSourcePosition = builder.configSourcePosition;
         this.lineNumber = builder.lineNumber;
+        this.problems = builder.problems;
     }
 
     @Override
@@ -92,6 +101,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return lineNumber != -1 ? configSourceName + ":" + lineNumber : configSourceName;
     }
 
+    List<Problem> getProblems() {
+        return Collections.unmodifiableList(problems);
+    }
+
     public ConfigValue withName(final String name) {
         return from().withName(name).build();
     }
@@ -118,6 +131,18 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withLineNumber(final int lineNumber) {
         return from().withLineNumber(lineNumber).build();
+    }
+
+    public ConfigValue noProblems() {
+        return from().noProblems().build();
+    }
+
+    public ConfigValue withProblems(final List<Problem> problems) {
+        return from().withProblems(problems).build();
+    }
+
+    public ConfigValue withProblem(final Problem problem) {
+        return from().addProblem(problem).build();
     }
 
     @Override
@@ -166,7 +191,8 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .withConfigSourcePosition(configSourcePosition)
-                .withLineNumber(lineNumber);
+                .withLineNumber(lineNumber)
+                .withProblems(problems);
     }
 
     public static ConfigValueBuilder builder() {
@@ -182,6 +208,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private int configSourceOrdinal;
         private int configSourcePosition;
         private int lineNumber = -1;
+        private final List<Problem> problems = new ArrayList<>();
 
         public ConfigValueBuilder withName(final String name) {
             this.name = name;
@@ -223,6 +250,21 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             return this;
         }
 
+        public ConfigValueBuilder noProblems() {
+            this.problems.clear();
+            return this;
+        }
+
+        public ConfigValueBuilder withProblems(final List<Problem> problems) {
+            this.problems.addAll(problems);
+            return this;
+        }
+
+        public ConfigValueBuilder addProblem(final Problem problem) {
+            this.problems.add(problem);
+            return this;
+        }
+
         public ConfigValue build() {
             return new ConfigValue(this);
         }
@@ -235,7 +277,19 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             if (result != 0) {
                 return result;
             }
-            return Integer.compare(original.configSourcePosition, candidate.configSourcePosition) * -1;
+            result = Integer.compare(original.configSourcePosition, candidate.configSourcePosition) * -1;
+            if (result != 0) {
+                return result;
+            }
+            // If both properties are profiled, prioritize the one with the most specific profile.
+            if (original.getName().charAt(0) == '%' && candidate.getName().charAt(0) == '%') {
+                List<String> originalProfiles = convertProfile(
+                        new NameIterator(original.getName()).getNextSegment().substring(1));
+                List<String> candidateProfiles = convertProfile(
+                        new NameIterator(candidate.getName()).getNextSegment().substring(1));
+                return Integer.compare(originalProfiles.size(), candidateProfiles.size()) * -1;
+            }
+            return result;
         }
     };
 }
