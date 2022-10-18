@@ -38,7 +38,7 @@
     <version.smallrye.common>1.13.1</version.smallrye.common>
     <version.asm>9.4</version.asm>
 
-    <version.smallrye.testing>1.0.0</version.smallrye.testing>
+    <version.smallrye.testing.utilities>1.0.0</version.smallrye.testing.utilities>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
@@ -67,6 +67,7 @@
     <module>common</module>
     <module>implementation</module>
     <module>cdi</module>
+    <module>cdi-asm-shaded</module>
     <module>validator</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
@@ -106,7 +107,7 @@
       <dependency>
         <groupId>io.smallrye.testing</groupId>
         <artifactId>smallrye-testing-utilities</artifactId>
-        <version>${version.smallrye.testing}</version>
+        <version>${version.smallrye.testing.utilities}</version>
         <scope>test</scope>
       </dependency>
 
