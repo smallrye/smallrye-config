@@ -72,7 +72,7 @@ jobs:
       - name: generate tck report
         run: |
           cd target/checkout
-          mvn surefire-report:report-only
+          mvn surefire-report:report
           mv testsuite/tck/target/tck-results.html $GITHUB_WORKSPACE
 
       - uses: meeDamian/github-release@2.0
