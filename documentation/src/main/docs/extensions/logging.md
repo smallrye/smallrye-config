@@ -1,7 +1,7 @@
 ## LoggingConfigSourceInterceptor
 
 The `io.smallrye.config.LoggingConfigSourceInterceptor` logs lookups of configuration names in the provided logging 
-platform. The log information includes config name and value, the config source origing and location if exists.
+platform. The log information includes config name and value, the config source origin and location if it exists.
 
 The log is done as `debug`, so the debug threshold must be set to `debug` for the `io.smallrye.config` appender to
 display the logs.
