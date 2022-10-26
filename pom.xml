@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>36</version>
+    <version>37</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
@@ -56,7 +56,9 @@
     <url>https://github.com/smallrye/smallrye-config/issues</url>
   </issueManagement>
 
-  <scm>
+  <scm child.scm.connection.inherit.append.path="false"
+       child.scm.developerConnection.inherit.append.path="false"
+       child.scm.url.inherit.append.path="false">
     <connection>scm:git:git@github.com:smallrye/smallrye-config.git</connection>
     <developerConnection>scm:git:git@github.com:smallrye/smallrye-config.git</developerConnection>
     <url>https://github.com/smallrye/smallrye-config/</url>
