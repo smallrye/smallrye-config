@@ -7,8 +7,7 @@ accidental exposure of such values.
 secrets. However, there is still the basic problem that passwords and secrets are generally encoded simply as strings. 
 Secret Keys provides a way to "lock" the configuration so that secrets do not appear unless explicitly enabled.
 
-To mark specific keys as secret, register an instance of `io.smallrye.config.SecretKeysConfigSourceInterceptor`
-using your own interceptor factory, like this:
+To mark specific keys as secret, register an instance of `io.smallrye.config.SecretKeysConfigSourceInterceptor` by using your interceptor factory as follows:
 
 ```java
 public class SecretKeysConfigInterceptorFactory implements ConfigSourceInterceptorFactory {
@@ -19,12 +18,11 @@ public class SecretKeysConfigInterceptorFactory implements ConfigSourceIntercept
 }
 ```
 
-You will need to register this factory to be found at runtime by creating a `META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory`
-file containing the fully qualified name of this factory class.
+Register this factory so that it can be found at runtime by creating a `META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory` file that contains the fully qualified name of this factory class.
 
 From this point forward, every lookup to the configuration name `secret` will throw a `SecurityException`.
 
-Access to the Secret Keys, is available via the APIs `io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)` 
+You can access Secret Keys by using this APIs `io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)` .
 and `io.smallrye.config.SecretKeys#doUnlocked(java.util.function.Supplier<T>)`.
 
 ```java
