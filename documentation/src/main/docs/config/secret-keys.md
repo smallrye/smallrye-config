@@ -22,7 +22,7 @@ Register this factory so that it can be found at runtime by creating a `META-INF
 
 From this point forward, every lookup to the configuration name `secret` will throw a `SecurityException`.
 
-You can access Secret Keys by using this APIs `io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)` .
+Access the Secret Keys using the APIs `io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)` 
 and `io.smallrye.config.SecretKeys#doUnlocked(java.util.function.Supplier<T>)`.
 
 ```java
