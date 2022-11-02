@@ -7,7 +7,7 @@ accidental exposure of such values.
 secrets. However, there is still the basic problem that passwords and secrets are generally encoded simply as strings. 
 Secret Keys provides a way to "lock" the configuration so that secrets do not appear unless explicitly enabled.
 
-To mark specific keys as secret, register an instance of `io.smallrye.config.SecretKeysConfigSourceInterceptor` by using your interceptor factory as follows:
+To mark specific keys as secrets, register an instance of `io.smallrye.config.SecretKeysConfigSourceInterceptor` by using your interceptor factory as follows:
 
 ```java
 public class SecretKeysConfigInterceptorFactory implements ConfigSourceInterceptorFactory {
