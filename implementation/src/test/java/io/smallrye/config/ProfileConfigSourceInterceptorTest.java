@@ -106,7 +106,8 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void priorityProfile() {
         final Config config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withProfile("prof")
                 .withSources(
                         new MapBackedConfigSource("higher", new HashMap<String, String>() {
                             {
@@ -121,9 +122,6 @@ class ProfileConfigSourceInterceptorTest {
                             }
                         }, 100) {
                         })
-                .withInterceptors(
-                        new ProfileConfigSourceInterceptor("prof"),
-                        new ExpressionConfigSourceInterceptor())
                 .build();
 
         assertEquals("higher-profile", config.getValue("my.prop", String.class));
@@ -132,7 +130,7 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void priorityOverrideProfile() {
         final Config config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
+                .addDefaultInterceptors()
                 .withSources(
                         new MapBackedConfigSource("higher", new HashMap<String, String>() {
                             {
@@ -147,9 +145,6 @@ class ProfileConfigSourceInterceptorTest {
                             }
                         }, 100) {
                         })
-                .withInterceptors(
-                        new ProfileConfigSourceInterceptor("prof"),
-                        new ExpressionConfigSourceInterceptor())
                 .build();
 
         assertEquals("higher", config.getValue("my.prop", String.class));
@@ -158,7 +153,8 @@ class ProfileConfigSourceInterceptorTest {
     @Test
     void priorityProfileOverOriginal() {
         final Config config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withProfile("prof")
                 .withSources(
                         new MapBackedConfigSource("higher", new HashMap<String, String>() {
                             {
@@ -174,9 +170,6 @@ class ProfileConfigSourceInterceptorTest {
                             }
                         }, 100) {
                         })
-                .withInterceptors(
-                        new ProfileConfigSourceInterceptor("prof"),
-                        new ExpressionConfigSourceInterceptor())
                 .build();
 
         assertEquals("higher-profile", config.getValue("my.prop", String.class));
@@ -511,10 +504,9 @@ class ProfileConfigSourceInterceptorTest {
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withProfile("prof")
                 .withSources(config(keyValues))
-                .withInterceptors(
-                        new ProfileConfigSourceInterceptor("prof"),
-                        new ExpressionConfigSourceInterceptor())
                 .build();
     }
 }

@@ -19,6 +19,8 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
 import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -178,13 +180,35 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return profiles.isEmpty() ? new ProfileConfigSourceInterceptor(context)
-                        : new ProfileConfigSourceInterceptor(profiles);
+                if (profiles.isEmpty()) {
+                    profiles.addAll(getProfile(context));
+                }
+                return new ProfileConfigSourceInterceptor(profiles);
             }
 
             @Override
             public OptionalInt getPriority() {
                 return OptionalInt.of(Priorities.LIBRARY + 200);
+            }
+
+            private List<String> getProfile(final ConfigSourceInterceptorContext context) {
+                List<String> profiles = new ArrayList<>();
+                profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE_PARENT));
+                profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE));
+                return profiles;
+            }
+
+            private List<String> getProfiles(final ConfigSourceInterceptorContext context, final String propertyName) {
+                List<String> profiles = new ArrayList<>();
+                ConfigValue profileValue = context.proceed(propertyName);
+                if (profileValue != null) {
+                    final List<String> convertProfiles = convertProfile(profileValue.getValue());
+                    for (String profile : convertProfiles) {
+                        profiles.addAll(getProfiles(context, "%" + profile + "." + SMALLRYE_CONFIG_PROFILE_PARENT));
+                        profiles.add(profile);
+                    }
+                }
+                return profiles;
             }
         }));
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
@@ -256,7 +280,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return new ExpressionConfigSourceInterceptor(context);
+                boolean expressions = true;
+                ConfigValue expressionsValue = context.proceed(Config.PROPERTY_EXPRESSIONS_ENABLED);
+                if (expressionsValue != null) {
+                    expressions = Boolean.valueOf(expressionsValue.getValue());
+                }
+                return new ExpressionConfigSourceInterceptor(expressions);
             }
 
             @Override

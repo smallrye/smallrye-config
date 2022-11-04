@@ -7,7 +7,6 @@ import static io.smallrye.config.ConfigMessages.msg;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import javax.annotation.Priority;
@@ -26,15 +25,8 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
     private final boolean enabled;
 
-    public ExpressionConfigSourceInterceptor() {
-        this.enabled = true;
-    }
-
-    public ExpressionConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
-        this.enabled = Optional.ofNullable(context.proceed(Config.PROPERTY_EXPRESSIONS_ENABLED))
-                .map(ConfigValue::getValue)
-                .map(Boolean::valueOf)
-                .orElse(Boolean.TRUE);
+    public ExpressionConfigSourceInterceptor(final boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override
