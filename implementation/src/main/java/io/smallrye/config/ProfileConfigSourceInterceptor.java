@@ -4,8 +4,6 @@ import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
-import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
-import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +28,6 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         List<String> reverseProfiles = new ArrayList<>(profiles);
         Collections.reverse(reverseProfiles);
         this.profiles = reverseProfiles.toArray(new String[0]);
-    }
-
-    public ProfileConfigSourceInterceptor(final ConfigSourceInterceptorContext context) {
-        this(getProfile(context));
     }
 
     @Override
@@ -106,25 +100,5 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public static List<String> convertProfile(final String profile) {
         List<String> profiles = newCollectionConverter(newTrimmingConverter(STRING_CONVERTER), ArrayList::new).convert(profile);
         return profiles != null ? profiles : Collections.emptyList();
-    }
-
-    private static List<String> getProfile(final ConfigSourceInterceptorContext context) {
-        final List<String> profiles = new ArrayList<>();
-        profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE_PARENT));
-        profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE));
-        return profiles;
-    }
-
-    private static List<String> getProfiles(final ConfigSourceInterceptorContext context, final String propertyName) {
-        final List<String> profiles = new ArrayList<>();
-        final ConfigValue profileValue = context.proceed(propertyName);
-        if (profileValue != null) {
-            final List<String> convertProfiles = convertProfile(profileValue.getValue());
-            for (String profile : convertProfiles) {
-                profiles.addAll(getProfiles(context, "%" + profile + "." + SMALLRYE_CONFIG_PROFILE_PARENT));
-                profiles.add(profile);
-            }
-        }
-        return profiles;
     }
 }

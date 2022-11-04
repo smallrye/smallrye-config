@@ -205,9 +205,8 @@ class ExpressionConfigSourceInterceptorTest {
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
-                .addDefaultSources()
+                .addDefaultInterceptors()
                 .withSources(KeyValuesConfigSource.config(keyValues))
-                .withInterceptors(new ExpressionConfigSourceInterceptor())
                 .build();
     }
 }
