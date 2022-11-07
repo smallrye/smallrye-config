@@ -92,7 +92,6 @@ class SecretKeysTest {
 
     private static Config buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
-                .addDefaultSources()
                 .addDefaultInterceptors()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .withSecretKeys("secret")

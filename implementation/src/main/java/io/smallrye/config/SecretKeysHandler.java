@@ -4,7 +4,7 @@ import io.smallrye.common.annotation.Experimental;
 
 @Experimental("")
 public interface SecretKeysHandler {
-    String handleSecret(String secret);
+    String decode(String secret);
 
     String getName();
 }
