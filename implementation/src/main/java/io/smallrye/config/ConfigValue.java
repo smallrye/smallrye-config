@@ -32,6 +32,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private final int configSourcePosition;
     private final int lineNumber;
 
+    private final String extendedExpressionHandler;
     private final List<Problem> problems;
 
     private ConfigValue(final ConfigValueBuilder builder) {
@@ -43,6 +44,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.configSourcePosition = builder.configSourcePosition;
         this.lineNumber = builder.lineNumber;
+        this.extendedExpressionHandler = builder.extendedExpressionHandler;
         this.problems = builder.problems;
     }
 
@@ -99,6 +101,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return lineNumber != -1 ? configSourceName + ":" + lineNumber : configSourceName;
     }
 
+    public String getExtendedExpressionHandler() {
+        return extendedExpressionHandler;
+    }
+
     List<Problem> getProblems() {
         return Collections.unmodifiableList(problems);
     }
@@ -129,6 +135,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withLineNumber(final int lineNumber) {
         return from().withLineNumber(lineNumber).build();
+    }
+
+    public ConfigValue withExtendedExpressionHandler(final String extendedExpressionHandler) {
+        return from().withExtendedExpressionHandler(extendedExpressionHandler).build();
     }
 
     public ConfigValue noProblems() {
@@ -190,6 +200,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .withConfigSourcePosition(configSourcePosition)
                 .withLineNumber(lineNumber)
+                .withExtendedExpressionHandler(extendedExpressionHandler)
                 .withProblems(problems);
     }
 
@@ -206,6 +217,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private int configSourceOrdinal;
         private int configSourcePosition;
         private int lineNumber = -1;
+        private String extendedExpressionHandler;
         private final List<Problem> problems = new ArrayList<>();
 
         public ConfigValueBuilder withName(final String name) {
@@ -248,6 +260,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
             return this;
         }
 
+        public ConfigValueBuilder withExtendedExpressionHandler(final String extendedExpressionHandler) {
+            this.extendedExpressionHandler = extendedExpressionHandler;
+            return this;
+        }
+
         public ConfigValueBuilder noProblems() {
             this.problems.clear();
             return this;
@@ -264,6 +281,9 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         }
 
         public ConfigValue build() {
+            if (!this.problems.isEmpty()) {
+                this.value = null;
+            }
             return new ConfigValue(this);
         }
     }

@@ -283,7 +283,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 boolean expressions = true;
                 ConfigValue expressionsValue = context.proceed(Config.PROPERTY_EXPRESSIONS_ENABLED);
                 if (expressionsValue != null) {
-                    expressions = Boolean.valueOf(expressionsValue.getValue());
+                    expressions = Boolean.parseBoolean(expressionsValue.getValue());
                 }
                 return new ExpressionConfigSourceInterceptor(expressions);
             }
@@ -293,20 +293,35 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 300);
             }
         }));
+
+        Map<String, SecretKeysHandler> discoveredHandlers = new HashMap<>();
+        ServiceLoader<SecretKeysHandler> secretKeysHandlers = ServiceLoader.load(SecretKeysHandler.class, classLoader);
+        for (SecretKeysHandler secretKeysHandler : secretKeysHandlers) {
+            discoveredHandlers.put(secretKeysHandler.getName(), secretKeysHandler);
+        }
+
+        SecretKeys secretKeys = new SecretKeys(this.secretKeys, discoveredHandlers);
+
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                Map<String, SecretKeysHandler> discoveredHandlers = new HashMap<>();
-                ServiceLoader<SecretKeysHandler> secretKeysHandlers = ServiceLoader.load(SecretKeysHandler.class, classLoader);
-                for (SecretKeysHandler secretKeysHandler : secretKeysHandlers) {
-                    discoveredHandlers.put(secretKeysHandler.getName(), secretKeysHandler);
-                }
-                return new SecretKeysConfigSourceInterceptor(secretKeys, discoveredHandlers);
+                return new SecretKeysConfigSourceInterceptor(secretKeys);
             }
 
             @Override
             public OptionalInt getPriority() {
                 return OptionalInt.of(Priorities.LIBRARY + 100);
+            }
+        }));
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                return new SecretKeysHandlerConfigSourceInterceptor(secretKeys);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 310);
             }
         }));
 

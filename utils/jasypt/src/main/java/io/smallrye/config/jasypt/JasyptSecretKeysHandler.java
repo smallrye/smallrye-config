@@ -8,7 +8,7 @@ import io.smallrye.config.SecretKeysHandler;
 
 public class JasyptSecretKeysHandler implements SecretKeysHandler {
     @Override
-    public String handleSecret(final String secret) {
+    public String decode(final String secret) {
         // TODO - We need to be able to configure this in the Handler.
         // Option to configure it in the constructor or retrieve config on the fly?
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();

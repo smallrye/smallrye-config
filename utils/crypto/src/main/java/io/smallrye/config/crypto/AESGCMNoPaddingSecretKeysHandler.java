@@ -6,7 +6,7 @@ public class AESGCMNoPaddingSecretKeysHandler implements SecretKeysHandler {
     // TODO - Should we provide a way to configure the handler?
 
     @Override
-    public String handleSecret(final String secret) {
+    public String decode(final String secret) {
         // TODO - handle implementation.
         return "decoded";
     }

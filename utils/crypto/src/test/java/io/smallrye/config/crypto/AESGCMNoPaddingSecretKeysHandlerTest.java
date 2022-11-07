@@ -16,7 +16,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
     @Test
     void handler() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("my.secret", "${aes-gcm-nopadding::encoded}");
+        properties.put("my.secret", "${aes-gcm-nopadding::encoded::x}");
         properties.put("my.expression", "${not.found:default}");
         properties.put("another.expression", "${my.expression}");
 
