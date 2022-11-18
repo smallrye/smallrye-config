@@ -1033,8 +1033,9 @@ final class ConfigMappingProvider implements Serializable {
         // Look for unmatched properties if we can find one in the Env ones and add it
         for (String mappedProperty : mappedProperties) {
             Set<String> matchedEnvProperties = new HashSet<>();
+            String endMappedProperty = replaceNonAlphanumericByUnderscores(mappedProperty);
             for (String envProperty : envProperties) {
-                if (envProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(mappedProperty))) {
+                if (envProperty.equalsIgnoreCase(endMappedProperty)) {
                     additionalMappedProperties.add(mappedProperty);
                     matchedEnvProperties.add(envProperty);
                     break;
@@ -1144,8 +1145,9 @@ final class ConfigMappingProvider implements Serializable {
 
         for (String property : properties) {
             boolean found = false;
+            String envProperty = replaceNonAlphanumericByUnderscores(property);
             for (String usedProperty : usedProperties) {
-                if (usedProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(property))) {
+                if (usedProperty.equalsIgnoreCase(envProperty)) {
                     found = true;
                     break;
                 }

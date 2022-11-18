@@ -1,6 +1,5 @@
 package io.smallrye.config;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,7 +16,12 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
     }
 
     public AbstractMappingConfigSourceInterceptor(final Map<String, String> mappings) {
-        this((Serializable & Function<String, String>) name -> mappings.getOrDefault(name, name));
+        this(new Function<String, String>() {
+            @Override
+            public String apply(final String name) {
+                return mappings.getOrDefault(name, name);
+            }
+        });
     }
 
     @Override
