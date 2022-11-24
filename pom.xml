@@ -69,7 +69,6 @@
     <module>common</module>
     <module>implementation</module>
     <module>cdi</module>
-    <module>cdi-asm-shaded</module>
     <module>validator</module>
     <module>sources/hocon</module>
     <module>sources/file-system</module>
