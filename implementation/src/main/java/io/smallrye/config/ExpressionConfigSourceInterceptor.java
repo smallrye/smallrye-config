@@ -25,6 +25,10 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
 
     private final boolean enabled;
 
+    public ExpressionConfigSourceInterceptor() {
+        this(true);
+    }
+
     public ExpressionConfigSourceInterceptor(final boolean enabled) {
         this.enabled = enabled;
     }
