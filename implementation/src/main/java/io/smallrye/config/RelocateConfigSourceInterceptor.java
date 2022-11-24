@@ -5,7 +5,7 @@ import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
 import java.util.Map;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 300)
 public class RelocateConfigSourceInterceptor extends AbstractMappingConfigSourceInterceptor {
