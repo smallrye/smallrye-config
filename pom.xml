@@ -38,7 +38,7 @@
     <version.smallrye.common>1.13.2</version.smallrye.common>
     <version.asm>9.4</version.asm>
 
-    <version.smallrye.testing.utilities>1.0.0</version.smallrye.testing.utilities>
+    <version.smallrye.testing>1.1.0</version.smallrye.testing>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
@@ -108,9 +108,10 @@
       <!-- Test Dependencies -->
       <dependency>
         <groupId>io.smallrye.testing</groupId>
-        <artifactId>smallrye-testing-utilities</artifactId>
-        <version>${version.smallrye.testing.utilities}</version>
-        <scope>test</scope>
+        <artifactId>smallrye-testing-bom</artifactId>
+        <version>${version.smallrye.testing}</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
 
       <!-- Internal Dependencies -->

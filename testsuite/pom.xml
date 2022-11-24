@@ -53,4 +53,16 @@
       </plugin>
     </plugins>
   </build>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-bom-tck</artifactId>
+        <version>${version.smallrye.testing}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>
