@@ -6,12 +6,15 @@
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
         <version>2.12.3-SNAPSHOT</version>
-        <relativePath>../../</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     
     <artifactId>smallrye-config-converter-json</artifactId>
-    
     <name>SmallRye Config: Converter - Json</name>
+
+    <properties>
+        <version.jakarta.json>1.1.6</version.jakarta.json>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -38,6 +41,7 @@
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
+            <version>${version.jakarta.json}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
