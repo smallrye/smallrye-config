@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -35,5 +37,24 @@ public interface ConfigSourceFactory {
      */
     default OptionalInt getPriority() {
         return OptionalInt.empty();
+    }
+
+    interface ConfigurableConfigSourceFactory<MAPPING> extends ConfigSourceFactory {
+        @Override
+        @SuppressWarnings("unchecked")
+        default Iterable<ConfigSource> getConfigSources(ConfigSourceContext context) {
+            Type typeArgument = ((ParameterizedType) this.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
+
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
+                    .withMapping((Class<? extends MAPPING>) typeArgument)
+                    .build();
+
+            MAPPING mapping = config.getConfigMapping((Class<? extends MAPPING>) typeArgument);
+
+            return getConfigSources(context, mapping);
+        }
+
+        Iterable<ConfigSource> getConfigSources(ConfigSourceContext context, MAPPING config);
     }
 }
