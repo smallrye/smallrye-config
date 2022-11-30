@@ -437,20 +437,20 @@ final class ConfigMappingProvider implements Serializable {
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final KeyMap<String> defaultValues,
             final MapProperty mapProperty,
-            final Property valueProperty,
+            final Property property,
             final Class<? extends Converter<?>> keyConvertWith,
             final Class<?> keyRawType,
             final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface enclosingGroup) {
 
-        if (valueProperty.isLeaf()) {
+        if (property.isLeaf()) {
             if (matchActions.hasRootValue(currentPath)) {
                 currentPath.removeLast();
                 return;
             }
 
-            LeafProperty leafProperty = valueProperty.asLeaf();
+            LeafProperty leafProperty = property.asLeaf();
             Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
             Class<?> valueRawType = leafProperty.getValueRawType();
 
@@ -513,8 +513,8 @@ final class ConfigMappingProvider implements Serializable {
                 addAction(inlineCollectionPath(currentPath), leafProperty, DO_NOTHING);
             }
 
-        } else if (valueProperty.isMap()) {
-            processLazyMap(currentPath, matchActions, defaultValues, valueProperty.asMap(), (mc, ni) -> {
+        } else if (property.isMap()) {
+            processLazyMap(currentPath, matchActions, defaultValues, property.asMap(), (mc, ni) -> {
                 ni.previous();
                 Map<?, ?> enclosingMap = getEnclosingMap.apply(mc, ni);
                 ni.next();
@@ -529,15 +529,17 @@ final class ConfigMappingProvider implements Serializable {
                 Object key = keyConv.convert(rawMapKey);
                 return (Map) ((Map) enclosingMap).computeIfAbsent(key, x -> new HashMap<>());
             }, namingStrategy, enclosingGroup);
-        } else if (valueProperty.isGroup()) {
+        } else if (property.isGroup()) {
             GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, mapProperty, enclosingGroup,
-                    valueProperty.asGroup(), currentPath);
+                    property.asGroup(), currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy,
-                    valueProperty.asGroup().getGroupType(), ef, new HashSet<>());
-        } else if (valueProperty.isCollection()) {
-            CollectionProperty collectionProperty = valueProperty.asCollection();
+                    property.asGroup().getGroupType(), ef, new HashSet<>());
+        } else if (property.isCollection()) {
+            CollectionProperty collectionProperty = property.asCollection();
             Property element = collectionProperty.getElement();
-            currentPath.addLast(currentPath.removeLast() + "[*]");
+            if (!element.hasConvertWith()) {
+                currentPath.addLast(currentPath.removeLast() + "[*]");
+            }
             processLazyMapValue(currentPath, matchActions, defaultValues, mapProperty, element, keyConvertWith, keyRawType,
                     getEnclosingMap, namingStrategy, enclosingGroup);
         } else {
