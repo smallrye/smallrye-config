@@ -150,7 +150,7 @@ public final class ConfigMappingContext {
                         throw new IllegalStateException();
                     }
 
-                    while (degree + 1 > mapProperty.getLevels()) {
+                    while (degree + 1 < mapProperty.getLevels()) {
                         mapProperty = mapProperty.getValueProperty().asMap();
                     }
                     if (mapProperty.hasKeyConvertWith()) {
