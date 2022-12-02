@@ -1683,4 +1683,32 @@ class ConfigMappingInterfaceTest {
             }
         }
     }
+
+    @Test
+    void mapKeyLevels() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MapKeyLevels.class)
+                .withSources(config("map.1.two.value", "value"))
+                .withSources(config("map.one.2.3.value", "value"))
+                .build();
+
+        MapKeyLevels mapping = config.getConfigMapping(MapKeyLevels.class);
+
+        assertEquals("value", mapping.two().get(1L).get("two").value());
+        assertEquals("value", mapping.three().get("one").get(2).get(3L).value());
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapKeyLevels {
+        @WithParentName
+        Map<Long, Map<String, Value>> two();
+
+        @WithParentName
+        Map<String, Map<Integer, Map<Long, Value>>> three();
+
+        interface Value {
+            String value();
+        }
+    }
 }
