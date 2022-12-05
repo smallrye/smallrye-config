@@ -893,7 +893,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         if (type instanceof AnnotatedParameterizedType) {
             return ((AnnotatedParameterizedType) type).getAnnotatedActualTypeArguments()[index];
         } else {
-            return null;
+            return type;
         }
     }
 
@@ -901,7 +901,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         if (type instanceof ParameterizedType) {
             return ((ParameterizedType) type).getActualTypeArguments()[index];
         } else {
-            return null;
+            return type;
         }
     }
 
