@@ -8,7 +8,6 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +18,9 @@ import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.nodes.Tag;
 
 import io.smallrye.common.classloader.ClassPathUtils;
@@ -97,7 +97,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
         Assert.checkNotNullParam("inputStream", inputStream);
         final Map<String, String> yamlInput = new TreeMap<>();
         try {
-            final Iterable<Object> objects = new Yaml(new StringConstructor()).loadAll(inputStream);
+            final Iterable<Object> objects = new Yaml(new StringConstructor(new LoaderOptions())).loadAll(inputStream);
             for (Object object : objects) {
                 if (object instanceof Map) {
                     yamlInput.putAll(yamlInputToMap((Map<Object, Object>) object));
@@ -117,8 +117,14 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     @SuppressWarnings("unchecked")
     private static Map<String, String> stringToMap(String str) {
-        final Map<Object, Object> yamlInput = new Yaml(new StringConstructor()).loadAs(str, HashMap.class);
-        return yamlInputToMap(yamlInput);
+        final Map<String, String> yamlInput = new TreeMap<>();
+        final Iterable<Object> objects = new Yaml(new StringConstructor(new LoaderOptions())).loadAll(str);
+        for (Object object : objects) {
+            if (object instanceof Map) {
+                yamlInput.putAll(yamlInputToMap((Map<Object, Object>) object));
+            }
+        }
+        return yamlInput;
     }
 
     private static Map<String, String> yamlInputToMap(final Map<Object, Object> yamlInput) {
@@ -221,12 +227,13 @@ public class YamlConfigSource extends MapBackedConfigSource {
     }
 
     /**
-     * Override some of the yaml constructors, so that the value written in the flatten result is more alike with the
+     * Override some yaml constructors, so that the value written in the flatten result is more alike with the
      * source. For instance, timestamps may be written in a completely different format which prevents converters to
      * convert the correct value.
      */
-    private static class StringConstructor extends Constructor {
-        public StringConstructor() {
+    private static class StringConstructor extends SafeConstructor {
+        public StringConstructor(final LoaderOptions loadingConfig) {
+            super(loadingConfig);
             this.yamlConstructors.put(Tag.INT, new ConstructYamlStr());
             this.yamlConstructors.put(Tag.FLOAT, new ConstructYamlStr());
             this.yamlConstructors.put(Tag.TIMESTAMP, new ConstructYamlStr());
