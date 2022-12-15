@@ -103,7 +103,7 @@
         <executions>
           <execution>
             <id>test-compile</id>
-            <phase>test-compile</phase>
+            <phase>generate-test-sources</phase>
             <goals>
               <goal>test-compile</goal>
             </goals>
