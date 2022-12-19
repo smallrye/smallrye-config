@@ -52,11 +52,27 @@ public class ConfigMappingWithConverterTest {
         }
     }
 
+    @ConfigMapping
+    interface WrongPrimitiveConverterType {
+        @WithConverter(IntegerConverter.class)
+        double type();
+
+        class IntegerConverter implements Converter<Integer> {
+
+            @Override
+            public Integer convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return 0;
+            }
+
+        }
+    }
+
     @Test
     void wrongConverter() {
         assertThrows(IllegalArgumentException.class, () -> config(WrongConverterType.class));
         assertThrows(IllegalArgumentException.class, () -> config(WrongAbstractConverterType.class));
         assertThrows(IllegalArgumentException.class, () -> config(WrongSuperConverterType.class));
+        assertThrows(IllegalArgumentException.class, () -> config(WrongPrimitiveConverterType.class));
     }
 
     @ConfigMapping

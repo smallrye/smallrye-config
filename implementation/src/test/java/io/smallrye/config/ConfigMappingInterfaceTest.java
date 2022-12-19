@@ -383,6 +383,13 @@ class ConfigMappingInterfaceTest {
         final Converters converters = config.getConfigMapping(Converters.class);
 
         assertEquals("bar", converters.foo());
+        assertTrue(converters.bprim());
+        assertEquals('c', converters.cprim());
+        assertEquals(-1, converters.iprim());
+        assertEquals(-1, converters.sprim());
+        assertEquals(-1L, converters.lprim());
+        assertEquals(-1.0, converters.fprim());
+        assertEquals(-1.0, converters.dprim());
     }
 
     @Test
@@ -661,12 +668,82 @@ class ConfigMappingInterfaceTest {
     public interface Converters {
         @WithConverter(FooBarConverter.class)
         String foo();
+
+        @WithConverter(BooleanConverter.class)
+        boolean bprim();
+
+        @WithConverter(CharacterConverter.class)
+        char cprim();
+
+        @WithConverter(IntegerConverter.class)
+        int iprim();
+
+        @WithConverter(ShortConverter.class)
+        short sprim();
+
+        @WithConverter(LongConverter.class)
+        long lprim();
+
+        @WithConverter(FloatConverter.class)
+        float fprim();
+
+        @WithConverter(DoubleConverter.class)
+        double dprim();
     }
 
     public static class FooBarConverter implements Converter<String> {
         @Override
         public String convert(final String value) {
             return "bar";
+        }
+    }
+
+    public static class BooleanConverter implements Converter<Boolean> {
+        @Override
+        public Boolean convert(String value) throws IllegalArgumentException, NullPointerException {
+            return true;
+        }
+    }
+
+    public static class CharacterConverter implements Converter<Character> {
+        @Override
+        public Character convert(String value) throws IllegalArgumentException, NullPointerException {
+            return 'c';
+        }
+    }
+
+    public static class IntegerConverter implements Converter<Integer> {
+        @Override
+        public Integer convert(String value) throws IllegalArgumentException, NullPointerException {
+            return -1;
+        }
+    }
+
+    public static class ShortConverter implements Converter<Short> {
+        @Override
+        public Short convert(String value) throws IllegalArgumentException, NullPointerException {
+            return -1;
+        }
+    }
+
+    public static class LongConverter implements Converter<Long> {
+        @Override
+        public Long convert(String value) throws IllegalArgumentException, NullPointerException {
+            return -1L;
+        }
+    }
+
+    public static class FloatConverter implements Converter<Float> {
+        @Override
+        public Float convert(String value) throws IllegalArgumentException, NullPointerException {
+            return -1.0F;
+        }
+    }
+
+    public static class DoubleConverter implements Converter<Double> {
+        @Override
+        public Double convert(String value) throws IllegalArgumentException, NullPointerException {
+            return -1.0;
         }
     }
 
