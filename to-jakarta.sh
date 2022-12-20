@@ -4,6 +4,7 @@
 find . -type f -name 'pom.xml' -exec sed -i'' -e 's/smallrye-parent/smallrye-jakarta-parent/g' {} +
 # java sources
 find . -type f -name '*.java' -exec sed -i'' -e 's/javax./jakarta./g' {} +
+find . -type f -name '*.kt' -exec sed -i'' -e 's/javax./jakarta./g' {} +
 # service loader files
 find . -path "*/src/main/resources/META-INF/services/javax*" | sed -e 'p;s/javax/jakarta/g' | xargs -n2 git mv
 # docs
