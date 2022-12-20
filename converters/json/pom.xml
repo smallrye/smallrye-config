@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-parent</artifactId>
-        <version>2.13.2-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     
@@ -13,7 +13,7 @@
     <name>SmallRye Config: Converter - Json</name>
 
     <properties>
-        <version.jakarta.json>1.1.6</version.jakarta.json>
+        <version.jakarta.json>2.0.1</version.jakarta.json>
     </properties>
 
     <dependencies>
