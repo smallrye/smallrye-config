@@ -824,8 +824,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private static void validateConverter(final Type type, final Class<? extends Converter<?>> convertWith) {
         if (type instanceof Class) {
             try {
+                Class<?> classType = (Class<?>) type;
+                Class<?> effectiveType = classType.isPrimitive() ? PrimitiveProperty.boxTypes.get(classType) : classType;
                 Method convertMethod = convertWith.getMethod("convert", String.class);
-                if (!((Class<?>) type).isAssignableFrom(convertMethod.getReturnType())) {
+                if (!effectiveType.isAssignableFrom(convertMethod.getReturnType())) {
                     throw new IllegalArgumentException();
                 }
             } catch (NoSuchMethodException e) {
