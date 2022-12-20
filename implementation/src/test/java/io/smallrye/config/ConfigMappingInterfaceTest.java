@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -1786,6 +1787,75 @@ class ConfigMappingInterfaceTest {
 
         interface Value {
             String value();
+        }
+    }
+
+    @Test
+    void optionalWithConverter() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(OptionalWithConverter.class)
+                .withSources(config("optional.converter.value", "value"))
+                .withSources(config("optional.converter.primitive", "1"))
+                .withSources(config("optional.converter.wrapper-int", "1"))
+                .withSources(config("optional.converter.primitive-array", "dummy"))
+                .build();
+
+        OptionalWithConverter mapping = config.getConfigMapping(OptionalWithConverter.class);
+
+        assertEquals("value", mapping.value().value);
+        assertTrue(mapping.optionalValue().isPresent());
+        assertEquals("value", mapping.optionalValue().get().value);
+        assertEquals(0, mapping.primitive());
+        assertTrue(mapping.wrapperInt().isPresent());
+        assertEquals(0, mapping.wrapperInt().get());
+    }
+
+    @ConfigMapping(prefix = "optional.converter")
+    interface OptionalWithConverter {
+        @WithConverter(ValueConverter.class)
+        Value value();
+
+        @WithName("value")
+        @WithConverter(ValueConverter.class)
+        Optional<Value> optionalValue();
+
+        @WithConverter(IntConverter.class)
+        int primitive();
+
+        @WithConverter(IntConverter.class)
+        Optional<Integer> wrapperInt();
+
+        @WithConverter(ByteArrayConverter.class)
+        byte[] primitiveArray();
+    }
+
+    public static class ValueConverter implements Converter<Value> {
+        @Override
+        public Value convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return new Value(value);
+        }
+    }
+
+    public static class IntConverter implements Converter<Integer> {
+        @Override
+        public Integer convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return 0;
+        }
+    }
+
+    public static class ByteArrayConverter implements Converter<byte[]> {
+        @Override
+        public byte[] convert(String value) throws IllegalArgumentException, NullPointerException {
+            return value.getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    static class Value {
+        String value;
+
+        Value(final String value) {
+            this.value = value;
         }
     }
 }
