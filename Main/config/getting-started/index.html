@@ -1180,7 +1180,7 @@ the <code>org.eclipse.microprofile.config.inject.ConfigProperty</code> qualifier
 </code></pre></div>
 <ul>
 <li>If a value if not provided for this <code>greeting.message</code>, the application startup fails with a 
-<code>javax.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message</code>.</li>
+<code>jakarta.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message</code>.</li>
 <li>The default value <code>!</code> is injected if the configuration does not provide a value for <code>greeting.suffix</code>.</li>
 <li>The property <code>greeting.name</code> is optional - an empty Optional is injected if the configuration does not provide a 
 value for it.</li>
