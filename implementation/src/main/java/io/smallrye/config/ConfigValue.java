@@ -8,7 +8,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.ConfigValidationException.Problem;
 
 /**
@@ -23,7 +22,6 @@ import io.smallrye.config.ConfigValidationException.Problem;
  * This is used together with {@link ConfigValueConfigSource} and {@link ConfigSourceInterceptor} to expose the
  * Configuration lookup metadata.
  */
-@Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
 public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue {
     private final String name;
     private final String value;

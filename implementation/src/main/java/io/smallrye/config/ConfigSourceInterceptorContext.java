@@ -3,13 +3,10 @@ package io.smallrye.config;
 import java.io.Serializable;
 import java.util.Iterator;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * Exposes contextual information about the intercepted invocation of {@link ConfigSourceInterceptor}. This allows
  * implementers to control the behavior of the invocation chain.
  */
-@Experimental("Interceptor API to intercept resolution of a configuration name")
 public interface ConfigSourceInterceptorContext extends Serializable {
     /**
      * Proceeds to the next interceptor in the chain.

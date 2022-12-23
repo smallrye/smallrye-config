@@ -7,12 +7,9 @@ import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * Exposes contextual information on the ConfigSource initialization via {@link ConfigSourceFactory}.
  */
-@Experimental("ConfigSource API Enhancements")
 public interface ConfigSourceContext {
     ConfigValue getValue(String name);
 

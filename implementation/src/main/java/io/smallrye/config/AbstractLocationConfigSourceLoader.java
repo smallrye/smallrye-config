@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * This {@link AbstractLocationConfigSourceLoader} loads {@link ConfigSource}s from a list of specific
  * locations.
@@ -46,7 +44,6 @@ import io.smallrye.common.annotation.Experimental;
  * location. This is to keep a consistent loading order and match with the unprofiled resource. Profiles are not
  * taken into account if the location is a directory.
  */
-@Experimental("Loads sources by location")
 public abstract class AbstractLocationConfigSourceLoader {
     private static final Converter<URI> URI_CONVERTER = new URIConverter();
 
