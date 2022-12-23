@@ -2,8 +2,6 @@ package io.smallrye.config;
 
 import java.util.OptionalInt;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * This ConfigSourceInterceptorFactory allows to initialize a {@link ConfigSourceInterceptor}, with access to the
  * current {@link ConfigSourceInterceptorContext}.
@@ -19,7 +17,6 @@ import io.smallrye.common.annotation.Experimental;
  * {@code META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory} which contains the fully qualified class
  * name of the custom {@link ConfigSourceInterceptor} implementation.
  */
-@Experimental("Interceptor API to intercept resolution of a configuration name")
 public interface ConfigSourceInterceptorFactory {
     /**
      * The default priority value, {@link Priorities#APPLICATION}.

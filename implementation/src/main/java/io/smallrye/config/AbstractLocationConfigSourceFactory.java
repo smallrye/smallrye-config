@@ -9,14 +9,11 @@ import java.util.Collections;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * This {@code AbstractLocationConfigSourceFactory} allows to initialize additional config locations with the
  * configuration {@link SmallRyeConfig#SMALLRYE_CONFIG_LOCATIONS}. The configuration support multiple
  * locations separated by a comma and each must represent a valid {@link URI}.
  */
-@Experimental("Loads additional config locations")
 public abstract class AbstractLocationConfigSourceFactory extends AbstractLocationConfigSourceLoader
         implements ConfigSourceFactory {
 

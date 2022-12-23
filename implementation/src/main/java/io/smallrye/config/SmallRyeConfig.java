@@ -179,7 +179,6 @@ public class SmallRyeConfig implements Config, Serializable {
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
      * @throws NoSuchElementException if no direct sub properties could be found.
      */
-    @Experimental("Extension to retrieve mandatory sub properties as a Map")
     public <K, V> Map<K, V> getValues(String name, Class<K> kClass, Class<V> vClass) {
         final Map<K, V> result = getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass));
         if (result == null) {
@@ -319,7 +318,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return Objects.equals(expected, getRawValue(name));
     }
 
-    @Experimental("Extension to the original ConfigSource to allow retrieval of additional metadata on config lookup")
     public ConfigValue getConfigValue(String name) {
         final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
         return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
@@ -352,7 +350,6 @@ public class SmallRyeConfig implements Config, Serializable {
      * @return the resolved property value as an instance of the requested Map (not {@code null})
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
      */
-    @Experimental("Extension to retrieve non mandatory sub properties as a Map")
     public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass) {
         return Optional.ofNullable(getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass)));
     }
@@ -405,12 +402,10 @@ public class SmallRyeConfig implements Config, Serializable {
         return mappings;
     }
 
-    @Experimental("ConfigMapping API to group configuration properties")
     public <T> T getConfigMapping(Class<T> type) {
         return mappings.getConfigMapping(type);
     }
 
-    @Experimental("ConfigMapping API to group configuration properties")
     public <T> T getConfigMapping(Class<T> type, String prefix) {
         return mappings.getConfigMapping(type, prefix);
     }
@@ -515,7 +510,6 @@ public class SmallRyeConfig implements Config, Serializable {
         throw ConfigMessages.msg.getTypeNotSupportedForUnwrapping(type);
     }
 
-    @Experimental("To retrieve active profiles")
     public List<String> getProfiles() {
         return configSources.getProfiles();
     }

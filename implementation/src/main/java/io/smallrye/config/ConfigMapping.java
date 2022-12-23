@@ -9,8 +9,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * This annotation may be placed in interfaces to group configuration properties with a common prefix.
  *
@@ -32,7 +30,6 @@ import io.smallrye.common.annotation.Experimental;
 @Documented
 @Target({ FIELD, PARAMETER, TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@Experimental("ConfigMapping API to group configuration properties")
 public @interface ConfigMapping {
     /**
      * The prefix of the configuration properties.

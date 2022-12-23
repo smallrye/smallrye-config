@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * The ConfigSourceInterceptor allows to intercept the resolution of a configuration name before the
  * configuration value is resolved by the Config and before any conversion taking place. It can also intercept
@@ -28,7 +26,6 @@ import io.smallrye.common.annotation.Experimental;
  * of {@code io.smallrye.config.Priorities#APPLICATION} is assumed. If multiple interceptors are registered with the
  * same priority, then their execution order may be non deterministic.
  */
-@Experimental("Interceptor API to intercept resolution of a configuration name")
 public interface ConfigSourceInterceptor extends Serializable {
     /**
      * Intercept the resolution of a configuration name and either return the corresponding {@link ConfigValue} or a

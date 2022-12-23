@@ -6,8 +6,6 @@ import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.common.annotation.Experimental;
-
 /**
  * This {@code ConfigSourceFactory} allows to initialize a {@link ConfigSource}, with access to the current
  * {@link ConfigSourceContext}.
@@ -24,7 +22,6 @@ import io.smallrye.common.annotation.Experimental;
  * {@code META-INF/services/io.smallrye.config.ConfigSourceFactory} which contains the fully qualified class name of the
  * custom {@link ConfigSourceFactory} implementation.
  */
-@Experimental("ConfigSource API Enhancements")
 public interface ConfigSourceFactory {
     Iterable<ConfigSource> getConfigSources(ConfigSourceContext context);
 
