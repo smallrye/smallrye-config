@@ -85,21 +85,8 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void configMappingBuilder() {
-        final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder().addRoot("server", Server.class)
-                .addIgnored("server.name").build();
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                config("server.host", "localhost", "server.port", "8080", "server.name", "name")).build();
-
-        configMappingProvider.mapConfiguration(config);
-        final Server server = config.getConfigMapping(Server.class, "server");
-        assertEquals("localhost", server.host());
-        assertEquals(8080, server.port());
-    }
-
-    @Test
     void unknownConfigElement() {
-        assertThrows(IllegalStateException.class,
+        assertThrows(ConfigValidationException.class,
                 () -> new SmallRyeConfigBuilder().withMapping(Server.class, "server").build());
     }
 
@@ -146,7 +133,7 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void validateUnknown() {
-        assertThrows(IllegalStateException.class,
+        assertThrows(ConfigValidationException.class,
                 () -> new SmallRyeConfigBuilder().addDefaultSources().withMapping(Server.class).build());
 
         final SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -164,22 +151,20 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void splitRoots() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
                 .build();
 
-        final ConfigMappingProvider configMappingProvider = ConfigMappingProvider.builder()
-                .addRoot("server", SplitRootServerHostAndPort.class)
-                .addRoot("server", SplitRootServerName.class)
-                .build();
+        ConfigMappings.mapConfiguration(
+                config, ConfigMappingProvider.builder()
+                        .addRoot("server", SplitRootServerHostAndPort.class)
+                        .addRoot("server", SplitRootServerName.class));
 
-        configMappingProvider.mapConfiguration(config);
-
-        final SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
+        SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
 
-        final SplitRootServerName name = config.getConfigMapping(SplitRootServerName.class, "server");
+        SplitRootServerName name = config.getConfigMapping(SplitRootServerName.class, "server");
         assertEquals("konoha", name.name());
     }
 
@@ -861,10 +846,8 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
                 .withSources(config("server.name", "localhost"));
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(exception.getCause() instanceof ConfigValidationException);
-        assertEquals("server.name does not map to any root",
-                ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, builder::build);
+        assertEquals("server.name does not map to any root", exception.getProblem(0).getMessage());
 
         builder = new SmallRyeConfigBuilder()
                 .withMapping(ServerPrefix.class, "server")
@@ -876,10 +859,8 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("cloud.server.host", "localhost", "cloud.server.port", "8080"))
                 .withSources(config("cloud.server.name", "localhost"));
 
-        exception = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(exception.getCause() instanceof ConfigValidationException);
-        assertEquals("cloud.server.name does not map to any root",
-                ((ConfigValidationException) exception.getCause()).getProblem(0).getMessage());
+        exception = assertThrows(ConfigValidationException.class, builder::build);
+        assertEquals("cloud.server.name does not map to any root", exception.getProblem(0).getMessage());
     }
 
     @ConfigMapping(prefix = "mapping.server.env")

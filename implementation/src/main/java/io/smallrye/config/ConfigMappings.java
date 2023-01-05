@@ -28,23 +28,19 @@ public final class ConfigMappings implements Serializable {
         this.mappings = new ConcurrentHashMap<>();
     }
 
-    void registerConfigMappings(final Map<Class<?>, Map<String, ConfigMappingObject>> mappings) {
-        this.mappings.putAll(mappings);
-    }
-
     public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
             Boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
                     .orElse(TRUE);
-            mapConfiguration(ConfigMappingProvider.builder().validateUnknown(validateUnknown), config, configClasses);
+            mapConfiguration(config, ConfigMappingProvider.builder().validateUnknown(validateUnknown), configClasses);
         }
     }
 
     public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
-            mapConfiguration(ConfigMappingProvider.builder().validateUnknown(false), config, configClasses);
+            mapConfiguration(config, ConfigMappingProvider.builder().validateUnknown(false), configClasses);
         }
     }
 
@@ -73,13 +69,27 @@ public final class ConfigMappings implements Serializable {
     }
 
     static void mapConfiguration(
-            final ConfigMappingProvider.Builder builder,
             final SmallRyeConfig config,
-            final Set<ConfigClassWithPrefix> configClasses) throws ConfigValidationException {
+            final ConfigMappingProvider.Builder builder)
+            throws ConfigValidationException {
+        mapConfiguration(config, builder, new HashSet<>());
+    }
+
+    static void mapConfiguration(
+            final SmallRyeConfig config,
+            final ConfigMappingProvider.Builder builder,
+            final Set<ConfigClassWithPrefix> configClasses)
+            throws ConfigValidationException {
         for (ConfigClassWithPrefix configClass : configClasses) {
             builder.addRoot(configClass.getPrefix(), configClass.getKlass());
         }
-        builder.build().mapConfiguration(config);
+        ConfigMappingProvider mappingProvider = builder.build();
+        mapConfiguration(config, mappingProvider);
+    }
+
+    static void mapConfiguration(SmallRyeConfig config, ConfigMappingProvider mappingProvider) {
+        ConfigMappingContext mappingContext = mappingProvider.mapConfiguration(config);
+        config.getConfigMappings().mappings.putAll(mappingContext.getRootsMap());
     }
 
     <T> T getConfigMapping(Class<T> type) {
