@@ -925,29 +925,26 @@ final class ConfigMappingProvider implements Serializable {
         return properties;
     }
 
-    KeyMap<String> getDefaultValues() {
-        return defaultValues;
-    }
-
-    void mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
+    ConfigMappingContext mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource instanceof DefaultValuesConfigSource) {
-                final DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
-                defaultValuesConfigSource.registerDefaults(this.getDefaultValues());
+                DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
+                defaultValuesConfigSource.registerDefaults(defaultValues);
             }
         }
 
         config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), config));
-        SecretKeys.doUnlocked(() -> mapConfiguration(config, config.getConfigMappings()));
+        return SecretKeys.doUnlocked(() -> mapConfigurationInternal(config));
     }
 
-    private void mapConfiguration(SmallRyeConfig config, ConfigMappings mappings) throws ConfigValidationException {
-        if (roots.isEmpty()) {
-            return;
-        }
-
+    private ConfigMappingContext mapConfigurationInternal(SmallRyeConfig config) throws ConfigValidationException {
         Assert.checkNotNullParam("config", config);
         ConfigMappingContext context = new ConfigMappingContext(config);
+
+        if (roots.isEmpty()) {
+            return context;
+        }
+
         // eagerly populate roots
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             String path = entry.getKey();
@@ -960,11 +957,7 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
 
-        boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class)
-                .orElse(this.validateUnknown);
-
         // lazily sweep
-        Set<String> unknownProperties = new HashSet<>();
         for (String name : config.getPropertyNames()) {
             NameIterator ni = new NameIterator(name);
             // filter properties in root
@@ -976,20 +969,20 @@ final class ConfigMappingProvider implements Serializable {
             if (action != null) {
                 action.accept(context, ni);
             } else {
-                if (validateUnknown) {
-                    unknownProperties.add(name);
-                }
+                context.unknownProperty(name);
             }
         }
 
-        unknownProperties(unknownProperties, context);
-        ArrayList<ConfigValidationException.Problem> problems = context.getProblems();
+        context.validateUnknown(
+                config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(this.validateUnknown));
+
+        List<ConfigValidationException.Problem> problems = context.getProblems();
         if (!problems.isEmpty()) {
             throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
 
-        mappings.registerConfigMappings(context.getRootsMap());
+        return context;
     }
 
     private boolean isPropertyInRoot(NameIterator propertyName) {
@@ -1148,32 +1141,6 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
         return false;
-    }
-
-    private static void unknownProperties(Set<String> properties, ConfigMappingContext context) {
-        Set<String> usedProperties = new HashSet<>();
-        for (String property : context.getConfig().getPropertyNames()) {
-            if (properties.contains(property)) {
-                continue;
-            }
-
-            usedProperties.add(replaceNonAlphanumericByUnderscores(property));
-        }
-        usedProperties.removeAll(properties);
-
-        for (String property : properties) {
-            boolean found = false;
-            String envProperty = replaceNonAlphanumericByUnderscores(property);
-            for (String usedProperty : usedProperties) {
-                if (usedProperty.equalsIgnoreCase(envProperty)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                context.unknownConfigElement(property);
-            }
-        }
     }
 
     public static final class Builder {

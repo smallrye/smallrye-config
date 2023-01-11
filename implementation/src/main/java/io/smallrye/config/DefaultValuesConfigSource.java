@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-public class DefaultValuesConfigSource extends KeyMapBackedConfigSource {
+public final class DefaultValuesConfigSource extends KeyMapBackedConfigSource {
     private static final long serialVersionUID = -6386021034957868328L;
 
     public DefaultValuesConfigSource(final KeyMap<String> properties) {

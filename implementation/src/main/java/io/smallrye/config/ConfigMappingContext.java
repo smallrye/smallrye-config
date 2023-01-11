@@ -8,6 +8,7 @@ import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterfac
 import static io.smallrye.config.ConfigMappingInterface.rawTypeOf;
 import static io.smallrye.config.ConfigMappingInterface.typeOfParameter;
 import static io.smallrye.config.ConfigValidationException.Problem;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -41,7 +42,8 @@ public final class ConfigMappingContext {
     private final List<ConfigMappingObject> allInstances = new ArrayList<>();
     private final SmallRyeConfig config;
     private final StringBuilder stringBuilder = new StringBuilder();
-    private final ArrayList<Problem> problems = new ArrayList<>();
+    private final Set<String> unknownProperties = new HashSet<>();
+    private final List<Problem> problems = new ArrayList<>();
 
     private NamingStrategy namingStrategy = null;
 
@@ -222,8 +224,34 @@ public final class ConfigMappingContext {
         return new NoSuchElementException("A required configuration group of type " + type.getName() + " was not provided");
     }
 
-    public void unknownConfigElement(final String propertyName) {
-        problems.add(new Problem(propertyName + " does not map to any root"));
+    void unknownProperty(final String unknownProperty) {
+        unknownProperties.add(unknownProperty);
+    }
+
+    void validateUnknown(final boolean validateUnknown) {
+        Set<String> usedProperties = new HashSet<>();
+        for (String property : config.getPropertyNames()) {
+            if (unknownProperties.contains(property)) {
+                continue;
+            }
+
+            usedProperties.add(replaceNonAlphanumericByUnderscores(property));
+        }
+        usedProperties.removeAll(unknownProperties);
+
+        for (String property : unknownProperties) {
+            boolean found = false;
+            String envProperty = replaceNonAlphanumericByUnderscores(property);
+            for (String usedProperty : usedProperties) {
+                if (usedProperty.equalsIgnoreCase(envProperty)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && validateUnknown) {
+                problems.add(new Problem(property + " does not map to any root"));
+            }
+        }
     }
 
     void fillInOptionals() {
@@ -244,7 +272,7 @@ public final class ConfigMappingContext {
         problems.add(new Problem(problem.toString()));
     }
 
-    ArrayList<Problem> getProblems() {
+    List<Problem> getProblems() {
         return problems;
     }
 

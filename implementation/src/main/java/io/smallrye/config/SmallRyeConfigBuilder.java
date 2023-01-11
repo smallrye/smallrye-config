@@ -462,6 +462,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultValues;
     }
 
+    ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
     public boolean isAddDefaultSources() {
         return addDefaultSources;
     }
@@ -518,23 +522,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        for (ConfigSourceProvider sourceProvider : sourceProviders) {
-            for (ConfigSource configSource : sourceProvider.getConfigSources(classLoader)) {
-                sources.add(configSource);
-            }
-        }
-
-        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
-        defaultValues.putAll(mappingProvider.getDefaultValues());
-
-        try {
-            ConfigMappings configMappings = new ConfigMappings(getValidator());
-            SmallRyeConfig config = new SmallRyeConfig(this, configMappings);
-            mappingProvider.mapConfiguration(config);
-            return config;
-        } catch (ConfigValidationException e) {
-            throw new IllegalStateException(e);
-        }
+        SmallRyeConfig config = new SmallRyeConfig(this);
+        ConfigMappings.mapConfiguration(config, mappingsBuilder.build());
+        return config;
     }
 
     static class ConverterWithPriority {
