@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class ConfigValuePropertiesConfigSourceTest {
     @Test
     void interceptor() throws Exception {
-        SmallRyeConfig config = (SmallRyeConfig) buildConfig();
+        SmallRyeConfig config = buildConfig().unwrap(SmallRyeConfig.class);
 
         assertEquals("1", config.getValue("my.prop", String.class));
         assertEquals("20", config.getValue("my.prop.20", String.class));

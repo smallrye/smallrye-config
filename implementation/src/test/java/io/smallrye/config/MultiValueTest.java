@@ -24,9 +24,10 @@ class MultiValueTest {
         Properties properties = new Properties();
         properties.put("my.pets", "snake,dog,cat,cat");
 
-        config = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getBuilder()
+        config = SmallRyeConfigProviderResolver.instance().getBuilder()
                 .withSources(new PropertiesConfigSource(properties, "my properties"))
-                .build();
+                .build()
+                .unwrap(SmallRyeConfig.class);
     }
 
     @Test

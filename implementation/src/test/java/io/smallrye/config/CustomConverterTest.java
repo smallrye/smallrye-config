@@ -40,7 +40,7 @@ class CustomConverterTest {
     @Test
     void explicitConverter() {
         // setup
-        SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "1234");// sanity check
+        SmallRyeConfig config = buildConfig("my.prop", "1234").unwrap(SmallRyeConfig.class);// sanity check
         final Converter<Integer> customConverter = new Converter<Integer>() {
             public Integer convert(final String value) {
                 return Integer.valueOf(Integer.parseInt(value) * 2);
@@ -109,7 +109,7 @@ class CustomConverterTest {
         assertEquals(uuidUUIDTruth, config.getValue("uuid.shouting", UUID.class), "Uppercase UUID incorrectly converted");
 
         // Check UUIDs work fine in arrays
-        ArrayList<UUID> values = ((SmallRyeConfig) config).getValues("uuid.multiple", UUID.class, ArrayList::new);
+        ArrayList<UUID> values = config.unwrap(SmallRyeConfig.class).getValues("uuid.multiple", UUID.class, ArrayList::new);
         assertEquals(uuidUUIDTruth, values.get(0), "Unexpected list item in UUID config");
         assertEquals(secondUuidUUIDTruth, values.get(1), "Unexpected list item in UUID config");
 

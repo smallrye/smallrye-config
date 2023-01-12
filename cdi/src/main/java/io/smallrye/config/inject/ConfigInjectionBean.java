@@ -106,7 +106,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             } else {
                 Optional<T> optionalValue = (Optional<T>) getConfig().getOptionalValue(key, annotatedTypeClass);
                 return optionalValue.orElseGet(
-                        () -> (T) ((SmallRyeConfig) getConfig()).convert(defaultValue, annotatedTypeClass));
+                        () -> (T) getConfig().unwrap(SmallRyeConfig.class).convert(defaultValue, annotatedTypeClass));
             }
         }
 
