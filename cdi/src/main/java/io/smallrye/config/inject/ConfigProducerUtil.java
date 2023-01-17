@@ -408,7 +408,8 @@ public final class ConfigProducerUtil {
          */
         private static <K, V> Map<K, V> getValues(String name, Config config, Converter<K> keyConverter,
                 Converter<V> valueConverter) {
-            return SecretKeys.doUnlocked(() -> config.unwrap(SmallRyeConfig.class).getValuesAsMap(name, keyConverter, valueConverter));
+            return SecretKeys
+                    .doUnlocked(() -> config.unwrap(SmallRyeConfig.class).getValuesAsMap(name, keyConverter, valueConverter));
         }
     }
 }
