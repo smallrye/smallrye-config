@@ -231,7 +231,7 @@ public final class ConfigProducerUtil {
 
     /**
      * Indicates whether the given type is a type of Map or is a Supplier or Optional of Map.
-     * 
+     *
      * @param type the type to check
      * @return {@code true} if the given type is a type of Map or is a Supplier or Optional of Map,
      *         {@code false} otherwise.
@@ -408,7 +408,8 @@ public final class ConfigProducerUtil {
          */
         private static <K, V> Map<K, V> getValues(String name, Config config, Converter<K> keyConverter,
                 Converter<V> valueConverter) {
-            return SecretKeys.doUnlocked(() -> ((SmallRyeConfig) config).getValuesAsMap(name, keyConverter, valueConverter));
+            return SecretKeys
+                    .doUnlocked(() -> config.unwrap(SmallRyeConfig.class).getValuesAsMap(name, keyConverter, valueConverter));
         }
     }
 }

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class ConfigSourcePropertySubstitutionTest {
     @Test
     void interceptor() {
-        SmallRyeConfig config = (SmallRyeConfig) buildConfig("my.prop", "${prop.replace}", "prop.replace", "1234");
+        SmallRyeConfig config = buildConfig("my.prop", "${prop.replace}", "prop.replace", "1234").unwrap(SmallRyeConfig.class);
 
         final String value = config.getValue("my.prop", String.class);
         Assertions.assertEquals("1234", value);

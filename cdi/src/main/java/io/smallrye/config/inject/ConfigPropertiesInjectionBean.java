@@ -52,7 +52,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
             }
         }
 
-        SmallRyeConfig config = (SmallRyeConfig) ConfigProvider.getConfig(getContextClassLoader());
+        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
         return config.getConfigMapping(getBeanClass(), prefix);
     }
 

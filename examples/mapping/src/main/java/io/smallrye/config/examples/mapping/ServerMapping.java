@@ -6,7 +6,7 @@ import io.smallrye.config.SmallRyeConfig;
 
 public class ServerMapping {
     public static Server getServer() {
-        SmallRyeConfig config = (SmallRyeConfig) ConfigProvider.getConfig();
+        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
         return config.getConfigMapping(Server.class);
     }
 }
