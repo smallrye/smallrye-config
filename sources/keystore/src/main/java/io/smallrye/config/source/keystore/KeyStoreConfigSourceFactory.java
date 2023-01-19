@@ -13,8 +13,6 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,28 +22,17 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.AbstractLocationConfigSourceFactory;
 import io.smallrye.config.ConfigSourceContext;
-import io.smallrye.config.ConfigSourceFactory;
-import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigSourceFactory.ConfigurableConfigSourceFactory;
 import io.smallrye.config.ConfigurableConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
 
-public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
+public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFactory<KeyStoreConfig> {
     @Override
-    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new ContextConfigSource(context))
-                .withMapping(KeyStoreConfig.class)
-                .build();
-
-        KeyStoreConfig keyStoreConfig = config.getConfigMapping(KeyStoreConfig.class);
-
+    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, KeyStoreConfig keyStoreConfig) {
         List<ConfigSource> keyStoreSources = new ArrayList<>();
         for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : keyStoreConfig.keystores().entrySet()) {
             KeyStoreConfig.KeyStore keyStore = keyStoreEntry.getValue();
-
             keyStoreSources.add(new ConfigurableConfigSource(new AbstractLocationConfigSourceFactory() {
                 @Override
                 protected String[] getFileExtensions() {
@@ -53,7 +40,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
                 }
 
                 @Override
-                protected ConfigSource loadConfigSource(final URL url, final int ordinal) {
+                protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
                     return new UrlKeyStoreConfigSource(url, ordinal).loadKeyStore(keyStore);
                 }
 
@@ -67,35 +54,6 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
         return keyStoreSources;
     }
 
-    private static class ContextConfigSource implements ConfigSource {
-        private final ConfigSourceContext context;
-
-        public ContextConfigSource(final ConfigSourceContext context) {
-            this.context = context;
-        }
-
-        @Override
-        public Set<String> getPropertyNames() {
-            Set<String> names = new HashSet<>();
-            Iterator<String> namesIterator = context.iterateNames();
-            while (namesIterator.hasNext()) {
-                names.add(namesIterator.next());
-            }
-            return names;
-        }
-
-        @Override
-        public String getValue(final String propertyName) {
-            ConfigValue value = context.getValue(propertyName);
-            return value != null && value.getValue() != null ? value.getValue() : null;
-        }
-
-        @Override
-        public String getName() {
-            return ContextConfigSource.class.getName();
-        }
-    }
-
     private static class UrlKeyStoreConfigSource implements ConfigSource {
         private final URL url;
         private final int ordinal;
@@ -105,7 +63,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
             this.ordinal = ordinal;
         }
 
-        ConfigSource loadKeyStore(KeyStoreConfig.KeyStore keyStoreConfig) {
+        ConfigSource loadKeyStore(KeyStoreConfig.KeyStore keyStoreConfig) throws IOException {
             try {
                 KeyStore keyStore = KeyStore.getInstance(keyStoreConfig.type());
                 keyStore.load(url.openStream(), keyStoreConfig.password().toCharArray());
@@ -146,8 +104,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
                     }
                 }
                 return new PropertiesConfigSource(properties, this.getName(), this.getOrdinal());
-            } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException
-                    | UnrecoverableKeyException e) {
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
                 throw new RuntimeException(e);
             }
         }
