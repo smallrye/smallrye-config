@@ -22,8 +22,6 @@ class DotEnvConfigSourceProviderTest {
         }
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
                 .build();
@@ -63,8 +61,6 @@ class DotEnvConfigSourceProviderTest {
         }
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
                 .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
@@ -76,5 +72,23 @@ class DotEnvConfigSourceProviderTest {
         assertEquals("common", config.getRawValue("MY_PROP_COMMON"));
         assertEquals("dev", config.getRawValue("my.prop.profile"));
         assertEquals("dev", config.getRawValue("MY_PROP_PROFILE"));
+    }
+
+    @Test
+    void dotEnvSourceConvertNames(@TempDir Path tempDir) throws Exception {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("MY-PROP", "1234");
+        envProperties.setProperty("FOO_BAR_BAZ", "1234");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve(".env").toFile())) {
+            envProperties.store(out, null);
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getRawValue("foo.bar.baz"));
     }
 }
