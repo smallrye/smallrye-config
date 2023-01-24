@@ -16,6 +16,7 @@
 package io.smallrye.config.common.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Properties;
@@ -34,5 +35,21 @@ class ConfigSourceUtilTest {
         assertEquals("my.value1", map.get("my.key1"));
         assertEquals("my.value2", map.get("my.key2"));
         assertEquals("2", map.get("my.key3"));
+    }
+
+    @Test
+    void unableToConvertToString() {
+        Properties properties = new Properties();
+        properties.put("foo.bar", new UnconvertableString());
+
+        Map<String, String> map = ConfigSourceUtil.propertiesToMap(properties);
+        assertTrue(map.isEmpty());
+    }
+
+    private static class UnconvertableString {
+        @Override
+        public String toString() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

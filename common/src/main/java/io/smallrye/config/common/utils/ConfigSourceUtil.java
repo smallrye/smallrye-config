@@ -53,8 +53,22 @@ public class ConfigSourceUtil {
     public static Map<String, String> propertiesToMap(Properties properties) {
         Map<String, String> map = new HashMap<>();
         synchronized (properties) {
-            for (Map.Entry<Object, Object> e : properties.entrySet()) {
-                map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                String key;
+                try {
+                    key = String.valueOf(entry.getKey());
+                } catch (Exception e) {
+                    continue;
+                }
+
+                String value;
+                try {
+                    value = String.valueOf(entry.getValue());
+                } catch (Exception e) {
+                    continue;
+                }
+
+                map.put(key, value);
             }
         }
         return map;
