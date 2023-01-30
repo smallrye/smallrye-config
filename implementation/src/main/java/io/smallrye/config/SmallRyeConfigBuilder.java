@@ -221,7 +221,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 Iterator<String> names = context.iterateNames();
                 while (names.hasNext()) {
                     String name = names.next();
-                    if (name.charAt(0) == '%') {
+                    if (name.length() > 0 && name.charAt(0) == '%') {
                         NameIterator ni = new NameIterator(name);
                         String profileSegment = ni.getNextSegment();
                         List<String> profiles = convertProfile(profileSegment.substring(1));
