@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -370,7 +371,7 @@ class SmallRyeConfigTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(new EnvConfigSource(Collections.singletonMap("ENV__QUOTED_KEY__VALUE", "env"), 300))
+                .withSources(new EnvConfigSource(singletonMap("ENV__QUOTED_KEY__VALUE", "env"), 300))
                 .withSources(new KeyMapBackedConfigSource("key-map", 100, keyMap))
                 .build();
 
@@ -378,5 +379,15 @@ class SmallRyeConfigTest {
 
         ConfigSource keymap = config.getConfigSource("key-map").get();
         assertEquals("key-map", keymap.getValue("env.\"quoted-key\".value"));
+    }
+
+    @Test
+    void emptyPropertyNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(new EnvConfigSource(singletonMap("", "value"), 300))
+                .build();
+
+        assertEquals("value", config.getRawValue(""));
     }
 }
