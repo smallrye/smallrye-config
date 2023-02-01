@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-testsuite</artifactId>
-    <version>2.13.3-SNAPSHOT</version>
+    <version>3.1.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>smallrye-config-tck</artifactId>
@@ -29,7 +29,7 @@
 
   <properties>
     <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>
-    <tck.skip.owb>false</tck.skip.owb>
+    <tck.skip.owb>true</tck.skip.owb>
   </properties>
 
   <build>

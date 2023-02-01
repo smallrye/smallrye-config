@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.UnsatisfiedResolutionException;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;

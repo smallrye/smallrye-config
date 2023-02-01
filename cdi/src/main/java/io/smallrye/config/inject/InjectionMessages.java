@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
