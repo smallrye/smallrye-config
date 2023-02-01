@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>37</version>
+    <version>38</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
@@ -38,7 +38,7 @@
     <version.smallrye.common>1.13.2</version.smallrye.common>
     <version.asm>9.4</version.asm>
 
-    <version.smallrye.testing>1.1.0</version.smallrye.testing>
+    <version.smallrye.testing>1.2.0</version.smallrye.testing>
 
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
