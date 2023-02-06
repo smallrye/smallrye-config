@@ -130,6 +130,14 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         }
     }
 
+    public void releaseConfig(ClassLoader classLoader) {
+        final ClassLoader realClassLoader = getRealClassLoader(classLoader);
+        final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
+        synchronized (configsForClassLoader) {
+            configsForClassLoader.remove(realClassLoader);
+        }
+    }
+
     static ClassLoader getRealClassLoader(ClassLoader classLoader) {
         if (classLoader == null) {
             classLoader = getContextClassLoader();
