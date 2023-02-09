@@ -925,6 +925,10 @@ final class ConfigMappingProvider implements Serializable {
         return properties;
     }
 
+    KeyMap<String> getDefaultValues() {
+        return defaultValues;
+    }
+
     ConfigMappingContext mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource instanceof DefaultValuesConfigSource) {

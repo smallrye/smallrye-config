@@ -522,8 +522,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
+        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
+        defaultValues.putAll(mappingProvider.getDefaultValues());
         SmallRyeConfig config = new SmallRyeConfig(this);
-        ConfigMappings.mapConfiguration(config, mappingsBuilder.build());
+        ConfigMappings.mapConfiguration(config, mappingProvider);
         return config;
     }
 
