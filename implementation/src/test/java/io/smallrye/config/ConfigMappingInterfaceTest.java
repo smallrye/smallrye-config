@@ -1839,4 +1839,23 @@ class ConfigMappingInterfaceTest {
             this.value = value;
         }
     }
+
+    @Test
+    void expressionDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(ExpressionDefaults.class)
+                .withDefaultValue("expression", "1234")
+                .build();
+
+        ExpressionDefaults mapping = config.getConfigMapping(ExpressionDefaults.class);
+
+        assertEquals("1234", mapping.expression());
+    }
+
+    @ConfigMapping(prefix = "expression.defaults")
+    interface ExpressionDefaults {
+        @WithDefault("${expression}")
+        String expression();
+    }
 }
