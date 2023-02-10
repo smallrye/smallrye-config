@@ -37,24 +37,26 @@ jobs:
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
           java -version
+          mvn -q -N io.takari:maven:0.7.7:wrapper -Dmaven=3.8.7 && ./mvnw -v
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output smallrye-sign.asc .github/release/smallrye-sign.asc.gpg
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.SECRET_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           gpg --fast-import --no-tty --batch --yes smallrye-sign.asc
           git config --global user.name "SmallRye CI"
           git config --global user.email "smallrye@googlegroups.com"
           git checkout -b release
-          mvn -B release:prepare -Prelease,coverage -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}} -s maven-settings.xml
+          ./mvnw -B release:prepare -Prelease,coverage -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}} -s maven-settings.xml
           git checkout ${{github.base_ref}}
           git rebase release
-          mvn -B release:perform -Prelease -s maven-settings.xml
+          ./mvnw -B release:perform -Prelease -s maven-settings.xml
           git push
           git push --tags
 
       - name: docs release ${{steps.metadata.outputs.current-version}}
         run: |
+          mvn -q -N io.takari:maven:0.7.7:wrapper -Dmaven=3.8.7 && ./mvnw -v
           git checkout -b ${{steps.metadata.outputs.current-version}} ${{steps.metadata.outputs.current-version}}
           cd documentation
-          mvn package
+          ./mvnw package
           VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
           pipx install pipenv
           pipenv install
@@ -71,8 +73,9 @@ jobs:
 
       - name: generate tck report
         run: |
+          mvn -q -N io.takari:maven:0.7.7:wrapper -Dmaven=3.8.7 && ./mvnw -v
           cd target/checkout
-          mvn surefire-report:report
+          ./mvnw surefire-report:report
           mv testsuite/tck/target/tck-results.html $GITHUB_WORKSPACE
 
       - uses: meeDamian/github-release@2.0
