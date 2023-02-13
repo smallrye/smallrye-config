@@ -20,7 +20,8 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>37</version>
+    <version>38</version>
+    <relativePath/>
   </parent>
 
   <groupId>io.smallrye.config.examples</groupId>
@@ -31,7 +32,20 @@
 
   <properties>
     <sonar.skip>true</sonar.skip>
+    <version.smallrye.testing>1.2.0</version.smallrye.testing>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.smallrye.testing</groupId>
+        <artifactId>smallrye-testing-bom</artifactId>
+        <version>${version.smallrye.testing}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
