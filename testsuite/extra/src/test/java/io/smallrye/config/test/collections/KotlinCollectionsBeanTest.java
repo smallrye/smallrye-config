@@ -2,7 +2,7 @@ package io.smallrye.config.test.collections;
 
 import static org.testng.Assert.assertEquals;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;

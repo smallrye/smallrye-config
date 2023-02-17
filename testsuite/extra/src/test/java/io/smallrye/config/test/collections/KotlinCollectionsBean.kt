@@ -1,8 +1,8 @@
 package io.smallrye.config.test.collections
 
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import javax.enterprise.context.Dependent
-import javax.inject.Inject
+import jakarta.enterprise.context.Dependent
+import jakarta.inject.Inject
 
 @Dependent
 class KotlinCollectionsBean {

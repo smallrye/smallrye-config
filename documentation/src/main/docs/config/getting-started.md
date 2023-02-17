@@ -99,7 +99,7 @@ SmallRyeConfig config;
 ```
 
 - If a value if not provided for this `greeting.message`, the application startup fails with a 
-`javax.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message`.
+`jakarta.enterprise.inject.spi.DeploymentException: No config value of type [class java.lang.String] exists for: greeting.message`.
 - The default value `!` is injected if the configuration does not provide a value for `greeting.suffix`.
 - The property `greeting.name` is optional - an empty Optional is injected if the configuration does not provide a 
 value for it.

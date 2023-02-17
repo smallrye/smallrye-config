@@ -2,7 +2,7 @@ package io.smallrye.config;
 
 /**
  * A collection of built-in priority constants for {@link ConfigSourceInterceptor} that are supposed to be
- * ordered based on their {@code javax.annotation.Priority} class-level annotation.
+ * ordered based on their {@code jakarta.annotation.Priority} class-level annotation.
  */
 public final class Priorities {
     /**

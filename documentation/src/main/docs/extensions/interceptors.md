@@ -26,7 +26,7 @@ origin and ordinal.
 ```java
 package org.acme.config;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigLogging;
@@ -66,7 +66,7 @@ The `ConfigSourceInterceptorFactory` can initialize an interceptor with access t
 (so it can be used to configure the interceptor and retrieve configuration values) and set the priority.
 
 A `ConfigSourceInterceptor` implementation class can specify a priority by way of the standard 
-`javax.annotation.Priority` annotation. If no priority is explicitly assigned, the default priority value of 
+`jakarta.annotation.Priority` annotation. If no priority is explicitly assigned, the default priority value of 
 `io.smallrye.config.Priorities.APPLICATION` is assumed. If multiple interceptors are registered with the same priority, 
 then their execution order may be non-deterministic.
 

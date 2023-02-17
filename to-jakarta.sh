@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# move to jakarta parent
+find . -type f -name 'pom.xml' -exec sed -i'' -e 's/smallrye-parent/smallrye-jakarta-parent/g' {} +
 # java sources
 find . -type f -name '*.java' -exec sed -i'' -e 's/javax./jakarta./g' {} +
 find . -type f -name '*.kt' -exec sed -i'' -e 's/javax./jakarta./g' {} +

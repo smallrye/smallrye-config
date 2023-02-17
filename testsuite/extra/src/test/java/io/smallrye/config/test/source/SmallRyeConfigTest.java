@@ -7,7 +7,7 @@ import static org.testng.Assert.assertTrue;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
