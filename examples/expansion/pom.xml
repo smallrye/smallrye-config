@@ -21,12 +21,12 @@
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
     <version>38</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>expansion</artifactId>
-  <version>2.13.3-SNAPSHOT</version>
+  <version>2.13.3</version>
 
   <name>SmallRye Config Examples: Property Expansion</name>
 
@@ -70,4 +70,8 @@
       <artifactId>weld-junit5</artifactId>
     </dependency>
   </dependencies>
+
+  <scm>
+    <tag>2.13.3</tag>
+  </scm>
 </project>
