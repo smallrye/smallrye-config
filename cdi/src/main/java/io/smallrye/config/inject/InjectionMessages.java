@@ -49,32 +49,32 @@ public interface InjectionMessages {
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
     /**
-     * 
+     *
      * Formats InjectPoint information for Exception messages.<br>
      * <br>
-     * 
+     *
      * 3 possible InjectionPoint types are considered:<br>
      * <br>
-     * 
+     *
      * <b>Fields</b><br>
      * Given: java.lang.String
      * io.smallrye.config.inject.ValidateInjectionTest$SkipPropertiesTest$SkipPropertiesBean.missingProp<br>
      * Returns: io.smallrye.config.inject.ValidateInjectionTest$SkipPropertiesTest$SkipPropertiesBean.missingProp<br>
      * <br>
-     * 
+     *
      * <b>Method parameters</b><br>
      * Given: private void
      * io.smallrye.config.inject.ValidateInjectionTest$MethodUnnamedPropertyTest$MethodUnnamedPropertyBean.methodUnnamedProperty(java.lang.String)<br>
      * Returns:
      * io.smallrye.config.inject.ValidateInjectionTest$MethodUnnamedPropertyTest$MethodUnnamedPropertyBean.methodUnnamedProperty(String)<br>
      * <br>
-     * 
+     *
      * <b>Constructor parameters</b><br>
      * Given: public
      * io.smallrye.config.inject.ValidateInjectionTest$ConstructorUnnamedPropertyTest$ConstructorUnnamedPropertyBean(java.lang.String)<br>
      * Returns:
      * io.smallrye.config.inject.ValidateInjectionTest$ConstructorUnnamedPropertyTest$ConstructorUnnamedPropertyBean(String)
-     * 
+     *
      */
     public static String formatInjectionPoint(InjectionPoint injectionPoint) {
 

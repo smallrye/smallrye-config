@@ -13,7 +13,7 @@
     <name>SmallRye Config: Converter - Json</name>
 
     <properties>
-        <version.jakarta.json>2.0.1</version.jakarta.json>
+        <version.parsson>1.1.1</version.parsson>
     </properties>
 
     <dependencies>
@@ -39,9 +39,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
-            <version>${version.jakarta.json}</version>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <version>${version.parsson}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

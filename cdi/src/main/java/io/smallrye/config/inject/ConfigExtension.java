@@ -165,7 +165,7 @@ public class ConfigExtension implements Extension {
                 ParameterizedType type = (ParameterizedType) requiredType;
                 // TODO We should probably handle all parameterized types correctly
                 if (type.getRawType().equals(Provider.class) || type.getRawType().equals(Instance.class)) {
-                    // These injection points are satisfied by the built-in Instance bean 
+                    // These injection points are satisfied by the built-in Instance bean
                     Type typeArgument = type.getActualTypeArguments()[0];
                     if (typeArgument instanceof Class && !isClassHandledByConfigProducer(typeArgument)) {
                         customTypes.add((Class<?>) typeArgument);

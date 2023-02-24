@@ -21,7 +21,7 @@ import io.smallrye.config.inject.ConfigExtension;
 
 /**
  * Testing the injection of a JsonArray
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @ExtendWith(WeldJunit5Extension.class)

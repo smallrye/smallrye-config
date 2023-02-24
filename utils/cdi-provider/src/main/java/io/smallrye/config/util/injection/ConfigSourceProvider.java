@@ -20,7 +20,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Making the Config sources available via CDI
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Dependent

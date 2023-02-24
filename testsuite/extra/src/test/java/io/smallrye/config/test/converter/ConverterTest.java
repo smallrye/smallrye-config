@@ -23,7 +23,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.testng.annotations.Test;
 
@@ -41,7 +40,7 @@ public class ConverterTest extends Arquillian {
                 .addClasses(ConverterTest.class, ConverterBean.class)
                 .addClass(IntConverter.class)
                 .addAsServiceProvider(Converter.class, IntConverter.class)
-                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+                .addAsWebInfResource("beans.xml");
     }
 
     @Inject

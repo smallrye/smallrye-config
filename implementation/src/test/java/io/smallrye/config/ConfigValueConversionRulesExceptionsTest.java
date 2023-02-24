@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 
 /**
- * 
+ *
  * Test sensible error messages are output when edge case config value conversion Exceptions occur
  *
  */

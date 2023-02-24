@@ -74,11 +74,6 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    public boolean isNullable() {
-        return false;
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public T create(CreationalContext<T> context) {
         InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(), context);

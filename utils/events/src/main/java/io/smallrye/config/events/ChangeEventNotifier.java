@@ -15,9 +15,9 @@ import jakarta.inject.Inject;
 
 /**
  * Easy way to fire a change event
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
- * 
+ *
  *         This gets used from Config sources that is not in the CDI Context. So we can not @Inject a bean.
  *         For some reason, CDI.current() is only working on Payara, and not on Thorntail and OpenLiberty, so this ugly footwork
  *         is to

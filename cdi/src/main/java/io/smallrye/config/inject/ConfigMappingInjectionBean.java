@@ -40,11 +40,6 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
     }
 
     @Override
-    public boolean isNullable() {
-        return false;
-    }
-
-    @Override
     public T create(final CreationalContext<T> creationalContext) {
         InjectionPoint injectionPoint = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(),
                 creationalContext);

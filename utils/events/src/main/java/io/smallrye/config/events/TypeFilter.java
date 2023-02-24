@@ -11,7 +11,7 @@ import jakarta.inject.Qualifier;
 
 /**
  * filter by change type
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Qualifier

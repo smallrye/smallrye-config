@@ -1031,7 +1031,7 @@ public final class Converters {
 
         /**
          * Construct a {@code MapConverter} with the given converters.
-         * 
+         *
          * @param keyConverter the converter to use the for keys
          * @param valueConverter the converter to use the for values
          */
@@ -1066,7 +1066,7 @@ public final class Converters {
 
         /**
          * Converts the line into an entry and add it to the given map.
-         * 
+         *
          * @param map the map to which the extracted entries are added.
          * @param value the original value to convert.
          * @param rawLine the extracted line to convert into an entry.

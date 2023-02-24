@@ -24,7 +24,6 @@ import jakarta.inject.Provider;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -39,9 +38,8 @@ public class ProviderAloneTest extends Arquillian {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "ProviderTest.jar")
                 .addClasses(ProviderAloneTest.class, Email.class, ProviderAlone.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addAsManifestResource(new StringAsset(
-                        "myEmail=example@smallrye.io"), "microprofile-config.properties")
+                .addAsManifestResource("beans.xml")
+                .addAsManifestResource(new StringAsset("myEmail=example@smallrye.io"), "microprofile-config.properties")
                 .as(JavaArchive.class);
         return ShrinkWrap
                 .create(WebArchive.class, "ProviderTest.war")

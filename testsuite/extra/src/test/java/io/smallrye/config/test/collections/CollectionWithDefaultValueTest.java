@@ -29,7 +29,6 @@ import jakarta.inject.Inject;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.testng.annotations.Test;
@@ -47,7 +46,7 @@ public class CollectionWithDefaultValueTest extends Arquillian {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "CollectionWithDefaultValueTest.jar")
                 .addClasses(CollectionWithDefaultValueTest.class, CollectionBean.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsManifestResource("beans.xml")
                 .as(JavaArchive.class);
         return ShrinkWrap
                 .create(WebArchive.class, "CollectionWithDefaultValueTest.war")
