@@ -123,12 +123,12 @@ class ExpressionConfigSourceInterceptorTest {
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
-                                .getRawValue("camel.expression"));
+                        .getRawValue("camel.expression"));
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=\\${date:now:yyyyMMddssSS}.txt&charset=utf-8")
-                                .getRawValue("camel.expression"));
+                        .getRawValue("camel.expression"));
     }
 
     @Test

@@ -17,7 +17,7 @@ import io.smallrye.config.inject.ConfigExtension;
 
 /**
  * Testing that the events fire correctly
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @ExtendWith(WeldJunit5Extension.class)

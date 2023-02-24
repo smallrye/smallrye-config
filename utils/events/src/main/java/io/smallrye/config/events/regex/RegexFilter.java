@@ -11,7 +11,7 @@ import jakarta.interceptor.InterceptorBinding;
 
 /**
  * an interceptor that match the value to a regular expression
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Inherited

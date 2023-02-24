@@ -31,7 +31,6 @@ import jakarta.inject.Inject;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -49,9 +48,8 @@ public class CollectionWithConfiguredValueTest extends Arquillian {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "CollectionWithConfiguredValueTest.jar")
                 .addClasses(CollectionWithConfiguredValueTest.class, CollectionBean.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
-                .addAsManifestResource(new StringAsset(
-                        "myPets=snake,ox"), "microprofile-config.properties")
+                .addAsManifestResource("beans.xml")
+                .addAsManifestResource(new StringAsset("myPets=snake,ox"), "microprofile-config.properties")
                 .as(JavaArchive.class);
         return ShrinkWrap
                 .create(WebArchive.class, "CollectionWithConfiguredValueTest.war")

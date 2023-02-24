@@ -32,7 +32,7 @@
 
         <!-- Test -->
         <version.hibernate.validator>8.0.0.Final</version.hibernate.validator>
-        <version.jakarta.el>5.0.0-M1</version.jakarta.el>
+        <version.glassfish.expressly>5.0.0</version.glassfish.expressly>
     </properties>
 
     <dependencies>
@@ -59,9 +59,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.el</artifactId>
-            <version>${version.jakarta.el}</version>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <version>${version.glassfish.expressly}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

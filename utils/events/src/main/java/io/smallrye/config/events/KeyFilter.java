@@ -11,7 +11,7 @@ import jakarta.inject.Qualifier;
 
 /**
  * Filter the event on the key
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Qualifier

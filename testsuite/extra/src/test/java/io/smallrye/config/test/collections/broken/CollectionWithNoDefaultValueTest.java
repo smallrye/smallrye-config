@@ -21,7 +21,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.ShouldThrowException;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.weld.exceptions.DeploymentException;
@@ -37,7 +36,7 @@ public class CollectionWithNoDefaultValueTest extends Arquillian {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "CollectionWithNoDefaultValueTest.jar")
                 .addClasses(CollectionWithNoDefaultValueTest.class, CollectionWithNoDefaultValueBean.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsManifestResource("beans.xml")
                 .as(JavaArchive.class);
         return ShrinkWrap
                 .create(WebArchive.class, "CollectionWithNoDefaultValueTest.war")

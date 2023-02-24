@@ -50,7 +50,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 
 /**
  * The Exception messages caused by Config CDI should have the format:<br>
- * 
+ *
  * <pre>
  * {@link org.jboss.weld.exceptions.DeploymentException}: SRCFG0200X: < a SmallRye {@link InjectionMessages}> (+ where appropriate) SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
@@ -61,13 +61,13 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  * the.root.cause.Exception: SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * ...
  * </pre>
- * 
+ *
  * If n Exception messages are thrown during
  * {@link ConfigExtension#validate(jakarta.enterprise.inject.spi.AfterDeploymentValidation)},
  * as defined by
  * {@link org.jboss.weld.exceptions.DeploymentException#DeploymentException(List)}
  * the messages will be bundled together as follows:
- * 
+ *
  * <pre>
  * {@link org.jboss.weld.exceptions.DeploymentException}: Exception List with n exceptions:
  * Exception 0 :
@@ -82,7 +82,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  * caused by: (where appropriate)
  * the.root.cause.Exception: SRCFG0000X: < a SmallRye {@link ConfigMessages}>
  * </pre>
- * 
+ *
  * where each Exception is a supressedException.
  */
 public class ValidateInjectionTest {
@@ -317,7 +317,7 @@ public class ValidateInjectionTest {
 
         Throwable exception = failingEvents.get(0)
                 .getPayload(TestExecutionResult.class).get().getThrowable().get();
-        assertThat(exception).isInstanceOf(DeploymentException.class); // the exception should be a DeploymentException  
+        assertThat(exception).isInstanceOf(DeploymentException.class); // the exception should be a DeploymentException
 
         return (DeploymentException) exception;
     }
@@ -617,7 +617,7 @@ public class ValidateInjectionTest {
         @ApplicationScoped
         static class MissingPropertyExpressionBean {
             @Inject
-            @ConfigProperty(name = "bad.property.expression.prop") // Exists but contains ${missing.prop} which doesn't 
+            @ConfigProperty(name = "bad.property.expression.prop") // Exists but contains ${missing.prop} which doesn't
             String missingExpressionProp;
         }
     }

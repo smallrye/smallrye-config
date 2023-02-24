@@ -9,7 +9,7 @@ import jakarta.inject.Qualifier;
 
 /**
  * Mark a map that contains the config sources
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Qualifier

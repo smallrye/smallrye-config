@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * an Event on a config element
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 public class ChangeEvent implements Serializable {

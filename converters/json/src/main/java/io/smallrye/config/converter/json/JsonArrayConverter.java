@@ -10,7 +10,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Converts a json string to a JSonArray
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 public class JsonArrayConverter implements Converter<JsonArray> {

@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * &#064;ConfigMapping(prefix = "server")
  * public interface Server {
  *     public String host(); // maps the property name server.host
- * 
+ *
  *     public int port(); // maps to the property name server.port
  * }
  * </pre>

@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.testng.annotations.Test;
@@ -19,7 +18,7 @@ public class KotlinCollectionsBeanTest extends Arquillian {
                 .create(WebArchive.class)
                 .addClasses(CollectionBean.class)
                 .addClasses(KotlinCollectionsBean.class, KotlinCollectionsBeanTest.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsManifestResource("beans.xml")
                 .addAsResource(new StringAsset("property.list=1,2,3\n" +
                         "property.single=1234\n"),
                         "META-INF/microprofile-config.properties");

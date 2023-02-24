@@ -10,7 +10,7 @@ import jakarta.inject.Qualifier;
 
 /**
  * The define the name of a config source
- * 
+ *
  * @author <a href="mailto:phillip.kruger@redhat.com">Phillip Kruger</a>
  */
 @Qualifier

@@ -73,7 +73,7 @@ class InjectedConfigSerializationTest {
 
     /**
      * Asserts that an object can be serialized and deserialized
-     * 
+     *
      * @param o the object
      * @return the resulting object after serializing and deserializing
      */
