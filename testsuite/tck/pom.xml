@@ -38,9 +38,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <suiteXmlFiles>
-            <suiteXmlFile>src/test/resources/tck-suite.xml</suiteXmlFile>
-          </suiteXmlFiles>
           <environmentVariables>
             <MP_TCK_ENV_DUMMY>dummy</MP_TCK_ENV_DUMMY>
             <my_int_property>45</my_int_property>
@@ -55,6 +52,15 @@
             <customer.hobby>Tennis</customer.hobby>
             <config_ordinal>120</config_ordinal>
           </systemProperties>
+          <dependenciesToScan>
+            <dependency>org.eclipse.microprofile.config:microprofile-config-tck</dependency>
+          </dependenciesToScan>
+          <!-- Require updates to MP TCK -->
+          <excludes>
+            <exclude>org.eclipse.microprofile.config.tck.ConverterTest</exclude>
+            <exclude>org.eclipse.microprofile.config.tck.ConfigPropertiesTest</exclude>
+            <exclude>org.eclipse.microprofile.config.tck.broken.ConfigPropertiesMissingPropertyInjectionTest</exclude>
+          </excludes>
         </configuration>
         <executions>
           <execution>
