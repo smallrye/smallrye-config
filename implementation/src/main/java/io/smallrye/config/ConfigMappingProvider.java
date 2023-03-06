@@ -45,7 +45,7 @@ final class ConfigMappingProvider implements Serializable {
     private static final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> IGNORE_EVERYTHING;
 
     static {
-        final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> map = new KeyMap<>();
+        KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> map = new KeyMap<>();
         map.putRootValue(DO_NOTHING);
         //noinspection CollectionAddedToSelf
         map.putAny(map);
@@ -103,10 +103,13 @@ final class ConfigMappingProvider implements Serializable {
         if (root.getAny() == null) {
             root.putAny(IGNORE_EVERYTHING);
         } else {
-            ignoreRecursively(root.getAny());
+            var any = root.getAny();
+            if (root != any) {
+                ignoreRecursively(any);
+            }
         }
 
-        for (final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> value : root.values()) {
+        for (var value : root.values()) {
             ignoreRecursively(value);
         }
     }
@@ -148,6 +151,13 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction) {
 
+        // Register super types first. The main mapping will override methods from the super types
+        int sc = group.getSuperTypeCount();
+        for (int i = 0; i < sc; i++) {
+            processEagerGroup(currentPath, matchActions, defaultValues, namingStrategy, group.getSuperType(i),
+                    getEnclosingFunction);
+        }
+
         Class<?> type = group.getInterfaceType();
         HashSet<String> usedProperties = new HashSet<>();
         for (int i = 0; i < group.getPropertyCount(); i++) {
@@ -167,11 +177,6 @@ final class ConfigMappingProvider implements Serializable {
                 processProperty(propertyPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
                         memberName, property);
             }
-        }
-        int sc = group.getSuperTypeCount();
-        for (int i = 0; i < sc; i++) {
-            processEagerGroup(currentPath, matchActions, defaultValues, namingStrategy, group.getSuperType(i),
-                    getEnclosingFunction);
         }
     }
 
@@ -287,7 +292,6 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface group,
             final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
             final HashSet<String> usedProperties) {
-
         int pc = group.getPropertyCount();
         int pathLen = currentPath.size();
         for (int i = 0; i < pc; i++) {
@@ -299,12 +303,6 @@ final class ConfigMappingProvider implements Serializable {
                     currentPath.add(ni.getNextSegment());
                     ni.next();
                 }
-            }
-            if (matchActions.hasRootValue(currentPath)) {
-                while (currentPath.size() > pathLen) {
-                    currentPath.removeLast();
-                }
-                continue;
             }
             if (usedProperties.add(String.join(".", String.join(".", currentPath), property.getMethod().getName()))) {
                 boolean optional = property.isOptional();
@@ -445,43 +443,30 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface enclosingGroup) {
 
         if (property.isLeaf()) {
-            if (matchActions.hasRootValue(currentPath)) {
-                currentPath.removeLast();
-                return;
-            }
-
             LeafProperty leafProperty = property.asLeaf();
             Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
             Class<?> valueRawType = leafProperty.getValueRawType();
 
+            String mapPath = String.join(".", currentPath);
             addAction(currentPath, mapProperty, (mc, ni) -> {
-                StringBuilder sb = mc.getStringBuilder();
-                // We may need to reset the StringBuilder because the delegate may not be a Map
-                boolean restore = false;
-                if (ni.getPosition() != -1) {
-                    restore = true;
-                    ni.previous();
-                    sb.setLength(0);
-                    sb.append(ni.getAllPreviousSegments());
-                }
-                Map<?, ?> map = getEnclosingMap.apply(mc, ni);
-                if (restore) {
-                    ni.next();
-                    sb.setLength(0);
-                    sb.append(ni.getAllPreviousSegments());
-                }
+                // Place the cursor at the map path
+                NameIterator niAtMapPath = atMapPath(mapPath, ni);
+                Map<?, ?> map = getEnclosingMap.apply(mc, niAtMapPath);
 
                 String rawMapKey;
                 String configKey;
                 boolean indexed = isIndexed(ni.getPreviousSegment());
                 if (indexed && ni.hasPrevious()) {
-                    rawMapKey = normalizeIfIndexed(ni.getPreviousSegment());
-                    ni.previous();
-                    configKey = ni.getAllPreviousSegmentsWith(rawMapKey);
-                    ni.next();
+                    rawMapKey = normalizeIfIndexed(niAtMapPath.getName().substring(niAtMapPath.getPosition() + 1));
+                    configKey = niAtMapPath.getAllPreviousSegmentsWith(rawMapKey);
                 } else {
-                    rawMapKey = ni.getPreviousSegment();
+                    rawMapKey = niAtMapPath.getName().substring(niAtMapPath.getPosition() + 1);
                     configKey = ni.getAllPreviousSegments();
+                }
+
+                // Remove quotes if exists
+                if (rawMapKey.charAt(0) == '"' && rawMapKey.charAt(rawMapKey.length() - 1) == '"') {
+                    rawMapKey = rawMapKey.substring(1, rawMapKey.length() - 1);
                 }
 
                 Converter<?> keyConv;
@@ -507,6 +492,11 @@ final class ConfigMappingProvider implements Serializable {
                     ((Map) map).put(keyConv.convert(rawMapKey), config.getValue(configKey, valueConv));
                 }
             });
+            // action to match all segments of a key after the map path
+            KeyMap mapAction = matchActions.find(currentPath);
+            if (mapAction != null) {
+                mapAction.putAny(matchActions.find(currentPath));
+            }
 
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
@@ -593,6 +583,25 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
         return name;
+    }
+
+    private static NameIterator atMapPath(final String mapPath, final NameIterator propertyName) {
+        int segments = 0;
+        NameIterator countSegments = new NameIterator(mapPath);
+        while (countSegments.hasNext()) {
+            segments++;
+            countSegments.next();
+        }
+
+        // We don't want the key;
+        segments = segments - 1;
+
+        NameIterator propertyMap = new NameIterator(propertyName.getName());
+        for (int i = 0; i < segments; i++) {
+            propertyMap.next();
+        }
+
+        return propertyMap;
     }
 
     private static String propertyName(final Property property, final ConfigMappingInterface group,
@@ -690,23 +699,23 @@ final class ConfigMappingProvider implements Serializable {
         @Override
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
-            NameIterator mapPath = toMapPath(ni);
-            Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, mapPath);
+            NameIterator atMapPath = atMapPath(mapPath, ni);
+            Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, atMapPath);
 
             Converter<?> keyConverter = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
             MapKey mapKey;
             if (enclosingMap.getValueProperty().isCollection()) {
-                mapKey = MapKey.collectionKey(mapPath.getNextSegment(), keyConverter);
+                mapKey = MapKey.collectionKey(atMapPath.getNextSegment(), keyConverter);
             } else {
-                mapKey = MapKey.key(mapPath.getNextSegment(), ni.getAllPreviousSegments(), keyConverter);
+                mapKey = MapKey.key(atMapPath.getNextSegment(), ni.getAllPreviousSegments(), keyConverter);
             }
             ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingGroup.getInterfaceType(),
                     mapKey.getKey(),
                     ourEnclosing);
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
-                sb.replace(0, sb.length(), mapPath.getAllPreviousSegmentsWith(mapKey.getKey()));
+                sb.replace(0, sb.length(), atMapPath.getAllPreviousSegmentsWith(mapKey.getKey()));
 
                 context.applyNamingStrategy(
                         namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
@@ -723,7 +732,7 @@ final class ConfigMappingProvider implements Serializable {
                                 .createCollectionFactory(collectionRawType);
                         // Get all the available indexes
                         List<Integer> indexes = context.getConfig().getIndexedPropertiesIndexes(
-                                mapPath.getAllPreviousSegmentsWith(normalizeIfIndexed(mapKey.getKey())));
+                                atMapPath.getAllPreviousSegmentsWith(normalizeIfIndexed(mapKey.getKey())));
                         collection = collectionFactory.apply(indexes.size());
                         // Initialize all expected elements in the list
                         if (collection instanceof List) {
@@ -750,25 +759,6 @@ final class ConfigMappingProvider implements Serializable {
         @Override
         public void accept(final ConfigMappingContext context, final NameIterator ni) {
             apply(context, ni);
-        }
-
-        private NameIterator toMapPath(final NameIterator ni) {
-            int segments = 0;
-            NameIterator countSegments = new NameIterator(this.mapPath);
-            while (countSegments.hasNext()) {
-                segments++;
-                countSegments.next();
-            }
-
-            // We don't want the key;
-            segments = segments - 1;
-
-            NameIterator mapPath = new NameIterator(ni.getName());
-            for (int i = 0; i < segments; i++) {
-                mapPath.next();
-            }
-
-            return mapPath;
         }
 
         static class MapKey {

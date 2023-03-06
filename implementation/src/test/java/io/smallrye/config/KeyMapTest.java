@@ -238,10 +238,10 @@ class KeyMapTest {
 
     @Test
     void findOrAddDotted() {
-        //        KeyMap<String> map = new KeyMap<>();
-        //        map.findOrAdd("map.\"quoted.key\".value").putRootValue("value");
-        //        assertEquals("value", map.findRootValue("map.\"quoted.key\".value"));
-        //        assertNull(map.findRootValue("map.quoted.key.value"));
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("map.\"quoted.key\".value").putRootValue("value");
+        assertEquals("value", map.findRootValue("map.\"quoted.key\".value"));
+        assertNull(map.findRootValue("map.quoted.key.value"));
 
         KeyMap<String> varArgs = new KeyMap<>();
         varArgs.findOrAdd("foo", "bar.bar", "baz").putRootValue("value");
@@ -267,5 +267,17 @@ class KeyMapTest {
         assertEquals("value", nameIterator.findRootValue("foo.\"bar.bar\".baz"));
         assertEquals("value", iterator.findRootValue("foo.\"bar.bar\".baz"));
         assertEquals("value", iterable.findRootValue("foo.\"bar.bar\".baz"));
+    }
+
+    @Test
+    void star() {
+        KeyMap<String> map = new KeyMap<>();
+        KeyMap<String> orAdd = map.findOrAdd("map.key.*");
+        orAdd.putRootValue("value");
+        orAdd.putAny(map.findOrAdd("map.key.*"));
+
+        assertEquals("value", map.findRootValue("map.key.one"));
+        assertEquals("value", map.findRootValue("map.key.one.two"));
+        assertEquals("value", map.findRootValue("map.key.one.two.three"));
     }
 }
