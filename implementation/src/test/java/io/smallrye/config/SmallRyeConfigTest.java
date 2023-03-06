@@ -356,12 +356,16 @@ class SmallRyeConfigTest {
     void getValuesAsMap() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(config("my.prop.key", "value", "my.prop.key.nested", "value"))
+                .withSources(config(
+                        "my.prop.key", "value",
+                        "my.prop.key.nested", "value",
+                        "my.prop.\"key.quoted\"", "value"))
                 .build();
 
         Map<String, String> map = config.getValuesAsMap("my.prop", STRING_CONVERTER, STRING_CONVERTER);
-        assertEquals(1, map.size());
+        assertEquals(2, map.size());
         assertEquals("value", map.get("key"));
+        assertEquals("value", map.get("key.quoted"));
     }
 
     @Test

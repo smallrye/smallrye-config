@@ -693,7 +693,6 @@ public class ConfigMappingCollectionsTest {
         class KeyConverter implements Converter<String> {
             @Override
             public String convert(final String value) throws IllegalArgumentException, NullPointerException {
-                System.out.println("KeyConverter.convert");
                 if (value.equals("one")) {
                     return "1";
                 } else if (value.equals("two")) {
@@ -709,7 +708,6 @@ public class ConfigMappingCollectionsTest {
 
             @Override
             public List<String> convert(final String value) throws IllegalArgumentException, NullPointerException {
-                System.out.println("ListConverter.convert");
                 return DELEGATE.convert(value);
             }
         }

@@ -368,20 +368,25 @@ public interface Server {
 ```properties
 server.host=localhost
 server.port=8080
-server.form.login-page=login.html
-server.form.error-page=error.html
-server.form.landing-page=index.html
+server.form.index=index.html
+server.form.login.page=login.html
+server.form.error.page=error.html
 server.aliases.localhost[0].name=prod
 server.aliases.localhost[1].name=127.0.0.1
+server.aliases.\"io.smallrye\"[0].name=smallrye
 ```
 
 The configuration property name needs to specify an additional segment to act as the map key. The `server.form` matches 
-the `Server#form` `Map` and the segments `login-page`, `error-page` and `landing-page` represent the `Map` 
+the `Server#form` `Map` and the segments `index`, `login.page` and `error.page` represent the `Map` 
 keys.
 
 For collection types, the key requires the indexed format. The configuration name `server.aliases.localhost[0].name` 
 maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is the `Map` key, `[0]` is the index of the 
-`List<Alias>` where the `Alias` element will be stored, containing the name `prod`.
+`List<Alias>` collection where the `Alias` element will be stored, containing the name `prod`.
+
+!!! info
+
+    They `Map` key part in the configuration property name may require quotes to delimit the key.
 
 ## Defaults
 

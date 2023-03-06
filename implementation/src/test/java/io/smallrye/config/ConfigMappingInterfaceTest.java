@@ -1858,4 +1858,42 @@ class ConfigMappingInterfaceTest {
         @WithDefault("${expression}")
         String expression();
     }
+
+    @Test
+    void mapKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MapKeys.class)
+                .withSources(config(
+                        "keys.map.one", "1",
+                        "keys.map.one.two", "2",
+                        "keys.map.one.two.three", "3",
+                        "keys.map.\"one.two.three.four\"", "4"))
+                .withSources(config(
+                        "keys.list.one[0]", "1",
+                        "keys.list.one.two[0]", "2",
+                        "keys.list.one.two.three[0]", "3",
+                        "keys.list.\"one.two.three.four\"[0]", "4"))
+                .build();
+
+        MapKeys mapping = config.getConfigMapping(MapKeys.class);
+
+        assertEquals(4, mapping.map().size());
+        assertEquals("1", mapping.map().get("one"));
+        assertEquals("2", mapping.map().get("one.two"));
+        assertEquals("3", mapping.map().get("one.two.three"));
+        assertEquals("4", mapping.map().get("one.two.three.four"));
+
+        assertEquals("1", mapping.list().get("one").get(0));
+        assertEquals("2", mapping.list().get("one.two").get(0));
+        assertEquals("3", mapping.list().get("one.two.three").get(0));
+        assertEquals("4", mapping.list().get("one.two.three.four").get(0));
+    }
+
+    @ConfigMapping(prefix = "keys")
+    interface MapKeys {
+        Map<String, String> map();
+
+        Map<String, List<String>> list();
+    }
 }
