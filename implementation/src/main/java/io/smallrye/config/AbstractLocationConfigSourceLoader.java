@@ -105,7 +105,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         final Path urlPath = uri.getScheme() != null ? Paths.get(uri) : Paths.get(uri.getPath());
-        if (Files.isRegularFile(urlPath)) {
+        if (Files.isRegularFile(urlPath) || "file".equals(uri.getScheme())) {
             consumeAsPath(toURL(urlPath.toUri()), new ConfigSourcePathConsumer(ordinal, configSources));
         } else if (Files.isDirectory(urlPath)) {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(urlPath, this::validExtension)) {
@@ -113,7 +113,7 @@ public abstract class AbstractLocationConfigSourceLoader {
                     addConfigSource(path.toUri(), ordinal, configSources);
                 }
             } catch (IOException e) {
-                throw ConfigMessages.msg.failedToLoadResource(e);
+                throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
             }
         }
         return configSources;
@@ -125,7 +125,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         try {
             consumeAsPaths(useClassloader, uri.getPath(), new ConfigSourcePathConsumer(ordinal, configSources));
         } catch (IOException e) {
-            throw ConfigMessages.msg.failedToLoadResource(e);
+            throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         } catch (IllegalArgumentException e) {
             configSources.addAll(fallbackToUnknownProtocol(uri, ordinal, useClassloader));
         }
@@ -137,7 +137,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         try {
             consumeAsPath(toURL(uri), new ConfigSourcePathConsumer(ordinal, configSources));
         } catch (Exception e) {
-            throw ConfigMessages.msg.failedToLoadResource(e);
+            throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         }
         return configSources;
     }
@@ -170,7 +170,7 @@ public abstract class AbstractLocationConfigSourceLoader {
                 }
             }
         } catch (IOException e) {
-            throw ConfigMessages.msg.failedToLoadResource(e);
+            throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         }
         return configSources;
     }
@@ -224,7 +224,7 @@ public abstract class AbstractLocationConfigSourceLoader {
             configSources.add(configSource);
             return configSource;
         } catch (IOException e) {
-            throw ConfigMessages.msg.failedToLoadResource(e);
+            throw ConfigMessages.msg.failedToLoadResource(e, url.toString());
         }
     }
 
@@ -235,7 +235,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         } catch (FileNotFoundException | NoSuchFileException e) {
             // It is ok to not find the resource here, because it is an optional profile resource.
         } catch (IOException e) {
-            throw ConfigMessages.msg.failedToLoadResource(e);
+            throw ConfigMessages.msg.failedToLoadResource(e, profileToFileName.toString());
         }
     }
 
