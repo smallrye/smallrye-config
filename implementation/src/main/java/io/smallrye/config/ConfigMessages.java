@@ -121,8 +121,8 @@ public interface ConfigMessages {
     @Message(id = 34, value = "URI Syntax invalid %s")
     IllegalArgumentException uriSyntaxInvalid(@Cause Throwable cause, String uri);
 
-    @Message(id = 35, value = "Failed to load resource")
-    IllegalStateException failedToLoadResource(@Cause Throwable cause);
+    @Message(id = 35, value = "Failed to load resource %s")
+    IllegalStateException failedToLoadResource(@Cause Throwable cause, String location);
 
     @Message(id = 36, value = "Type %s not supported for unwrapping.")
     IllegalArgumentException getTypeNotSupportedForUnwrapping(Class<?> type);

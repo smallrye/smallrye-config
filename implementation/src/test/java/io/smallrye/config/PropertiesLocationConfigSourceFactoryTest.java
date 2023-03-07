@@ -112,6 +112,13 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertNull(config.getRawValue("my.prop"));
         assertEquals(0, countSources(config));
+
+        assertThrows(IllegalStateException.class, () -> buildConfig("file:/not/found/not-found.properties"),
+                "Failed to load resource file:/not/found/not-found.properties");
+        assertThrows(IllegalStateException.class, () -> buildConfig("http://not.found/not-found-properties"),
+                "Failed to load resource http://not.found/not-found-properties");
+        assertThrows(IllegalStateException.class, () -> buildConfig("jar:file:/resources-one.jar!/"),
+                "Failed to load resource jar:file:/resources-one.jar!/");
     }
 
     @Test
@@ -175,14 +182,13 @@ class PropertiesLocationConfigSourceFactoryTest {
             devProperties.store(out, null);
         }
 
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
-                .build();
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString());
 
-        assertNull(config.getRawValue("my.prop.profile"));
+        assertThrows(IllegalStateException.class, builder::build);
     }
 
     @Test
