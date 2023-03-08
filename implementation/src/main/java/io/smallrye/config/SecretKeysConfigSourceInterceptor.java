@@ -10,15 +10,15 @@ import jakarta.annotation.Priority;
 public class SecretKeysConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 7291982039729980590L;
 
-    private final SecretKeys secrets;
+    private final Set<String> secrets;
 
-    public SecretKeysConfigSourceInterceptor(final SecretKeys secrets) {
+    public SecretKeysConfigSourceInterceptor(final Set<String> secrets) {
         this.secrets = secrets;
     }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        if (secrets.secretExistsWithName(name) && SecretKeys.isLocked()) {
+        if (SecretKeys.isLocked() && secrets.contains(name)) {
             throw ConfigMessages.msg.notAllowed(name);
         }
         return context.proceed(name);
@@ -31,7 +31,7 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
             Iterator<String> namesIterator = context.iterateNames();
             while (namesIterator.hasNext()) {
                 String name = namesIterator.next();
-                if (!secrets.secretExistsWithName(name)) {
+                if (!secrets.contains(name)) {
                     names.add(name);
                 }
             }
@@ -47,7 +47,7 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
             Iterator<ConfigValue> valuesIterator = context.iterateValues();
             while (valuesIterator.hasNext()) {
                 ConfigValue value = valuesIterator.next();
-                if (!secrets.secretExistsWithName(value.getName())) {
+                if (!secrets.contains(value.getName())) {
                     values.add(value);
                 }
             }

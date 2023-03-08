@@ -7,15 +7,18 @@ import org.jasypt.properties.PropertyValueEncryptionUtils;
 import io.smallrye.config.SecretKeysHandler;
 
 public class JasyptSecretKeysHandler implements SecretKeysHandler {
-    @Override
-    public String decode(final String secret) {
-        // TODO - We need to be able to configure this in the Handler.
-        // Option to configure it in the constructor or retrieve config on the fly?
-        StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
-        encryptor.setPassword("jasypt");
-        encryptor.setAlgorithm("PBEWithHMACSHA512AndAES_256");
+    private final StandardPBEStringEncryptor encryptor;
+
+    public JasyptSecretKeysHandler(final String password, final String algorithm) {
+        encryptor = new StandardPBEStringEncryptor();
+        encryptor.setPassword(password);
+        encryptor.setAlgorithm(algorithm);
         encryptor.setIvGenerator(new RandomIvGenerator());
         encryptor.initialize();
+    }
+
+    @Override
+    public String decode(final String secret) {
         return PropertyValueEncryptionUtils.decrypt(secret, encryptor);
     }
 

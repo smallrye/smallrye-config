@@ -154,4 +154,7 @@ public interface ConfigMessages {
 
     @Message(id = 45, value = "The %s class is not a ConfigMapping")
     IllegalArgumentException classIsNotAMapping(Class<?> type);
+
+    @Message(id = 46, value = "Could not find a secret key handler for %s")
+    NoSuchElementException secretKeyHandlerNotFound(String handler);
 }
