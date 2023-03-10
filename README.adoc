@@ -20,7 +20,7 @@ Compile and test the project:
 mvn verify
 ----
 
-Generate the documentation (from the documentation folder):
+Generate the documentation (from the `documentation` folder):
 
 [source,bash]
 ----

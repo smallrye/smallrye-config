@@ -27,6 +27,7 @@ nav:
       - 'FileSystem': config-sources/filesystem.md
       - 'ZooKeeper': config-sources/zookeeper.md
       - 'HOCON': config-sources/hocon.md
+      - 'KeyStore': config-sources/keystore.md
   - Converters:
       - 'Custom': converters/custom.md
       - 'JSON': converters/json.md
@@ -87,6 +88,7 @@ theme:
 
 markdown_extensions:
   - toc:
+      toc_depth: 3
       permalink: '#'
   - admonition
   - smarty

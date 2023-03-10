@@ -20,7 +20,7 @@ public interface KeyStoreConfig {
 
         String password();
 
-        Optional<String> algorithm();
+        Optional<String> handler();
 
         Map<String, Alias> aliases();
 
@@ -29,7 +29,7 @@ public interface KeyStoreConfig {
 
             Optional<String> password();
 
-            Optional<String> algorithm();
+            Optional<String> handler();
         }
     }
 }
