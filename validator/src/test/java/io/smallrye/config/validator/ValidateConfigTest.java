@@ -318,6 +318,35 @@ public class ValidateConfigTest {
         }
     }
 
+    @Test
+    void optionalLists() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidator(new BeanValidationConfigValidatorImpl())
+                .withMapping(Optionals.class)
+                .withSources(config(
+                        "optionals.list[0].value", "value",
+                        "optionals.list-map[0].value", "value"))
+                .build();
+
+        Optionals mapping = config.getConfigMapping(Optionals.class);
+
+        assertTrue(mapping.list().isPresent());
+        assertEquals("value", mapping.list().get().get(0).value());
+        assertTrue(mapping.listMap().isPresent());
+        assertEquals("value", mapping.listMap().get().get(0).get("value"));
+    }
+
+    @ConfigMapping(prefix = "optionals")
+    interface Optionals {
+        Optional<List<Nested>> list();
+
+        Optional<List<Map<String, String>>> listMap();
+
+        interface Nested {
+            String value();
+        }
+    }
+
     private static void assertValidationsEqual(List<String> validations, String... expectedProblemMessages) {
         List<String> remainingActual = new ArrayList<>(validations);
         List<String> remainingExpected = Stream.of(expectedProblemMessages).collect(Collectors.toList());
