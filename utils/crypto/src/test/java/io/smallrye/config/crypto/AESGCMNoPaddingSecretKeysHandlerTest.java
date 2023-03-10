@@ -40,7 +40,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key", "somearbitrarycrazystringthatdoesnotmatter",
                 "io.smallrye.config.source.keystore.test.path", "keystore",
                 "io.smallrye.config.source.keystore.test.password", "secret",
-                "io.smallrye.config.source.keystore.test.algorithm", "aes-gcm-nopadding");
+                "io.smallrye.config.source.keystore.test.handler", "aes-gcm-nopadding");
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()

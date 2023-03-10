@@ -46,7 +46,7 @@ class KeyStoreConfigSourceTest {
         ConfigValue secret = config.getConfigValue("my.secret");
         assertNull(secret.getValue());
 
-        assertThrows(IllegalStateException.class, () -> new SmallRyeConfigBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .withSources(new PropertiesConfigSource(Map.of(
                         "io.smallrye.config.source.keystore.test.path", "file:/not.found",

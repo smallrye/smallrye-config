@@ -84,8 +84,8 @@ public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFact
                         }
 
                         @Override
-                        public Optional<String> algorithm() {
-                            return keyStoreConfig.algorithm();
+                        public Optional<String> handler() {
+                            return keyStoreConfig.handler();
                         }
                     });
 
@@ -93,8 +93,8 @@ public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFact
                         Key key = keyStore.getKey(alias,
                                 aliasConfig.password().orElse(keyStoreConfig.password()).toCharArray());
                         String encoded;
-                        if (aliasConfig.algorithm().isPresent()) {
-                            encoded = "${" + aliasConfig.algorithm().get() + "::" + new String(key.getEncoded(), UTF_8) + "}";
+                        if (aliasConfig.handler().isPresent()) {
+                            encoded = "${" + aliasConfig.handler().get() + "::" + new String(key.getEncoded(), UTF_8) + "}";
                         } else {
                             encoded = new String(key.getEncoded(), UTF_8);
                         }
