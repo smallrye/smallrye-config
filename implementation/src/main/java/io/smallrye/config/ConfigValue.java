@@ -180,7 +180,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 '}';
     }
 
-    ConfigValueBuilder from() {
+    public ConfigValueBuilder from() {
         return new ConfigValueBuilder()
                 .withName(name)
                 .withValue(value)

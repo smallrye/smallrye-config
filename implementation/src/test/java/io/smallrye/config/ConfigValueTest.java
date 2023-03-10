@@ -44,6 +44,19 @@ class ConfigValueTest {
         assertEquals(o2, o1);
     }
 
+    @Test
+    void configValueCloning() {
+        ConfigValue o1 = io.smallrye.config.ConfigValue.builder().withName("my.prop").build();
+        ConfigValue o2 = ((io.smallrye.config.ConfigValue) o1).from().build();
+        assertEquals(o2, o1);
+
+        o1 = io.smallrye.config.ConfigValue.builder().withName("my.prop").withValue("value").build();
+        o2 = ((io.smallrye.config.ConfigValue) o1).from().withName("my.prop.cloned").build();
+        assertNotEquals(o2, o1);
+        assertEquals("my.prop.cloned", o2.getName());
+        assertEquals(o1.getValue(), o2.getValue());
+    }
+
     public static class ConfigValueConfigSource implements ConfigSource {
         private final Map<String, String> properties;
 
