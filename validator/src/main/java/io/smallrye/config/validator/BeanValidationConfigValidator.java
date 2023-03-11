@@ -83,7 +83,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                 // unwrap
                 if (optional) {
                     Optional<?> optionalGroup = (Optional<?>) group;
-                    if (!optionalGroup.isPresent()) {
+                    if (optionalGroup.isEmpty()) {
                         return;
                     }
                     group = optionalGroup.get();
@@ -108,7 +108,15 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             CollectionProperty collectionProperty = property.asCollection();
             if (collectionProperty.getElement().isGroup()) {
                 try {
-                    Collection<?> collection = (Collection<?>) property.getMethod().invoke(mappingObject);
+                    Object object = property.getMethod().invoke(mappingObject);
+                    if (optional) {
+                        Optional<?> optionalCollection = (Optional<?>) object;
+                        if (optionalCollection.isEmpty()) {
+                            return;
+                        }
+                        object = optionalCollection.get();
+                    }
+                    Collection<?> collection = (Collection<?>) object;
                     int i = 0;
                     for (Object element : collection) {
                         validateMappingInterface(collectionProperty.getElement().asGroup().getGroupType(),
