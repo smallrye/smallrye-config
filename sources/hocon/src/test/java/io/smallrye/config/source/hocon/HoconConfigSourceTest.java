@@ -4,6 +4,7 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
@@ -96,6 +97,11 @@ class HoconConfigSourceTest {
         SmallRyeConfig config = buildConfig("./src/test/resources/list.conf");
 
         assertEquals("FJ", config.getRawValue("countries[0].code"));
+    }
+
+    @Test
+    void missingFile() {
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not-found.conf"));
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

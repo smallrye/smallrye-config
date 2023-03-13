@@ -48,6 +48,17 @@ public abstract class AbstractLocationConfigSourceLoader {
     private static final Converter<URI> URI_CONVERTER = new URIConverter();
 
     /**
+     * If the lookup from an {@link URL} which the scheme {@code file:} should fail. By default, a failed load does not
+     * throw an exception. In situations where the resource is required, a return value of {@code true} enables the
+     * exception.
+     *
+     * @return {@code true} if file lookup should fail with an exception, {@code false} otherwise.
+     */
+    protected boolean failOnMissingFile() {
+        return false;
+    }
+
+    /**
      * The file extensions to filter the locations to load. It does not require to include the dot separator.
      *
      * @return an array with the file extensions.
@@ -62,7 +73,7 @@ public abstract class AbstractLocationConfigSourceLoader {
      * @param ordinal the ordinal of the {@link ConfigSource}.
      *
      * @return the loaded {@link ConfigSource}.
-     * @throws IOException if an error occurred when reading from the the {@link URL}.
+     * @throws IOException if an error occurred when reading from the {@link URL}.
      */
     protected abstract ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException;
 
@@ -105,7 +116,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         final Path urlPath = uri.getScheme() != null ? Paths.get(uri) : Paths.get(uri.getPath());
-        if (Files.isRegularFile(urlPath) || "file".equals(uri.getScheme())) {
+        if (Files.isRegularFile(urlPath)) {
             consumeAsPath(toURL(urlPath.toUri()), new ConfigSourcePathConsumer(ordinal, configSources));
         } else if (Files.isDirectory(urlPath)) {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(urlPath, this::validExtension)) {
@@ -115,6 +126,8 @@ public abstract class AbstractLocationConfigSourceLoader {
             } catch (IOException e) {
                 throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
             }
+        } else if ("file".equals(uri.getScheme()) && Files.notExists(urlPath) && failOnMissingFile()) {
+            throw ConfigMessages.msg.failedToLoadResource(new FileNotFoundException(uri.toString()), uri.toString());
         }
         return configSources;
     }
@@ -254,7 +267,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private static URI addProfileName(final URI uri, final String profile) {
         if ("jar".equals(uri.getScheme())) {
-            return URI.create("jar:" + addProfileName(URI.create(decodeIfNeeded(uri).getRawSchemeSpecificPart()), profile));
+            return URI.create("jar:" + addProfileName(URI.create(uri.getRawSchemeSpecificPart()), profile));
         }
 
         final String fileName = uri.getPath();
@@ -307,19 +320,9 @@ public abstract class AbstractLocationConfigSourceLoader {
         public void accept(final Path path) {
             final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
-                final ConfigSource mainSource = loader.addConfigSource(decodeIfNeeded(path.toUri()), ordinal, configSources);
+                final ConfigSource mainSource = loader.addConfigSource(path.toUri(), ordinal, configSources);
                 configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
             }
-        }
-    }
-
-    // https://bugs.openjdk.java.net/browse/JDK-8131067 - For Java 8
-    @Deprecated
-    private static URI decodeIfNeeded(final URI uri) {
-        if (uri.getScheme().equals("jar")) {
-            return URI.create(uri.getScheme() + ":" + uri.getSchemeSpecificPart());
-        } else {
-            return uri;
         }
     }
 }
