@@ -88,7 +88,7 @@ class YamlLocationConfigSourceFactoryTest {
 
     @Test
     void invalidWebResource() {
-        assertThrows(IllegalStateException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> buildConfig("https://raw.githubusercontent.com/smallrye/smallrye-config/notfound.yml"));
         buildConfig("https://github.com/smallrye/smallrye-config/blob/3cc4809734d7fbd03852a20b5870ca743a2427bc/pom.xml");
     }
@@ -106,6 +106,11 @@ class YamlLocationConfigSourceFactoryTest {
         buildConfig("additional.yml");
 
         assertTrue(logCapture.records().isEmpty());
+    }
+
+    @Test
+    void missingFile() {
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not-found.yaml"));
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

@@ -18,6 +18,11 @@ public abstract class AbstractLocationConfigSourceFactory extends AbstractLocati
         implements ConfigSourceFactory {
 
     @Override
+    protected boolean failOnMissingFile() {
+        return true;
+    }
+
+    @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
         final ConfigValue value = context.getValue(SMALLRYE_CONFIG_LOCATIONS);
         if (value.getValue() == null) {

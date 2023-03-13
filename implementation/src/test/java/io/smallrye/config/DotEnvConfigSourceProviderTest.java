@@ -3,6 +3,8 @@ package io.smallrye.config;
 import static io.smallrye.config.DotEnvConfigSourceProvider.dotEnvSources;
 import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileOutputStream;
 import java.nio.file.Path;
@@ -90,5 +92,20 @@ class DotEnvConfigSourceProviderTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("1234", config.getRawValue("foo.bar.baz"));
+    }
+
+    @Test
+    void missing() {
+        new SmallRyeConfigBuilder().withSources(new DotEnvConfigSourceProvider()).build();
+        assertTrue(true);
+
+        SmallRyeConfigBuilder failBuilder = new SmallRyeConfigBuilder().withSources(new DotEnvConfigSourceProvider() {
+            @Override
+            protected boolean failOnMissingFile() {
+                return true;
+            }
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> failBuilder.build());
     }
 }

@@ -113,11 +113,11 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertNull(config.getRawValue("my.prop"));
         assertEquals(0, countSources(config));
 
-        assertThrows(IllegalStateException.class, () -> buildConfig("file:/not/found/not-found.properties"),
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not/found/not-found.properties"),
                 "Failed to load resource file:/not/found/not-found.properties");
-        assertThrows(IllegalStateException.class, () -> buildConfig("http://not.found/not-found-properties"),
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("http://not.found/not-found-properties"),
                 "Failed to load resource http://not.found/not-found-properties");
-        assertThrows(IllegalStateException.class, () -> buildConfig("jar:file:/resources-one.jar!/"),
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("jar:file:/resources-one.jar!/"),
                 "Failed to load resource jar:file:/resources-one.jar!/");
     }
 
@@ -130,7 +130,7 @@ class PropertiesLocationConfigSourceFactoryTest {
 
     @Test
     void invalidHttp() {
-        assertThrows(IllegalStateException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> buildConfig("https://raw.githubusercontent.com/smallrye/smallrye-config/notfound.properties"));
         buildConfig("https://github.com/smallrye/smallrye-config/blob/3cc4809734d7fbd03852a20b5870ca743a2427bc/pom.xml");
     }
@@ -188,7 +188,7 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .withProfile("common,dev")
                 .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString());
 
-        assertThrows(IllegalStateException.class, builder::build);
+        assertThrows(IllegalArgumentException.class, builder::build);
     }
 
     @Test
@@ -349,6 +349,11 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("dev", config.getRawValue("my.prop.dev"));
         assertEquals("main", config.getRawValue("context.main"));
         assertEquals("dev", config.getRawValue("context.dev"));
+    }
+
+    @Test
+    void missingFile() {
+        assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not-found.properties"));
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {
