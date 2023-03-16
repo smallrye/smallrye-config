@@ -12,6 +12,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import jakarta.annotation.Priority;
+
 import org.junit.jupiter.api.Test;
 
 class ExpressionConfigSourceInterceptorTest {
@@ -203,10 +205,39 @@ class ExpressionConfigSourceInterceptorTest {
         assertEquals("C:\\Some\\Path", config.getRawValue("window.path"));
     }
 
+    @Test
+    void nullValue() {
+        SmallRyeConfig config = buildConfigWithCustomInterceptor("sth", null);
+        ConfigValue configValue = config.getConfigValue("sth");
+
+        assertNotNull(configValue);
+
+        // No exception is thrown, only null is returned
+        assertNull(configValue.getValue());
+    }
+
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();
+    }
+
+    private static SmallRyeConfig buildConfigWithCustomInterceptor(String... keyValues) {
+        return new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withInterceptors(new CustomConfigSourceInterceptor())
+                .withInterceptors(new ExpressionConfigSourceInterceptor())
+                .withSources(KeyValuesConfigSource.config(keyValues))
+                .build();
+    }
+
+    @Priority(Priorities.LIBRARY + 201)
+    private static class CustomConfigSourceInterceptor implements ConfigSourceInterceptor {
+
+        @Override
+        public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+            return ConfigValue.builder().withName(name).withValue(null).build();
+        }
     }
 }

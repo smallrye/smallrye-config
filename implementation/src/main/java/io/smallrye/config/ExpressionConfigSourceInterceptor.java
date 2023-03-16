@@ -49,7 +49,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return configValue;
         }
 
-        if (configValue == null) {
+        if (configValue == null || configValue.getValue() == null) {
             return null;
         }
 
