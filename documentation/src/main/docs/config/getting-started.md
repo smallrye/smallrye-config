@@ -157,6 +157,7 @@ interpreted as `false`
 * `java.util.UUID`
 * `java.util.Currency`
 * `java.util.regex.Pattern`
+* `java.nio.file.Path`
 * Any class with declared static methods `of`, `valueOf` or `parse` that take a `String` or a `CharSequence`
 * Any class with declared constructors that takes a `String` or a `CharSequence` 
 

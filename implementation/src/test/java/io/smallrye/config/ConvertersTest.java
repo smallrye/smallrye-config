@@ -17,6 +17,7 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.util.ArrayList;
@@ -358,6 +359,15 @@ class ConvertersTest {
         assertEquals(expected.pattern(),
                 config.getValue("simple.pattern", Pattern.class).pattern(),
                 "Unexpected value for pattern");
+    }
+
+    @Test
+    void path() {
+        final SmallRyeConfig config = buildConfig("simple.path", "/test");
+        final Path expected = Path.of("/test");
+        assertEquals(expected,
+                config.getValue("simple.path", Path.class),
+                "Unexpected value for path");
     }
 
     @Test
