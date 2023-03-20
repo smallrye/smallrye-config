@@ -23,6 +23,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -173,6 +174,9 @@ public final class Converters {
     static final Converter<Pattern> PATTERN_CONVERTER = BuiltInConverter.of(17,
             newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
 
+    static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18,
+            newEmptyValueConverter(Path::of));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -210,6 +214,8 @@ public final class Converters {
         ALL_CONVERTERS.put(BitSet.class, BITSET_CONVERTER);
 
         ALL_CONVERTERS.put(Pattern.class, PATTERN_CONVERTER);
+
+        ALL_CONVERTERS.put(Path.class, PATH_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
