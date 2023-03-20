@@ -363,10 +363,12 @@ class ConvertersTest {
 
     @Test
     void path() {
-        final SmallRyeConfig config = buildConfig("simple.path", "/test");
-        final Path expected = Path.of("/test");
-        assertEquals(expected,
+        final SmallRyeConfig config = buildConfig("simple.path", "/test", "path.leading.space", " test");
+        assertEquals(Path.of("/test"),
                 config.getValue("simple.path", Path.class),
+                "Unexpected value for path");
+        assertEquals(Path.of(" test"),
+                config.getValue("path.leading.space", Path.class),
                 "Unexpected value for path");
     }
 

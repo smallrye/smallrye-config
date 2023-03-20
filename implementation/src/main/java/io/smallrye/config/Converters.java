@@ -175,7 +175,7 @@ public final class Converters {
             newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
 
     static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18,
-            newTrimmingConverter(newEmptyValueConverter(Path::of)));
+            newEmptyValueConverter(Path::of));
 
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
