@@ -18,8 +18,8 @@ class KeyStoreConfigSourceTest {
     void keystore() {
         // keytool -importpass -alias my.secret -keystore keystore -storepass secret -storetype PKCS12 -v
         Map<String, String> properties = Map.of(
-                "io.smallrye.config.source.keystore.test.path", "keystore",
-                "io.smallrye.config.source.keystore.test.password", "secret");
+                "smallrye.config.source.keystore.test.path", "keystore",
+                "smallrye.config.source.keystore.test.password", "secret");
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withProfile("prod")
@@ -39,8 +39,8 @@ class KeyStoreConfigSourceTest {
                 .addDefaultInterceptors()
                 .addDiscoveredSources()
                 .withSources(new PropertiesConfigSource(Map.of(
-                        "io.smallrye.config.source.keystore.test.path", "not.found",
-                        "io.smallrye.config.source.keystore.test.password", "secret"), "", 0))
+                        "smallrye.config.source.keystore.test.path", "not.found",
+                        "smallrye.config.source.keystore.test.password", "secret"), "", 0))
                 .build();
 
         ConfigValue secret = config.getConfigValue("my.secret");
@@ -49,8 +49,8 @@ class KeyStoreConfigSourceTest {
         assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder()
                 .addDiscoveredSources()
                 .withSources(new PropertiesConfigSource(Map.of(
-                        "io.smallrye.config.source.keystore.test.path", "file:/not.found",
-                        "io.smallrye.config.source.keystore.test.password", "secret"), "", 0))
+                        "smallrye.config.source.keystore.test.path", "file:/not.found",
+                        "smallrye.config.source.keystore.test.password", "secret"), "", 0))
                 .build());
     }
 }

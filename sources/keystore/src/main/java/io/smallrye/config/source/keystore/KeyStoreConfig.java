@@ -7,7 +7,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithParentName;
 
-@ConfigMapping(prefix = "io.smallrye.config.source.keystore")
+@ConfigMapping(prefix = "smallrye.config.source.keystore")
 public interface KeyStoreConfig {
     @WithParentName
     Map<String, KeyStore> keystores();
