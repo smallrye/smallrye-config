@@ -37,14 +37,6 @@ public class PropertiesConfigSourceProvider extends AbstractLocationConfigSource
         this.configSources.addAll(loadConfigSources(location, ConfigSource.DEFAULT_ORDINAL, classLoader));
     }
 
-    @Deprecated
-    public PropertiesConfigSourceProvider(String location, boolean optional, ClassLoader classLoader) {
-        this(location, classLoader, false);
-        if (!optional && this.configSources.isEmpty()) {
-            throw ConfigMessages.msg.fileNotFound(location);
-        }
-    }
-
     @Override
     public List<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
         return configSources;
