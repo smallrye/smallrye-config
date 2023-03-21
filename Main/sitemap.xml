@@ -76,6 +76,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://smallrye.io/smallrye-config/Main/config-sources/keystore/</loc>
+         <lastmod>2023-03-21</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/locations/</loc>
          <lastmod>2023-03-21</lastmod>
          <changefreq>daily</changefreq>

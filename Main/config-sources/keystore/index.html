@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/config-sources/yaml/">
+        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/config-sources/keystore/">
       
       <link rel="icon" href="../../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.9">
     
     
       
-        <title>YAML - SmallRye Config</title>
+        <title>KeyStore - SmallRye Config</title>
       
     
     
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#yaml-config-source" class="md-skip">
+        <a href="#keystore-config-source" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              YAML
+              KeyStore
             
           </span>
         </div>
@@ -625,21 +625,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../yaml/" class="md-nav__link">
         YAML
       </a>
-      
     </li>
   
 
@@ -691,11 +681,52 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../keystore/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          KeyStore
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         KeyStore
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -895,6 +926,21 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -905,23 +951,68 @@
             <article class="md-content__inner md-typeset">
               
                 
-  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config-sources/yaml.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/smallrye/smallrye-config/edit/main/documentation/src/main/docs/config-sources/keystore.md" title="Edit this page" class="md-content__button md-icon">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
 
-<h1 id="yaml-config-source">YAML Config Source<a class="headerlink" href="#yaml-config-source" title="Permanent link">#</a></h1>
-<p>This Config Source allows to use a <code>yaml</code> file to load configuration values. The YAML Config Source loads the 
-configuration from the file <code>META-INF/microprofile-config.yaml</code>. It has a higher ordinal (<code>110</code>) than the 
-<code>microprofile-config.properties</code>.</p>
-<p>The following dependency is required in the classpath to use the YAML Config Source:</p>
+<h1 id="keystore-config-source">KeyStore Config Source<a class="headerlink" href="#keystore-config-source" title="Permanent link">#</a></h1>
+<p>This Config Source allows to use a Java <code>KeyStore</code> to load configuration values. It uses an ordinal of <code>100</code>.</p>
+<p>The following dependency is required in the classpath to use the KeyStore Config Source:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-yaml<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-keystore<span class="nt">&lt;/artifactId&gt;</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="nt">&lt;version&gt;</span>3.1.4-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Configuration Property</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smallrye.config.source.keystore."name".path</code><br>The KeyStore path.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".password</code><br>The KeyStore password.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".type</code><br>The KeyStore type.</td>
+<td>String</td>
+<td><code>PKCS12</code></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".handler</code><br>An Optional secret keys handler.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".aliases."key".name</code><br>An Optional aliases key name.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".aliases."key".password</code><br>An Optional aliases key password.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.source.keystore."name".aliases."key".handler</code><br>An Optional aliases key secret keys handler.</td>
+<td>String</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 
               
             </article>
@@ -937,7 +1028,7 @@ configuration from the file <code>META-INF/microprofile-config.yaml</code>. It h
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../locations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Locations" rel="prev">
+        <a href="../hocon/" class="md-footer__link md-footer__link--prev" aria-label="Previous: HOCON" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -946,20 +1037,20 @@ configuration from the file <code>META-INF/microprofile-config.yaml</code>. It h
               <span class="md-footer__direction">
                 Previous
               </span>
-              Locations
+              HOCON
             </div>
           </div>
         </a>
       
       
         
-        <a href="../filesystem/" class="md-footer__link md-footer__link--next" aria-label="Next: FileSystem" rel="next">
+        <a href="../../converters/custom/" class="md-footer__link md-footer__link--next" aria-label="Next: Custom" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              FileSystem
+              Custom
             </div>
           </div>
           <div class="md-footer__button md-icon">
