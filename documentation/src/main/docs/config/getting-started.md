@@ -32,7 +32,7 @@ rules detailed by [Environment Variables](environment-variables.md).
 The MicroProfile Config configuration file `META-INF/microprofile-config.properties` in the classpath. It follows the 
 standard convention for `properties` files.
 
-```properties
+```properties title="META-INF/microprofile-config.properties"
 greeting.message=hello
 goodbye.message=bye
 ```

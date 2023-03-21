@@ -55,8 +55,7 @@ public class InMemoryConfigSource implements ConfigSource {
 
 And registration in:
 
-_META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource_
-```properties
+```properties title="META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource"
 org.acme.config.InMemoryConfigSource
 ```
 
@@ -113,8 +112,7 @@ public class URLConfigSourceFactory implements ConfigSourceFactory {
 
 And registration in:
 
-_META-INF/services/io.smallrye.config.ConfigSourceFactory_
-```properties
+```properties title="META-INF/services/io.smallrye.config.ConfigSourceFactory"
 org.acme.config.URLConfigSourceFactory
 ```
 
