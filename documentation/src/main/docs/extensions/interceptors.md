@@ -49,8 +49,8 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
 ```
 
 And registration in:
-_META-INF/services/io.smallrye.config.ConfigSourceInterceptor_
-```properties
+
+```properties title="META-INF/services/io.smallrye.config.ConfigSourceInterceptor"
 org.acme.config.LoggingConfigSourceInterceptor
 ```
 

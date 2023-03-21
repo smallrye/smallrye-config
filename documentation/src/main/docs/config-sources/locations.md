@@ -40,7 +40,7 @@ For relative paths, the JVM `user.dir` property defines the current directory.
 
 _A specific file_
 
-```properties
+```properties title="./src/main/resources/additional.properties"
 smallrye.config.locations=./src/main/resources/additional.properties
 ```
 
@@ -48,7 +48,7 @@ If a profile `dev` is active, and an `additional-dev.properties` file exists, th
 
 _All `additional.properties` files from the classpath_
 
-```properties
+```properties title="additional.properties"
 smallrye.config.locations=additional.properties
 ```
 
@@ -57,14 +57,14 @@ resource, this will also be loaded.
 
 _The `resources.properties` file from a specific jar_
 
-```properties
+```properties title="jar:file:///user/local/app/lib/resources-.jar!/resources.properties"
 smallrye.config.locations=jar:file:///user/local/app/lib/resources-.jar!/resources.properties
 ```
 
-If a profile `test` is active, and an `additional-test.properties` respource exists, this will also be loaded.
+If a profile `test` is active, and an `additional-test.properties` resource exists, this will also be loaded.
 
 _The `config.properties` file from a web server_
 
-```properties
-smallrye.config.locations=http://localhost:8080/config/config.
+```properties title="http://localhost:8080/config/config.properties"
+smallrye.config.locations=http://localhost:8080/config/config.properties
 ```

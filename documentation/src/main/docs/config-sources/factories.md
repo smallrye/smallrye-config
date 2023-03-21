@@ -73,8 +73,8 @@ public class FileSystemConfigSourceFactory implements ConfigSourceFactory {
 ```
 
 And registration in:
-_META-INF/services/io.smallrye.config.ConfigSourceFactory_
-```properties
+
+```properties title="META-INF/services/io.smallrye.config.ConfigSourceFactory"
 org.acme.config.FileSystemConfigSourceFactory
 ```
 

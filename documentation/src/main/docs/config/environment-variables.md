@@ -35,20 +35,21 @@ contains a dash or some other special character, that property name can be speci
 Source, with the expected dotted format. It will provide additional information to SmallRye Config to perform a 
 two-way conversion and match the property names.
 
-For instance:
+Consider:
 
-**Config A**
-```console
+```console title=".env"
 FOO_BAR_BAZ=VALUE
 ```
 
 Will map to `foo.bar.baz` and value `value`.
 
-**Config B**
-```console
+If `foo.bar-baz` is available in any source:
+
+```console title=".env"
 FOO_BAR_BAZ=VALUE
 ```
-```properties
+
+```properties title="application.properties"
 foo.bar-baz=default
 ```
 
