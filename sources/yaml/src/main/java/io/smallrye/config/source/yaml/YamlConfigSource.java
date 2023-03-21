@@ -54,11 +54,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
         this.propertyNames = filterPropertyNames(source);
     }
 
-    @Deprecated
-    public YamlConfigSource(String name, InputStream stream) throws IOException {
-        this(name, stream, ORDINAL);
-    }
-
     public YamlConfigSource(URL url) throws IOException {
         this(url, ORDINAL);
     }
@@ -72,11 +67,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
                         throw new UncheckedIOException(e);
                     }
                 }), ordinal);
-    }
-
-    @Deprecated
-    public YamlConfigSource(String name, InputStream stream, int defaultOrdinal) throws IOException {
-        this(name, streamToMap(stream), defaultOrdinal);
     }
 
     public YamlConfigSource(String name, String source) {
