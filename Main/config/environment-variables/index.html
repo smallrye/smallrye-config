@@ -924,16 +924,15 @@ dotted format for Environment Variables.</p>
 contains a dash or some other special character, that property name can be specified in another Config 
 Source, with the expected dotted format. It will provide additional information to SmallRye Config to perform a 
 two-way conversion and match the property names.</p>
-<p>For instance:</p>
-<p><strong>Config A</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
-</code></pre></div></p>
-<p>Will map to <code>foo.bar.baz</code> and value <code>value</code>.</p>
-<p><strong>Config B</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
+<p>Consider:</p>
+<div class="highlight"><span class="filename">.env</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">foo.bar-baz</span><span class="o">=</span><span class="s">default</span><span class="w"></span>
-</code></pre></div></p>
+<p>Will map to <code>foo.bar.baz</code> and value <code>value</code>.</p>
+<p>If <code>foo.bar-baz</code> is available in any source:</p>
+<div class="highlight"><span class="filename">.env</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">FOO_BAR_BAZ=VALUE</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">foo.bar-baz</span><span class="o">=</span><span class="s">default</span><span class="w"></span>
+</code></pre></div>
 <p>Will map to <code>foo.bar-baz</code> and value <code>value</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

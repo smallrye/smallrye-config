@@ -927,20 +927,20 @@ which file is the main resource. Properties that use the profile prefix syntax <
 </code></pre></div>
 <p>For relative paths, the JVM <code>user.dir</code> property defines the current directory.</p>
 <p><em>A specific file</em></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">./src/main/resources/additional.properties</span><span class="w"></span>
+<div class="highlight"><span class="filename">./src/main/resources/additional.properties</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">./src/main/resources/additional.properties</span><span class="w"></span>
 </code></pre></div>
 <p>If a profile <code>dev</code> is active, and an <code>additional-dev.properties</code> file exists, this will also be loaded.</p>
 <p><em>All <code>additional.properties</code> files from the classpath</em></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">additional.properties</span><span class="w"></span>
+<div class="highlight"><span class="filename">additional.properties</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">additional.properties</span><span class="w"></span>
 </code></pre></div>
 <p>If a profile <code>prod</code> is active, and an <code>additional-prod.properties</code> resources exists next to the <code>additional.properties</code> 
 resource, this will also be loaded.</p>
 <p><em>The <code>resources.properties</code> file from a specific jar</em></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">jar:file:///user/local/app/lib/resources-.jar!/resources.properties</span><span class="w"></span>
+<div class="highlight"><span class="filename">jar:file:///user/local/app/lib/resources-.jar!/resources.properties</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">jar:file:///user/local/app/lib/resources-.jar!/resources.properties</span><span class="w"></span>
 </code></pre></div>
-<p>If a profile <code>test</code> is active, and an <code>additional-test.properties</code> respource exists, this will also be loaded.</p>
+<p>If a profile <code>test</code> is active, and an <code>additional-test.properties</code> resource exists, this will also be loaded.</p>
 <p><em>The <code>config.properties</code> file from a web server</em></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">http://localhost:8080/config/config.</span><span class="w"></span>
+<div class="highlight"><span class="filename">http://localhost:8080/config/config.properties</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">smallrye.config.locations</span><span class="o">=</span><span class="s">http://localhost:8080/config/config.properties</span><span class="w"></span>
 </code></pre></div>
 
               

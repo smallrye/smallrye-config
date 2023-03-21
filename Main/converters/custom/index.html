@@ -930,9 +930,8 @@ requires registration via the <code>ServiceLoader</code> mechanism in the
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>And registration in:</p>
-<p>_META-INF/services/org.eclipse.microprofile.config.spi.Converter
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">org.acme.config.CustomValue</span><span class="w"></span>
-</code></pre></div></p>
+<div class="highlight"><span class="filename">META-INF/services/org.eclipse.microprofile.config.spi.Converter</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">org.acme.config.CustomValue</span><span class="w"></span>
+</code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The custom <code>Converter</code> class must be <code>public</code>, must have a <code>public</code> constructor with no arguments, and must not be 

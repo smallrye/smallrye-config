@@ -901,25 +901,35 @@ providing a transformation function or just a simple key value map.</p>
 <p>When a configuration name does not exist, there might be another configuration name that the config can
 fall back to provide the same expected behavior. The fallback function is only applied if the original resolved
 configuration name is not found and resolved to the fallback name.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.util.function.Function</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.FallbackConfigSourceInterceptor</span><span class="p">;</span><span class="w"></span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MicroProfileConfigFallbackInterceptor</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">FallbackConfigSourceInterceptor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">MicroProfileConfigFallbackInterceptor</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mapping</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="na">startsWith</span><span class="p">(</span><span class="s">&quot;microprofile.config&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"></span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">                      </span><span class="n">name</span><span class="p">.</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&quot;microprofile\\.config&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;smallrye.config&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="na">startsWith</span><span class="p">(</span><span class="s">&quot;mp.config&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"></span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">                      </span><span class="n">name</span><span class="p">.</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&quot;mp\\.config&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;smallrye.config&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"></span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">                      </span><span class="n">name</span><span class="p">);</span><span class="w"></span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
-<p>And registration in:
-<em>META-INF/services/io.smallrye.config.ConfigSourceInterceptor</em>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">io.smallrye.config.MicroProfileConfigFallbackInterceptor</span><span class="w"></span>
-</code></pre></div></p>
-<p>The <code>MicroProfileConfigFallbackInterceptor</code> can fallback configuration names in the <code>microprofile.config</code> namespace
+<p>And registration in:</p>
+<div class="highlight"><span class="filename">META-INF/services/io.smallrye.config.ConfigSourceInterceptor</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.MicroProfileConfigFallbackInterceptor</span><span class="w"></span>
+</code></pre></div>
+<p>The <code>MicroProfileConfigFallbackInterceptor</code> can fallback configuration names in the <code>mp.config</code> namespace
 to the <code>smallrye.config</code> namespace.</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">mp.config.profile</span><span class="o">=</span><span class="s">test</span><span class="w"></span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">prod</span><span class="w"></span>
+</code></pre></div>
+<p>A lookup to <code>mp.config.profile</code> returns the value <code>test</code>.</p>
+<div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">smallrye.config.profile</span><span class="o">=</span><span class="s">prod</span><span class="w"></span>
+</code></pre></div>
+<p>A lookup to <code>mp.config.profile</code> returns the value <code>prod</code>. The config is not able to find a value for 
+<code>mp.config.profile</code>, so the interceptor fallbacks and lookups the value of <code>smallrye.config.profile</code>.</p>
+</div>
 
               
             </article>

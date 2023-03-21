@@ -960,10 +960,9 @@ Programmatic API in <code>SmallRyeConfigBuilder#withSources</code>.</p>
 <a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
-<p>And registration in:
-<em>META-INF/services/io.smallrye.config.ConfigSourceFactory</em>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.FileSystemConfigSourceFactory</span><span class="w"></span>
-</code></pre></div></p>
+<p>And registration in:</p>
+<div class="highlight"><span class="filename">META-INF/services/io.smallrye.config.ConfigSourceFactory</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.FileSystemConfigSourceFactory</span><span class="w"></span>
+</code></pre></div>
 <p>The <code>FileSystemConfigSourceFactory</code> look ups the configuration value for <code>org.acme.config.file.locations</code>, and uses it 
 to set up an additional <code>ConfigSource</code>.</p>
 

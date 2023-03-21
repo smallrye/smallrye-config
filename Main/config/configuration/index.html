@@ -528,61 +528,9 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Configuration Reference
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Configuration Reference
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigprofile" class="md-nav__link">
-    smallrye.config.profile
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigprofileparent" class="md-nav__link">
-    smallrye.config.profile.parent
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfiglocations" class="md-nav__link">
-    smallrye.config.locations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigmappingvalidate-unknown" class="md-nav__link">
-    smallrye.config.mapping.validate-unknown
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -931,42 +879,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigprofile" class="md-nav__link">
-    smallrye.config.profile
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigprofileparent" class="md-nav__link">
-    smallrye.config.profile.parent
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfiglocations" class="md-nav__link">
-    smallrye.config.locations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smallryeconfigmappingvalidate-unknown" class="md-nav__link">
-    smallrye.config.mapping.validate-unknown
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -984,40 +896,37 @@
 
 
 <h1 id="configuration-reference">Configuration Reference<a class="headerlink" href="#configuration-reference" title="Permanent link">#</a></h1>
-<h2 id="smallryeconfigprofile"><code>smallrye.config.profile</code><a class="headerlink" href="#smallryeconfigprofile" title="Permanent link">#</a></h2>
-<p>The main <a href="../profiles/">Profile</a> to activate.</p>
-<blockquote>
-<ul>
-<li>type: String[] </li>
-<li>default:</li>
-</ul>
-</blockquote>
-<h2 id="smallryeconfigprofileparent"><code>smallrye.config.profile.parent</code><a class="headerlink" href="#smallryeconfigprofileparent" title="Permanent link">#</a></h2>
-<p>The parent <a href="../profiles/#parent-profile">Profile</a> to activate.</p>
-<blockquote>
-<ul>
-<li>type: String[]</li>
-<li>default:</li>
-</ul>
-</blockquote>
-<h2 id="smallryeconfiglocations"><code>smallrye.config.locations</code><a class="headerlink" href="#smallryeconfiglocations" title="Permanent link">#</a></h2>
-<p><a href="../../config-sources/locations/">Additional config locations</a> to be loaded with the Config. The configuration supports 
-multiple locations separated by a comma and each must represent a valid <code>java.net.URI</code>.</p>
-<blockquote>
-<ul>
-<li>type: URI[]</li>
-<li>default:</li>
-</ul>
-</blockquote>
-<h2 id="smallryeconfigmappingvalidate-unknown"><code>smallrye.config.mapping.validate-unknown</code><a class="headerlink" href="#smallryeconfigmappingvalidate-unknown" title="Permanent link">#</a></h2>
-<p><a href="../mappings/#retrieval">Validates</a> that a <code>@ConfigMapping</code> maps every available configuration name contained in the 
-mapping prefix.</p>
-<blockquote>
-<ul>
-<li>type: boolean</li>
-<li>default: false</li>
-</ul>
-</blockquote>
+<table>
+<thead>
+<tr>
+<th>Configuration Property</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smallrye.config.profile</code><br>The main <a href="../profiles/">Profile</a> to activate.</td>
+<td>String[]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.profile.parent</code><br>The parent <a href="../profiles/#parent-profile">Profile</a> to activate.</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.locations</code><br><a href="../../config-sources/locations/">Additional config locations</a> to be loaded with the Config. The configuration supports multiple locations separated by a comma and each must represent a valid <code>java.net.URI</code>.</td>
+<td>URI[]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>smallrye.config.mapping.validate-unknown</code><br><a href="../mappings/#retrieval">Validates</a> that a <code>@ConfigMapping</code> maps every available configuration name contained in the      mapping prefix.</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
 
               
             </article>

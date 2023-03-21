@@ -938,10 +938,9 @@ origin and ordinal.</p>
 <a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
-<p>And registration in:
-<em>META-INF/services/io.smallrye.config.ConfigSourceInterceptor</em>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.LoggingConfigSourceInterceptor</span><span class="w"></span>
-</code></pre></div></p>
+<p>And registration in:</p>
+<div class="highlight"><span class="filename">META-INF/services/io.smallrye.config.ConfigSourceInterceptor</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.LoggingConfigSourceInterceptor</span><span class="w"></span>
+</code></pre></div>
 <p>The <code>LoggingConfigSourceInterceptor</code> logs looks up configuration names in the provided logging platform. The log 
 information includes config name and value, the config source origin and location if exists.</p>
 <p>Interceptors may also be created with an implementation of <code>io.smallrye.config.ConfigSourceInterceptorFactory</code>. Each 

@@ -901,7 +901,8 @@ accidental exposure of such values.</p>
 <p><strong>This is no way a replacement for securing secrets.</strong> Proper security mechanisms must still be used to secure 
 secrets. However, there is still the basic problem that passwords and secrets are generally encoded simply as strings. 
 Secret Keys provides a way to &ldquo;lock&rdquo; the configuration so that secrets do not appear unless explicitly enabled.</p>
-<p>To mark specific keys as secrets, register an instance of <code>io.smallrye.config.SecretKeysConfigSourceInterceptor</code> by using your interceptor factory as follows:</p>
+<p>To mark specific keys as secrets, register an instance of <code>io.smallrye.config.SecretKeysConfigSourceInterceptor</code> by 
+using the interceptor factory as follows:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SecretKeysConfigInterceptorFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptorFactory</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nd">@Override</span><span class="w"></span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="nf">getInterceptor</span><span class="p">(</span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -909,7 +910,9 @@ Secret Keys provides a way to &ldquo;lock&rdquo; the configuration so that secre
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
-<p>Register this factory so that it can be found at runtime by creating a <code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file that contains the fully qualified name of this factory class.</p>
+<p>Register the factory so that it can be found at runtime by creating a 
+<code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file that contains the fully qualified name of 
+this factory class.</p>
 <p>From this point forward, every lookup to the configuration name <code>secret</code> will throw a <code>SecurityException</code>.</p>
 <p>Access the Secret Keys using the APIs <code>io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)</code> 
 and <code>io.smallrye.config.SecretKeys#doUnlocked(java.util.function.Supplier&lt;T&gt;)</code>.</p>

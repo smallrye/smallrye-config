@@ -1059,9 +1059,8 @@ instance in a defined ordinal. This allows overriding values from other sources 
 <a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>And registration in:</p>
-<p><em>META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource</em>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.InMemoryConfigSource</span><span class="w"></span>
-</code></pre></div></p>
+<div class="highlight"><span class="filename">META-INF/services/org.eclipse.microprofile.config.spi.ConfigSource</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">org.acme.config.InMemoryConfigSource</span><span class="w"></span>
+</code></pre></div>
 <p>The <code>InMemoryConfigSource</code> will be ordered between the <code>System properties</code> config source, and the 
 <code>Environment variables</code> config source due to the <code>350</code> ordinal.</p>
 <p>In this case, <code>my.prop</code> from <code>InMemoryConfigSource</code> will only be used if the <code>Config</code> instance is unable to find a 
@@ -1107,9 +1106,8 @@ in the <code>META-INF/services/io.smallrye.config.ConfigSourceFactory</code> fil
 <a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>And registration in:</p>
-<p><em>META-INF/services/io.smallrye.config.ConfigSourceFactory</em>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="err">org.acme.config.URLConfigSourceFactory</span><span class="w"></span>
-</code></pre></div></p>
+<div class="highlight"><span class="filename">META-INF/services/io.smallrye.config.ConfigSourceFactory</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="err">org.acme.config.URLConfigSourceFactory</span><span class="w"></span>
+</code></pre></div>
 <p>By implementing <code>io.smallrye.config.ConfigSourceFactory</code>, a list of <code>ConfigSource</code> may be provided via the 
 <code>Iterable&lt;ConfigSource&gt; getConfigSources(ConfigSourceContext context)</code> method. The <code>ConfigSourceFactory</code> may also 
 assign a priority by overriding the method <code>OptionalInt getPriority()</code>. The priority value is used to sort multiple 
