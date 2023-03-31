@@ -37,12 +37,12 @@ public final class ConfigMappingLoader {
         final ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass != null) {
             mappings.add(configMappingClass);
-            mappings.addAll(getConfigMappingsMetadata(getConfigMappingInterface(type).getInterfaceType()));
+            mappings.addAll(getConfigMappingsMetadata(getConfigMapping(type).getInterfaceType()));
         }
         return mappings;
     }
 
-    static ConfigMappingInterface getConfigMappingInterface(final Class<?> type) {
+    public static ConfigMappingInterface getConfigMapping(final Class<?> type) {
         return ConfigMappingInterface.getConfigurationInterface(getConfigMappingClass(type));
     }
 
