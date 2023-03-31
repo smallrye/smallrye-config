@@ -1650,9 +1650,10 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("ignore.nested.nested.value", "value", "ignore.nested.nested.ignore", "ignore"))
                 .withSources(config("ignore.nested.optional.value", "value", "ignore.nested.optional.ignore", "ignore"))
                 .withSources(config("ignore.nested.list[0].value", "value", "ignore.nested.list[0].ignore", "ignore"))
-                .withSources(config("ignore.nested.map.key", "value", "ignore.nested.map.ignored.ignored", "ignore"))
+                .withSources(config("ignore.nested.map.key.value", "value", "ignore.nested.map.ignored.ignored", "ignore"))
+                .withSources(config("ignore.nested.key.value", "parent", "ignore.nested.ignored.ignored", "ignore"))
                 .withSources(config("ignore.nested.ignore.ignore", "ignore"))
-                .withMappingIgnore("ignore.nested.**")
+                .withMappingIgnore("ignore.**")
                 .build();
 
         IgnoreNestedUnknown mapping = config.getConfigMapping(IgnoreNestedUnknown.class);
@@ -1662,7 +1663,8 @@ class ConfigMappingInterfaceTest {
         assertTrue(mapping.optional().isPresent());
         assertEquals("value", mapping.optional().get().value());
         assertEquals("value", mapping.list().get(0).value());
-        assertEquals("value", mapping.map().get("key"));
+        assertEquals("value", mapping.map().get("key").value());
+        assertEquals("parent", mapping.mapParent().get("key").value());
     }
 
     @ConfigMapping(prefix = "ignore.nested")
@@ -1675,7 +1677,10 @@ class ConfigMappingInterfaceTest {
 
         List<Nested> list();
 
-        Map<String, String> map();
+        Map<String, Nested> map();
+
+        @WithParentName
+        Map<String, Nested> mapParent();
 
         interface Nested {
             String value();

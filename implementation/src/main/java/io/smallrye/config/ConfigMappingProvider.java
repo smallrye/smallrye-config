@@ -100,6 +100,10 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     static void ignoreRecursively(KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> root) {
+        if (root.getRootValue() == null) {
+            root.putRootValue(DO_NOTHING);
+        }
+
         if (root.getAny() == null) {
             root.putAny(IGNORE_EVERYTHING);
         } else {
