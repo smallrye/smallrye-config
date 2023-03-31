@@ -34,7 +34,7 @@ public class KeyMapBackedConfigSource extends AbstractConfigSource {
 
     @Override
     public Set<String> getPropertyNames() {
-        return Collections.emptySet();
+        return properties.keySet();
     }
 
     @Override
