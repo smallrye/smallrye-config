@@ -5,8 +5,8 @@ import static io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import static io.smallrye.config.ConfigMappingInterface.MapProperty;
 import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import static io.smallrye.config.ConfigMappingInterface.Property;
+import static io.smallrye.config.ConfigMappingLoader.getConfigMapping;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingInterface;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.lang.Integer.parseInt;
@@ -80,7 +80,7 @@ final class ConfigMappingProvider implements Serializable {
                 // construct the lazy match actions for each group
                 BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> ef = new GetRootAction(root,
                         entry.getKey());
-                ConfigMappingInterface mapping = getConfigMappingInterface(root);
+                ConfigMappingInterface mapping = getConfigMapping(root);
                 processEagerGroup(currentPath, matchActions, defaultValues, mapping.getNamingStrategy(), mapping, ef);
             }
             currentPath.clear();

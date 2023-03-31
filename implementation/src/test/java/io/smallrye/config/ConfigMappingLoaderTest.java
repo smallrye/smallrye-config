@@ -44,7 +44,7 @@ class ConfigMappingLoaderTest {
 
     @Test
     void discoverNested() {
-        ConfigMappingInterface mapping = ConfigMappingLoader.getConfigMappingInterface(ServerNested.class);
+        ConfigMappingInterface mapping = ConfigMappingLoader.getConfigMapping(ServerNested.class);
         List<ConfigMappingInterface> nested = mapping.getNested();
         assertEquals(4, nested.size());
         List<Class<?>> types = nested.stream().map(ConfigMappingInterface::getInterfaceType).collect(toList());
