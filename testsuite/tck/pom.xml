@@ -47,11 +47,11 @@
             <config_ordinal>45</config_ordinal>
             <customer_name>Bob</customer_name>
           </environmentVariables>
-          <systemProperties>
+          <systemPropertyVariables>
             <mp.tck.prop.dummy>dummy</mp.tck.prop.dummy>
             <customer.hobby>Tennis</customer.hobby>
             <config_ordinal>120</config_ordinal>
-          </systemProperties>
+          </systemPropertyVariables>
           <dependenciesToScan>
             <dependency>org.eclipse.microprofile.config:microprofile-config-tck</dependency>
           </dependenciesToScan>
