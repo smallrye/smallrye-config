@@ -317,7 +317,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             }
         }));
 
-        withDefaultValue("smallrye.config.secret-handlers", "all");
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {

@@ -4,6 +4,7 @@ import static io.smallrye.config.ConfigMappingInterfaceTest.HyphenatedEnumMappin
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.NAF;
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.SOS_DAH;
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -356,8 +357,9 @@ class ConfigMappingInterfaceTest {
         assertEquals("bar", defaults.bar());
         assertEquals("foo", config.getRawValue("foo"));
 
-        final List<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toList());
-        assertFalse(propertyNames.contains("foo"));
+        List<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        assertTrue(propertyNames.contains("foo"));
+        assertTrue(propertyNames.contains("bar"));
     }
 
     @Test
@@ -1619,6 +1621,7 @@ class ConfigMappingInterfaceTest {
                 .addDefaultInterceptors()
                 .withMapping(DefaultsBuilderAndMapping.class)
                 .withDefaultValue("server.host", "localhost")
+                .withDefaultValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, "false")
                 .build();
 
         DefaultsBuilderAndMapping mapping = config.getConfigMapping(DefaultsBuilderAndMapping.class);
@@ -1900,5 +1903,27 @@ class ConfigMappingInterfaceTest {
         Map<String, String> map();
 
         Map<String, List<String>> list();
+    }
+
+    @Test
+    void defaultsPropertyNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(DefaultsPropertyNames.class)
+                .build();
+
+        DefaultsPropertyNames mapping = config.getConfigMapping(DefaultsPropertyNames.class);
+        assertEquals("value", mapping.value());
+        assertEquals("value", config.getRawValue("defaults.myProperty"));
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertTrue(properties.contains("defaults.myProperty"));
+    }
+
+    @ConfigMapping(prefix = "defaults")
+    interface DefaultsPropertyNames {
+        @WithDefault("value")
+        @WithName("myProperty")
+        String value();
     }
 }

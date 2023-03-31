@@ -3,10 +3,12 @@ package io.smallrye.config;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -279,5 +281,19 @@ class KeyMapTest {
         assertEquals("value", map.findRootValue("map.key.one"));
         assertEquals("value", map.findRootValue("map.key.one.two"));
         assertEquals("value", map.findRootValue("map.key.one.two.three"));
+    }
+
+    @Test
+    void keySet() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("root.foo").putRootValue("bar");
+        map.findOrAdd("root.foo.bar").putRootValue("baz");
+        map.findOrAdd("root.foo.bar.*").putRootValue("baz");
+        map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
+
+        Set<String> keys = map.keySet();
+        assertEquals(2, keys.size());
+        assertTrue(keys.contains("root.foo"));
+        assertTrue(keys.contains("root.foo.bar"));
     }
 }

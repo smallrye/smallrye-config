@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -308,6 +309,22 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         } else {
             super.putAll(m);
         }
+    }
+
+    @Override
+    public Set<String> keySet() {
+        Set<String> keys = super.keySet();
+        Set<String> allKeys = new HashSet<>();
+        for (String key : keys) {
+            Set<String> childKeys = find(key).keySet();
+            for (String childKey : childKeys) {
+                allKeys.add(key + "." + childKey);
+            }
+            if (hasRootValue(key)) {
+                allKeys.add(key);
+            }
+        }
+        return allKeys;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
