@@ -93,8 +93,9 @@ public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFact
                         Key key = keyStore.getKey(alias,
                                 aliasConfig.password().orElse(keyStoreConfig.password()).toCharArray());
                         String encoded;
-                        if (aliasConfig.handler().isPresent()) {
-                            encoded = "${" + aliasConfig.handler().get() + "::" + new String(key.getEncoded(), UTF_8) + "}";
+                        Optional<String> handler = aliasConfig.handler();
+                        if (handler.isPresent()) {
+                            encoded = "${" + handler.get() + "::" + new String(key.getEncoded(), UTF_8) + "}";
                         } else {
                             encoded = new String(key.getEncoded(), UTF_8);
                         }

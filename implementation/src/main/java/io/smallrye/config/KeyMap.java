@@ -316,9 +316,12 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         Set<String> keys = super.keySet();
         Set<String> allKeys = new HashSet<>();
         for (String key : keys) {
-            Set<String> childKeys = find(key).keySet();
-            for (String childKey : childKeys) {
-                allKeys.add(key + "." + childKey);
+            KeyMap<V> childMap = find(key);
+            if (childMap != null) {
+                Set<String> childKeys = childMap.keySet();
+                for (String childKey : childKeys) {
+                    allKeys.add(key + "." + childKey);
+                }
             }
             if (hasRootValue(key)) {
                 allKeys.add(key);
