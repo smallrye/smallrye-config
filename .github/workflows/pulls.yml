@@ -1,0 +1,16 @@
+name: Pulls
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: pulls
+
+    steps:
+      - uses: radcortez/milestone-set-action@main
+        name: milestone set
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
