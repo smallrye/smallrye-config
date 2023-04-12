@@ -9,7 +9,14 @@ image:https://img.shields.io/maven-central/v/io.smallrye.config/smallrye-config?
 
 = SmallRye Config
 
-SmallRye Config is an implementation of {microprofile-config}[Eclipse MicroProfile Config].
+*SmallRye Config* is a library that provides a way to configure applications, frameworks and containers. It is used
+in applications servers like https://wildfly.org/[WildFly] and https://openliberty.io[Open Liberty], or frameworks
+like https://quarkus.io[Quarkus]. It can also be used completely standalone in any Java application, which makes it a
+very flexible library.
+
+It follows the https://github.com/eclipse/microprofile-config/[MicroProfile Config] specification to provide
+the initial config foundations and expands with it own concepts to cover a wide range of use cases observed in the
+configuration space.
 
 == Instructions
 
@@ -35,10 +42,10 @@ mkdocs serve
 * link:converters[] - Additional Converters
 * link:documentation[] - Project documentation
 * link:examples[] - Examples projects to demonstrate SmallRye Config features
-* link:implementation[] - Implementation of the MicroProfile Config API
+* link:implementation[] - Implementation of SmallRye Config
 * link:sources[] - Implementation of custom Config Sources
 * link:testsuite[] - Test suite to run the implementation against the MicroProfile Config TCK
-* link:utils[] - A set of additional extensions to enhance MicroProfile Config
+* link:utils[] - A set of additional extensions to enhance SmallRye Config
 * link:validator[] - Bean Validation integration
 
 === Contributing

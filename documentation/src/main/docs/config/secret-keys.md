@@ -3,7 +3,7 @@
 ## Secret Keys Expressions
 
 In SmallRye Config, a secret configuration may be expressed as `${handler::value}`, where the `handler` is the name of 
-a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value`. Consider:
+a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value` separated by a double colon `::`. Consider:
 
 ```properties
 my.secret=${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}

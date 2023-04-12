@@ -68,7 +68,8 @@ Server server = config.getConfigMapping(Server.class);
 
 !!! info
 
-    Config Mapping instances are cached. They are populated when the `Config` instance is initialized.
+    Config Mapping instances are cached. They are populated when the `Config` instance is initialized and their values 
+    are not updated on Config Source changes. 
 
 For a Config Mapping to be valid, it needs to match every configuration property name contained in the `Config` under 
 the specified prefix set in `@ConfigMapping`. This prevents unknown configuration properties in the `Config`. This 
