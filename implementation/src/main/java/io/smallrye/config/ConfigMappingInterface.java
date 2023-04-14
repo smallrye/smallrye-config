@@ -101,7 +101,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return superTypes.length;
     }
 
-    ConfigMappingInterface[] getSuperTypes() {
+    public ConfigMappingInterface[] getSuperTypes() {
         return superTypes;
     }
 

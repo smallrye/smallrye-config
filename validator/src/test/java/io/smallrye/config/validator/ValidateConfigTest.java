@@ -347,6 +347,34 @@ public class ValidateConfigTest {
         }
     }
 
+    @Test
+    void hierarchy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidator(new BeanValidationConfigValidatorImpl())
+                .withMapping(Child.class)
+                .withSources(config("validator.child.number", "1"))
+                .build();
+
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
+                () -> config.getConfigMapping(Child.class));
+        List<String> validations = new ArrayList<>();
+        for (int i = 0; i < validationException.getProblemCount(); i++) {
+            validations.add(validationException.getProblem(i).getMessage());
+        }
+        assertEquals(1, validations.size());
+        assertTrue(validations.contains("validator.child.number must be greater than or equal to 10"));
+    }
+
+    public interface Parent {
+        @Min(10)
+        Integer number();
+    }
+
+    @ConfigMapping(prefix = "validator.child")
+    public interface Child extends Parent {
+
+    }
+
     private static void assertValidationsEqual(List<String> validations, String... expectedProblemMessages) {
         List<String> remainingActual = new ArrayList<>(validations);
         List<String> remainingExpected = Stream.of(expectedProblemMessages).collect(Collectors.toList());

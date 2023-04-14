@@ -53,6 +53,12 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             final Object mappingObject,
             final List<Problem> problems) {
 
+        for (ConfigMappingInterface superType : mappingInterface.getSuperTypes()) {
+            for (Property property : superType.getProperties()) {
+                validateProperty(property, currentPath, namingStrategy, mappingObject, false, problems);
+            }
+        }
+
         for (Property property : mappingInterface.getProperties()) {
             validateProperty(property, currentPath, namingStrategy, mappingObject, false, problems);
         }
