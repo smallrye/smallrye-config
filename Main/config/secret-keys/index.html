@@ -1014,7 +1014,7 @@
 <h1 id="secret-keys">Secret Keys<a class="headerlink" href="#secret-keys" title="Permanent link">#</a></h1>
 <h2 id="secret-keys-expressions">Secret Keys Expressions<a class="headerlink" href="#secret-keys-expressions" title="Permanent link">#</a></h2>
 <p>In SmallRye Config, a secret configuration may be expressed as <code>${handler::value}</code>, where the <code>handler</code> is the name of 
-a <code>io.smallrye.config.SecretKeysHandler</code> to decode or decrypt the <code>value</code>. Consider:</p>
+a <code>io.smallrye.config.SecretKeysHandler</code> to decode or decrypt the <code>value</code> separated by a double colon <code>::</code>. Consider:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">my.secret</span><span class="o">=</span><span class="s">${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}</span><span class="w"></span>
 </code></pre></div>
 <p>A lookup to <code>my.secret</code> will use the <code>SecretKeysHandler</code> name <code>aes-gcm-nopadding</code> to decode the value 

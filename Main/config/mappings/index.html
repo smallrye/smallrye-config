@@ -1216,7 +1216,8 @@ mapping instance:</p>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>Config Mapping instances are cached. They are populated when the <code>Config</code> instance is initialized.</p>
+<p>Config Mapping instances are cached. They are populated when the <code>Config</code> instance is initialized and their values 
+are not updated on Config Source changes. </p>
 </div>
 <p>For a Config Mapping to be valid, it needs to match every configuration property name contained in the <code>Config</code> under 
 the specified prefix set in <code>@ConfigMapping</code>. This prevents unknown configuration properties in the <code>Config</code>. This 
