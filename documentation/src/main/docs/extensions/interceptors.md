@@ -26,6 +26,8 @@ origin and ordinal.
 ```java
 package org.acme.config;
 
+import static io.smallrye.config.SecretKeys.doLocked;
+
 import jakarta.annotation.Priority;
 
 import io.smallrye.config.ConfigSourceInterceptor;

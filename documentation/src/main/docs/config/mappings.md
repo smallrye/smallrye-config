@@ -133,7 +133,7 @@ server.port=8080
 
 ### `@WithParentName`
 
-The `io.smallrye.config.WithParent` annotation allows configurations mappings to inherit its parent container name, 
+The `io.smallrye.config.WithParentName` annotation allows configurations mappings to inherit its parent container name, 
 simplifying the configuration property name required to match the mapping.
 
 ```java
