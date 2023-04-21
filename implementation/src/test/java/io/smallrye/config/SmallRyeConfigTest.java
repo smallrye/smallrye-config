@@ -239,6 +239,17 @@ class SmallRyeConfigTest {
     }
 
     @Test
+    void quotedIndexes() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("map.roles.\"quoted.key\"[0].name", ""))
+                .build();
+
+        List<Integer> indexes = config.getIndexedPropertiesIndexes("map.roles.\"quoted.key\"");
+        assertEquals(1, indexes.size());
+        assertTrue(indexes.contains(0));
+    }
+
+    @Test
     void overrideIndexedValues() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config(

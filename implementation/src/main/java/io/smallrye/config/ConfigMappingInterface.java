@@ -275,6 +275,34 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         public DefaultMethodProperty asDefaultMethod() {
             throw new ClassCastException();
         }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Property property = (Property) o;
+            boolean result = method.equals(property.method) && propertyName.equals(property.propertyName);
+            if (result) {
+                return result;
+            }
+            return isMethodInHierarchy(property.getMethod().getDeclaringClass(), method);
+        }
+
+        private static boolean isMethodInHierarchy(final Class<?> declaringClass, final Method method) {
+            for (Class<?> parent : declaringClass.getInterfaces()) {
+                for (final Method parentMethod : parent.getMethods()) {
+                    if (parentMethod.getName().equals(method.getName())) {
+                        return true;
+                    }
+                }
+                return isMethodInHierarchy(parent, method);
+            }
+            return false;
+        }
     }
 
     public static abstract class MayBeOptionalProperty extends Property {
@@ -510,13 +538,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     public static final class MapProperty extends Property {
         private final Type keyType;
+        private final String keyUnnamed;
         private final Class<? extends Converter<?>> keyConvertWith;
         private final Property valueProperty;
 
-        MapProperty(final Method method, final String propertyName, final Type keyType,
+        MapProperty(final Method method, final String propertyName, final Type keyType, final String keyUnnamed,
                 final Class<? extends Converter<?>> keyConvertWith, final Property valueProperty) {
             super(method, propertyName);
             this.keyType = keyType;
+            this.keyUnnamed = keyUnnamed;
             this.keyConvertWith = keyConvertWith;
             this.valueProperty = valueProperty;
         }
@@ -527,6 +557,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         public Class<?> getKeyRawType() {
             return rawTypeOf(keyType);
+        }
+
+        public String getKeyUnnamed() {
+            return "".equals(keyUnnamed) ? null : keyUnnamed;
+        }
+
+        public boolean hasKeyUnnamed() {
+            return keyUnnamed != null;
         }
 
         public Class<? extends Converter<?>> getKeyConvertWith() {
@@ -718,7 +756,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         // now figure out what kind it is
-        Class<? extends Converter<?>> convertWith = getConvertWith(type, method);
+        Class<? extends Converter<?>> convertWith = getConverter(type, method);
         String propertyName = getPropertyName(method);
         Class<?> rawType = rawTypeOf(type.getType());
         if (rawType.isPrimitive()) {
@@ -739,10 +777,9 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             if (rawType == Map.class) {
                 // it's a map...
                 AnnotatedType keyType = typeOfParameter(type, 0);
-                Class<? extends Converter<?>> keyConvertWith = getConvertWith(keyType, method);
                 AnnotatedType valueType = typeOfParameter(type, 1);
-                return new MapProperty(method, propertyName, keyType.getType(), keyConvertWith,
-                        getPropertyDef(method, valueType));
+                return new MapProperty(method, propertyName, keyType.getType(), getUnnamedKey(keyType, method),
+                        getConverter(keyType, method), getPropertyDef(method, valueType));
             }
             if (rawType == List.class || rawType == Set.class) {
                 AnnotatedType elementType = typeOfParameter(type, 0);
@@ -811,7 +848,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return null;
     }
 
-    private static Class<? extends Converter<?>> getConvertWith(final AnnotatedType type, final Method method) {
+    private static String getUnnamedKey(final AnnotatedType type, final Method method) {
+        WithUnnamedKey annotation = type.getAnnotation(WithUnnamedKey.class);
+        if (annotation == null) {
+            annotation = method.getAnnotation(WithUnnamedKey.class);
+        }
+        return annotation != null ? annotation.value() : null;
+    }
+
+    private static Class<? extends Converter<?>> getConverter(final AnnotatedType type, final Method method) {
         WithConverter annotation = type.getAnnotation(WithConverter.class);
         // fallback to method
         if (annotation == null) {

@@ -17,6 +17,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import io.smallrye.config.WithParentName;
+import io.smallrye.config.WithUnnamedKey;
 
 class YamlConfigMappingTest {
     @Test
@@ -486,6 +487,31 @@ class YamlConfigMappingTest {
 
                 Map<String, String> phones();
             }
+        }
+    }
+
+    @Test
+    void unnamedMapKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(UnnamedMapKeys.class)
+                .withSources(new YamlConfigSource("yaml", "unnamed:\n" +
+                        "    map: \n" +
+                        "        value: value\n"))
+                .build();
+
+        UnnamedMapKeys mapping = config.getConfigMapping(UnnamedMapKeys.class);
+
+        assertEquals("value", mapping.map().get(null).value());
+    }
+
+    @ConfigMapping(prefix = "unnamed")
+    interface UnnamedMapKeys {
+        @WithUnnamedKey
+        Map<String, Nested> map();
+
+        interface Nested {
+            String value();
         }
     }
 }

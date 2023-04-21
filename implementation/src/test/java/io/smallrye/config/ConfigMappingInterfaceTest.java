@@ -317,7 +317,7 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void mapsEmptyPrefix() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
+        final Map<String, String> typesConfig = new HashMap<>() {
             {
                 put("host", "localhost");
                 put("port", "8080");
@@ -1698,12 +1698,14 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("with.name.dotted.name", "value"))
                 .withSources(config("with.name.nested.dotted.name", "value"))
                 .withSources(config(
-                        "with.name.map.key.dotted.name", "value",
                         "with.name.map.key.name", "value",
+                        "with.name.map.key.dotted.name", "value",
+                        "with.name.map.key.dotted.another.name", "another",
                         "with.name.map.key.dotted.description", "value"))
                 .withSources(config(
-                        "with.name.nested.map.key.nested-key.dotted.name", "value",
                         "with.name.nested.map.key.nested-key.name", "value",
+                        "with.name.nested.map.key.nested-key.dotted.name", "value",
+                        "with.name.nested.map.key.nested-key.dotted.another.name", "another",
                         "with.name.nested.map.key.nested-key.dotted.description", "value"))
                 .build();
 
@@ -1711,13 +1713,14 @@ class ConfigMappingInterfaceTest {
 
         assertEquals("value", mapping.dottedName());
         assertEquals("value", mapping.nested().dottedName());
+        assertEquals("default", mapping.nested().dotted().name());
         assertEquals("value", mapping.map().get("key").dottedName());
         assertEquals("value", mapping.map().get("key").name());
+        assertEquals("another", mapping.map().get("key").dotted().name());
         assertEquals("value", mapping.map().get("key").dotted().description());
-        assertEquals("value", mapping.map().get("key").dotted().name());
         assertEquals("value", mapping.nestedMap().get("key").get("nested-key").name());
+        assertEquals("another", mapping.nestedMap().get("key").get("nested-key").dotted().name());
         assertEquals("value", mapping.nestedMap().get("key").get("nested-key").dotted().description());
-        assertEquals("value", mapping.nestedMap().get("key").get("nested-key").dotted().name());
     }
 
     @ConfigMapping(prefix = "with.name")
@@ -1742,6 +1745,7 @@ class ConfigMappingInterfaceTest {
             Dotted dotted();
 
             interface Dotted {
+                @WithName("another.name")
                 @WithDefault("default")
                 String name();
 
@@ -1785,6 +1789,7 @@ class ConfigMappingInterfaceTest {
                 .addDefaultInterceptors()
                 .withMapping(OptionalWithConverter.class)
                 .withSources(config("optional.converter.value", "value"))
+                .withSources(config("optional.converter.optional-value", "value"))
                 .withSources(config("optional.converter.primitive", "1"))
                 .withSources(config("optional.converter.wrapper-int", "1"))
                 .withSources(config("optional.converter.primitive-array", "dummy"))
@@ -1805,7 +1810,6 @@ class ConfigMappingInterfaceTest {
         @WithConverter(ValueConverter.class)
         Value value();
 
-        @WithName("value")
         @WithConverter(ValueConverter.class)
         Optional<Value> optionalValue();
 
@@ -1925,5 +1929,114 @@ class ConfigMappingInterfaceTest {
         @WithDefault("value")
         @WithName("myProperty")
         String value();
+    }
+
+    @Test
+    void unnamedMapKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(UnnamedMapKeys.class)
+                .withSources(config(
+                        "unnamed.map.value", "unnamed",
+                        "unnamed.map.one.value", "one",
+                        "unnamed.map.two.value", "two",
+                        "unnamed.map.\"3.three\".value", "three",
+                        "unnamed.double-map.value", "unnamed",
+                        "unnamed.double-map.one.two.value", "double",
+                        "unnamed.triple-map.value", "unnamed",
+                        "unnamed.triple-map.one.three.value", "unnamed-2-3",
+                        "unnamed.triple-map.one.two.three.value", "triple",
+                        "unnamed.map-list.value", "unnamed",
+                        "unnamed.map-list.one[0].value", "one-0",
+                        "unnamed.map-list.one[1].value", "one-1",
+                        "unnamed.map-list.\"3.three\"[0].value", "3.three-0",
+                        "unnamed.parent.value", "unnamed",
+                        "unnamed.parent.one.value", "one"))
+                .build();
+
+        UnnamedMapKeys mapping = config.getConfigMapping(UnnamedMapKeys.class);
+        assertEquals("unnamed", mapping.map().get(null).value());
+        assertEquals("one", mapping.map().get("one").value());
+        assertEquals("two", mapping.map().get("two").value());
+        assertEquals("three", mapping.map().get("3.three").value());
+        assertEquals("unnamed", mapping.doubleMap().get(null).get(null).value());
+        assertEquals("double", mapping.doubleMap().get("one").get("two").value());
+        assertEquals("unnamed", mapping.tripleMap().get("a").get("b").get("c").value());
+        assertEquals("triple", mapping.tripleMap().get("one").get("two").get("three").value());
+        assertEquals("unnamed", mapping.mapList().get(null).get(0).value());
+        assertEquals("one-0", mapping.mapList().get("one").get(0).value());
+        assertEquals("one-1", mapping.mapList().get("one").get(1).value());
+        assertEquals("3.three-0", mapping.mapList().get("3.three").get(0).value());
+        assertEquals("unnamed", mapping.parent().parent().get(null).value());
+        assertEquals("one", mapping.parent().parent().get("one").value());
+    }
+
+    @ConfigMapping(prefix = "unnamed")
+    interface UnnamedMapKeys {
+        @WithUnnamedKey
+        Map<String, Nested> map();
+
+        Map<@WithUnnamedKey String, Map<@WithUnnamedKey String, Nested>> doubleMap();
+
+        Map<@WithUnnamedKey("a") String, Map<@WithUnnamedKey("b") String, Map<@WithUnnamedKey("c") String, Nested>>> tripleMap();
+
+        @WithUnnamedKey
+        Map<String, List<Nested>> mapList();
+
+        Parent parent();
+
+        interface Nested {
+            String value();
+        }
+
+        interface Parent {
+            @WithParentName
+            @WithUnnamedKey
+            Map<String, Nested> parent();
+        }
+    }
+
+    @Test
+    void explicitUnnamedMapKeys() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(UnnamedExplicitMapKeys.class)
+                .withSources(config(
+                        "unnamed.map.value", "value",
+                        "unnamed.map.unnamed.value", "explicit"));
+
+        assertThrows(IllegalArgumentException.class, builder::build);
+    }
+
+    @ConfigMapping(prefix = "unnamed")
+    interface UnnamedExplicitMapKeys {
+        @WithUnnamedKey("unnamed")
+        Map<String, Nested> map();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void ambiguousMapping() {
+        assertThrows(IllegalStateException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(AmbiguousMapping.class).build());
+    }
+
+    @ConfigMapping(prefix = "ambiguous")
+    interface AmbiguousMapping {
+        // match `ambiguous.value`
+        String value();
+
+        // match `ambiguous.value`
+        // match `ambiguous.*.value`
+        @WithParentName
+        @WithUnnamedKey
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
     }
 }

@@ -389,6 +389,40 @@ maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is th
 
     They `Map` key part in the configuration property name may require quotes to delimit the key.
 
+### `@WithUnnamedKey`
+
+The `io.smallrye.config.WithUnnamedKey` annotation allows to omit a single map key in the configuration path:
+
+```java
+@ConfigMapping(prefix = "server")
+public interface Server {
+    @WithUnnamedKey("localhost")
+    Map<String, Alias> aliases();
+    
+    interface Alias {
+        String name();
+    }
+}
+```
+
+```properties
+server.aliases.name=localhost
+server.aliases.prod.name=prod
+```
+
+The `sever.aliases.name` is an unnamed `Map` property, because it does not contain the `Map` key to populate the `Map` 
+entry. Due to `@WithUnnamedKey("localhost")` the `Map` key is not required in the configuration path. The key used to 
+look up the Map entry is given by `io.smallrye.config.WithUnnamedKey#value`:
+
+```java
+Server server = config.getConfigMapping(Server.class);
+Map<String, Alias> localhost = server.aliases.get("localhost");
+```
+
+!!! warning
+
+     If the unnamed key (in this case `localhost`) is explicitly set in a property name, the mapping will throw an error.
+
 ## Defaults
 
 The `io.smallrye.config.WithDefault` annotation allows to set a default property value into a mapping (and prevent 
@@ -414,7 +448,7 @@ implementation of the `toString` method.
 
 !!! caution
 
-    Do not include a `toString` declaration in a config mapping with sensitive information
+    Do not include a `toString` declaration in a config mapping with sensitive information.
 
 ## Validation
 
