@@ -1,10 +1,11 @@
 # Map Support
 
 SmallRye Config allows injecting multiple configuration parameters as a `Map`. The configuration value syntax is 
-represented by `<key1>=<value1>;<key2>=<value2>` Consider:
+represented by `property.name.map-key=value` Consider:
 
 ```properties
-server.reasons=200=OK;201=Created
+server.reasons.200=OK
+server.reasons.201=Created
 ```
 
 The previous configuration could be injected directly in a CDI Bean:
@@ -15,7 +16,7 @@ With `@ConfigProperty`
 @ApplicationScoped
 public class ConfigBean {
     @Inject
-    @ConfigProperty(name = "server.reasons", defaultValue = "200=OK;201=Created") 
+    @ConfigProperty(name = "server.reasons") 
     Map<Integer, String> reasons;
 }
 ```
@@ -28,6 +29,8 @@ public class Config {
     Map<Integer, String> reasons; 
 }
 ```
+
+The `Map` will contains the keys `200` and `201`, which map to the values `OK` and `Created`.
 
 !!!note
 
