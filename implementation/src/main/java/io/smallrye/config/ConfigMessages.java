@@ -157,4 +157,10 @@ public interface ConfigMessages {
 
     @Message(id = 46, value = "Could not find a secret key handler for %s")
     NoSuchElementException secretKeyHandlerNotFound(String handler);
+
+    @Message(id = 47, value = "The ConfigMapping path %s is ambiguous. It is mapped by %s and %s")
+    IllegalStateException ambiguousMapping(String path, String amb1, String amb2);
+
+    @Message(id = 48, value = "The config property %s explicitly defined the key %s, but the key is marked as unnamed")
+    IllegalArgumentException explicitNameInUnnamed(String name, String key);
 }
