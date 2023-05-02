@@ -621,10 +621,7 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         NameIterator propertyMap = new NameIterator(propertyName.getName());
-        for (int i = 0; i < segments; i++) {
-            propertyMap.next();
-        }
-
+        propertyMap.next(segments);
         return propertyMap;
     }
 
@@ -663,6 +660,7 @@ final class ConfigMappingProvider implements Serializable {
         private final ConfigMappingInterface enclosingGroup;
         private final GroupProperty enclosedGroup;
         private final String groupPath;
+        private final int groupDepth;
 
         GetOrCreateEnclosingGroupInGroup(
                 final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate,
@@ -673,6 +671,7 @@ final class ConfigMappingProvider implements Serializable {
             this.enclosingGroup = enclosingGroup;
             this.enclosedGroup = enclosedGroup;
             this.groupPath = String.join(".", path);
+            this.groupDepth = path.size();
         }
 
         @Override
@@ -684,9 +683,11 @@ final class ConfigMappingProvider implements Serializable {
             context.applyNamingStrategy(
                     namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
             if (val == null) {
+                NameIterator groupNi = new NameIterator(ni.getName());
+                groupNi.next(groupDepth);
                 // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
-                sb.replace(0, sb.length(), ni.getAllPreviousSegments());
+                sb.replace(0, sb.length(), groupNi.getAllPreviousSegments());
                 val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
                 context.registerEnclosedField(enclosingType, key, ourEnclosing, val);
             }
@@ -977,10 +978,6 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         // lazily sweep
-        //        LinkedHashSet<String> names = new LinkedHashSet<>();
-        //        names.add("unnamed.map.unnamed.value");
-        //        names.add("unnamed.map.value");
-        //        for (String name : names) {
         for (String name : config.getPropertyNames()) {
             NameIterator ni = new NameIterator(name);
             // filter properties in root
