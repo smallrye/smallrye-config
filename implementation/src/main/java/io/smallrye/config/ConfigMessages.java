@@ -163,4 +163,7 @@ public interface ConfigMessages {
 
     @Message(id = 48, value = "The config property %s explicitly defined the key %s, but the key is marked as unnamed")
     IllegalArgumentException explicitNameInUnnamed(String name, String key);
+
+    @Message(id = 49, value = "Cannot convert %s to enum %s, allowed values: %s")
+    IllegalArgumentException cannotConvertEnum(String value, Class<?> enumType, String values);
 }
