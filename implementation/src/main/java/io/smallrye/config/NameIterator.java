@@ -326,6 +326,12 @@ public final class NameIterator {
         pos = getNextEnd();
     }
 
+    public void next(int segments) {
+        for (int i = 0; i < segments; i++) {
+            next();
+        }
+    }
+
     public void previous() {
         pos = getPreviousStart() - 1;
     }

@@ -2039,4 +2039,44 @@ class ConfigMappingInterfaceTest {
             String value();
         }
     }
+
+    @Test
+    void withNameMultipleSegments() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(WithNameMultipleSegments.class)
+                .withSources(config(
+                        "my.property.rest.api.url", "http://localhost:8094",
+                        "my.optional.rest.api.url", "http://localhost:8094",
+                        "my.list[0].rest.api.url", "http://localhost:8094",
+                        "my.map.key.rest.api.url", "http://localhost:8094",
+                        "my.map-list.key[0].rest.api.url", "http://localhost:8094"))
+                .build();
+
+        WithNameMultipleSegments mapping = config.getConfigMapping(WithNameMultipleSegments.class);
+        assertEquals("http://localhost:8094", mapping.property().apiUrl());
+        assertTrue(mapping.optional().isPresent());
+        assertEquals("http://localhost:8094", mapping.optional().get().apiUrl());
+        assertEquals("http://localhost:8094", mapping.list().get(0).apiUrl());
+        assertEquals("http://localhost:8094", mapping.map().get("key").apiUrl());
+        assertEquals("http://localhost:8094", mapping.mapList().get("key").get(0).apiUrl());
+    }
+
+    @ConfigMapping(prefix = "my")
+    public interface WithNameMultipleSegments {
+        Property property();
+
+        Optional<Property> optional();
+
+        List<Property> list();
+
+        Map<String, Property> map();
+
+        Map<String, List<Property>> mapList();
+
+        interface Property {
+            @WithName("rest.api.url")
+            String apiUrl();
+        }
+    }
 }
