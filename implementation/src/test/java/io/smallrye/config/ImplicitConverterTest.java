@@ -107,7 +107,12 @@ class ImplicitConverterTest {
     @Test
     public void testIllegalEnumConfigUtilConversion() {
         HyphenateEnumConverter<MyEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyEnum.class);
-        assertThrows(IllegalArgumentException.class, () -> hyphenateEnumConverter.convert("READUNCOMMITTED"));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> hyphenateEnumConverter.convert("READUNCOMMITTED"));
+        assertEquals(
+                "SRCFG00049: Cannot convert READUNCOMMITTED to enum class io.smallrye.config.ImplicitConverterTest$MyEnum, " +
+                        "allowed values: trend-breaker,discard,making-l-ife-difficult,sigusr1,read-uncommitted,a-b",
+                exception.getMessage());
     }
 
     private static Config buildConfig(String... keyValues) {

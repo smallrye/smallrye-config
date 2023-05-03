@@ -229,7 +229,7 @@ class ImplicitConverters {
                 return enumType.cast(enumValue);
             }
 
-            throw new IllegalArgumentException(String.format("Cannot convert %s to enum %s", value, enumType));
+            throw ConfigMessages.msg.cannotConvertEnum(value, enumType, String.join(",", values.keySet()));
         }
 
         private static String hyphenate(String value) {
