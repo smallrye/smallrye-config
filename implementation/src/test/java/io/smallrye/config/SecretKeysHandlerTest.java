@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.NoSuchElementException;
@@ -12,6 +13,7 @@ class SecretKeysHandlerTest {
     void notFound() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
                 .withDefaultValue("my.secret", "${missing::secret}")
                 .build();
 
@@ -37,5 +39,16 @@ class SecretKeysHandlerTest {
                 .build();
 
         assertEquals("decoded", config.getRawValue("my.secret"));
+    }
+
+    @Test
+    void disabled() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .setAddDiscoveredSecretKeysHandlers(false)
+                .withDefaultValue("my.secret", "${handler::secret}")
+                .build();
+
+        assertNotNull(config.getRawValue("my.secret"));
     }
 }

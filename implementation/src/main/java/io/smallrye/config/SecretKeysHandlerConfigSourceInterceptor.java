@@ -7,9 +7,11 @@ import java.util.Map;
 public class SecretKeysHandlerConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -5228028387733656005L;
 
+    private final boolean enabled;
     private final Map<String, SecretKeysHandler> handlers = new HashMap<>();
 
-    public SecretKeysHandlerConfigSourceInterceptor(final List<SecretKeysHandler> handlers) {
+    public SecretKeysHandlerConfigSourceInterceptor(final boolean enabled, final List<SecretKeysHandler> handlers) {
+        this.enabled = enabled;
         for (SecretKeysHandler handler : handlers) {
             this.handlers.put(handler.getName(), handler);
         }
@@ -18,7 +20,7 @@ public class SecretKeysHandlerConfigSourceInterceptor implements ConfigSourceInt
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         ConfigValue configValue = context.proceed(name);
-        if (configValue != null && configValue.getValue() != null) {
+        if (enabled && configValue != null && configValue.getValue() != null) {
             String handler = configValue.getExtendedExpressionHandler();
             if (handler != null) {
                 return configValue.withValue(getSecretValue(handler, configValue.getValue()));
