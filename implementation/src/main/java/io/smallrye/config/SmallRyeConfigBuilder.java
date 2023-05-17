@@ -323,7 +323,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 if (isAddDiscoveredSecretKeysHandlers()) {
                     secretKeysHandlers.addAll(discoverSecretKeysHandlers(context));
                 }
-                return new SecretKeysHandlerConfigSourceInterceptor(secretKeysHandlers);
+                return new SecretKeysHandlerConfigSourceInterceptor(
+                        isAddDiscoveredSecretKeysHandlers() || !secretKeysHandlers.isEmpty(), secretKeysHandlers);
             }
 
             @Override
@@ -608,6 +609,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder setAddDiscoveredInterceptors(final boolean addDiscoveredInterceptors) {
         this.addDiscoveredInterceptors = addDiscoveredInterceptors;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddDiscoveredSecretKeysHandlers(final boolean addDiscoveredSecretKeysHandlers) {
+        this.addDiscoveredSecretKeysHandlers = addDiscoveredSecretKeysHandlers;
         return this;
     }
 
