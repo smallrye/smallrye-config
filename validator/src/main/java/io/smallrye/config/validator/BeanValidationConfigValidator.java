@@ -38,7 +38,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
         if (mappingInterface != null) {
             validateMappingInterface(mappingInterface, prefix, mappingInterface.getNamingStrategy(), mappingObject, problems);
         } else {
-            validateMappingClass(mappingObject, problems);
+            validateMappingClass(mappingObject, problems, prefix);
         }
 
         if (!problems.isEmpty()) {
@@ -63,7 +63,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             validateProperty(property, currentPath, namingStrategy, mappingObject, false, problems);
         }
 
-        validateMappingClass(mappingObject, problems);
+        validateMappingClass(mappingObject, problems, currentPath);
     }
 
     default void validateProperty(
@@ -225,11 +225,15 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
         }
     }
 
-    default void validateMappingClass(final Object mappingObject, final List<Problem> problems) {
+    default void validateMappingClass(
+            final Object mappingObject,
+            final List<Problem> problems,
+            final String currentPath) {
         final Set<ConstraintViolation<Object>> violations = getValidator().validate(mappingObject);
         for (ConstraintViolation<Object> violation : violations) {
-            problems.add(violation.getPropertyPath().toString().isEmpty() ? new Problem(violation.getMessage())
-                    : new Problem(violation.getPropertyPath() + " " + violation.getMessage()));
+            problems.add(violation.getPropertyPath().toString().isEmpty() ?
+                    new Problem(currentPath + " " + violation.getMessage())
+                    : new Problem(currentPath + " " + violation.getPropertyPath() + " " + violation.getMessage()));
         }
     }
 
