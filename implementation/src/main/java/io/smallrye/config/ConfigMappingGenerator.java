@@ -59,6 +59,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
+import io.smallrye.config.ConfigMappingInterface.MapProperty;
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
 
@@ -605,13 +606,55 @@ public class ConfigMappingGenerator {
 
             } else if (property.isMap()) {
                 // stack: -
-                ctor.visitMethodInsn(Opcodes.INVOKESTATIC, I_COLLECTIONS, "emptyMap", "()L" + I_MAP + ';', false);
+                MapProperty mapProperty = property.asMap();
+                if (mapProperty.getValueProperty().isGroup() && mapProperty.hasDefaultValue()) {
+                    appendPropertyName(ctor, property);
+                    ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                    ctor.visitLdcInsn(".*");
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append",
+                            "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ';', false);
+                    ctor.visitInsn(POP);
+                    ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitLdcInsn(getType(mapProperty.getValueProperty().asGroup().getGroupType().getInterfaceType()));
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "constructGroup",
+                            "(L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createMapWithDefault",
+                            "(L" + I_OBJECT + ";)L" + I_MAP + ";", false);
+                    restoreLength(ctor);
+                } else if (mapProperty.getValueProperty().isLeaf() && mapProperty.hasDefaultValue()) {
+                    ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';', false);
+                    ctor.visitLdcInsn(getType(mapProperty.getValueProperty().asLeaf().getValueRawType()));
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "requireConverter",
+                            "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                    ctor.visitLdcInsn(mapProperty.getDefaultValue());
+                    ctor.visitMethodInsn(INVOKEINTERFACE, I_CONVERTER, "convert", "(L" + I_STRING + ";)L" + I_OBJECT + ";",
+                            true);
+                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createMapWithDefault",
+                            "(L" + I_OBJECT + ";)L" + I_MAP + ";", false);
+                } else {
+                    ctor.visitTypeInsn(NEW, getInternalName(HashMap.class));
+                    ctor.visitInsn(DUP);
+                    ctor.visitMethodInsn(INVOKESPECIAL, getInternalName(HashMap.class), "<init>", "()V", false);
+                }
+
                 // stack: map
                 ctor.visitVarInsn(Opcodes.ALOAD, V_THIS);
                 // stack: map this
                 ctor.visitInsn(Opcodes.SWAP);
                 // stack: this map
                 ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+
+                ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitLdcInsn(Type.getType(mapping.getInterfaceType()));
+                ctor.visitLdcInsn(memberName);
+                ctor.visitVarInsn(ALOAD, V_THIS);
+                ctor.visitVarInsn(ALOAD, V_THIS);
+                ctor.visitFieldInsn(GETFIELD, className, memberName, fieldDesc);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "registerEnclosedField",
+                        "(L" + I_CLASS + ";L" + I_STRING + ";L" + I_OBJECT + ";L" + I_OBJECT + ";)V",
+                        false);
+
                 // stack: -
                 // then sweep it up
                 // stack: -

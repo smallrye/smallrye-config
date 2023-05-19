@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -2090,7 +2091,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "my")
-    public interface WithNameMultipleSegments {
+    interface WithNameMultipleSegments {
         Property property();
 
         Optional<Property> optional();
@@ -2122,5 +2123,127 @@ class ConfigMappingInterfaceTest {
 
     @ConfigMapping(prefix = "unmapped")
     interface UnMappedPropertiesLocation {
+    }
+
+    @Test
+    void mapDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MapDefaults.class)
+                .withSources(config("map.nested.key.value", "non-default-value"))
+                .build();
+
+        MapDefaults mapping = config.getConfigMapping(MapDefaults.class);
+        Map<String, MapDefaults.Nested> nested = mapping.nested();
+        assertEquals(1, nested.size());
+        assertEquals("non-default-value", nested.get("key").value());
+        assertEquals("value", nested.get("one").value());
+        assertEquals("value", nested.get("two").value());
+        assertEquals("another", nested.get("three").another().another());
+        assertFalse(nested.get("one").optional().isPresent());
+
+        Map<String, MapDefaults.AnotherNested> anotherNested = nested.get("four").anotherNested();
+        assertEquals(0, anotherNested.size());
+        assertEquals("another", anotherNested.get("one").another());
+        assertTrue(anotherNested.get("one").optional().isPresent());
+        assertEquals("another", anotherNested.get("one").optional().get());
+
+        assertEquals(0, mapping.leaf().size());
+        assertEquals("value", mapping.leaf().get("one"));
+
+        assertEquals(0, mapping.list().size());
+        assertNull(mapping.list().get("one"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapDefaults {
+        @WithDefaults
+        Map<String, Nested> nested();
+
+        @WithDefault("value")
+        Map<String, String> leaf();
+
+        @WithDefaults
+        Map<String, List<Nested>> list();
+
+        interface Nested {
+            @WithDefault("value")
+            String value();
+
+            AnotherNested another();
+
+            Optional<AnotherNested> optional();
+
+            @WithDefaults
+            Map<String, AnotherNested> anotherNested();
+        }
+
+        interface AnotherNested {
+            @WithDefault("another")
+            String another();
+
+            @WithDefault("another")
+            Optional<String> optional();
+        }
+    }
+
+    @Test
+    void mapDefaultsWithParentName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MapDefaultsWithParentName.class)
+                .withSources(config("map.nested.value", "value"))
+                .build();
+
+        MapDefaultsWithParentName mapping = config.getConfigMapping(MapDefaultsWithParentName.class);
+
+        assertEquals(1, mapping.nested().size());
+        assertEquals("value", mapping.nested().get("nested").value());
+        assertEquals("value", mapping.nested().get("one").value());
+        assertEquals("value", mapping.value());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapDefaultsWithParentName {
+        @WithParentName
+        @WithDefaults
+        Map<String, Nested> nested();
+
+        @WithName("another.value")
+        @WithDefault("value")
+        String value();
+
+        interface Nested {
+            @WithDefault("value")
+            String value();
+        }
+    }
+
+    @Test
+    void invalidMapDefaults() {
+        assertThrows(ConfigValidationException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(InvalidMapDefaults.class).build());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface InvalidMapDefaults {
+        @WithDefaults
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void emptyDefault() {
+        assertThrows(ConfigValidationException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(EmptyDefault.class).build());
+    }
+
+    @ConfigMapping(prefix = "empty")
+    interface EmptyDefault {
+        @WithDefault("")
+        String empty();
     }
 }
