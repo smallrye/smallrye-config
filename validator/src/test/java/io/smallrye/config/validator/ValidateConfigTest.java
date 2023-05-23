@@ -26,7 +26,12 @@ import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.junit.jupiter.api.AfterAll;
@@ -110,7 +115,7 @@ public class ValidateConfigTest {
                 "server.cors.origins size must be between 4 and 2147483647",
                 "server.cors.origins[0].host size must be between 0 and 10",
                 "server.cors.origins[0].port must be less than or equal to 10",
-                "server.cors.origins[2] someClassLevelCrossValidation If host is server3, then port value must be 3",
+                "server.cors.origins[2].someClassLevelCrossValidation If host is server3, then port value must be 3",
                 "server.cors.methods[1] size must be between 0 and 3",
                 "server.cors.methods size must be between 3 and 2147483647",
                 "server.form.login-page size must be between 0 and 3",
@@ -158,7 +163,7 @@ public class ValidateConfigTest {
         assertEquals(1, validationException.getProblemCount());
         List<String> validations = new ArrayList<>();
         validations.add(validationException.getProblem(0).getMessage());
-        assertTrue(validations.contains("client port must be less than or equal to 10"));
+        assertTrue(validations.contains("client.port must be less than or equal to 10"));
     }
 
     @Test

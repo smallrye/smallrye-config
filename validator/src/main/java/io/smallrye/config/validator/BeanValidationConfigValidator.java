@@ -231,9 +231,9 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             final String currentPath) {
         final Set<ConstraintViolation<Object>> violations = getValidator().validate(mappingObject);
         for (ConstraintViolation<Object> violation : violations) {
-            problems.add(violation.getPropertyPath().toString().isEmpty() ?
-                    new Problem(currentPath + " " + violation.getMessage())
-                    : new Problem(currentPath + " " + violation.getPropertyPath() + " " + violation.getMessage()));
+            problems.add(
+                    violation.getPropertyPath().toString().isEmpty() ? new Problem(currentPath + " " + violation.getMessage())
+                            : new Problem(currentPath + "." + violation.getPropertyPath() + " " + violation.getMessage()));
         }
     }
 
