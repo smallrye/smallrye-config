@@ -1691,6 +1691,31 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
+    void ignorePartial() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(IgnorePartial.class)
+                .withSources(config("path.key", "value"))
+                .withSources(config("path.main.key", "value"))
+                .withSources(config("path.ignore.key", ""))
+                .withMappingIgnore("path.ignore.**")
+                .build();
+
+        IgnorePartial mapping = config.getConfigMapping(IgnorePartial.class);
+
+        assertEquals("value", mapping.common().get("key"));
+        assertEquals("value", mapping.main().get("key"));
+    }
+
+    @ConfigMapping(prefix = "path")
+    interface IgnorePartial {
+        @WithParentName
+        Map<String, String> common();
+
+        Map<String, String> main();
+    }
+
+    @Test
     void withNameDotted() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
