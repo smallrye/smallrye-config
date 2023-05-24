@@ -849,7 +849,8 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("server.name", "localhost"));
 
         ConfigValidationException exception = assertThrows(ConfigValidationException.class, builder::build);
-        assertEquals("server.name does not map to any root", exception.getProblem(0).getMessage());
+        assertEquals("SRCFG00050: server.name in KeyValuesConfigSource does not map to any root",
+                exception.getProblem(0).getMessage());
 
         builder = new SmallRyeConfigBuilder()
                 .withMapping(ServerPrefix.class, "server")
@@ -862,7 +863,8 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("cloud.server.name", "localhost"));
 
         exception = assertThrows(ConfigValidationException.class, builder::build);
-        assertEquals("cloud.server.name does not map to any root", exception.getProblem(0).getMessage());
+        assertEquals("SRCFG00050: cloud.server.name in KeyValuesConfigSource does not map to any root",
+                exception.getProblem(0).getMessage());
     }
 
     @ConfigMapping(prefix = "mapping.server.env")
@@ -2103,5 +2105,22 @@ class ConfigMappingInterfaceTest {
             @WithName("rest.api.url")
             String apiUrl();
         }
+    }
+
+    @Test
+    void unmmapedPropertiesLocation() {
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, () -> new SmallRyeConfigBuilder()
+                .withMapping(UnMappedPropertiesLocation.class)
+                .withSources(config("unmapped.unmapped", "value", "unmapped.another", "value"))
+                .build());
+
+        assertEquals("SRCFG00050: unmapped.unmapped in KeyValuesConfigSource does not map to any root",
+                exception.getProblem(0).getMessage());
+        assertEquals("SRCFG00050: unmapped.another in KeyValuesConfigSource does not map to any root",
+                exception.getProblem(1).getMessage());
+    }
+
+    @ConfigMapping(prefix = "unmapped")
+    interface UnMappedPropertiesLocation {
     }
 }

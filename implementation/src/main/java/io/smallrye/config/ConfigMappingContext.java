@@ -249,7 +249,8 @@ public final class ConfigMappingContext {
                 }
             }
             if (!found && validateUnknown) {
-                problems.add(new Problem(property + " does not map to any root"));
+                ConfigValue configValue = config.getConfigValue(property);
+                problems.add(new Problem(ConfigMessages.msg.propertyDoesNotMapToAnyRoot(property, configValue.getLocation())));
             }
         }
     }

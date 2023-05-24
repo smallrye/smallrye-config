@@ -166,4 +166,7 @@ public interface ConfigMessages {
 
     @Message(id = 49, value = "Cannot convert %s to enum %s, allowed values: %s")
     IllegalArgumentException cannotConvertEnum(String value, Class<?> enumType, String values);
+
+    @Message(id = 50, value = "%s in %s does not map to any root")
+    IllegalStateException propertyDoesNotMapToAnyRoot(String name, String location);
 }
