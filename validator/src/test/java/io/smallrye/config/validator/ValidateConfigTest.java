@@ -26,6 +26,7 @@ import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -85,6 +86,8 @@ public class ValidateConfigTest {
                         "server.cors.origins[0].port", "9000",
                         "server.cors.origins[1].host", "localhost",
                         "server.cors.origins[1].port", "1",
+                        "server.cors.origins[2].host", "server3",
+                        "server.cors.origins[2].port", "4",
                         "server.cors.methods[0]", "GET",
                         "server.cors.methods[1]", "POST",
                         "server.info.name", "Bond",
@@ -109,9 +112,10 @@ public class ValidateConfigTest {
                 "server.log.levels all identifiers must have the same length",
                 "server.log.levels.ERROR.importance must be greater than or equal to 0",
                 "server.proxy.timeout must be less than or equal to 10",
-                "server.cors.origins size must be between 3 and 2147483647",
+                "server.cors.origins size must be between 4 and 2147483647",
                 "server.cors.origins[0].host size must be between 0 and 10",
                 "server.cors.origins[0].port must be less than or equal to 10",
+                "server.cors.origins[2] someClassLevelCrossValidation If host is server3, then port value must be 3",
                 "server.cors.methods[1] size must be between 0 and 3",
                 "server.cors.methods size must be between 3 and 2147483647",
                 "server.form.login-page size must be between 0 and 3",
@@ -124,7 +128,7 @@ public class ValidateConfigTest {
                 "server.info.admins.root[1].username size must be between 0 and 4",
                 "server.info.admins.root size must be between 0 and 1",
                 "server.info.firewall.accepted[1] size must be between 8 and 15",
-                "server is not prod");
+                "server server is not prod");
     }
 
     @Test
@@ -159,7 +163,7 @@ public class ValidateConfigTest {
         assertEquals(1, validationException.getProblemCount());
         List<String> validations = new ArrayList<>();
         validations.add(validationException.getProblem(0).getMessage());
-        assertTrue(validations.contains("port must be less than or equal to 10"));
+        assertTrue(validations.contains("client port must be less than or equal to 10"));
     }
 
     @Test
@@ -220,7 +224,7 @@ public class ValidateConfigTest {
         }
 
         interface Cors {
-            @Size(min = 3)
+            @Size(min = 4)
             List<Origin> origins();
 
             @Size(min = 3)
@@ -232,6 +236,11 @@ public class ValidateConfigTest {
 
                 @Max(10)
                 int port();
+
+                @AssertTrue(message = "If host is server3, then port value must be 3")
+                private boolean isSomeClassLevelCrossValidation() {
+                    return !"server3".equals(host()) || port() == 3;
+                }
             }
         }
 
