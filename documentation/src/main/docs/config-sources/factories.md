@@ -80,3 +80,24 @@ org.acme.config.FileSystemConfigSourceFactory
 
 The `FileSystemConfigSourceFactory` look ups the configuration value for `org.acme.config.file.locations`, and uses it 
 to set up an additional `ConfigSource`.
+
+Alternatively, a `ConfigurableConfigSourceFactory` accepts a `ConfigMapping` interface to configure the `ConfigSource`:
+
+```java
+@ConfigMapping(prefix = "org.acme.config.file")
+interface FileSystemConfig {
+    List<URL> locations();   
+}
+```
+
+```java
+public class FileSystemConfigurableConfigSourceFactory<FileSystemConfig> implements ConfigurableConfigSourceFactory {
+    @Override
+    public Iterable<ConfigSource> getConfigSources(ConfigSourceContext context, FileSystemConfig config) {
+        
+    }
+}
+```
+
+With a `ConfigurableConfigSourceFactory` it is not required to look up the configuration values with 
+`ConfigSourceContext`. The values are automatically mapped with the defined `@ConfigMapping`.

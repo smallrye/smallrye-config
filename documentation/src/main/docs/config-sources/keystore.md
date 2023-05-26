@@ -12,6 +12,34 @@ The following dependency is required in the classpath to use the KeyStore Config
 </dependency>
 ```
 
+## Create a KeyStore
+
+The following command creates a simple KeyStore
+
+```bash
+keytool -importpass -alias my.secret -keystore keystore -storepass secret -storetype PKCS12 -v
+```
+
+The `-alias my.secret` stores the configuration property name `my.secret` in the KeyStore. The command will 
+interactively ask for the value to be stored in the KeyStore.
+
+## Read the KeyStore
+
+The KeyStore Config Source supports reading multiple keystore files:
+
+```properties
+smallrye.config.source.keystore.one.path=keystore-one
+smallrye.config.source.keystore.one.password=password
+
+smallrye.config.source.keystore.two.path=keystore-two
+smallrye.config.source.keystore.two.password=password
+```
+
+The names are arbitrary and can be any name. The name `one` and `two` are used to distinguish both KeyStores.  
+
+If a stored configuration property requires a [Secret Handler](../config/secret-keys.md) to decode a value, set 
+the handler name with `smallrye.config.source.keystore."name".handler`.
+
 ## Configuration
 
 | Configuration Property 	                                                                                            | Type 	| Default 	 |

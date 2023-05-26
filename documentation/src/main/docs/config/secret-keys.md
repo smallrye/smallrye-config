@@ -7,6 +7,9 @@ a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value` separa
 
 ```properties
 my.secret=${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}
+
+# the encryption key required to decode the secret. It can be set in any source.
+smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key=somearbitrarycrazystringthatdoesnotmatter
 ```
 
 A lookup to `my.secret` will use the `SecretKeysHandler` name `aes-gcm-nopadding` to decode the value 
@@ -19,6 +22,10 @@ A custom `SecretKeysHandler` requires an implementation of `io.smallrye.config.S
 `io.smallrye.config.SecretKeysHandlerFactory`. Each implementation requires registration via the `ServiceLoader` 
 mechanism, either in `META-INF/services/io.smallrye.config.SecretKeysHandler` or
 `META-INF/services/io.smallrye.config.SecretKeysHandlerFactory` files.
+
+!!!danger
+
+     It is not possible to mix Secret Keys Expressions with Property Expressions.
 
 ### Crypto
 
@@ -34,6 +41,9 @@ the following dependency:
 ```
 
 #### AES/GCM/NoPadding `${aes-gcm-nopadding::...}`
+
+- The encoding length is 128.
+- The secret and the encryption key (without padding) must be base 64 encoded.
 
 ##### Configuration
 

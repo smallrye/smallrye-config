@@ -36,6 +36,12 @@ public interface ConfigSourceFactory {
         return OptionalInt.empty();
     }
 
+    /**
+     * A {@code ConfigSourceFactory} that accepts a {@link ConfigMapping} interface to configure the
+     * {@link ConfigSource}.
+     *
+     * @param <MAPPING> {@link ConfigMapping} interface.
+     */
     interface ConfigurableConfigSourceFactory<MAPPING> extends ConfigSourceFactory {
         @Override
         @SuppressWarnings("unchecked")
