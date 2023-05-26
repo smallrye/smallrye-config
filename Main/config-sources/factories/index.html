@@ -981,6 +981,21 @@ Programmatic API in <code>SmallRyeConfigBuilder#withSources</code>.</p>
 </code></pre></div>
 <p>The <code>FileSystemConfigSourceFactory</code> look ups the configuration value for <code>org.acme.config.file.locations</code>, and uses it 
 to set up an additional <code>ConfigSource</code>.</p>
+<p>Alternatively, a <code>ConfigurableConfigSourceFactory</code> accepts a <code>ConfigMapping</code> interface to configure the <code>ConfigSource</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;org.acme.config.file&quot;</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">interface</span> <span class="nc">FileSystemConfig</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">locations</span><span class="p">();</span><span class="w">   </span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">FileSystemConfigurableConfigSourceFactory</span><span class="o">&lt;</span><span class="n">FileSystemConfig</span><span class="o">&gt;</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigurableConfigSourceFactory</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nd">@Override</span><span class="w"></span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">ConfigSource</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getConfigSources</span><span class="p">(</span><span class="n">ConfigSourceContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">FileSystemConfig</span><span class="w"> </span><span class="n">config</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p>With a <code>ConfigurableConfigSourceFactory</code> it is not required to look up the configuration values with 
+<code>ConfigSourceContext</code>. The values are automatically mapped with the defined <code>@ConfigMapping</code>.</p>
 
               
             </article>

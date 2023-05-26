@@ -1016,6 +1016,9 @@
 <p>In SmallRye Config, a secret configuration may be expressed as <code>${handler::value}</code>, where the <code>handler</code> is the name of 
 a <code>io.smallrye.config.SecretKeysHandler</code> to decode or decrypt the <code>value</code> separated by a double colon <code>::</code>. Consider:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">my.secret</span><span class="o">=</span><span class="s">${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c"># the encryption key required to decode the secret. It can be set in any source.</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</span><span class="o">=</span><span class="s">somearbitrarycrazystringthatdoesnotmatter</span><span class="w"></span>
 </code></pre></div>
 <p>A lookup to <code>my.secret</code> will use the <code>SecretKeysHandler</code> name <code>aes-gcm-nopadding</code> to decode the value 
 <code>DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg</code>.</p>
@@ -1025,6 +1028,10 @@ values. </p>
 <code>io.smallrye.config.SecretKeysHandlerFactory</code>. Each implementation requires registration via the <code>ServiceLoader</code> 
 mechanism, either in <code>META-INF/services/io.smallrye.config.SecretKeysHandler</code> or
 <code>META-INF/services/io.smallrye.config.SecretKeysHandlerFactory</code> files.</p>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>It is not possible to mix Secret Keys Expressions with Property Expressions.</p>
+</div>
 <h3 id="crypto">Crypto<a class="headerlink" href="#crypto" title="Permanent link">#</a></h3>
 <p>The <code>smallrye-config-crypto</code> artifact contains a few out-of-the-box <code>SecretKeysHandler</code>s ready for use. It requires 
 the following dependency:</p>
@@ -1035,6 +1042,10 @@ the following dependency:</p>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 <h4 id="aesgcmnopadding-aes-gcm-nopadding">AES/GCM/NoPadding <code>${aes-gcm-nopadding::...}</code><a class="headerlink" href="#aesgcmnopadding-aes-gcm-nopadding" title="Permanent link">#</a></h4>
+<ul>
+<li>The encoding length is 128.</li>
+<li>The secret and the encryption key (without padding) must be base 64 encoded.</li>
+</ul>
 <h5 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">#</a></h5>
 <table>
 <thead>
