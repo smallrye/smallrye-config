@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -292,6 +293,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return isMethodInHierarchy(property.getMethod().getDeclaringClass(), method);
         }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash(method, propertyName);
+        }
+
         private static boolean isMethodInHierarchy(final Class<?> declaringClass, final Method method) {
             for (Class<?> parent : declaringClass.getInterfaces()) {
                 for (final Method parentMethod : parent.getMethods()) {
@@ -299,7 +305,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                         return true;
                     }
                 }
-                return isMethodInHierarchy(parent, method);
+                boolean methodInHierarchy = isMethodInHierarchy(parent, method);
+                if (methodInHierarchy) {
+                    return true;
+                }
             }
             return false;
         }
