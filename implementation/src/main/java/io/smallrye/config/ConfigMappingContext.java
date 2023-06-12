@@ -44,8 +44,7 @@ public final class ConfigMappingContext {
     private final StringBuilder stringBuilder = new StringBuilder();
     private final Set<String> unknownProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
-
-    private NamingStrategy namingStrategy = null;
+    private NamingStrategy namingStrategy = new ConfigMappingInterface.KebabNamingStrategy();
 
     ConfigMappingContext(final SmallRyeConfig config) {
         this.config = config;
@@ -208,6 +207,10 @@ public final class ConfigMappingContext {
         return namingStrategy.apply(name);
     }
 
+    public static <K, V> Map<K, V> createMapWithDefault(final V defaultValue) {
+        return new MapWithDefault<>(defaultValue);
+    }
+
     public static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
         if (type == List.class) {
             return ArrayList::new;
@@ -270,6 +273,7 @@ public final class ConfigMappingContext {
     }
 
     public void reportProblem(RuntimeException problem) {
+        problem.printStackTrace();
         problems.add(new Problem(problem.toString()));
     }
 
@@ -279,5 +283,19 @@ public final class ConfigMappingContext {
 
     Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
         return roots;
+    }
+
+    static class MapWithDefault<K, V> extends HashMap<K, V> {
+        private static final long serialVersionUID = 1390928078837140814L;
+        private final V defaultValue;
+
+        MapWithDefault(final V defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public V get(final Object key) {
+            return getOrDefault(key, defaultValue);
+        }
     }
 }

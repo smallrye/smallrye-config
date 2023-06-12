@@ -541,14 +541,26 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         private final String keyUnnamed;
         private final Class<? extends Converter<?>> keyConvertWith;
         private final Property valueProperty;
+        private final boolean hasDefault;
+        private final String defaultValue;
 
-        MapProperty(final Method method, final String propertyName, final Type keyType, final String keyUnnamed,
-                final Class<? extends Converter<?>> keyConvertWith, final Property valueProperty) {
+        MapProperty(
+                final Method method,
+                final String propertyName,
+                final Type keyType,
+                final String keyUnnamed,
+                final Class<? extends Converter<?>> keyConvertWith,
+                final Property valueProperty,
+                final boolean hasDefault,
+                final String defaultValue) {
+
             super(method, propertyName);
             this.keyType = keyType;
             this.keyUnnamed = keyUnnamed;
             this.keyConvertWith = keyConvertWith;
             this.valueProperty = valueProperty;
+            this.hasDefault = hasDefault;
+            this.defaultValue = defaultValue;
         }
 
         public Type getKeyType() {
@@ -577,6 +589,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         public Property getValueProperty() {
             return valueProperty;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public boolean hasDefaultValue() {
+            return hasDefault;
         }
 
         @Override
@@ -761,9 +781,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         Class<?> rawType = rawTypeOf(type.getType());
         if (rawType.isPrimitive()) {
             // primitive!
-            WithDefault annotation = method.getAnnotation(WithDefault.class);
-            return new PrimitiveProperty(method, propertyName, rawType, convertWith,
-                    annotation == null ? null : annotation.value());
+            return new PrimitiveProperty(method, propertyName, rawType, convertWith, getDefaultValue(method));
         }
         if (convertWith == null) {
             if (rawType == Optional.class) {
@@ -778,8 +796,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 // it's a map...
                 AnnotatedType keyType = typeOfParameter(type, 0);
                 AnnotatedType valueType = typeOfParameter(type, 1);
+                String defaultValue = getDefaultValue(method);
                 return new MapProperty(method, propertyName, keyType.getType(), getUnnamedKey(keyType, method),
-                        getConverter(keyType, method), getPropertyDef(method, valueType));
+                        getConverter(keyType, method), getPropertyDef(method, valueType),
+                        defaultValue != null || hasDefaults(method), defaultValue);
             }
             if (rawType == List.class || rawType == Set.class) {
                 AnnotatedType elementType = typeOfParameter(type, 0);
@@ -793,9 +813,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
                 }
 
-                WithDefault annotation = method.getAnnotation(WithDefault.class);
-                return new CollectionProperty(rawType, new LeafProperty(method, propertyName, elementType.getType(), null,
-                        annotation == null ? null : annotation.value()));
+                return new CollectionProperty(rawType,
+                        new LeafProperty(method, propertyName, elementType.getType(), null, getDefaultValue(method)));
             }
             ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
             if (configurationInterface != null) {
@@ -805,8 +824,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             // fall out (leaf)
         }
 
-        WithDefault annotation = method.getAnnotation(WithDefault.class);
-        String defaultValue = annotation == null ? null : annotation.value();
+        String defaultValue = getDefaultValue(method);
         if (rawType == List.class || rawType == Set.class) {
             Type elementType = typeOfParameter(type.getType(), 0);
             return new CollectionProperty(rawType,
@@ -846,6 +864,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         }
         return null;
+    }
+
+    private static String getDefaultValue(final Method method) {
+        WithDefault annotation = method.getAnnotation(WithDefault.class);
+        return annotation == null ? null : annotation.value();
+    }
+
+    private static boolean hasDefaults(final Method method) {
+        return method.getAnnotation(WithDefaults.class) != null;
     }
 
     private static String getUnnamedKey(final AnnotatedType type, final Method method) {
