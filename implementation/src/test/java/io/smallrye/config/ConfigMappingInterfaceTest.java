@@ -2087,6 +2087,8 @@ class ConfigMappingInterfaceTest {
         assertEquals("http://localhost:8094", mapping.list().get(0).apiUrl());
         assertEquals("http://localhost:8094", mapping.map().get("key").apiUrl());
         assertEquals("http://localhost:8094", mapping.mapList().get("key").get(0).apiUrl());
+        assertEquals("other", mapping.other());
+        assertEquals("other", config.getConfigValue("my.rest.api.other").getValue());
     }
 
     @ConfigMapping(prefix = "my")
@@ -2100,6 +2102,10 @@ class ConfigMappingInterfaceTest {
         Map<String, Property> map();
 
         Map<String, List<Property>> mapList();
+
+        @WithName("rest.api.other")
+        @WithDefault("other")
+        String other();
 
         interface Property {
             @WithName("rest.api.url")
