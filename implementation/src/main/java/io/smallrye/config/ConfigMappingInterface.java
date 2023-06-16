@@ -822,8 +822,12 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
                 }
 
+                Class<? extends Converter<?>> converter = getConverter(elementType, method);
+                if (converter != null) {
+                    convertWith = converter;
+                }
                 return new CollectionProperty(rawType,
-                        new LeafProperty(method, propertyName, elementType.getType(), null, getDefaultValue(method)));
+                        new LeafProperty(method, propertyName, elementType.getType(), convertWith, getDefaultValue(method)));
             }
             ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
             if (configurationInterface != null) {
@@ -835,9 +839,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         String defaultValue = getDefaultValue(method);
         if (rawType == List.class || rawType == Set.class) {
-            Type elementType = typeOfParameter(type.getType(), 0);
+            AnnotatedType elementType = typeOfParameter(type, 0);
+            Class<? extends Converter<?>> converter = getConverter(elementType, method);
+            if (converter != null) {
+                convertWith = converter;
+            }
             return new CollectionProperty(rawType,
-                    new LeafProperty(method, propertyName, elementType, convertWith, defaultValue));
+                    new LeafProperty(method, propertyName, elementType.getType(), convertWith, defaultValue));
         } else if (rawType == Optional.class) {
             return new OptionalProperty(method, propertyName,
                     new LeafProperty(method, propertyName, type.getType(), convertWith, defaultValue));

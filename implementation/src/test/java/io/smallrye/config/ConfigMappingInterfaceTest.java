@@ -2252,4 +2252,38 @@ class ConfigMappingInterfaceTest {
         @WithDefault("")
         String empty();
     }
+
+    @Test
+    void withConverterListElement() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(WithConverterListElement.class)
+                .withSources(config(
+                        "converter.list", "one, two",
+                        "converter.elements", "one, two"))
+                .build();
+
+        WithConverterListElement mapping = config.getConfigMapping(WithConverterListElement.class);
+
+        assertTrue(mapping.list().isPresent());
+        assertEquals("one", mapping.list().get().get(0));
+        assertEquals("two", mapping.list().get().get(1));
+        assertTrue(mapping.elements().isPresent());
+        assertEquals("one", mapping.elements().get().get(0));
+        assertEquals("two", mapping.elements().get().get(1));
+    }
+
+    @ConfigMapping(prefix = "converter")
+    interface WithConverterListElement {
+        Optional<@WithConverter(TrimConverter.class) List<String>> list();
+
+        Optional<List<@WithConverter(TrimConverter.class) String>> elements();
+    }
+
+    public static class TrimConverter implements Converter<String> {
+        @Override
+        public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return value.trim();
+        }
+    }
 }
