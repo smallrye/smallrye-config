@@ -320,7 +320,11 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             if (childMap != null) {
                 Set<String> childKeys = childMap.keySet();
                 for (String childKey : childKeys) {
-                    allKeys.add(key + "." + childKey);
+                    if (key.endsWith("[") || childKey.startsWith("[") || childKey.startsWith("]")) {
+                        allKeys.add(key + childKey);
+                    } else {
+                        allKeys.add(key + "." + childKey);
+                    }
                 }
             }
             if (hasRootValue(key)) {
