@@ -3,17 +3,7 @@
 ## Secret Keys Expressions
 
 In SmallRye Config, a secret configuration may be expressed as `${handler::value}`, where the `handler` is the name of 
-a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value` separated by a double colon `::`. Consider:
-
-```properties
-my.secret=${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}
-
-# the encryption key required to decode the secret. It can be set in any source.
-smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key=somearbitrarycrazystringthatdoesnotmatter
-```
-
-A lookup to `my.secret` will use the `SecretKeysHandler` name `aes-gcm-nopadding` to decode the value 
-`DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg`.
+a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value` separated by a double colon `::`.
 
 It is possible to create a custom `SecretKeysHandler` and provide different ways to decode or decrypt configuration 
 values. 
@@ -45,6 +35,29 @@ the following dependency:
 - The encoding length is 128.
 - The secret and the encryption key (without padding) must be base 64 encoded.
 
+!!! example
+
+    ```properties title="application.properties"
+    smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key=somearbitrarycrazystringthatdoesnotmatter
+
+    my.secret=${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}
+    ``` 
+
+    The `${aes-gcm-nopadding::...}` `SecretKeyHandler` requires 
+    `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key` configuration to state the encryption key to be 
+    used by the `aes-gcm-nopaddin` handler.
+
+    A lookup to `my.secret` will use the `SecretKeysHandler` name `aes-gcm-nopadding` to decode the value 
+    `DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg`.
+
+!!! info
+
+    It is possible to generate the encrypted secret with the following [JBang](http://jbang.dev/) script:
+
+    ```shell
+    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/docs/documentation/src/main/docs/config/secret-handlers/encryptor.java <secret> <encryptionKey>`
+    ```
+
 ##### Configuration
 
 | Configuration Property 	| Type 	| Default 	|
@@ -53,8 +66,8 @@ the following dependency:
 
 ### Jasypt
 
-[Jasypt](http://www.jasypt.org) is a java library which allows the developer to add basic encryption capabilities. It 
-requires the following dependency:
+[Jasypt](http://www.jasypt.org) is a java library which allows the developer to add basic encryption capabilities. Add 
+the following dependency in your project to use it:
 
 ```xml
 <dependency>
@@ -64,7 +77,36 @@ requires the following dependency:
 </dependency>
 ```
 
-#### Jasypt ``${jasypt::...}``
+#### Jasypt `${jasypt::...}`
+
+!!! example
+
+    ```properties title="application.properties"
+    smallrye.config.secret-handler.jasypt.password=jasypt
+    smallrye.config.secret-handler.jasypt.algorithm=PBEWithHMACSHA512AndAES_256
+
+    my.secret=${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}
+    ```
+    The `${jasypt::...}` `SecretKeyHandler` requires both `smallrye.config.secret-handler.jasypt.password` and 
+    `smallrye.config.secret-handler.jasypt.algorithm` configurations to state the password and the algorithm to be
+    used by the Jasypt encryptor.
+
+    Jasypt encrypted values must be set with the handler expression as `${jasypt::ENC(value)}`. Note that the 
+    encrypted value must be generated using the proper Jasypt encryptor with the same password and algorithm set in 
+    the confguration.
+
+    A possible encrypted value for `12345678` is `ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)`
+
+    Lookups to the configuration `my.secret` will automatically decrypt the value with Jasypt and provide the original
+    `12345678` string.
+
+!!! info
+
+    It is possible to generate the encrypted secret with the following [JBang](http://jbang.dev/) script:
+    
+    ```shell  
+    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/docs/documentation/src/main/docs/config/secret-handlers/jasypt.java <secret> <password>
+    ```
 
 ##### Configuration
 
