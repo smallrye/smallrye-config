@@ -32,19 +32,19 @@ Add the _dependency_ to your project using your preferred build tool:
 === "Gradle (Groovy)"
 
     ```groovy
-    implementation 'io.smallrye.config:smallrye-config:{{ attributes.versions }}'
+    implementation 'io.smallrye.config:smallrye-config:{{attributes['version']}}'
     ```
 
 === "Gradle (Kotlin)"
 
     ```kotlin
-    implementation("io.smallrye.config:smallrye-config:{{ attributes.versions }}")
+    implementation("io.smallrye.config:smallrye-config:{{attributes['version']}}")
     ```
 
 === "JBang"
 
     ```java
-    //DEPS io.smallrye.config:smallrye-config:{{ attributes.versions }}
+    //DEPS io.smallrye.config:smallrye-config:{{attributes['version']}}
     ```
 
 And retrieve a `SmallRyeConfig` instance with:
