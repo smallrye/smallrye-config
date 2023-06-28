@@ -290,10 +290,17 @@ class KeyMapTest {
         map.findOrAdd("root.foo.bar").putRootValue("baz");
         map.findOrAdd("root.foo.bar.*").putRootValue("baz");
         map.findOrAdd("root.foo.bar.*.baz").putRootValue("anything");
+        map.findOrAdd("list[0]").putRootValue("bar");
+        map.findOrAdd("list[0].foo").putRootValue("bar");
+
+        assertEquals("bar", map.findRootValue("list[0].foo"));
+        assertEquals("bar", map.findRootValue("list[0]"));
 
         Set<String> keys = map.keySet();
-        assertEquals(2, keys.size());
+        assertEquals(4, keys.size());
         assertTrue(keys.contains("root.foo"));
         assertTrue(keys.contains("root.foo.bar"));
+        assertTrue(keys.contains("list[0].foo"));
+        assertTrue(keys.contains("list[0]"));
     }
 }
