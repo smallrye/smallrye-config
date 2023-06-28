@@ -273,6 +273,7 @@ public final class ConfigMappingContext {
     }
 
     public void reportProblem(RuntimeException problem) {
+        problem.printStackTrace();
         problems.add(new Problem(problem.toString()));
     }
 

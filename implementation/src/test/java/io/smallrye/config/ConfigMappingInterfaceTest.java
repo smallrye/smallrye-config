@@ -2078,6 +2078,7 @@ class ConfigMappingInterfaceTest {
                         "my.optional.rest.api.url", "http://localhost:8094",
                         "my.list[0].rest.api.url", "http://localhost:8094",
                         "my.map.key.rest.api.url", "http://localhost:8094",
+                        "my.map.\"quoted-key\".rest.api.url", "http://localhost:8094",
                         "my.map-list.key[0].rest.api.url", "http://localhost:8094"))
                 .build();
 
@@ -2087,6 +2088,7 @@ class ConfigMappingInterfaceTest {
         assertEquals("http://localhost:8094", mapping.optional().get().apiUrl());
         assertEquals("http://localhost:8094", mapping.list().get(0).apiUrl());
         assertEquals("http://localhost:8094", mapping.map().get("key").apiUrl());
+        assertEquals("http://localhost:8094", mapping.map().get("quoted-key").apiUrl());
         assertEquals("http://localhost:8094", mapping.mapList().get("key").get(0).apiUrl());
         assertEquals("other", mapping.other());
         assertEquals("other", config.getConfigValue("my.rest.api.other").getValue());
