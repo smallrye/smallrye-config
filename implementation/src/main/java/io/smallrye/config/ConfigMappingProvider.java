@@ -462,17 +462,17 @@ final class ConfigMappingProvider implements Serializable {
             String mapPath = String.join(".", currentPath);
             addAction(currentPath, mapProperty, (mc, ni) -> {
                 // Place the cursor at the map path
-                NameIterator niAtMapPath = atMapPath(mapPath, ni);
-                Map<?, ?> map = getEnclosingMap.apply(mc, niAtMapPath);
+                NameIterator niMapPath = mapPath(mapPath, ni);
+                Map<?, ?> map = getEnclosingMap.apply(mc, niMapPath);
 
                 String rawMapKey;
                 String configKey;
                 boolean indexed = isIndexed(ni.getPreviousSegment());
                 if (indexed && ni.hasPrevious()) {
-                    rawMapKey = normalizeIfIndexed(niAtMapPath.getName().substring(niAtMapPath.getPosition() + 1));
-                    configKey = niAtMapPath.getAllPreviousSegmentsWith(rawMapKey);
+                    rawMapKey = normalizeIfIndexed(niMapPath.getName().substring(niMapPath.getPosition() + 1));
+                    configKey = niMapPath.getAllPreviousSegmentsWith(rawMapKey);
                 } else {
-                    rawMapKey = niAtMapPath.getName().substring(niAtMapPath.getPosition() + 1);
+                    rawMapKey = niMapPath.getName().substring(niMapPath.getPosition() + 1);
                     configKey = ni.getAllPreviousSegments();
                 }
 
@@ -607,7 +607,7 @@ final class ConfigMappingProvider implements Serializable {
         return name;
     }
 
-    private static NameIterator atMapPath(final String mapPath, final NameIterator propertyName) {
+    private static NameIterator mapPath(final String mapPath, final NameIterator propertyName) {
         int segments = 0;
         NameIterator countSegments = new NameIterator(mapPath);
         while (countSegments.hasNext()) {
@@ -727,15 +727,15 @@ final class ConfigMappingProvider implements Serializable {
         @Override
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
-            NameIterator atMapPath = atMapPath(mapPath, ni);
-            MapKey mapKey = mapKey(context, ni);
-            Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, atMapPath);
+            NameIterator niMapPath = mapPath(mapPath, ni);
+            MapKey mapKey = mapKey(context, ni, niMapPath);
+            Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, niMapPath);
             ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingGroup.getInterfaceType(),
                     mapKey.getKey(), ourEnclosing);
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
-                sb.replace(0, sb.length(), keyUnnamed ? atMapPath.getAllPreviousSegments()
-                        : atMapPath.getAllPreviousSegmentsWith(mapKey.getKey()));
+                sb.replace(0, sb.length(), keyUnnamed ? niMapPath.getAllPreviousSegments()
+                        : niMapPath.getAllPreviousSegmentsWith(mapKey.getKey()));
                 context.applyNamingStrategy(
                         namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
                 val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
@@ -751,7 +751,7 @@ final class ConfigMappingProvider implements Serializable {
                         // Get all the available indexes
                         List<Integer> indexes = keyUnnamed ? List.of(0)
                                 : context.getConfig()
-                                        .getIndexedPropertiesIndexes(atMapPath.getAllPreviousSegmentsWith(mapKey.getNameKey()));
+                                        .getIndexedPropertiesIndexes(niMapPath.getAllPreviousSegmentsWith(mapKey.getNameKey()));
                         collection = collectionFactory.apply(indexes.size());
                         // Initialize all expected elements in the list
                         if (collection instanceof List) {
@@ -780,13 +780,15 @@ final class ConfigMappingProvider implements Serializable {
             apply(context, ni);
         }
 
-        private MapKey mapKey(final ConfigMappingContext context, final NameIterator ni) {
+        private MapKey mapKey(final ConfigMappingContext context, final NameIterator ni, final NameIterator mapPath) {
             if (keyUnnamed && enclosingMap.getKeyUnnamed() == null) {
                 return new MapKey(null, null, null, 0);
             }
 
-            String rawKey = keyUnnamed ? enclosingMap.getKeyUnnamed() : atMapPath(this.mapPath, ni).getNextSegment();
-            String pathKey = ni.getAllPreviousSegments();
+            String rawKey = keyUnnamed ? enclosingMap.getKeyUnnamed() : mapPath.getNextSegment();
+            mapPath.next();
+            String pathKey = mapPath.getAllPreviousSegments();
+            mapPath.previous();
             Converter<?> converterKey = context.getKeyConverter(enclosingGroup.getInterfaceType(),
                     enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
 
