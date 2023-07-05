@@ -1,6 +1,7 @@
 package io.smallrye.config.validator;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -206,9 +207,20 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             final List<Problem> problems) {
 
         try {
+            Method methodToInvoke;
+            if (property.getMethod().canAccess(mappingObject)) {
+                methodToInvoke = property.getMethod();
+            } else {
+                try {
+                    methodToInvoke = mappingObject.getClass().getMethod(property.getMethod().getName());
+                } catch (NoSuchMethodException e) {
+                    // This never happens, because we generated the class, and we know the method exists
+                    throw new RuntimeException(e);
+                }
+            }
+
             Set<ConstraintViolation<Object>> violations = getValidator().forExecutables().validateReturnValue(mappingObject,
-                    property.getMethod(),
-                    property.getMethod().invoke(mappingObject));
+                    property.getMethod(), methodToInvoke.invoke(mappingObject));
             for (ConstraintViolation<Object> violation : violations) {
                 problems.add(new Problem(interpolateMessage(currentPath, namingStrategy, property, violation)));
             }
