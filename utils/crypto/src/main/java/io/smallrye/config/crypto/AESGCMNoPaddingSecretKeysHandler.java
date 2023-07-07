@@ -13,15 +13,12 @@ import javax.crypto.spec.SecretKeySpec;
 import io.smallrye.config.SecretKeysHandler;
 
 public class AESGCMNoPaddingSecretKeysHandler implements SecretKeysHandler {
-    private static final String ENC_ALGORITHM = "AES/GCM/NoPadding";
-    private static final int ENC_LENGTH = 128;
-
     private final SecretKeySpec encryptionKey;
 
-    public AESGCMNoPaddingSecretKeysHandler(final String encryptionKey) {
+    public AESGCMNoPaddingSecretKeysHandler(final byte[] encryptionKey) {
         try {
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-            sha256.update(encryptionKey.getBytes(UTF_8));
+            sha256.update(encryptionKey);
             this.encryptionKey = new SecretKeySpec(sha256.digest(), "AES");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -31,14 +28,14 @@ public class AESGCMNoPaddingSecretKeysHandler implements SecretKeysHandler {
     @Override
     public String decode(final String secret) {
         try {
-            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             ByteBuffer byteBuffer = ByteBuffer.wrap(Base64.getUrlDecoder().decode(secret.getBytes(UTF_8)));
             int ivLength = byteBuffer.get();
             byte[] iv = new byte[ivLength];
             byteBuffer.get(iv);
             byte[] encrypted = new byte[byteBuffer.remaining()];
             byteBuffer.get(encrypted);
-            cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new GCMParameterSpec(ENC_LENGTH, iv));
+            cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new GCMParameterSpec(128, iv));
             return new String(cipher.doFinal(encrypted), UTF_8);
         } catch (Exception e) {
             throw new RuntimeException(e);

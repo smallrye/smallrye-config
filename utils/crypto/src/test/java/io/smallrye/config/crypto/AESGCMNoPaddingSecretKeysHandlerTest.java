@@ -23,7 +23,8 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
     @Test
     void handler() {
         Map<String, String> properties = Map.of(
-                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key", "somearbitrarycrazystringthatdoesnotmatter",
+                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
+                "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
                 "my.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
                 "my.expression", "${not.found:default}",
                 "another.expression", "${my.expression}");
@@ -43,6 +44,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
     void keystore() {
         Map<String, String> properties = Map.of(
                 "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key", "somearbitrarycrazystringthatdoesnotmatter",
+                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "false",
                 "smallrye.config.source.keystore.test.path", "keystore",
                 "smallrye.config.source.keystore.test.password", "secret",
                 "smallrye.config.source.keystore.test.handler", "aes-gcm-nopadding");
