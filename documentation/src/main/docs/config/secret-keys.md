@@ -55,7 +55,7 @@ the following dependency:
     It is possible to generate the encrypted secret with the following [JBang](http://jbang.dev/) script:
 
     ```shell
-    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/encryptor.java <secret> <encryptionKey>`
+    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/encryptor.java -s=<secret> -k=<encryptionKey>`
     ```
 
 ##### Configuration
@@ -105,7 +105,7 @@ the following dependency in your project to use it:
     It is possible to generate the encrypted secret with the following [JBang](http://jbang.dev/) script:
     
     ```shell  
-    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/jasypt.java <secret> <password>
+    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/jasypt.java -s=<secret> -p=<password>
     ```
 
 ##### Configuration

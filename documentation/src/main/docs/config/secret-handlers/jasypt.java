@@ -7,6 +7,7 @@ import org.jasypt.iv.RandomIvGenerator;
 import org.jasypt.properties.PropertyValueEncryptionUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.util.concurrent.Callable;
@@ -14,11 +15,11 @@ import java.util.logging.Logger;
 
 @Command(name = "jasypt", mixinStandardHelpOptions = true)
 class jasypt implements Callable<Integer> {
-    @Parameters(index = "0")
+    @Option(names = {"-s", "--secret" }, description = "Secret", required = true)
     private String secret;
-    @Parameters(index = "1")
+    @Option(names = {"-p", "--password" }, description = "Password", required = true)
     private String password;
-    @Parameters(index = "2", defaultValue = "PBEWithHMACSHA512AndAES_256")
+    @Option(names = {"-a", "--algorithm" }, description = "Algorithm", defaultValue = "PBEWithHMACSHA512AndAES_256")
     private String algorithm;
 
     public static void main(String... args) {
