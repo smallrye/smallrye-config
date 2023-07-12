@@ -16,21 +16,31 @@ public class AESGCMNoPaddingSecretKeysHandlerFactory implements SecretKeysHandle
 
     @Override
     public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
-        ConfigValue encryptionKey = context.getValue(ENCRYPTION_KEY);
-        if (encryptionKey == null || encryptionKey.getValue() == null) {
-            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(ENCRYPTION_KEY));
-        }
+        return new LazySecretKeysHandler(new SecretKeysHandlerFactory() {
+            @Override
+            public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
+                ConfigValue encryptionKey = context.getValue(ENCRYPTION_KEY);
+                if (encryptionKey == null || encryptionKey.getValue() == null) {
+                    throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(ENCRYPTION_KEY));
+                }
 
-        boolean decode = true;
-        ConfigValue plain = context.getValue("smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode");
-        if (plain != null && plain.getValue() != null) {
-            decode = Converters.getImplicitConverter(Boolean.class).convert(plain.getValue());
-        }
+                boolean decode = true;
+                ConfigValue plain = context.getValue("smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode");
+                if (plain != null && plain.getValue() != null) {
+                    decode = Converters.getImplicitConverter(Boolean.class).convert(plain.getValue());
+                }
 
-        byte[] encryptionKeyBytes = decode ? Base64.getUrlDecoder().decode(encryptionKey.getValue())
-                : encryptionKey.getValue().getBytes(StandardCharsets.UTF_8);
+                byte[] encryptionKeyBytes = decode ? Base64.getUrlDecoder().decode(encryptionKey.getValue())
+                        : encryptionKey.getValue().getBytes(StandardCharsets.UTF_8);
 
-        return new AESGCMNoPaddingSecretKeysHandler(encryptionKeyBytes);
+                return new AESGCMNoPaddingSecretKeysHandler(encryptionKeyBytes);
+            }
+
+            @Override
+            public String getName() {
+                return AESGCMNoPaddingSecretKeysHandlerFactory.this.getName();
+            }
+        });
     }
 
     @Override
