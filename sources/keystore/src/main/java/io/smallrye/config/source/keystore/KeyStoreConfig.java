@@ -18,16 +18,12 @@ public interface KeyStoreConfig {
         @WithDefault("PKCS12")
         String type();
 
-        String password();
-
         Optional<String> handler();
 
         Map<String, Alias> aliases();
 
         interface Alias {
             Optional<String> name();
-
-            Optional<String> password();
 
             Optional<String> handler();
         }

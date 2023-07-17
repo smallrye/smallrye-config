@@ -16,6 +16,7 @@ class MultipleSecretHandlersTest {
         Map<String, String> properties = Map.of(
                 "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
                 "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true",
                 "aes-gcm-nopadding.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
                 "smallrye.config.secret-handler.jasypt.password", "jasypt",
                 "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",

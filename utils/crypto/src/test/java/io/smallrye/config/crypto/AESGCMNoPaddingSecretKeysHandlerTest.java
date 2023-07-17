@@ -19,13 +19,13 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 class AESGCMNoPaddingSecretKeysHandlerTest {
     @Test
     void handler() {
-
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
                 .withDefaultValues(Map.of(
                         "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
                         "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true",
                         "my.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
                         "my.expression", "${not.found:default}",
                         "another.expression", "${my.expression}"))
@@ -43,16 +43,15 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 .addDiscoveredSources()
                 .addDiscoveredSecretKeysHandlers()
                 .withDefaultValues(Map.of(
-                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
-                        "somearbitrarycrazystringthatdoesnotmatter",
-                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "false",
-                        "smallrye.config.source.keystore.test.path", "keystore",
-                        "smallrye.config.source.keystore.test.password", "secret",
-                        "smallrye.config.source.keystore.test.handler", "aes-gcm-nopadding"))
+                        "smallrye.config.source.keystore.\"properties\".path", "properties",
+                        "smallrye.config.source.keystore.\"properties\".password", "arealpassword",
+                        "smallrye.config.source.keystore.\"properties\".handler", "aes-gcm-nopadding",
+                        "smallrye.config.source.keystore.\"key\".path", "key",
+                        "smallrye.config.source.keystore.\"key\".password", "anotherpassword"))
                 .build();
 
         ConfigValue secret = config.getConfigValue("my.secret");
-        assertEquals("decoded", secret.getValue());
+        assertEquals("1234", secret.getValue());
     }
 
     @Test
@@ -86,8 +85,10 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "smallrye.config.source.keystore.test.password", "secret",
                         "smallrye.config.source.keystore.test.handler", "aes-gcm-nopadding"))
                 .withSources((ConfigSourceFactory) context -> List.of(
-                        new PropertiesConfigSource(Map.of("smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
-                                "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI"), "", 0)))
+                        new PropertiesConfigSource(Map.of(
+                                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
+                                "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true"), "", 0)))
                 .build();
 
         ConfigValue secret = config.getConfigValue("my.secret");
