@@ -13,7 +13,7 @@
     <name>SmallRye Config: Converter - Json</name>
 
     <properties>
-        <version.parsson>1.1.2</version.parsson>
+        <version.parsson>1.1.3</version.parsson>
     </properties>
 
     <dependencies>
