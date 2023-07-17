@@ -21,11 +21,9 @@ import java.util.concurrent.Callable;
 @Command(name = "encryptor", mixinStandardHelpOptions = true)
 class encryptor implements Callable<Integer> {
     @Option(names = {"-s", "--secret" }, description = "Secret", required = true)
-    private String secret;
+    String secret;
     @Option(names = {"-k", "--key" }, description = "Encryption Key")
-    private String encryptionKey;
-    @Option(names = {"-b"}, description = "Encryption Key in Base64 format", defaultValue = "false")
-    private boolean base64EncryptionKey;
+    String encryptionKey;
     @Option(names = {"-a", "--algorithm" }, description = "Algorithm", defaultValue = "AES", hidden = true)
     String algorithm;
     @Option(names = {"-m", "--mode" }, description = "Mode", defaultValue = "GCM", hidden = true)
@@ -42,10 +40,6 @@ class encryptor implements Callable<Integer> {
     public Integer call() throws Exception {
         if (encryptionKey == null) {
             encryptionKey = encodeToString(generateEncryptionKey().getEncoded());
-        } else {
-            if (!base64EncryptionKey) {
-                encryptionKey = encodeToString(encryptionKey.getBytes(StandardCharsets.UTF_8));
-            }
         }
 
         Cipher cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + padding);
