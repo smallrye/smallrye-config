@@ -38,9 +38,9 @@ the following dependency:
 !!! example
 
     ```properties title="application.properties"
-    smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key=somearbitrarycrazystringthatdoesnotmatter
+    smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key=DDne5obnfH1RSeTg71xSZg
 
-    my.secret=${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}
+    my.secret=${aes-gcm-nopadding::DLTb_9zxThxeT5iAQqswEl5Dn1ju4FdM9hIyVip35t5V}
     ``` 
 
     The `${aes-gcm-nopadding::...}` `SecretKeyHandler` requires 
@@ -60,9 +60,10 @@ the following dependency:
 
 ##### Configuration
 
-| Configuration Property 	| Type 	| Default 	|
-|---	|---	|---	|
-| `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key`<br>The encription key to use to decode secrets encoded by the `AES/GCM/NoPadding` algorithm. 	| String 	|  	|
+| Configuration Property 	                                                                                                                                         | Type 	    | Default 	 |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|-----------|
+| `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key`<br>The encryption key to use to decode secrets encoded by the `AES/GCM/NoPadding` algorithm. 	 | String 	  | 	         |
+| `"smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode"`<br>Decode the encryption key in Base64. 	                                             | boolean 	 | false 	   |
 
 ### Jasypt
 

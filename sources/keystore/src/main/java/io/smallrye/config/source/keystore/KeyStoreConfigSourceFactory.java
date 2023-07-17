@@ -13,45 +13,114 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.AbstractLocationConfigSourceFactory;
+import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigSourceContext;
-import io.smallrye.config.ConfigSourceFactory.ConfigurableConfigSourceFactory;
-import io.smallrye.config.ConfigurableConfigSource;
+import io.smallrye.config.ConfigSourceFactory;
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
 
-public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFactory<KeyStoreConfig> {
+public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
     @Override
-    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, KeyStoreConfig keyStoreConfig) {
+    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+        KeyStoreConfig keyStoreConfig = getKeyStoreConfig(context);
+
+        // A keystore may contain the encryption key for a handler, so we load keystore that do not have handlers
+        Map<String, KeyStoreConfig.KeyStore> prioritized = new HashMap<>();
+        Map<String, KeyStoreConfig.KeyStore> late = new HashMap<>();
+        for (final Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : keyStoreConfig.keystores().entrySet()) {
+            if (keyStoreEntry.getValue().handler().isEmpty()) {
+                prioritized.put(keyStoreEntry.getKey(), keyStoreEntry.getValue());
+            } else {
+                late.put(keyStoreEntry.getKey(), keyStoreEntry.getValue());
+            }
+        }
+
         List<ConfigSource> keyStoreSources = new ArrayList<>();
-        for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : keyStoreConfig.keystores().entrySet()) {
-            KeyStoreConfig.KeyStore keyStore = keyStoreEntry.getValue();
-            keyStoreSources.add(new ConfigurableConfigSource(new AbstractLocationConfigSourceFactory() {
-                @Override
-                protected String[] getFileExtensions() {
-                    return new String[0];
-                }
+        for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : prioritized.entrySet()) {
+            for (final ConfigSource configSource : loadKeyStoreSources(context, keyStoreEntry.getKey(),
+                    keyStoreEntry.getValue())) {
+                keyStoreSources.add(configSource);
+            }
+        }
 
-                @Override
-                protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
-                    return new UrlKeyStoreConfigSource(url, ordinal).loadKeyStore(keyStore);
-                }
+        ConfigSourceContext keyStoreContext = new ConfigSourceContext() {
+            final SmallRyeConfig contextConfig = new SmallRyeConfigBuilder()
+                    .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
+                    .withSources(keyStoreSources).build();
 
-                @Override
-                public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-                    return loadConfigSources(keyStore.path(), 100);
-                }
-            }));
+            @Override
+            public ConfigValue getValue(final String name) {
+                return contextConfig.getConfigValue(name);
+            }
+
+            @Override
+            public List<String> getProfiles() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterator<String> iterateNames() {
+                return contextConfig.getPropertyNames().iterator();
+            }
+        };
+
+        for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : late.entrySet()) {
+            for (final ConfigSource configSource : loadKeyStoreSources(keyStoreContext, keyStoreEntry.getKey(),
+                    keyStoreEntry.getValue())) {
+                keyStoreSources.add(configSource);
+            }
         }
 
         return keyStoreSources;
+    }
+
+    private static KeyStoreConfig getKeyStoreConfig(final ConfigSourceContext context) {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
+                .withMapping(KeyStoreConfig.class)
+                .withMappingIgnore("smallrye.config.source.keystore.*.password")
+                .build();
+        return config.getConfigMapping(KeyStoreConfig.class);
+    }
+
+    private static Iterable<ConfigSource> loadKeyStoreSources(final ConfigSourceContext context, final String name,
+            final KeyStoreConfig.KeyStore keyStore) {
+        return new AbstractLocationConfigSourceFactory() {
+            @Override
+            protected String[] getFileExtensions() {
+                return new String[0];
+            }
+
+            @Override
+            protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
+                // Avoid caching the keystore password
+                String passwordName = "smallrye.config.source.keystore." + name + ".password";
+                ConfigValue password = context.getValue(passwordName);
+                if (password == null || password.getValue() == null) {
+                    throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+                }
+                return new UrlKeyStoreConfigSource(url, ordinal).loadKeyStore(keyStore, password.getValue().toCharArray());
+            }
+
+            @Override
+            public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+                return loadConfigSources(keyStore.path(), 100);
+            }
+
+        }.getConfigSources(context);
     }
 
     private static class UrlKeyStoreConfigSource implements ConfigSource {
@@ -63,10 +132,10 @@ public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFact
             this.ordinal = ordinal;
         }
 
-        ConfigSource loadKeyStore(KeyStoreConfig.KeyStore keyStoreConfig) throws IOException {
+        ConfigSource loadKeyStore(KeyStoreConfig.KeyStore keyStoreConfig, char[] password) throws IOException {
             try {
                 KeyStore keyStore = KeyStore.getInstance(keyStoreConfig.type());
-                keyStore.load(url.openStream(), keyStoreConfig.password().toCharArray());
+                keyStore.load(url.openStream(), password);
 
                 Map<String, String> properties = new HashMap<>();
                 Enumeration<String> aliases = keyStore.aliases();
@@ -79,19 +148,13 @@ public class KeyStoreConfigSourceFactory implements ConfigurableConfigSourceFact
                         }
 
                         @Override
-                        public Optional<String> password() {
-                            return Optional.of(keyStoreConfig.password());
-                        }
-
-                        @Override
                         public Optional<String> handler() {
                             return keyStoreConfig.handler();
                         }
                     });
 
                     if (keyStore.isKeyEntry(alias)) {
-                        Key key = keyStore.getKey(alias,
-                                aliasConfig.password().orElse(keyStoreConfig.password()).toCharArray());
+                        Key key = keyStore.getKey(alias, password);
                         String encoded;
                         Optional<String> handler = aliasConfig.handler();
                         if (handler.isPresent()) {

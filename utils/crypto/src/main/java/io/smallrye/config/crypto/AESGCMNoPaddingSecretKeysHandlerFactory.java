@@ -24,7 +24,7 @@ public class AESGCMNoPaddingSecretKeysHandlerFactory implements SecretKeysHandle
                     throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(ENCRYPTION_KEY));
                 }
 
-                boolean decode = true;
+                boolean decode = false;
                 ConfigValue plain = context.getValue("smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode");
                 if (plain != null && plain.getValue() != null) {
                     decode = Converters.getImplicitConverter(Boolean.class).convert(plain.getValue());
