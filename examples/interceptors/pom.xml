@@ -26,7 +26,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>interceptors</artifactId>
-  <version>3.3.2-SNAPSHOT</version>
+  <version>3.3.2</version>
 
   <name>SmallRye Config Examples: Interceptors</name>
 
@@ -65,4 +65,8 @@
       <artifactId>weld-junit5</artifactId>
     </dependency>
   </dependencies>
+
+  <scm>
+    <tag>3.3.2</tag>
+  </scm>
 </project>
