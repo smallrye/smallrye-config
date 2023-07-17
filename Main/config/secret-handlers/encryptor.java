@@ -24,6 +24,8 @@ class encryptor implements Callable<Integer> {
     String secret;
     @Option(names = {"-k", "--key" }, description = "Encryption Key")
     String encryptionKey;
+    @Option(names = { "-f", "--format" }, description = "Encryption Key Format (base64 / plain)", defaultValue = "base64")
+    KeyFormat encryptionKeyFormat;
     @Option(names = {"-a", "--algorithm" }, description = "Algorithm", defaultValue = "AES", hidden = true)
     String algorithm;
     @Option(names = {"-m", "--mode" }, description = "Mode", defaultValue = "GCM", hidden = true)
@@ -40,6 +42,10 @@ class encryptor implements Callable<Integer> {
     public Integer call() throws Exception {
         if (encryptionKey == null) {
             encryptionKey = encodeToString(generateEncryptionKey().getEncoded());
+        } else {
+            if (encryptionKeyFormat.equals(KeyFormat.base64)) {
+                encryptionKey = encodeToString(encryptionKey.getBytes());
+            }
         }
 
         Cipher cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + padding);
@@ -75,5 +81,10 @@ class encryptor implements Callable<Integer> {
 
     private static String encodeToString(byte[] data) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
+    }
+
+    public enum KeyFormat {
+        base64,
+        plain
     }
 }
