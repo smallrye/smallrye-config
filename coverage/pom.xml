@@ -53,6 +53,23 @@
       <artifactId>smallrye-config-source-yaml</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-source-keystore</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Crypto -->
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-crypto</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config-jasypt</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Converters -->
     <dependency>
