@@ -37,6 +37,20 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
     }
 
     @Test
+    void plainKey() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withDefaultValues(Map.of(
+                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
+                        "somearbitrarycrazystringthatdoesnotmatter",
+                        "my.secret", "${aes-gcm-nopadding::DPZqAC4GZNAXi6_43A4O2SBmaQssGkq6PS7rz8tzHDt1}"))
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.secret"));
+    }
+
+    @Test
     void keystore() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
