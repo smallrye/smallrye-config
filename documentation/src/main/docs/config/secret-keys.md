@@ -60,10 +60,10 @@ the following dependency:
 
 ##### Configuration
 
-| Configuration Property 	                                                                                                                                         | Type 	    | Default 	 |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|-----------|
-| `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key`<br>The encryption key to use to decode secrets encoded by the `AES/GCM/NoPadding` algorithm. 	 | String 	  | 	         |
-| `"smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode"`<br>Decode the encryption key in Base64. 	                                             | boolean 	 | false 	   |
+| Configuration Property 	                                                                                                                                                   | Type 	    | Default 	 |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|-----------|
+| `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key`<br>The encryption key to use to decode secrets encoded by the `AES/GCM/NoPadding` algorithm. 	           | String 	  | 	         |
+| `"smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode"`<br>Decode the encryption key in Base64, if the plain text key was used to encrypt the secret. 	 | boolean 	 | false 	   |
 
 ### Jasypt
 
