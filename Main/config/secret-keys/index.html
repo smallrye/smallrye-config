@@ -1041,9 +1041,9 @@ the following dependency:</p>
 </ul>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
-<div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</span><span class="o">=</span><span class="s">somearbitrarycrazystringthatdoesnotmatter</span><span class="w"></span>
+<div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</span><span class="o">=</span><span class="s">DDne5obnfH1RSeTg71xSZg</span><span class="w"></span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="na">my.secret</span><span class="o">=</span><span class="s">${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}</span><span class="w"></span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="na">my.secret</span><span class="o">=</span><span class="s">${aes-gcm-nopadding::DLTb_9zxThxeT5iAQqswEl5Dn1ju4FdM9hIyVip35t5V}</span><span class="w"></span>
 </code></pre></div>
 <p>The <code>${aes-gcm-nopadding::...}</code> <code>SecretKeyHandler</code> requires 
 <code>smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</code> configuration to state the encryption key to be 
@@ -1068,9 +1068,14 @@ used by the <code>aes-gcm-nopaddin</code> handler.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</code><br>The encription key to use to decode secrets encoded by the <code>AES/GCM/NoPadding</code> algorithm.</td>
+<td><code>smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key</code><br>The encryption key to use to decode secrets encoded by the <code>AES/GCM/NoPadding</code> algorithm.</td>
 <td>String</td>
 <td></td>
+</tr>
+<tr>
+<td><code>"smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode"</code><br>Decode the encryption key in Base64.</td>
+<td>boolean</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>
