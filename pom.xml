@@ -34,7 +34,7 @@
   <url>https://smallrye.io</url>
 
   <properties>
-    <version.eclipse.microprofile.config>3.0.2</version.eclipse.microprofile.config>
+    <version.eclipse.microprofile.config>3.0.3</version.eclipse.microprofile.config>
     <version.smallrye.common>2.1.0</version.smallrye.common>
     <version.asm>9.5</version.asm>
 
