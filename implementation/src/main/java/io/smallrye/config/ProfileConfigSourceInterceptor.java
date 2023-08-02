@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import jakarta.annotation.Priority;
@@ -36,13 +35,9 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
             final String normalizeName = normalizeName(name);
             final ConfigValue profileValue = getProfileValue(context, normalizeName);
             if (profileValue != null) {
-                try {
-                    final ConfigValue originalValue = context.proceed(normalizeName);
-                    if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
-                        return originalValue;
-                    }
-                } catch (final NoSuchElementException e) {
-                    // We couldn't find the main property so we fallback to the profile property because it exists.
+                final ConfigValue originalValue = context.proceed(normalizeName);
+                if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
+                    return originalValue;
                 }
                 return profileValue.withName(normalizeName);
             }
