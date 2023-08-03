@@ -22,6 +22,7 @@ import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
 import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 
@@ -316,7 +317,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 100);
             }
         }));
-
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -380,6 +380,23 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 }
 
                 return discoveredHandlers;
+            }
+        }));
+
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                boolean enabled = false;
+                ConfigValue enabledValue = context.proceed(SMALLRYE_CONFIG_LOG_VALUES);
+                if (enabledValue != null) {
+                    enabled = Boolean.parseBoolean(enabledValue.getValue());
+                }
+                return new LoggingConfigSourceInterceptor(enabled);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 250);
             }
         }));
 

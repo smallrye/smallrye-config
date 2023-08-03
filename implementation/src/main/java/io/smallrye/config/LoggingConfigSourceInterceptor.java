@@ -8,8 +8,18 @@ import jakarta.annotation.Priority;
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 367246512037404779L;
 
+    private final boolean enabled;
+
+    public LoggingConfigSourceInterceptor(final boolean enabled) {
+        this.enabled = enabled;
+    }
+
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+        if (!enabled || !ConfigLogging.log.isDebugEnabled()) {
+            return context.proceed(name);
+        }
+
         try {
             // Unlocked keys will run here.
             ConfigValue configValue = doLocked(() -> context.proceed(name));

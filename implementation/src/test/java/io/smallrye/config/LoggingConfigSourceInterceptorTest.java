@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,13 +30,25 @@ class LoggingConfigSourceInterceptorTest {
     }
 
     @Test
+    void disabled() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(config("my.prop", "1234"))
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+        assertTrue(logCapture.records().stream().map(LogRecord::getMessage).findAny().isEmpty());
+    }
+
+    @Test
     void interceptor() throws Exception {
         Config config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
+                .withDefaultValue(SMALLRYE_CONFIG_LOG_VALUES, "true")
                 .withSources(new ConfigValuePropertiesConfigSource(
                         LoggingConfigSourceInterceptorTest.class.getResource("/config-values.properties")))
-                .withInterceptors(new LoggingConfigSourceInterceptor())
                 .withSecretKeys("secret")
                 .build();
 
@@ -48,9 +61,6 @@ class LoggingConfigSourceInterceptorTest {
         assertEquals("12345678", SecretKeys.doUnlocked(() -> config.getValue("secret", String.class)));
 
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
-        for (String log : logs) {
-            System.out.println(log);
-        }
         // my.prop lookup
         assertTrue(logs.stream()
                 .anyMatch(log -> log.contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource")));
@@ -65,7 +75,7 @@ class LoggingConfigSourceInterceptorTest {
     void expansion() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withInterceptors(new LoggingConfigSourceInterceptor())
+                .withDefaultValue(SMALLRYE_CONFIG_LOG_VALUES, "true")
                 .withSources(config("my.prop.expand", "${expand}", "expand", "1234"))
                 .build();
 
@@ -80,7 +90,7 @@ class LoggingConfigSourceInterceptorTest {
     void profiles() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withInterceptors(new LoggingConfigSourceInterceptor())
+                .withDefaultValue(SMALLRYE_CONFIG_LOG_VALUES, "true")
                 .withSources(config("%prod.my.prop", "1234", "my.prop", "5678"))
                 .withProfile("prod")
                 .build();
