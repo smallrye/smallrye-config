@@ -4,7 +4,7 @@ import static io.smallrye.config.SecretKeys.doLocked;
 
 import jakarta.annotation.Priority;
 
-@Priority(Priorities.LIBRARY + 150)
+@Priority(Priorities.LIBRARY + 250)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 367246512037404779L;
 
@@ -13,10 +13,11 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         try {
             // Unlocked keys will run here.
             ConfigValue configValue = doLocked(() -> context.proceed(name));
-            if (configValue != null)
+            if (configValue != null) {
                 ConfigLogging.log.lookup(configValue.getName(), configValue.getLocation(), configValue.getValue());
-            else
+            } else {
                 ConfigLogging.log.notFound(name);
+            }
             return configValue;
         } catch (SecurityException e) {
             // Handled next, to omit the values to log from the secret.
@@ -24,10 +25,11 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
 
         // Locked keys here.
         final ConfigValue secret = context.proceed(name);
-        if (secret != null)
+        if (secret != null) {
             ConfigLogging.log.lookup(secret.getName(), "secret", "secret");
-        else
+        } else {
             ConfigLogging.log.notFound(name);
+        }
         return secret;
     }
 }
