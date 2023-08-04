@@ -495,7 +495,7 @@ final class ConfigMappingProvider implements Serializable {
                     valueConv = config.requireConverter(valueRawType);
                 }
 
-                if (indexed) {
+                if (mapProperty.getValueProperty().isCollection() && valConvertWith == null) {
                     CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
                     Class<?> collectionRawType = collectionProperty.getCollectionRawType();
                     IntFunction collectionFactory = createCollectionFactory(collectionRawType);
@@ -505,9 +505,9 @@ final class ConfigMappingProvider implements Serializable {
                 }
             });
             // action to match all segments of a key after the map path
-            KeyMap mapAction = matchActions.find(currentPath);
+            KeyMap mapAction = matchActions.find(mapPath);
             if (mapAction != null) {
-                mapAction.putAny(matchActions.find(currentPath));
+                mapAction.putAny(matchActions.find(mapPath));
             }
 
             // collections may also be represented without [] so we need to register both paths
@@ -543,7 +543,7 @@ final class ConfigMappingProvider implements Serializable {
         } else if (property.isCollection()) {
             CollectionProperty collectionProperty = property.asCollection();
             Property element = collectionProperty.getElement();
-            if (!element.hasConvertWith() && !keyUnnamed) {
+            if (!element.hasConvertWith() && !keyUnnamed && !element.isLeaf()) {
                 currentPath.addLast(currentPath.removeLast() + "[*]");
             }
             processLazyMapValue(currentPath, matchActions, defaultValues, mapProperty, element, keyUnnamed, keyConvertWith,
