@@ -279,6 +279,7 @@ class KeyMapTest {
         orAdd.putAny(map.findOrAdd("map.key.*"));
 
         assertEquals("value", map.findRootValue("map.key.one"));
+        assertEquals("value", map.findRootValue("map.key.one[1]"));
         assertEquals("value", map.findRootValue("map.key.one.two"));
         assertEquals("value", map.findRootValue("map.key.one.two.three"));
     }

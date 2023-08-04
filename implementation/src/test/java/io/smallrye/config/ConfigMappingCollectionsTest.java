@@ -572,11 +572,11 @@ public class ConfigMappingCollectionsTest {
                 .withSources(config(
                         "map.roles.user[0].name", "p1",
                         "map.roles.user[0].aliases[0]", "user-role-p1",
-                        "map.roles.user[0].permissions.read[0]", "read"))
+                        "map.roles.user[0].permissions.read", "read"))
                 .withSources(config(
                         "map.roles.admin[0].name", "p2",
                         "map.roles.admin[0].aliases", "admin-role-p2,administrator-role-p2",
-                        "map.roles.admin[0].permissions.read[0]", "read",
+                        "map.roles.admin[0].permissions.read", "read",
                         "map.roles.admin[1].name", "p3",
                         "map.roles.admin[1].aliases", "admin-role-p3,administrator-role-p3",
                         "map.roles.admin[1].permissions.write[0]", "create",
@@ -726,5 +726,27 @@ public class ConfigMappingCollectionsTest {
         assertEquals("1", mapping.list().get("1").get(1));
         assertEquals("two", mapping.list().get("2").get(0));
         assertEquals("2", mapping.list().get("2").get(1));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapIndexedAndPlain {
+        @WithParentName
+        Map<String, List<String>> map();
+    }
+
+    @Test
+    void mapIndexedAndPlain() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapIndexedAndPlain.class, "map")
+                .withSources(config(
+                        "map.one[0]", "one", "map.one[1]", "1",
+                        "map.two", "two,2"))
+                .build();
+
+        MapIndexedAndPlain mapping = config.getConfigMapping(MapIndexedAndPlain.class);
+
+        assertEquals("one", mapping.map().get("one").get(0));
+        assertEquals("1", mapping.map().get("one").get(1));
+        assertEquals("two", mapping.map().get("two").get(0));
     }
 }
