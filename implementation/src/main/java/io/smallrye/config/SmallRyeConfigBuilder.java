@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -643,6 +644,14 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     public SmallRyeConfig build() {
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
         defaultValues.putAll(mappingProvider.getDefaultValues());
+
+        ServiceLoader<SmallRyeConfigBuilderCustomizer> customizers = ServiceLoader.load(SmallRyeConfigBuilderCustomizer.class,
+                classLoader);
+        customizers.stream()
+                .map(ServiceLoader.Provider::get)
+                .sorted(Comparator.comparingInt(SmallRyeConfigBuilderCustomizer::priority))
+                .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
+
         SmallRyeConfig config = new SmallRyeConfig(this);
         ConfigMappings.mapConfiguration(config, mappingProvider);
         return config;
