@@ -20,7 +20,16 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 
 public class SmallRyeConfigBuilderCustomizerTest {
     @Test
-    void builder(@TempDir Path tempDir) throws Exception {
+    void builder() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withCustomizers(new CustomConfigBuilder())
+                .build();
+
+        assertEquals("1234", config.getRawValue("from.custom.builder"));
+    }
+
+    @Test
+    void discoveredBuilder(@TempDir Path tempDir) throws Exception {
         JavaArchive serviceJar = ShrinkWrap
                 .create(JavaArchive.class, "service.jar")
                 .addAsManifestResource(new StringAsset("io.smallrye.config.test.builder.CustomConfigBuilder"),
@@ -34,7 +43,7 @@ public class SmallRyeConfigBuilderCustomizerTest {
         try (URLClassLoader urlClassLoader = urlClassLoader(contextClassLoader, "jar:" + servidePath.toUri() + "!/")) {
             Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-            SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+            SmallRyeConfig config = new SmallRyeConfigBuilder().addDiscoveredCustomizers().build();
 
             assertEquals("1234", config.getRawValue("from.custom.builder"));
         } finally {
@@ -59,7 +68,7 @@ public class SmallRyeConfigBuilderCustomizerTest {
         try (URLClassLoader urlClassLoader = urlClassLoader(contextClassLoader, "jar:" + servidePath.toUri() + "!/")) {
             Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-            SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+            SmallRyeConfig config = new SmallRyeConfigBuilder().addDiscoveredCustomizers().build();
 
             assertEquals("two", config.getRawValue("one"));
             assertEquals("true", config.getRawValue("addDefaultSources"));

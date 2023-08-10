@@ -57,6 +57,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class SmallRyeConfigBuilder implements ConfigBuilder {
     public static final String META_INF_MICROPROFILE_CONFIG_PROPERTIES = "META-INF/microprofile-config.properties";
 
+    private final List<SmallRyeConfigBuilderCustomizer> customizers = new ArrayList<>();
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
     private final List<ConfigSourceProvider> sourceProviders = new ArrayList<>();
@@ -69,6 +70,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final KeyMap<String> defaultValues = new KeyMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
+    private boolean addDiscoveredCustomizers = false;
     private boolean addDefaultSources = false;
     private boolean addDefaultInterceptors = false;
     private boolean addDiscoveredSources = false;
@@ -78,6 +80,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private boolean addDiscoveredValidator = false;
 
     public SmallRyeConfigBuilder() {
+    }
+
+    public SmallRyeConfigBuilder addDiscoveredCustomizers() {
+        addDiscoveredCustomizers = true;
+        return this;
     }
 
     @Override
@@ -410,6 +417,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder withCustomizers(SmallRyeConfigBuilderCustomizer... customizers) {
+        Collections.addAll(this.customizers, customizers);
+        return this;
+    }
+
     @Override
     public SmallRyeConfigBuilder withSources(ConfigSource... configSources) {
         Collections.addAll(sources, configSources);
@@ -577,6 +589,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return classLoader;
     }
 
+    public boolean isAddDiscoveredCustomizers() {
+        return addDiscoveredCustomizers;
+    }
+
     public boolean isAddDefaultSources() {
         return addDefaultSources;
     }
@@ -642,15 +658,19 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     @Override
     public SmallRyeConfig build() {
-        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
-        defaultValues.putAll(mappingProvider.getDefaultValues());
+        if (addDiscoveredCustomizers) {
+            for (SmallRyeConfigBuilderCustomizer customizer : ServiceLoader.load(SmallRyeConfigBuilderCustomizer.class,
+                    classLoader)) {
+                customizers.add(customizer);
+            }
+        }
 
-        ServiceLoader<SmallRyeConfigBuilderCustomizer> customizers = ServiceLoader.load(SmallRyeConfigBuilderCustomizer.class,
-                classLoader);
         customizers.stream()
-                .map(ServiceLoader.Provider::get)
                 .sorted(Comparator.comparingInt(SmallRyeConfigBuilderCustomizer::priority))
                 .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
+
+        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
+        defaultValues.putAll(mappingProvider.getDefaultValues());
 
         SmallRyeConfig config = new SmallRyeConfig(this);
         ConfigMappings.mapConfiguration(config, mappingProvider);

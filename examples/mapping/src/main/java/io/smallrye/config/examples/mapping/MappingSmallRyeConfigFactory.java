@@ -11,6 +11,7 @@ public class MappingSmallRyeConfigFactory extends SmallRyeConfigFactory {
 
         return configProviderResolver.getBuilder()
                 .forClassLoader(classLoader)
+                .addDiscoveredCustomizers()
                 .addDefaultSources()
                 .addDefaultInterceptors()
                 .addDiscoveredSources()
