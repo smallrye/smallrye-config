@@ -2288,4 +2288,23 @@ class ConfigMappingInterfaceTest {
             return value.trim();
         }
     }
+
+    @Test
+    void mapKeyQuotes() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapKeyQuotes.class)
+                // TODO - Default Values does not properly sypport quoted keys due to how NameIterator works
+                .withSources(config("map.values.\"key.quoted\"", "1234",
+                        "map.values.key.\"quoted\"", "1234"))
+                .build();
+
+        MapKeyQuotes mapping = config.getConfigMapping(MapKeyQuotes.class);
+        assertEquals("1234", mapping.values().get("key.quoted"));
+        assertEquals("1234", mapping.values().get("key.\"quoted\""));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapKeyQuotes {
+        Map<String, String> values();
+    }
 }

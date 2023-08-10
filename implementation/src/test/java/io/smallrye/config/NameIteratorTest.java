@@ -34,4 +34,14 @@ class NameIteratorTest {
         nameIterator.previous();
         assertEquals("foo", nameIterator.getNextSegment());
     }
+
+    @Test
+    void quotes() {
+        NameIterator nameIterator = new NameIterator("one.\"two.three\".four");
+        assertEquals("one", nameIterator.getNextSegment());
+        nameIterator.next();
+        assertEquals("two.three", nameIterator.getNextSegment());
+        nameIterator.next();
+        assertEquals("four", nameIterator.getNextSegment());
+    }
 }
