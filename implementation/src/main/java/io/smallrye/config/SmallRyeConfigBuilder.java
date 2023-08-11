@@ -585,7 +585,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaultValues;
     }
 
-    ClassLoader getClassLoader() {
+    public ClassLoader getClassLoader() {
         return classLoader;
     }
 
