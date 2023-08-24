@@ -6,6 +6,8 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -404,5 +406,22 @@ class SmallRyeConfigTest {
                 .build();
 
         assertEquals("value", config.getRawValue(""));
+    }
+
+    @Test
+    void subset() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "app.foo", "bar",
+                        "app.foo.user", "guest",
+                        "app.foo.password", "apassword",
+                        "app.fooed.user", "wrong"))
+                .build();
+        Config subset = config.subset("app.foo");
+        assertEquals("bar", subset.getValue("", String.class));
+        assertEquals("guest", subset.getValue("user", String.class));
+        assertEquals("apassword", subset.getValue("password", String.class));
+        assertThat(subset.getPropertyNames()).containsExactlyInAnyOrder("", "user", "password");
+        assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> subset.unwrap(SmallRyeConfig.class));
     }
 }
