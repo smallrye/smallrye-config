@@ -9,6 +9,7 @@ import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMapping;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
+import static io.smallrye.config.common.utils.StringUtil.equalsIgnoreCaseReplacingNonAlphanumericByUnderscores;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.lang.Integer.parseInt;
 
@@ -67,14 +68,16 @@ final class ConfigMappingProvider implements Serializable {
         this.validateUnknown = builder.validateUnknown;
 
         final ArrayDeque<String> currentPath = new ArrayDeque<>();
+        final NameIterator nameIterator = NameIterator.empty();
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
-            NameIterator rootNi = new NameIterator(entry.getKey());
-            while (rootNi.hasNext()) {
-                final String nextSegment = rootNi.getNextSegment();
-                if (!nextSegment.isEmpty()) {
-                    currentPath.add(nextSegment);
+            try (NameIterator rootNi = nameIterator.with(entry.getKey())) {
+                while (rootNi.hasNext()) {
+                    final String nextSegment = rootNi.getNextSegment();
+                    if (!nextSegment.isEmpty()) {
+                        currentPath.add(nextSegment);
+                    }
+                    rootNi.next();
                 }
-                rootNi.next();
             }
             List<Class<?>> roots = entry.getValue();
             for (Class<?> root : roots) {
@@ -1064,63 +1067,60 @@ final class ConfigMappingProvider implements Serializable {
 
         Set<String> additionalMappedProperties = new HashSet<>();
         // Look for unmatched properties if we can find one in the Env ones and add it
+        NameIterator nameIterator = NameIterator.empty();
+        StringBuilder sb = null;
         for (String mappedProperty : mappedProperties) {
             Set<String> matchedEnvProperties = new HashSet<>();
-            String endMappedProperty = replaceNonAlphanumericByUnderscores(mappedProperty);
             for (String envProperty : envProperties) {
-                if (envProperty.equalsIgnoreCase(endMappedProperty)) {
+                if (equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(envProperty, mappedProperty)) {
                     additionalMappedProperties.add(mappedProperty);
                     matchedEnvProperties.add(envProperty);
                     break;
                 }
 
-                NameIterator ni = new NameIterator(mappedProperty);
-                StringBuilder sb = new StringBuilder();
-                while (ni.hasNext()) {
-                    String propertySegment = ni.getNextSegment();
-                    if (isIndexed(propertySegment)) {
-                        // A mapped index property is represented as foo.bar[*] or foo.bar[*].baz
-                        // The env property is represented as FOO_BAR_0_ or FOO_BAR_0__BAZ
-                        // We need to match these somehow
-                        int position = ni.getPosition();
-                        int indexStart = propertySegment.indexOf("[") + position + 1;
-                        // If the segment is indexed, we try to match all previous segments with the env candidates
-                        if (envProperty.length() >= indexStart
-                                && envProperty.toLowerCase().startsWith(replaceNonAlphanumericByUnderscores(
-                                        sb + propertySegment.substring(0, indexStart - position - 1) + "_"))) {
-
-                            // Search for the ending _ to retrieve the possible index
-                            int indexEnd = -1;
-                            for (int i = indexStart + 1; i < envProperty.length(); i++) {
-                                if (envProperty.charAt(i) == '_') {
-                                    indexEnd = i;
-                                    break;
-                                }
-                            }
-
-                            // Extract the index from the env property
-                            // We don't care if this is numeric, it will be validated on the mapping retrieval
-                            String index = envProperty.substring(indexStart + 1, indexEnd);
-                            sb.append(propertySegment, 0, propertySegment.indexOf("[") + 1)
-                                    .append(index)
-                                    .append("]");
-                        }
+                try (NameIterator ni = nameIterator.with(mappedProperty)) {
+                    if (sb == null) {
+                        sb = new StringBuilder();
                     } else {
-                        sb.append(propertySegment);
+                        sb.setLength(0);
                     }
+                    while (ni.hasNext()) {
+                        int initialLength = sb.length();
+                        // append the propertySegment to it
+                        if (isIndexed(ni.getNextSegment(sb), initialLength)) {
+                            String propertySegment = sb.substring(initialLength);
+                            // rollback sb to the initialLength
+                            sb.setLength(initialLength);
+                            // A mapped index property is represented as foo.bar[*] or foo.bar[*].baz
+                            // The env property is represented as FOO_BAR_0_ or FOO_BAR_0__BAZ
+                            // We need to match these somehow
+                            int position = ni.getPosition();
+                            int firstSquareBracket = propertySegment.indexOf("[");
+                            int indexStart = firstSquareBracket + position + 1;
+                            // If the segment is indexed, we try to match all previous segments with the env candidates
+                            if (envProperty.length() >= indexStart
+                                    && envProperty.toLowerCase().startsWith(replaceNonAlphanumericByUnderscores(
+                                            sb + propertySegment.substring(0, indexStart - position - 1) + "_"))) {
+                                // Search for the ending _ to retrieve the possible index
+                                int indexEnd = envProperty.indexOf('_', indexStart + 1);
+                                // Extract the index from the env property
+                                // We don't care if this is numeric, it will be validated on the mapping retrieval
+                                sb.append(propertySegment, 0, firstSquareBracket + 1)
+                                        .append(envProperty, indexStart + 1, indexEnd)
+                                        .append(']');
+                            }
+                        }
 
-                    ni.next();
+                        ni.next();
 
-                    if (ni.hasNext()) {
-                        sb.append(".");
+                        if (ni.hasNext()) {
+                            sb.append(".");
+                        }
                     }
-                }
-
-                String mappedPropertyToMatch = sb.toString();
-                if (envProperty.equalsIgnoreCase(replaceNonAlphanumericByUnderscores(mappedPropertyToMatch))) {
-                    additionalMappedProperties.add(mappedPropertyToMatch);
-                    matchedEnvProperties.add(envProperty);
-                    // We cannot break here because if there are indexed properties they may match multiple envs
+                    if (equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(envProperty, sb)) {
+                        additionalMappedProperties.add(sb.toString());
+                        matchedEnvProperties.add(envProperty);
+                    }
                 }
             }
             envProperties.removeAll(matchedEnvProperties);
@@ -1151,16 +1151,29 @@ final class ConfigMappingProvider implements Serializable {
         int indexStart = propertyName.indexOf("[");
         int indexEnd = propertyName.indexOf("]");
         if (indexStart != -1 && indexEnd != -1) {
-            String index = propertyName.substring(indexStart + 1, indexEnd);
-            if (index.equals("*")) {
-                return true;
-            }
-            try {
-                Integer.parseInt(index);
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
+            return isIndexed0(propertyName, indexEnd, indexStart);
+        }
+        return false;
+    }
+
+    private static boolean isIndexed0(CharSequence propertyName, int indexEnd, int indexStart) {
+        int indexLength = indexEnd - (indexStart + 1);
+        if (indexLength == 1 && propertyName.charAt(indexStart + 1) == '*') {
+            return true;
+        }
+        try {
+            Integer.parseInt(propertyName, indexStart + 1, indexEnd, 10);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static boolean isIndexed(final StringBuilder propertyName, int start) {
+        int indexStart = propertyName.indexOf("[", start);
+        int indexEnd = propertyName.indexOf("]", start);
+        if (indexStart != -1 && indexEnd != -1) {
+            return isIndexed0(propertyName, indexEnd, indexStart);
         }
         return false;
     }

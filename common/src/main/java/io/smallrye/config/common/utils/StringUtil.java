@@ -88,14 +88,62 @@ public class StringUtil {
         return list.toArray(NO_STRINGS);
     }
 
+    private static boolean isAsciiLetterOrDigit(char c) {
+        return 'a' <= c && c <= 'z' ||
+                'A' <= c && c <= 'Z' ||
+                '0' <= c && c <= '9';
+    }
+
+    private static boolean isAsciiUpperCase(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+
+    private static char toAsciiLowerCase(char c) {
+        return isAsciiUpperCase(c) ? (char) (c + 32) : c;
+    }
+
+    public static boolean equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(final String property,
+            CharSequence mappedProperty) {
+        int length = mappedProperty.length();
+        if (property.length() != mappedProperty.length()) {
+            // special-case/slow-path
+            if (property.length() != mappedProperty.length() + 1) {
+                return false;
+            }
+            if (mappedProperty.charAt(length - 1) == '"' &&
+                    property.charAt(length - 1) == '_' && property.charAt(length) == '_') {
+                length = mappedProperty.length() - 1;
+            } else {
+                return false;
+            }
+        }
+        for (int i = 0; i < length; i++) {
+            char ch = mappedProperty.charAt(i);
+            if (!isAsciiLetterOrDigit(ch)) {
+                if (property.charAt(i) != '_') {
+                    return false;
+                }
+                continue;
+            }
+            final char pCh = property.charAt(i);
+            // in theory property should be ascii too, but better play safe
+            if (pCh < 128) {
+                if (toAsciiLowerCase(pCh) != toAsciiLowerCase(ch)) {
+                    return false;
+                }
+            } else if (Character.toLowerCase(property.charAt(i)) != Character.toLowerCase(ch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static String replaceNonAlphanumericByUnderscores(final String name) {
         int length = name.length();
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
-            if ('a' <= c && c <= 'z' ||
-                    'A' <= c && c <= 'Z' ||
-                    '0' <= c && c <= '9') {
+            if (isAsciiLetterOrDigit(c)) {
                 sb.append(c);
             } else {
                 sb.append('_');
