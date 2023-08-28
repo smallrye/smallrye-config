@@ -957,8 +957,6 @@ final class ConfigMappingProvider implements Serializable {
                 defaultValuesConfigSource.registerDefaults(defaultValues);
             }
         }
-
-        config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), config));
         return SecretKeys.doUnlocked(() -> mapConfigurationInternal(config));
     }
 
@@ -981,6 +979,8 @@ final class ConfigMappingProvider implements Serializable {
                 context.registerRoot(root, path, group);
             }
         }
+
+        config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), roots.keySet(), config));
 
         // lazily sweep
         for (String name : config.getPropertyNames()) {
@@ -1053,7 +1053,11 @@ final class ConfigMappingProvider implements Serializable {
         return false;
     }
 
-    private static Set<String> additionalMappedProperties(final Set<String> mappedProperties, final SmallRyeConfig config) {
+    private static Set<String> additionalMappedProperties(
+            final Set<String> mappedProperties,
+            final Set<String> roots,
+            final SmallRyeConfig config) {
+
         // Collect EnvSource properties
         Set<String> envProperties = new HashSet<>();
         for (ConfigSource source : config.getConfigSources(EnvConfigSource.class)) {
@@ -1064,6 +1068,32 @@ final class ConfigMappingProvider implements Serializable {
         for (String propertyName : config.getPropertyNames()) {
             mappedProperties.remove(propertyName);
         }
+
+        Set<String> envRoots = new HashSet<>(roots.size());
+        for (String root : roots) {
+            envRoots.add(replaceNonAlphanumericByUnderscores(root));
+        }
+
+        // Ignore Env properties that don't belong to a root
+        Set<String> envPropertiesUnmapped = new HashSet<>();
+        for (String envProperty : envProperties) {
+            boolean matched = false;
+            for (String envRoot : envRoots) {
+                if (envProperty.length() < envRoot.length()) {
+                    continue;
+                }
+
+                if (envRoot.equalsIgnoreCase(envProperty.substring(0, envRoot.length()))) {
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                envPropertiesUnmapped.add(envProperty);
+            }
+        }
+        envProperties.removeAll(envPropertiesUnmapped);
 
         Set<String> additionalMappedProperties = new HashSet<>();
         // Look for unmatched properties if we can find one in the Env ones and add it
