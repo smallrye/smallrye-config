@@ -107,7 +107,7 @@ public class StringUtil {
         int length = mappedProperty.length();
         if (property.length() != mappedProperty.length()) {
             // special-case/slow-path
-            if (property.length() != mappedProperty.length() + 1) {
+            if (length == 0 || property.length() != mappedProperty.length() + 1) {
                 return false;
             }
             if (mappedProperty.charAt(length - 1) == '"' &&
