@@ -935,7 +935,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         WithName annotation = element.getAnnotation(WithName.class);
         if (annotation != null) {
             if (useParent) {
-                throw new IllegalArgumentException("Cannot specify both @ParentConfigName and @ConfigName");
+                throw new IllegalArgumentException("Cannot specify both @WithParentName and @WithName in '" + element + "'");
             }
             String name = annotation.value();
             if (!name.isEmpty()) {
