@@ -165,51 +165,48 @@ public class StringUtil {
             if ('_' == c) {
                 if (i == 0) {
                     // leading _ can only mean a profile
-                    sb.append("%");
+                    sb.append('%');
                     continue;
                 }
 
                 // Do not convert to index if the first segment is a number
                 if (beginSegment > 0) {
-                    try {
-                        String segment = sb.substring(beginSegment, i);
-                        Integer.parseInt(segment);
-                        sb.replace(beginSegment - 1, beginSegment, "[").append("]");
+                    if (isNumeric(sb, beginSegment, i)) {
+                        sb.setCharAt(beginSegment - 1, '[');
+                        sb.append(']');
 
                         int j = i + 1;
                         if (j < length) {
                             if ('_' == name.charAt(j)) {
-                                sb.append(".");
+                                sb.append('.');
                                 i = j;
                             }
                         }
 
                         continue;
-                    } catch (NumberFormatException e) {
-                        // Ignore, it is not an indexed number
                     }
                 }
 
                 int j = i + 1;
                 if (j < length) {
                     if ('_' == name.charAt(j) && !quotesOpen) {
-                        sb.append(".");
-                        sb.append("\"");
+                        sb.append('.');
+                        sb.append('\"');
                         i = j;
                         quotesOpen = true;
                     } else if ('_' == name.charAt(j) && quotesOpen) {
-                        sb.append("\"");
+                        sb.append('\"');
                         // Ending
                         if (j + 1 < length) {
-                            sb.append(".");
+                            sb.append('.');
                         }
                         i = j;
                         quotesOpen = false;
                     } else {
-                        sb.append(".");
+                        sb.append('.');
                     }
                 } else {
-                    sb.append(".");
+                    sb.append('.');
                 }
                 beginSegment = j;
             } else {
@@ -217,6 +214,23 @@ public class StringUtil {
             }
         }
         return sb.toString();
+    }
+
+    public static boolean isNumeric(CharSequence digits) {
+        return isNumeric(digits, 0, digits.length());
+    }
+
+    public static boolean isNumeric(CharSequence digits, int start, int end) {
+        if (digits.length() == 0) {
+            return false;
+        }
+
+        for (int i = start; i < end; i++) {
+            if (!Character.isDigit(digits.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String skewer(String camelHumps) {
