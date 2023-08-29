@@ -957,6 +957,7 @@ final class ConfigMappingProvider implements Serializable {
                 defaultValuesConfigSource.registerDefaults(defaultValues);
             }
         }
+        config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), roots.keySet(), config));
         return SecretKeys.doUnlocked(() -> mapConfigurationInternal(config));
     }
 
@@ -969,6 +970,7 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         // eagerly populate roots
+        config.cachePropertyNames(true);
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             String path = entry.getKey();
             List<Class<?>> roots = entry.getValue();
@@ -980,16 +982,9 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
 
-        config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), roots.keySet(), config));
-
         // lazily sweep
-        for (String name : config.getPropertyNames()) {
+        for (String name : filterPropertiesInRoots(config.getPropertyNames(), roots.keySet())) {
             NameIterator ni = new NameIterator(name);
-            // filter properties in root
-            if (!isPropertyInRoot(ni)) {
-                continue;
-            }
-
             BiConsumer<ConfigMappingContext, NameIterator> action = matchActions.findRootValue(ni);
             if (action != null) {
                 action.accept(context, ni);
@@ -1006,51 +1001,49 @@ final class ConfigMappingProvider implements Serializable {
             throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
+        config.cachePropertyNames(false);
 
         return context;
     }
 
-    private boolean isPropertyInRoot(NameIterator propertyName) {
-        final Set<String> registeredRoots = roots.keySet();
-        for (String registeredRoot : registeredRoots) {
-            // match everything
-            if (registeredRoot.length() == 0) {
-                return true;
-            }
+    /**
+     * Filters the full list of properties names in Config to only the property names that can match any of the
+     * prefixes (namespaces) registered in mappings.
+     *
+     * @param properties the available property names in Config.
+     * @param roots the registered mapping roots.
+     *
+     * @return the property names that match to at least one root.
+     */
+    private static Iterable<String> filterPropertiesInRoots(final Iterable<String> properties, final Set<String> roots) {
+        if (roots.isEmpty()) {
+            return properties;
+        }
 
-            // A sub property from a namespace is always bigger in length
-            if (propertyName.getName().length() <= registeredRoot.length()) {
-                continue;
-            }
+        // Will match everything, so no point in filtering
+        if (roots.contains("")) {
+            return properties;
+        }
 
-            final NameIterator root = new NameIterator(registeredRoot);
-            // compare segments
-            while (root.hasNext()) {
-                String segment = root.getNextSegment();
-                if (!propertyName.hasNext()) {
-                    propertyName.goToStart();
-                    break;
+        List<String> matchedProperties = new ArrayList<>();
+        for (String property : properties) {
+            for (String root : roots) {
+                if (property.length() <= root.length()) {
+                    continue;
                 }
 
-                final String nextSegment = propertyName.getNextSegment();
-                if (!segment.equals(normalizeIfIndexed(nextSegment))) {
-                    propertyName.goToStart();
-                    break;
-                }
-
-                root.next();
-                propertyName.next();
-
-                // root has no more segments and we reached this far so everything matched.
-                // on top, property still has more segments to do the mapping.
-                if (!root.hasNext() && propertyName.hasNext()) {
-                    propertyName.goToStart();
-                    return true;
+                // foo.bar
+                // foo.bar."baz"
+                // foo.bar[0]
+                char c = property.charAt(root.length());
+                if ((c == '.') || c == '[') {
+                    if (property.startsWith(root)) {
+                        matchedProperties.add(property);
+                    }
                 }
             }
         }
-
-        return false;
+        return matchedProperties;
     }
 
     private static Set<String> additionalMappedProperties(
