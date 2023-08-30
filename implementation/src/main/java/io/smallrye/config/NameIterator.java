@@ -7,7 +7,7 @@ import io.smallrye.common.constraint.Assert;
 /**
  * An iterator for property name strings.
  */
-public final class NameIterator {
+public final class NameIterator implements AutoCloseable {
     /**
      * Configuration key maximum allowed length.
      */
@@ -16,18 +16,55 @@ public final class NameIterator {
     private static final int POS_BITS = 12;
     private static final int SE_SHIFT = 32 - POS_BITS;
 
-    private final String name;
+    private String name;
     private int pos;
+    private StringBuilder tmp;
+
+    private NameIterator() {
+    }
 
     public NameIterator(final String name) {
-        this(name, false);
+        with(name);
     }
 
     public NameIterator(final String name, final boolean startAtEnd) {
-        this(name, startAtEnd ? name.length() : -1);
+        with(name, startAtEnd);
     }
 
     public NameIterator(final String name, final int pos) {
+        with(name, pos);
+    }
+
+    private StringBuilder acquireTmpBuilder() {
+        if (tmp == null) {
+            tmp = new StringBuilder();
+        } else {
+            tmp.setLength(0);
+        }
+        return tmp;
+    }
+
+    @Override
+    public void close() {
+        name = null;
+    }
+
+    public static NameIterator empty() {
+        return new NameIterator();
+    }
+
+    public NameIterator with(String name, boolean startAtEnd) {
+        return with(name, startAtEnd ? name.length() : -1);
+    }
+
+    public NameIterator with(String name) {
+        return with(name, false);
+    }
+
+    public NameIterator with(String name, int pos) {
+        if (this.name != null) {
+            throw new IllegalStateException("this iterator must be closed first");
+        }
         Assert.checkNotNullParam("name", name);
         if (name.length() > MAX_LENGTH)
             throw new IllegalArgumentException("Name is too long");
@@ -37,6 +74,7 @@ public final class NameIterator {
             throw new IllegalArgumentException("Position is not located at a delimiter");
         this.name = name;
         this.pos = pos;
+        return this;
     }
 
     public void goToEnd() {
@@ -94,15 +132,15 @@ public final class NameIterator {
         return this.pos & POS_MASK;
     }
 
-    private int cookieOf(int state, int pos) {
+    private static int cookieOf(int state, int pos) {
         return state << POS_BITS | pos & POS_MASK;
     }
 
-    private int getPosition(int cookie) {
+    private static int getPosition(int cookie) {
         return (cookie & POS_MASK) << SE_SHIFT >> SE_SHIFT;
     }
 
-    private int getState(int cookie) {
+    private static int getState(int cookie) {
         return cookie >> POS_BITS;
     }
 
@@ -119,6 +157,7 @@ public final class NameIterator {
         }
         int state = getState(cookie);
         int ch;
+        final String name = this.name;
         for (;;) {
             pos++;
             if (pos == name.length()) {
@@ -253,12 +292,15 @@ public final class NameIterator {
     }
 
     public String getNextSegment() {
-        final StringBuilder b = new StringBuilder();
+        return getNextSegment(acquireTmpBuilder()).toString();
+    }
+
+    public StringBuilder getNextSegment(StringBuilder b) {
         int cookie = initIteration();
         for (;;) {
             cookie = nextPos(cookie);
             if (isSegmentDelimiter(cookie)) {
-                return b.toString();
+                return b;
             }
             b.append((char) charAt(cookie));
         }

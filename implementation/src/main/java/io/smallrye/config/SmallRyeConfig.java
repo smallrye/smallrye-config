@@ -518,6 +518,14 @@ public class SmallRyeConfig implements Config, Serializable {
         configSources.getPropertyNames().add(properties);
     }
 
+    void cachePropertyNames(boolean cache) {
+        if (cache) {
+            configSources.getPropertyNames().enableCache();
+        } else {
+            configSources.getPropertyNames().disableCache();
+        }
+    }
+
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
@@ -732,17 +740,36 @@ public class SmallRyeConfig implements Config, Serializable {
 
             private final PropertyNamesConfigSourceInterceptor interceptor;
 
+            // TODO - Temporary cache to improve allocation. Mappings require multiple calls to getPropertyNames.
+            // TODO - Replace with a proper implementation to avoid recomputation of property names.
+            private final Set<String> propertyNames = new HashSet<>();
+            private boolean cached = false;
+
             private PropertyNames(final PropertyNamesConfigSourceInterceptor propertyNamesInterceptor) {
                 this.interceptor = propertyNamesInterceptor;
             }
 
             Iterable<String> get() {
-                final HashSet<String> names = new HashSet<>();
-                final Iterator<String> namesIterator = interceptorChain.iterateNames();
-                while (namesIterator.hasNext()) {
-                    names.add(namesIterator.next());
+                if (cached) {
+                    return propertyNames;
+                } else {
+                    final HashSet<String> names = new HashSet<>();
+                    final Iterator<String> namesIterator = interceptorChain.iterateNames();
+                    while (namesIterator.hasNext()) {
+                        names.add(namesIterator.next());
+                    }
+                    return names;
                 }
-                return names;
+            }
+
+            void enableCache() {
+                propertyNames.addAll((Set<String>) get());
+                cached = true;
+            }
+
+            void disableCache() {
+                propertyNames.clear();
+                cached = false;
             }
 
             void add(final Set<String> properties) {
