@@ -2307,4 +2307,26 @@ class ConfigMappingInterfaceTest {
     interface MapKeyQuotes {
         Map<String, String> values();
     }
+
+    @Test
+    void mapWithEnvVarsOnlyInProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("map.env.one", "one", "%dev.map.env.two", "two"))
+                .withSources(new EnvConfigSource(Map.of("_DEV_MAP_ENV_THREE", "3"), 100))
+                .withMapping(MapWithEnvVarsOnlyInProfile.class)
+                .withProfile("dev")
+                .build();
+
+        MapWithEnvVarsOnlyInProfile mapping = config.getConfigMapping(MapWithEnvVarsOnlyInProfile.class);
+
+        assertEquals("one", mapping.map().get("one"));
+        assertEquals("two", mapping.map().get("two"));
+        assertEquals("3", mapping.map().get("three"));
+    }
+
+    @ConfigMapping(prefix = "map.env")
+    interface MapWithEnvVarsOnlyInProfile {
+        @WithParentName
+        Map<String, String> map();
+    }
 }
