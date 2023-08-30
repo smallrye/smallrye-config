@@ -88,14 +88,62 @@ public class StringUtil {
         return list.toArray(NO_STRINGS);
     }
 
+    private static boolean isAsciiLetterOrDigit(char c) {
+        return 'a' <= c && c <= 'z' ||
+                'A' <= c && c <= 'Z' ||
+                '0' <= c && c <= '9';
+    }
+
+    private static boolean isAsciiUpperCase(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+
+    private static char toAsciiLowerCase(char c) {
+        return isAsciiUpperCase(c) ? (char) (c + 32) : c;
+    }
+
+    public static boolean equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(final String property,
+            CharSequence mappedProperty) {
+        int length = mappedProperty.length();
+        if (property.length() != mappedProperty.length()) {
+            // special-case/slow-path
+            if (length == 0 || property.length() != mappedProperty.length() + 1) {
+                return false;
+            }
+            if (mappedProperty.charAt(length - 1) == '"' &&
+                    property.charAt(length - 1) == '_' && property.charAt(length) == '_') {
+                length = mappedProperty.length() - 1;
+            } else {
+                return false;
+            }
+        }
+        for (int i = 0; i < length; i++) {
+            char ch = mappedProperty.charAt(i);
+            if (!isAsciiLetterOrDigit(ch)) {
+                if (property.charAt(i) != '_') {
+                    return false;
+                }
+                continue;
+            }
+            final char pCh = property.charAt(i);
+            // in theory property should be ascii too, but better play safe
+            if (pCh < 128) {
+                if (toAsciiLowerCase(pCh) != toAsciiLowerCase(ch)) {
+                    return false;
+                }
+            } else if (Character.toLowerCase(property.charAt(i)) != Character.toLowerCase(ch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static String replaceNonAlphanumericByUnderscores(final String name) {
         int length = name.length();
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
-            if ('a' <= c && c <= 'z' ||
-                    'A' <= c && c <= 'Z' ||
-                    '0' <= c && c <= '9') {
+            if (isAsciiLetterOrDigit(c)) {
                 sb.append(c);
             } else {
                 sb.append('_');
@@ -117,51 +165,48 @@ public class StringUtil {
             if ('_' == c) {
                 if (i == 0) {
                     // leading _ can only mean a profile
-                    sb.append("%");
+                    sb.append('%');
                     continue;
                 }
 
                 // Do not convert to index if the first segment is a number
                 if (beginSegment > 0) {
-                    try {
-                        String segment = sb.substring(beginSegment, i);
-                        Integer.parseInt(segment);
-                        sb.replace(beginSegment - 1, beginSegment, "[").append("]");
+                    if (isNumeric(sb, beginSegment, i)) {
+                        sb.setCharAt(beginSegment - 1, '[');
+                        sb.append(']');
 
                         int j = i + 1;
                         if (j < length) {
                             if ('_' == name.charAt(j)) {
-                                sb.append(".");
+                                sb.append('.');
                                 i = j;
                             }
                         }
 
                         continue;
-                    } catch (NumberFormatException e) {
-                        // Ignore, it is not an indexed number
                     }
                 }
 
                 int j = i + 1;
                 if (j < length) {
                     if ('_' == name.charAt(j) && !quotesOpen) {
-                        sb.append(".");
-                        sb.append("\"");
+                        sb.append('.');
+                        sb.append('\"');
                         i = j;
                         quotesOpen = true;
                     } else if ('_' == name.charAt(j) && quotesOpen) {
-                        sb.append("\"");
+                        sb.append('\"');
                         // Ending
                         if (j + 1 < length) {
-                            sb.append(".");
+                            sb.append('.');
                         }
                         i = j;
                         quotesOpen = false;
                     } else {
-                        sb.append(".");
+                        sb.append('.');
                     }
                 } else {
-                    sb.append(".");
+                    sb.append('.');
                 }
                 beginSegment = j;
             } else {
@@ -169,6 +214,23 @@ public class StringUtil {
             }
         }
         return sb.toString();
+    }
+
+    public static boolean isNumeric(CharSequence digits) {
+        return isNumeric(digits, 0, digits.length());
+    }
+
+    public static boolean isNumeric(CharSequence digits, int start, int end) {
+        if (digits.length() == 0) {
+            return false;
+        }
+
+        for (int i = start; i < end; i++) {
+            if (!Character.isDigit(digits.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String skewer(String camelHumps) {
