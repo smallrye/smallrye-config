@@ -16,8 +16,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -553,22 +551,21 @@ public class SmallRyeConfig implements Config, Serializable {
             List<String> profiles = getProfiles(interceptors);
             List<ConfigSourceWithPriority> sourcesWithPriorities = mapLateSources(sources, interceptors, current, profiles,
                     builder);
+            List<ConfigSource> configSources = getSources(sourcesWithPriorities);
 
             // Rebuild the chain with the late sources and new instances of the interceptors
             // The new instance will ensure that we get rid of references to factories and other stuff and keep only
             // the resolved final source or interceptor to use.
             current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current);
+            PropertyNamesConfigSourceInterceptor propertyNamesInterceptor = new PropertyNamesConfigSourceInterceptor(current,
+                    configSources);
+            current = new SmallRyeConfigSourceInterceptorContext(propertyNamesInterceptor, current);
             for (ConfigSourceInterceptor interceptor : interceptors) {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
             }
 
-            // PropertyNames and generate additional properties
-            List<ConfigSource> configSources = getSources(sourcesWithPriorities);
-            PropertyNamesConfigSourceInterceptor propertyNamesInterceptor = new PropertyNamesConfigSourceInterceptor();
-            current = new SmallRyeConfigSourceInterceptorContext(propertyNamesInterceptor, current);
             PropertyNames propertyNames = new PropertyNames(propertyNamesInterceptor);
-            propertyNames.add(generateDottedProperties(configSources, current));
 
             this.profiles = profiles;
             this.sources = configSources;
@@ -712,63 +709,6 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             configurableConfigSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal).reversed());
             return Collections.unmodifiableList(configurableConfigSources);
-        }
-
-        /**
-         * Generate dotted properties from Env properties.
-         * <br>
-         * These are required when a consumer relies on the list of properties to find additional
-         * configurations. The list of properties is not normalized due to environment variables, which follow specific
-         * naming rules. The MicroProfile Config specification defines a set of conversion rules to look up and find
-         * values from environment variables even when using their dotted version, but this does not apply to the
-         * properties list.
-         * <br>
-         * Because an environment variable name may only be represented by a subset of characters, it is not possible
-         * to represent exactly a dotted version name from an environment variable name. Additional dotted properties
-         * mapped from environment variables are only added if a relationship cannot be found between all properties
-         * using the conversions look up rules of the MicroProfile Config specification. Example:
-         * <br>
-         * If <code>foo.bar</code> is present and <code>FOO_BAR</code> is also present, no property is required.
-         * If <code>foo-bar</code> is present and <code>FOO_BAR</code> is also present, no property is required.
-         * If <code>FOO_BAR</code> is present a property <code>foo.bar</code> is required.
-         */
-        private static Set<String> generateDottedProperties(final List<ConfigSource> sources,
-                final SmallRyeConfigSourceInterceptorContext current) {
-            // Collect all known properties
-            Set<String> properties = new HashSet<>();
-            Iterator<String> iterateNames = current.iterateNames();
-            while (iterateNames.hasNext()) {
-                properties.add(iterateNames.next());
-            }
-
-            // Collect only properties from the EnvSources
-            Set<String> envProperties = new HashSet<>();
-            for (ConfigSource source : sources) {
-                if (source instanceof EnvConfigSource) {
-                    envProperties.addAll(source.getPropertyNames());
-                }
-            }
-            properties.removeAll(envProperties);
-
-            // Collect properties that have the same semantic meaning
-            Set<String> overrides = new HashSet<>();
-            for (String property : properties) {
-                String semanticProperty = replaceNonAlphanumericByUnderscores(property);
-                for (String envProperty : envProperties) {
-                    if (envProperty.equalsIgnoreCase(semanticProperty)) {
-                        overrides.add(envProperty);
-                        break;
-                    }
-                }
-            }
-
-            // Remove them - Remaining properties can only be found in the EnvSource - generate a dotted version
-            envProperties.removeAll(overrides);
-            Set<String> dottedProperties = new HashSet<>();
-            for (String envProperty : envProperties) {
-                dottedProperties.add(toLowerCaseAndDotted(envProperty));
-            }
-            return dottedProperties;
         }
 
         List<String> getProfiles() {
