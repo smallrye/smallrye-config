@@ -15,10 +15,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class RelocateConfigSourceInterceptorTest {
@@ -249,6 +251,110 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", value.getName());
         assertEquals("dev", value.getProfile());
         assertEquals("%dev.old", value.getNameProfiled());
+    }
+
+    @Test
+    @Disabled
+    void fallbackMaps() {
+        FallbackConfigSourceInterceptor fallbackConfigSourceInterceptor = new FallbackConfigSourceInterceptor(name -> {
+            if (name.startsWith("child.")) {
+                return "parent." + name.substring(6);
+            }
+            return name;
+        }) {
+            @Override
+            public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
+                Set<String> names = new HashSet<>();
+                Set<String> hierarchyCandidates = new HashSet<>();
+                Iterator<String> namesIterator = context.iterateNames();
+                while (namesIterator.hasNext()) {
+                    String name = namesIterator.next();
+                    names.add(name);
+                    if (name.startsWith("parent.")) {
+                        hierarchyCandidates.add("child." + name.substring(7));
+                    }
+                }
+                names.addAll(ConfigMappings.mappedProperties(
+                        ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix(Child.class), hierarchyCandidates));
+                return names.iterator();
+            }
+        };
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "parent.parent", "parent", "child.child", "child",
+                        "parent.value", "parent",
+                        "parent.labels.parent", "parent",
+                        "parent.nested.parent.value", "parent-nested"))
+                .withInterceptors(fallbackConfigSourceInterceptor)
+                .withMapping(Parent.class)
+                .withMapping(Child.class)
+                .build();
+
+        Parent parent = config.getConfigMapping(Parent.class);
+        Child child = config.getConfigMapping(Child.class);
+
+        assertEquals("parent", parent.value().orElse(null));
+        assertEquals("parent", child.value().orElse(null));
+        assertEquals("parent", parent.labels().get("parent"));
+        assertEquals("parent", child.labels().get("parent"));
+        assertEquals("parent-nested", parent.nested().get("parent").value());
+        assertEquals("parent-nested", child.nested().get("parent").value());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "parent.parent", "parent", "child.child", "child",
+                        "parent.value", "parent", "child.value", "child",
+                        "parent.labels.parent", "parent", "child.labels.child", "child",
+                        "parent.nested.parent.value", "parent-nested", "child.nested.child.value", "child-nested"))
+                .withInterceptors(fallbackConfigSourceInterceptor)
+                .withMapping(Parent.class)
+                .withMapping(Child.class)
+                .build();
+
+        parent = config.getConfigMapping(Parent.class);
+        child = config.getConfigMapping(Child.class);
+
+        assertEquals("parent", parent.value().orElse(null));
+        assertEquals("child", child.value().orElse(null));
+        assertEquals(1, parent.labels().size());
+        assertEquals("parent", parent.labels().get("parent"));
+        assertEquals(2, child.labels().size());
+        assertEquals("child", child.labels().get("child"));
+        assertEquals(1, parent.nested().size());
+        assertEquals("parent-nested", parent.nested().get("parent").value());
+        assertEquals(2, child.nested().size());
+        assertEquals("child-nested", child.nested().get("child").value());
+    }
+
+    @ConfigMapping(prefix = "parent")
+    interface Parent {
+        String parent();
+
+        Optional<String> value();
+
+        Map<String, String> labels();
+
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @ConfigMapping(prefix = "child")
+    interface Child {
+        String child();
+
+        Optional<String> value();
+
+        Map<String, String> labels();
+
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
