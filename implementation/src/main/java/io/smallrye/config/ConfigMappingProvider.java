@@ -1028,7 +1028,16 @@ final class ConfigMappingProvider implements Serializable {
         List<String> matchedProperties = new ArrayList<>();
         for (String property : properties) {
             for (String root : roots) {
-                if (property.length() <= root.length()) {
+                // if property is less than the root no way to match
+                if (property.length() < root.length()) {
+                    continue;
+                }
+
+                // if it is the same, then it can still map with parent name
+                if (property.equals(root)) {
+                    matchedProperties.add(property);
+                    break;
+                } else if (property.length() == root.length()) {
                     continue;
                 }
 
