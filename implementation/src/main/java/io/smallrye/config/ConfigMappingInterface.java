@@ -773,7 +773,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             array[ti] = p;
             return array;
         }
-        return NO_PROPERTIES;
+        return ti > 0 ? new Property[ti] : NO_PROPERTIES;
     }
 
     private static Property getPropertyDef(Method method, AnnotatedType type) {
