@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -354,6 +355,44 @@ class PropertiesLocationConfigSourceFactoryTest {
     @Test
     void missingFile() {
         assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not-found.properties"));
+    }
+
+    @Test
+    void multipleProfilesAndFiles(@TempDir Path tempDir) throws Exception {
+        Properties mainProperties = new Properties();
+        mainProperties.setProperty("my.prop", "main");
+        mainProperties.setProperty("only-in-unprofiled", "unprofiled");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("application.properties").toFile())) {
+            mainProperties.store(out, null);
+        }
+
+        Properties baseProperties = new Properties();
+        baseProperties.setProperty("my.prop", "base");
+        baseProperties.setProperty("only-in-base", "base");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("application-base.properties").toFile())) {
+            baseProperties.store(out, null);
+        }
+
+        Properties prodProperties = new Properties();
+        prodProperties.setProperty("my.prop", "prod");
+        prodProperties.setProperty("only-in-prod", "prod");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve("application-prod.properties").toFile())) {
+            prodProperties.store(out, null);
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDiscoveredSources()
+                .addDefaultInterceptors()
+                .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("application.properties").toUri().toString())
+                .withProfiles(List.of("base", "prod"))
+                .build();
+
+        assertTrue(config.getProfiles().contains("base"));
+        assertTrue(config.getProfiles().contains("prod"));
+        assertEquals("unprofiled", config.getRawValue("only-in-unprofiled"));
+        assertEquals("base", config.getRawValue("only-in-base"));
+        assertEquals("prod", config.getRawValue("only-in-prod"));
+        assertEquals("prod", config.getRawValue("my.prop"));
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {
