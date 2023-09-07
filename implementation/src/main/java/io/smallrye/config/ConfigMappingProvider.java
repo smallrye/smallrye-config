@@ -57,14 +57,14 @@ final class ConfigMappingProvider implements Serializable {
     private final Map<String, List<Class<?>>> roots;
     private final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions;
     private final Map<String, Property> properties;
-    private final KeyMap<String> defaultValues;
+    private final Map<String, String> defaultValues;
     private final boolean validateUnknown;
 
     ConfigMappingProvider(final Builder builder) {
         this.roots = new HashMap<>(builder.roots);
         this.matchActions = new KeyMap<>();
         this.properties = new HashMap<>();
-        this.defaultValues = new KeyMap<>();
+        this.defaultValues = new HashMap<>();
         this.validateUnknown = builder.validateUnknown;
 
         final ArrayDeque<String> currentPath = new ArrayDeque<>();
@@ -154,7 +154,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processEagerGroup(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction) {
@@ -191,7 +191,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processProperty(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
@@ -211,11 +211,10 @@ final class ConfigMappingProvider implements Serializable {
             // already processed eagerly
             PrimitiveProperty primitiveProperty = property.asPrimitive();
             if (primitiveProperty.hasDefaultValue()) {
-                defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+                addDefault(currentPath, primitiveProperty.getDefaultValue());
                 // collections may also be represented without [] so we need to register both paths
                 if (isCollection(currentPath)) {
-                    defaultValues.findOrAdd(inlineCollectionPath(currentPath))
-                            .putRootValue(primitiveProperty.getDefaultValue());
+                    addDefault(inlineCollectionPath(currentPath), primitiveProperty.getDefaultValue());
                 }
             }
             addAction(currentPath, property, DO_NOTHING);
@@ -227,10 +226,10 @@ final class ConfigMappingProvider implements Serializable {
             // already processed eagerly
             LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
-                defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                addDefault(currentPath, leafProperty.getDefaultValue());
                 // collections may also be represented without [] so we need to register both paths
                 if (isCollection(currentPath)) {
-                    defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                    addDefault(inlineCollectionPath(currentPath), leafProperty.getDefaultValue());
                 }
             }
             // ignore with no error message
@@ -254,7 +253,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processOptionalProperty(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
@@ -273,10 +272,10 @@ final class ConfigMappingProvider implements Serializable {
         } else if (property.isLeaf()) {
             LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
-                defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                addDefault(currentPath, leafProperty.getDefaultValue());
                 // collections may also be represented without [] so we need to register both paths
                 if (isCollection(currentPath)) {
-                    defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                    addDefault(inlineCollectionPath(currentPath), leafProperty.getDefaultValue());
                 }
             }
             addAction(currentPath, property, DO_NOTHING);
@@ -295,7 +294,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processLazyGroupInGroup(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
@@ -331,7 +330,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processLazyPropertyInGroup(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
             final HashSet<String> usedProperties,
             final NamingStrategy namingStrategy,
@@ -367,29 +366,28 @@ final class ConfigMappingProvider implements Serializable {
             if (property.isPrimitive()) {
                 PrimitiveProperty primitiveProperty = property.asPrimitive();
                 if (primitiveProperty.hasDefaultValue()) {
-                    defaultValues.findOrAdd(currentPath).putRootValue(primitiveProperty.getDefaultValue());
+                    addDefault(currentPath, primitiveProperty.getDefaultValue());
                     // collections may also be represented without [] so we need to register both paths
                     if (isCollection(currentPath)) {
-                        defaultValues.findOrAdd(inlineCollectionPath(currentPath))
-                                .putRootValue(primitiveProperty.getDefaultValue());
+                        addDefault(inlineCollectionPath(currentPath), primitiveProperty.getDefaultValue());
                     }
                 }
             } else if (property.isLeaf() && optional) {
                 LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
                 if (leafProperty.hasDefaultValue()) {
-                    defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                    addDefault(currentPath, leafProperty.getDefaultValue());
                     // collections may also be represented without [] so we need to register both paths
                     if (isCollection(currentPath)) {
-                        defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                        addDefault(inlineCollectionPath(currentPath), leafProperty.getDefaultValue());
                     }
                 }
             } else {
                 LeafProperty leafProperty = property.asLeaf();
                 if (leafProperty.hasDefaultValue()) {
-                    defaultValues.findOrAdd(currentPath).putRootValue(leafProperty.getDefaultValue());
+                    addDefault(currentPath, leafProperty.getDefaultValue());
                     // collections may also be represented without [] so we need to register both paths
                     if (isCollection(currentPath)) {
-                        defaultValues.findOrAdd(inlineCollectionPath(currentPath)).putRootValue(leafProperty.getDefaultValue());
+                        addDefault(inlineCollectionPath(currentPath), leafProperty.getDefaultValue());
                     }
                 }
             }
@@ -409,7 +407,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processLazyMapInGroup(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final MapProperty property,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingGroup,
             final NamingStrategy namingStrategy,
@@ -423,7 +421,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processLazyMap(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final MapProperty property,
             final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
             final NamingStrategy namingStrategy,
@@ -447,7 +445,7 @@ final class ConfigMappingProvider implements Serializable {
     private void processLazyMapValue(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
-            final KeyMap<String> defaultValues,
+            final Map<String, String> defaultValues,
             final MapProperty mapProperty,
             final Property property,
             final boolean keyUnnamed,
@@ -946,15 +944,19 @@ final class ConfigMappingProvider implements Serializable {
         return properties;
     }
 
-    KeyMap<String> getDefaultValues() {
+    Map<String, String> getDefaultValues() {
         return defaultValues;
+    }
+
+    private void addDefault(ArrayDeque<String> path, String value) {
+        defaultValues.put(String.join(".", path), value);
     }
 
     ConfigMappingContext mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource instanceof DefaultValuesConfigSource) {
                 DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
-                defaultValuesConfigSource.registerDefaults(defaultValues);
+                defaultValuesConfigSource.addDefaults(defaultValues);
             }
         }
         config.addPropertyNames(additionalMappedProperties(new HashSet<>(getProperties().keySet()), roots.keySet(), config));
