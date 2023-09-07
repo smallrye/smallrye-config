@@ -67,7 +67,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final List<SecretKeysHandler> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
-    private final KeyMap<String> defaultValues = new KeyMap<>();
+    private final Map<String, String> defaultValues = new HashMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
@@ -482,14 +482,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withDefaultValue(String name, String value) {
-        this.defaultValues.findOrAdd(name).putRootValue(value);
+        this.defaultValues.put(name, value);
         return this;
     }
 
     public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
-        for (Map.Entry<String, String> entry : defaultValues.entrySet()) {
-            this.defaultValues.findOrAdd(entry.getKey()).putRootValue(entry.getValue());
-        }
+        this.defaultValues.putAll(defaultValues);
         return this;
     }
 
@@ -581,7 +579,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return validator;
     }
 
-    public KeyMap<String> getDefaultValues() {
+    public Map<String, String> getDefaultValues() {
         return defaultValues;
     }
 

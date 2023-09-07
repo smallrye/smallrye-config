@@ -106,12 +106,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
 
             @Override
             protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
-                // Avoid caching the keystore password
-                String passwordName = "smallrye.config.source.keystore." + name + ".password";
-                ConfigValue password = context.getValue(passwordName);
-                if (password == null || password.getValue() == null) {
-                    throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
-                }
+                ConfigValue password = getPassword(context, name);
                 return new UrlKeyStoreConfigSource(url, ordinal).loadKeyStore(keyStore, password.getValue().toCharArray());
             }
 
@@ -121,6 +116,21 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
             }
 
         }.getConfigSources(context);
+    }
+
+    // Avoid caching the keystore password
+    private static ConfigValue getPassword(final ConfigSourceContext context, final String name) {
+        // TODO - name can be quoted. try to figure out a better way to do this
+        String passwordName = "smallrye.config.source.keystore." + name + ".password";
+        ConfigValue password = context.getValue(passwordName);
+        if (password == null || password.getValue() == null) {
+            passwordName = "smallrye.config.source.keystore.\"" + name + "\".password";
+            password = context.getValue(passwordName);
+            if (password == null || password.getValue() == null) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+            }
+        }
+        return password;
     }
 
     private static class UrlKeyStoreConfigSource implements ConfigSource {
