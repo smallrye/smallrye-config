@@ -750,28 +750,30 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     static Property[] getProperties(Method[] methods, int si, int ti) {
-        if (si == methods.length) {
-            if (ti == 0) {
-                return NO_PROPERTIES;
-            } else {
-                return new Property[ti];
+        for (int i = si; i < methods.length; i++) {
+            Method method = methods[i];
+            int mods = method.getModifiers();
+            if (!Modifier.isPublic(mods) || Modifier.isStatic(mods) || !Modifier.isAbstract(mods)) {
+                // no need for recursive calls here, which are costy in interpreted mode!
+                continue;
             }
+            if (method.getParameterCount() > 0) {
+                throw new IllegalArgumentException("Configuration methods cannot accept parameters");
+            }
+            if (method.getReturnType() == void.class) {
+                throw new IllegalArgumentException("Void config methods are not allowed");
+            }
+            Property p = getPropertyDef(method, method.getAnnotatedReturnType());
+            final Property[] array;
+            if (i + 1 == methods.length) {
+                array = new Property[ti + 1];
+            } else {
+                array = getProperties(methods, i + 1, ti + 1);
+            }
+            array[ti] = p;
+            return array;
         }
-        Method method = methods[si];
-        int mods = method.getModifiers();
-        if (!Modifier.isPublic(mods) || Modifier.isStatic(mods) || !Modifier.isAbstract(mods)) {
-            return getProperties(methods, si + 1, ti);
-        }
-        if (method.getParameterCount() > 0) {
-            throw new IllegalArgumentException("Configuration methods cannot accept parameters");
-        }
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("Void config methods are not allowed");
-        }
-        Property p = getPropertyDef(method, method.getAnnotatedReturnType());
-        Property[] array = getProperties(methods, si + 1, ti + 1);
-        array[ti] = p;
-        return array;
+        return NO_PROPERTIES;
     }
 
     private static Property getPropertyDef(Method method, AnnotatedType type) {
