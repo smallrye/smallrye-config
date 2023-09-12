@@ -313,7 +313,7 @@ class SmallRyeConfigTest {
         assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp-config.prop"));
-        assertFalse(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
+        assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
     }
 
     @Test

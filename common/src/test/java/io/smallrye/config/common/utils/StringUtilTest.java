@@ -121,7 +121,34 @@ class StringUtilTest {
     }
 
     @Test
+    void replaceNonAlphanumericByUnderscoresWithStringBuilder() {
+        StringBuilder builder = new StringBuilder();
+        builder.setLength(0);
+        assertEquals("FOO_BAR", StringUtil.replaceNonAlphanumericByUnderscores("foo.bar", builder).toUpperCase());
+        builder.setLength(0);
+        assertEquals("FOO_BAR_BAZ", StringUtil.replaceNonAlphanumericByUnderscores("foo.bar.baz", builder).toUpperCase());
+        builder.setLength(0);
+        assertEquals("FOO", StringUtil.replaceNonAlphanumericByUnderscores("foo", builder).toUpperCase());
+        builder.setLength(0);
+        assertEquals("TEST_LANGUAGE__DE_ETR__",
+                StringUtil.replaceNonAlphanumericByUnderscores("test.language.\"de.etr\"".toUpperCase()));
+    }
+
+    @Test
     void toLowerCaseAndDotted() {
+        assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
+    }
+
+    @Test
+    void toLowerCaseAndDottedWithStringBuilder() {
+        StringBuilder builder = new StringBuilder();
+        builder.setLength(0);
+        assertEquals("foo.bar", StringUtil.toLowerCaseAndDotted("FOO_BAR", builder));
+        builder.setLength(0);
+        assertEquals("foo.bar.baz", StringUtil.toLowerCaseAndDotted("FOO_BAR_BAZ", builder));
+        builder.setLength(0);
+        assertEquals("foo", StringUtil.toLowerCaseAndDotted("FOO", builder));
+        builder.setLength(0);
         assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
     }
 

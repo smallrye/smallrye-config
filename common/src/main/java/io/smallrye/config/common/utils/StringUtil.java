@@ -139,8 +139,11 @@ public class StringUtil {
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name) {
+        return replaceNonAlphanumericByUnderscores(name, new StringBuilder(name.length()));
+    }
+
+    public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
         int length = name.length();
-        StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
             if (isAsciiLetterOrDigit(c)) {
@@ -156,10 +159,13 @@ public class StringUtil {
     }
 
     public static String toLowerCaseAndDotted(final String name) {
+        return toLowerCaseAndDotted(name, new StringBuilder(name.length()));
+    }
+
+    public static String toLowerCaseAndDotted(final String name, final StringBuilder sb) {
         int length = name.length();
         int beginSegment = 0;
         boolean quotesOpen = false;
-        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
             if ('_' == c) {

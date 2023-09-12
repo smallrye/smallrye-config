@@ -54,7 +54,7 @@ class EnvConfigSourceTest {
         assertFalse(cs.getPropertyNames().contains("smallrye_mp_config_prop"));
 
         assertEquals(envProp, cs.getValue("smallrye.mp.config.prop"));
-        assertFalse(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
+        assertTrue(cs.getPropertyNames().contains("smallrye.mp.config.prop"));
 
         assertEquals(envProp, cs.getValue("SMALLRYE.MP.CONFIG.PROP"));
         assertFalse(cs.getPropertyNames().contains("SMALLRYE.MP.CONFIG.PROP"));
@@ -100,7 +100,7 @@ class EnvConfigSourceTest {
         ConfigSource configSource = config.getConfigSources().iterator().next();
 
         assertTrue(configSource instanceof EnvConfigSource);
-        assertEquals(configSource.getOrdinal(), 301);
+        assertEquals(301, configSource.getOrdinal());
     }
 
     @Test
