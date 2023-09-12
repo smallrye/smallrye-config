@@ -23,7 +23,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.weld.junit5.WeldInitiator;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.inject.ConfigExtension;
 
 /**
@@ -92,20 +92,20 @@ class ZooKeeperConfigSourceTest {
     void testGettingProperty() {
         logger.info("ZooKeeperConfigSourceTest.testGettingProperty");
 
-        Config cfg = ConfigProvider.getConfig();
+        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
 
         //Check that the ZK ConfigSource will work
-        assertNotNull(cfg.getValue("io.smallrye.configsource.zookeeper.url", String.class));
+        assertNotNull(config.getValue("io.smallrye.configsource.zookeeper.url", String.class));
 
         //Check that a property doesn't exist yet
         try {
-            cfg.getValue(PROPERTY_NAME, String.class);
+            config.getValue(PROPERTY_NAME, String.class);
             fail("Property " + PROPERTY_NAME + " should not exist");
         } catch (NoSuchElementException ignored) {
         }
 
         //Check that the optional version of the property is not present
-        assertFalse(cfg.getOptionalValue(PROPERTY_NAME, String.class).isPresent());
+        assertFalse(config.getOptionalValue(PROPERTY_NAME, String.class).isPresent());
         //setup the property in ZK
         try {
             curatorClient.createContainers(ZK_KEY);
@@ -115,10 +115,10 @@ class ZooKeeperConfigSourceTest {
         }
 
         //check the property can be optained by a property
-        assertEquals(PROPERTY_VALUE, cfg.getValue(PROPERTY_NAME, String.class));
+        assertEquals(PROPERTY_VALUE, config.getValue(PROPERTY_NAME, String.class));
 
         Set<String> propertyNames = new HashSet<>();
-        cfg.getPropertyNames().forEach(propertyNames::add);
+        config.getLatestPropertyNames().forEach(propertyNames::add);
         assertTrue(propertyNames.contains(PROPERTY_NAME));
     }
 

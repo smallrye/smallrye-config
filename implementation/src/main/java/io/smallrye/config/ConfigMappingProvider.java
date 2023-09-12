@@ -972,7 +972,6 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         // eagerly populate roots
-        config.cachePropertyNames(true);
         for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
             String path = entry.getKey();
             List<Class<?>> roots = entry.getValue();
@@ -1003,7 +1002,6 @@ final class ConfigMappingProvider implements Serializable {
             throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
         context.fillInOptionals();
-        config.cachePropertyNames(false);
 
         return context;
     }
@@ -1066,11 +1064,6 @@ final class ConfigMappingProvider implements Serializable {
         Set<String> envProperties = new HashSet<>();
         for (ConfigSource source : config.getConfigSources(EnvConfigSource.class)) {
             envProperties.addAll(source.getPropertyNames());
-        }
-
-        // Remove properties that we know that already exist
-        for (String propertyName : config.getPropertyNames()) {
-            mappedProperties.remove(propertyName);
         }
 
         Set<String> envRoots = new HashSet<>(roots.size());
