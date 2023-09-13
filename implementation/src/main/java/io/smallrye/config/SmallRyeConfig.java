@@ -566,8 +566,7 @@ public class SmallRyeConfig implements Config, Serializable {
             // the resolved final source or interceptor to use.
             current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current);
-            PropertyNamesConfigSourceInterceptor propertyNamesInterceptor = new PropertyNamesConfigSourceInterceptor(current,
-                    configSources);
+            PropertyNamesConfigSourceInterceptor propertyNamesInterceptor = new PropertyNamesConfigSourceInterceptor();
             current = new SmallRyeConfigSourceInterceptorContext(propertyNamesInterceptor, current);
             for (ConfigSourceInterceptor interceptor : interceptors) {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
