@@ -50,7 +50,12 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return null;
         }
 
-        ConfigValue.ConfigValueBuilder value = configValue.from();
+        // Avoid extra StringBuilder allocations from Expression
+        if (configValue.getValue().indexOf('$') == -1) {
+            return configValue;
+        }
+
+        ConfigValue.ConfigValueBuilder valueBuilder = configValue.from();
         Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
                 NO_SMART_BRACES, DOUBLE_COLON);
         String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
@@ -61,7 +66,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 // Requires a handler lookup
                 int index = key.indexOf("::");
                 if (index != -1) {
-                    value.withExtendedExpressionHandler(key.substring(0, index));
+                    valueBuilder.withExtendedExpressionHandler(key.substring(0, index));
                     stringBuilder.append(key, index + 2, key.length());
                     return;
                 }
@@ -69,20 +74,20 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 // Expression lookup
                 ConfigValue resolve = getValue(context, key, depth + 1);
                 if (resolve != null) {
-                    if (resolve.getProblems().isEmpty()) {
+                    if (!resolve.hasProblems()) {
                         stringBuilder.append(resolve.getValue());
                     } else {
-                        value.withProblems(resolve.getProblems());
+                        valueBuilder.withProblems(resolve.getProblems());
                     }
                 } else if (resolveContext.hasDefault()) {
                     resolveContext.expandDefault();
                 } else {
-                    value.addProblem(new Problem(msg.expandingElementNotFound(key, configValue.getName())));
+                    valueBuilder.addProblem(new Problem(msg.expandingElementNotFound(key, configValue.getName())));
                 }
             }
         });
 
-        return value.withValue(expanded).build();
+        return valueBuilder.withValue(expanded).build();
     }
 
     /**

@@ -102,36 +102,36 @@ public class StringUtil {
         return isAsciiUpperCase(c) ? (char) (c + 32) : c;
     }
 
-    public static boolean equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(final String property,
-            CharSequence mappedProperty) {
-        int length = mappedProperty.length();
-        if (property.length() != mappedProperty.length()) {
+    public static boolean equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(final String envProperty,
+            CharSequence dottedProperty) {
+        int length = dottedProperty.length();
+        if (envProperty.length() != dottedProperty.length()) {
             // special-case/slow-path
-            if (length == 0 || property.length() != mappedProperty.length() + 1) {
+            if (length == 0 || envProperty.length() != dottedProperty.length() + 1) {
                 return false;
             }
-            if (mappedProperty.charAt(length - 1) == '"' &&
-                    property.charAt(length - 1) == '_' && property.charAt(length) == '_') {
-                length = mappedProperty.length() - 1;
+            if (dottedProperty.charAt(length - 1) == '"' &&
+                    envProperty.charAt(length - 1) == '_' && envProperty.charAt(length) == '_') {
+                length = dottedProperty.length() - 1;
             } else {
                 return false;
             }
         }
         for (int i = 0; i < length; i++) {
-            char ch = mappedProperty.charAt(i);
+            char ch = dottedProperty.charAt(i);
             if (!isAsciiLetterOrDigit(ch)) {
-                if (property.charAt(i) != '_') {
+                if (envProperty.charAt(i) != '_') {
                     return false;
                 }
                 continue;
             }
-            final char pCh = property.charAt(i);
+            final char pCh = envProperty.charAt(i);
             // in theory property should be ascii too, but better play safe
             if (pCh < 128) {
                 if (toAsciiLowerCase(pCh) != toAsciiLowerCase(ch)) {
                     return false;
                 }
-            } else if (Character.toLowerCase(property.charAt(i)) != Character.toLowerCase(ch)) {
+            } else if (Character.toLowerCase(envProperty.charAt(i)) != Character.toLowerCase(ch)) {
                 return false;
             }
         }
