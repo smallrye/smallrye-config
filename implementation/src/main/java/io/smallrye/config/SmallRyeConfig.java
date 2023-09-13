@@ -410,9 +410,29 @@ public class SmallRyeConfig implements Config, Serializable {
         return mappings.getConfigMapping(type, prefix);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation caches the list of property names collected when {@link SmallRyeConfig} is built via
+     * {@link SmallRyeConfigBuilder#build()}.
+     *
+     * @return the cached names of all configured keys of the underlying configuration
+     * @see {@link SmallRyeConfig#getLatestPropertyNames()}
+     */
     @Override
     public Iterable<String> getPropertyNames() {
         return configSources.getPropertyNames().get();
+    }
+
+    /**
+     * Provides a way to retrieve an updated list of all property names. The updated list replaces the cached list
+     * returned by {@link SmallRyeConfig#getPropertyNames()}.
+     *
+     * @return the names of all configured keys of the underlying configuration
+     */
+    @Experimental("Retrieve an updated list of all configuration property names")
+    public Iterable<String> getLatestPropertyNames() {
+        return configSources.getPropertyNames().get(true);
     }
 
     /**
@@ -516,14 +536,6 @@ public class SmallRyeConfig implements Config, Serializable {
 
     void addPropertyNames(Set<String> properties) {
         configSources.getPropertyNames().add(properties);
-    }
-
-    void cachePropertyNames(boolean cache) {
-        if (cache) {
-            configSources.getPropertyNames().enableCache();
-        } else {
-            configSources.getPropertyNames().disableCache();
-        }
     }
 
     private static class ConfigSources implements Serializable {
@@ -738,37 +750,28 @@ public class SmallRyeConfig implements Config, Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final PropertyNamesConfigSourceInterceptor interceptor;
-
-            // TODO - Temporary cache to improve allocation. Mappings require multiple calls to getPropertyNames.
-            // TODO - Replace with a proper implementation to avoid recomputation of property names.
             private final Set<String> propertyNames = new HashSet<>();
-            private boolean cached = false;
 
             private PropertyNames(final PropertyNamesConfigSourceInterceptor propertyNamesInterceptor) {
                 this.interceptor = propertyNamesInterceptor;
             }
 
             Iterable<String> get() {
-                if (cached) {
-                    return propertyNames;
-                } else {
-                    final HashSet<String> names = new HashSet<>();
-                    final Iterator<String> namesIterator = interceptorChain.iterateNames();
-                    while (namesIterator.hasNext()) {
-                        names.add(namesIterator.next());
-                    }
-                    return names;
+                if (propertyNames.isEmpty()) {
+                    return get(true);
                 }
+                return propertyNames;
             }
 
-            void enableCache() {
-                propertyNames.addAll((Set<String>) get());
-                cached = true;
-            }
-
-            void disableCache() {
-                propertyNames.clear();
-                cached = false;
+            Iterable<String> get(boolean latest) {
+                if (latest) {
+                    propertyNames.clear();
+                    Iterator<String> namesIterator = interceptorChain.iterateNames();
+                    while (namesIterator.hasNext()) {
+                        propertyNames.add(namesIterator.next());
+                    }
+                }
+                return propertyNames;
             }
 
             void add(final Set<String> properties) {
