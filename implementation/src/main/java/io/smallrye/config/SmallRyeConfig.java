@@ -417,7 +417,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * {@link SmallRyeConfigBuilder#build()}.
      *
      * @return the cached names of all configured keys of the underlying configuration
-     * @see {@link SmallRyeConfig#getLatestPropertyNames()}
+     * @see SmallRyeConfig#getLatestPropertyNames()
      */
     @Override
     public Iterable<String> getPropertyNames() {
