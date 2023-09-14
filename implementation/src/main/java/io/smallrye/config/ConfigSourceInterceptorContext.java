@@ -29,5 +29,6 @@ public interface ConfigSourceInterceptorContext extends Serializable {
      *
      * @return an Iterator of {@link ConfigValue} with information about the name, value, config source and ordinal.
      */
+    @Deprecated(forRemoval = true)
     Iterator<ConfigValue> iterateValues();
 }

@@ -329,6 +329,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * @param name the property name (must not be {@code null})
      * @return the raw value, or {@code null} if no property value was discovered for the given property name
      */
+    @Deprecated(forRemoval = true)
     public String getRawValue(String name) {
         final ConfigValue configValue = getConfigValue(name);
         return configValue != null && configValue.getValue() != null ? configValue.getValue() : null;
