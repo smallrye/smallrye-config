@@ -43,6 +43,7 @@ import io.smallrye.common.constraint.Assert;
  *           <p>
  *           The backing collections are assumed to be immutable.
  */
+@Deprecated(forRemoval = true)
 public class ConfigSourceMap extends AbstractMap<String, String> implements Map<String, String>, Serializable {
     private static final long serialVersionUID = -6694358608066599032L;
 
