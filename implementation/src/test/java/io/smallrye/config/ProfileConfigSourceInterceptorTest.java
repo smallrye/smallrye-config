@@ -221,6 +221,17 @@ class ProfileConfigSourceInterceptorTest {
     }
 
     @Test
+    void relocatePropertyKeysWithMultipleProfiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "common", "config_ordinal", "1000"))
+                .withSources(config("\"%common,another\".my.prop", "1234"))
+                .addDefaultInterceptors()
+                .build();
+
+        assertEquals("1234", config.getRawValue("my.prop"));
+    }
+
+    @Test
     void multipleProfilesDocs() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config(SMALLRYE_CONFIG_PROFILE, "common,dev"))

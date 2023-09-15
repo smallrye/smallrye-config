@@ -249,6 +249,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                             multipleProfileProperties
                                     .add(new MultipleProfileProperty(name, name.substring(profileSegment.length()), profiles));
                         }
+                    } else if (name.length() > 1 && name.charAt(0) == '"' && name.charAt(1) == '%') {
+                        String segments = name.substring(name.indexOf('"', 1) + 1);
+                        NameIterator ni = new NameIterator(name);
+                        String profileSegment = ni.getNextSegment();
+                        List<String> profiles = convertProfile(profileSegment.substring(1));
+
+                        if (profiles.size() > 1) {
+                            multipleProfileProperties
+                                    .add(new MultipleProfileProperty(name, segments, profiles));
+                        }
                     }
                 }
 
