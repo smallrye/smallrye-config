@@ -136,19 +136,13 @@ class StringUtilTest {
 
     @Test
     void toLowerCaseAndDotted() {
-        assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
-    }
-
-    @Test
-    void toLowerCaseAndDottedWithStringBuilder() {
-        StringBuilder builder = new StringBuilder();
-        builder.setLength(0);
-        assertEquals("foo.bar", StringUtil.toLowerCaseAndDotted("FOO_BAR", builder));
-        builder.setLength(0);
-        assertEquals("foo.bar.baz", StringUtil.toLowerCaseAndDotted("FOO_BAR_BAZ", builder));
-        builder.setLength(0);
-        assertEquals("foo", StringUtil.toLowerCaseAndDotted("FOO", builder));
-        builder.setLength(0);
+        assertEquals("", StringUtil.toLowerCaseAndDotted(""));
+        assertEquals("f", StringUtil.toLowerCaseAndDotted("F"));
+        assertEquals("foo", StringUtil.toLowerCaseAndDotted("FOO"));
+        assertEquals("foo.bar", StringUtil.toLowerCaseAndDotted("FOO_BAR"));
+        assertEquals("foo.bar.baz", StringUtil.toLowerCaseAndDotted("FOO_BAR_BAZ"));
+        assertEquals("foo.bar.baz[20]", StringUtil.toLowerCaseAndDotted("FOO_BAR_BAZ_20_"));
+        assertEquals("foo.bar.\"baz\".i[20].e", StringUtil.toLowerCaseAndDotted("FOO_BAR__BAZ__I_20__E"));
         assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
     }
 

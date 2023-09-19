@@ -7,7 +7,7 @@ import io.smallrye.common.constraint.Assert;
 /**
  * An iterator for property name strings.
  */
-public final class NameIterator implements AutoCloseable {
+public final class NameIterator {
     /**
      * Configuration key maximum allowed length.
      */
@@ -18,7 +18,6 @@ public final class NameIterator implements AutoCloseable {
 
     private String name;
     private int pos;
-    private StringBuilder tmp;
 
     private NameIterator() {
     }
@@ -33,20 +32,6 @@ public final class NameIterator implements AutoCloseable {
 
     public NameIterator(final String name, final int pos) {
         with(name, pos);
-    }
-
-    private StringBuilder acquireTmpBuilder() {
-        if (tmp == null) {
-            tmp = new StringBuilder();
-        } else {
-            tmp.setLength(0);
-        }
-        return tmp;
-    }
-
-    @Override
-    public void close() {
-        name = null;
     }
 
     public static NameIterator empty() {
@@ -292,7 +277,7 @@ public final class NameIterator implements AutoCloseable {
     }
 
     public String getNextSegment() {
-        return getNextSegment(acquireTmpBuilder()).toString();
+        return getNextSegment(new StringBuilder()).toString();
     }
 
     public StringBuilder getNextSegment(StringBuilder b) {

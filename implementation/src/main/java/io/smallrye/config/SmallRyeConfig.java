@@ -313,6 +313,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * @param expected the expected value (may be {@code null})
      * @return {@code true} if the values are equal, {@code false} otherwise
      */
+    @Deprecated(forRemoval = true)
     public boolean rawValueEquals(String name, String expected) {
         return Objects.equals(expected, getRawValue(name));
     }
@@ -328,7 +329,6 @@ public class SmallRyeConfig implements Config, Serializable {
      * @param name the property name (must not be {@code null})
      * @return the raw value, or {@code null} if no property value was discovered for the given property name
      */
-    @Deprecated(forRemoval = true)
     public String getRawValue(String name) {
         final ConfigValue configValue = getConfigValue(name);
         return configValue != null && configValue.getValue() != null ? configValue.getValue() : null;
@@ -534,10 +534,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.getProfiles();
     }
 
-    void addPropertyNames(Set<String> properties) {
-        configSources.getPropertyNames().add(properties);
-    }
-
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
@@ -578,18 +574,14 @@ public class SmallRyeConfig implements Config, Serializable {
             // the resolved final source or interceptor to use.
             current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current);
-            PropertyNamesConfigSourceInterceptor propertyNamesInterceptor = new PropertyNamesConfigSourceInterceptor();
-            current = new SmallRyeConfigSourceInterceptorContext(propertyNamesInterceptor, current);
             for (ConfigSourceInterceptor interceptor : interceptors) {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
             }
 
-            PropertyNames propertyNames = new PropertyNames(propertyNamesInterceptor);
-
             this.profiles = profiles;
             this.sources = configSources;
             this.interceptorChain = current;
-            this.propertyNames = propertyNames;
+            this.propertyNames = new PropertyNames();
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
@@ -749,12 +741,7 @@ public class SmallRyeConfig implements Config, Serializable {
         class PropertyNames implements Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
-            private final PropertyNamesConfigSourceInterceptor interceptor;
             private final Set<String> propertyNames = new HashSet<>();
-
-            private PropertyNames(final PropertyNamesConfigSourceInterceptor propertyNamesInterceptor) {
-                this.interceptor = propertyNamesInterceptor;
-            }
 
             Iterable<String> get() {
                 if (propertyNames.isEmpty()) {
@@ -771,11 +758,7 @@ public class SmallRyeConfig implements Config, Serializable {
                         propertyNames.add(namesIterator.next());
                     }
                 }
-                return propertyNames;
-            }
-
-            void add(final Set<String> properties) {
-                interceptor.addProperties(properties);
+                return Collections.unmodifiableSet(propertyNames);
             }
         }
     }

@@ -29,12 +29,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.EnvConfigSource.EnvProperty;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
@@ -67,6 +67,8 @@ class EnvConfigSourceTest {
 
         assertEquals("1234", cs.getValue("smallrye_mp_config_prop_lower"));
         assertTrue(cs.getPropertyNames().contains("smallrye_mp_config_prop_lower"));
+
+        assertEquals("1234", cs.getValue("smallrye/mp/config/prop"));
     }
 
     @Test
@@ -127,25 +129,15 @@ class EnvConfigSourceTest {
 
     @Test
     void numbers() {
-        Map<String, String> env = new HashMap<String, String>() {
-            {
-                put("999_MY_VALUE", "foo");
-                put("_999_MY_VALUE", "bar");
-            }
-        };
-
-        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(envConfigSource)
+                .withSources(new EnvConfigSource(Map.of("999_MY_VALUE", "foo", "_999_MY_VALUE", "bar"), 300))
                 .build();
 
-        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
-        assertEquals(4, properties.size());
-        assertTrue(properties.contains("999_MY_VALUE"));
-        assertTrue(properties.contains("999.my.value"));
-        assertTrue(properties.contains("_999_MY_VALUE"));
-        assertTrue(properties.contains("%999.my.value"));
+        assertEquals("foo", config.getRawValue("999.my.value"));
+        assertEquals("foo", config.getRawValue("999_MY_VALUE"));
+        assertEquals("bar", config.getRawValue("_999_MY_VALUE"));
+        assertEquals("bar", config.getRawValue("%999.my.value"));
     }
 
     @Test
@@ -164,8 +156,65 @@ class EnvConfigSourceTest {
                 .withSources(envConfigSource)
                 .build();
 
+        assertEquals("Einfache Sprache", config.getRawValue("test.language.\"de.etr\""));
+
         Map<String, String> map = config.getValuesAsMap("test.language", STRING_CONVERTER, STRING_CONVERTER);
         assertEquals(map.get("de.etr"), "Einfache Sprache");
         assertEquals(map.get("pt-br"), "FROM ENV");
+    }
+
+    @Test
+    void envEquals() {
+        assertTrue(EnvProperty.equals("", ""));
+        assertTrue(EnvProperty.equals(" ", " "));
+        assertFalse(EnvProperty.equals(" ", "foo.bar"));
+        assertFalse(EnvProperty.equals(" ", "FOO_BAR"));
+        assertFalse(EnvProperty.equals("foo.bar", ""));
+        assertFalse(EnvProperty.equals("FOO_BAR", ""));
+
+        assertFalse(EnvProperty.equals("BAR", "foo.bar"));
+        assertFalse(EnvProperty.equals("foo.bar", "BAR"));
+
+        assertTrue(EnvProperty.equals("FOO_BAR", "FOO_BAR"));
+        assertTrue(EnvProperty.equals("FOO_BAR", "foo.bar"));
+        assertTrue(EnvProperty.equals("FOO_BAR", "FOO.BAR"));
+        assertTrue(EnvProperty.equals("FOO_BAR", "foo-bar"));
+        assertTrue(EnvProperty.equals("FOO_BAR", "foo_bar"));
+
+        assertTrue(EnvProperty.equals("foo.bar", "foo.bar"));
+        assertTrue(EnvProperty.equals("foo.bar", "FOO_BAR"));
+        assertTrue(EnvProperty.equals("FOO.BAR", "FOO_BAR"));
+        assertTrue(EnvProperty.equals("foo-bar", "FOO_BAR"));
+        assertTrue(EnvProperty.equals("foo_bar", "FOO_BAR"));
+
+        assertTrue(EnvProperty.equals("FOO__BAR__BAZ", "foo.\"bar\".baz"));
+        assertTrue(EnvProperty.equals("foo.\"bar\".baz", "FOO__BAR__BAZ"));
+
+        assertTrue(EnvProperty.equals("FOO__BAR__BAZ_0__Z_0_", "foo.\"bar\".baz[0].z[0]"));
+
+        assertTrue(EnvProperty.equals("_DEV_FOO_BAR", "%dev.foo.bar"));
+        assertTrue(EnvProperty.equals("%dev.foo.bar", "_DEV_FOO_BAR"));
+        assertTrue(EnvProperty.equals("_ENV_SMALLRYE_MP_CONFIG_PROP", "_ENV_SMALLRYE_MP_CONFIG_PROP"));
+        assertTrue(EnvProperty.equals("%env.smallrye.mp.config.prop", "%env.smallrye.mp.config.prop"));
+        assertTrue(EnvProperty.equals("_ENV_SMALLRYE_MP_CONFIG_PROP", "%env.smallrye.mp.config.prop"));
+        assertTrue(EnvProperty.equals("%env.smallrye.mp.config.prop", "_ENV_SMALLRYE_MP_CONFIG_PROP"));
+
+        assertTrue(EnvProperty.equals("indexed[0]", "indexed[0]"));
+        assertTrue(EnvProperty.equals("INDEXED_0_", "INDEXED_0_"));
+        assertTrue(EnvProperty.equals("indexed[0]", "INDEXED_0_"));
+        assertTrue(EnvProperty.equals("INDEXED_0_", "indexed[0]"));
+
+        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", "env.\"quoted.key\".value"));
+        assertTrue(EnvProperty.equals("ENV__QUOTED_KEY__VALUE", "ENV__QUOTED_KEY__VALUE"));
+        assertTrue(EnvProperty.equals("ENV__QUOTED_KEY__VALUE", "env.\"quoted.key\".value"));
+        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", "ENV__QUOTED_KEY__VALUE"));
+        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", "env.\"quoted-key\".value"));
+        assertTrue(EnvProperty.equals("env.\"quoted-key\".value", "env.\"quoted.key\".value"));
+
+        assertTrue(EnvProperty.equals("TEST_LANGUAGE__DE_ETR__", "test.language.\"de.etr\""));
+        assertTrue(EnvProperty.equals("test.language.\"de.etr\"", "TEST_LANGUAGE__DE_ETR__"));
+
+        assertEquals(new EnvProperty("TEST_LANGUAGE__DE_ETR_").hashCode(),
+                new EnvProperty("test.language.\"de.etr\"").hashCode());
     }
 }
