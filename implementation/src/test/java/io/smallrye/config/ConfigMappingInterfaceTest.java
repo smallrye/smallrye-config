@@ -847,7 +847,8 @@ class ConfigMappingInterfaceTest {
                 .withMapping(ServerPrefix.class, "server")
                 .withSources(config("serverBoot", "server"))
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
-                .withSources(config("server.name", "localhost"));
+                .withSources(config("server.name", "localhost"))
+                .withSources(new EnvConfigSource(Map.of("SERVER_ALIAS", "alias"), 300));
 
         ConfigValidationException exception = assertThrows(ConfigValidationException.class, builder::build);
         assertEquals("SRCFG00050: server.name in KeyValuesConfigSource does not map to any root",

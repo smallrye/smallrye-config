@@ -260,13 +260,12 @@ public class SmallRyeConfig implements Config, Serializable {
      * the specified type).
      */
     public <T> T convertValue(ConfigValue configValue, Converter<T> converter) {
-        List<ConfigValidationException.Problem> problems = configValue.getProblems();
-        if (!problems.isEmpty()) {
+        if (configValue.hasProblems()) {
             // TODO - Maybe it will depend on the problem, but we only get the expression NoSuchElement here for now
             if (Converters.isOptionalConverter(converter)) {
                 configValue = configValue.noProblems();
             } else {
-                ConfigValidationException.Problem problem = problems.get(0);
+                ConfigValidationException.Problem problem = configValue.getProblems().get(0);
                 Optional<RuntimeException> exception = problem.getException();
                 if (exception.isPresent()) {
                     throw exception.get();

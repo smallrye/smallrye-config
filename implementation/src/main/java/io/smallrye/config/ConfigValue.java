@@ -1,9 +1,10 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -105,8 +106,12 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return extendedExpressionHandler;
     }
 
+    boolean hasProblems() {
+        return problems != null && !problems.isEmpty();
+    }
+
     List<Problem> getProblems() {
-        return Collections.unmodifiableList(problems);
+        return hasProblems() ? unmodifiableList(problems) : emptyList();
     }
 
     public ConfigValue withName(final String name) {
@@ -147,10 +152,6 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withProblems(final List<Problem> problems) {
         return from().withProblems(problems).build();
-    }
-
-    public ConfigValue withProblem(final Problem problem) {
-        return from().addProblem(problem).build();
     }
 
     @Override
@@ -218,7 +219,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private int configSourcePosition;
         private int lineNumber = -1;
         private String extendedExpressionHandler;
-        private final List<Problem> problems = new ArrayList<>();
+        private List<Problem> problems;
 
         public ConfigValueBuilder withName(final String name) {
             this.name = name;
@@ -266,22 +267,30 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         }
 
         public ConfigValueBuilder noProblems() {
-            this.problems.clear();
+            this.problems = emptyList();
             return this;
         }
 
         public ConfigValueBuilder withProblems(final List<Problem> problems) {
-            this.problems.addAll(problems);
+            if (problems != null) {
+                if (this.problems == null) {
+                    this.problems = new ArrayList<>();
+                }
+                this.problems.addAll(problems);
+            }
             return this;
         }
 
         public ConfigValueBuilder addProblem(final Problem problem) {
+            if (this.problems == null) {
+                this.problems = new ArrayList<>();
+            }
             this.problems.add(problem);
             return this;
         }
 
         public ConfigValue build() {
-            if (!this.problems.isEmpty()) {
+            if (problems != null && !problems.isEmpty()) {
                 this.value = null;
             }
             return new ConfigValue(this);

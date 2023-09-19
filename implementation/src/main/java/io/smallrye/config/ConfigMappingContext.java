@@ -28,6 +28,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
@@ -231,29 +232,27 @@ public final class ConfigMappingContext {
         unknownProperties.add(unknownProperty);
     }
 
-    void validateUnknown(final boolean validateUnknown) {
-        Set<String> usedProperties = new HashSet<>();
-        for (String property : config.getPropertyNames()) {
-            if (unknownProperties.contains(property)) {
-                continue;
-            }
-
-            usedProperties.add(replaceNonAlphanumericByUnderscores(property));
-        }
-        usedProperties.removeAll(unknownProperties);
-
-        for (String property : unknownProperties) {
+    void reportUnknown() {
+        // an unknown property may still be used if it was coming from the EnvSource
+        for (String unknownProperty : unknownProperties) {
             boolean found = false;
-            String envProperty = replaceNonAlphanumericByUnderscores(property);
-            for (String usedProperty : usedProperties) {
-                if (usedProperty.equalsIgnoreCase(envProperty)) {
+            String unknownEnvProperty = replaceNonAlphanumericByUnderscores(unknownProperty);
+            for (String userProperty : config.getPropertyNames()) {
+                if (unknownProperty.equals(userProperty)) {
+                    continue;
+                }
+
+                // Match another property with the same semantic meaning
+                if (StringUtil.equalsIgnoreCaseReplacingNonAlphanumericByUnderscores(unknownEnvProperty, userProperty)) {
                     found = true;
                     break;
                 }
             }
-            if (!found && validateUnknown) {
-                ConfigValue configValue = config.getConfigValue(property);
-                problems.add(new Problem(ConfigMessages.msg.propertyDoesNotMapToAnyRoot(property, configValue.getLocation())));
+
+            if (!found) {
+                ConfigValue configValue = config.getConfigValue(unknownProperty);
+                problems.add(new Problem(
+                        ConfigMessages.msg.propertyDoesNotMapToAnyRoot(unknownProperty, configValue.getLocation())));
             }
         }
     }

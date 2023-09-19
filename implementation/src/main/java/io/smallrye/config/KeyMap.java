@@ -111,13 +111,21 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public KeyMap<V> find(final NameIterator ni) {
+        return find(ni, new StringBuilder());
+    }
+
+    KeyMap<V> find(final NameIterator ni, final StringBuilder sb) {
         if (!ni.hasNext()) {
             return this;
         }
-        String seg = ni.getNextSegment();
-        ni.next();
-        KeyMap<V> next = findOrDefault(seg);
-        return next == null ? null : next.find(ni);
+        KeyMap<V> next = findOrDefault(ni.getNextSegment(sb).toString());
+        if (next != null) {
+            ni.next();
+            sb.setLength(0);
+            return next.find(ni, sb);
+        } else {
+            return null;
+        }
     }
 
     public KeyMap<V> find(final Iterator<String> iter) {
@@ -238,6 +246,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     }
 
     public V findRootValue(final NameIterator ni) {
+        StringBuilder sb = new StringBuilder();
         KeyMap<V> result = find(ni);
         return result == null ? null : result.getRootValue();
     }

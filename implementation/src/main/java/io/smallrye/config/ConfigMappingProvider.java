@@ -994,8 +994,11 @@ final class ConfigMappingProvider implements Serializable {
             }
         }
 
-        context.validateUnknown(
-                config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(this.validateUnknown));
+        boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class)
+                .orElse(this.validateUnknown);
+        if (validateUnknown) {
+            context.reportUnknown();
+        }
 
         List<ConfigValidationException.Problem> problems = context.getProblems();
         if (!problems.isEmpty()) {

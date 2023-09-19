@@ -27,7 +27,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
 
     public String getValue(final String propertyName) {
         String value = properties.get(propertyName);
-        return value == null ? wildcards.findRootValue(propertyName) : value;
+        return value == null && !wildcards.isEmpty() ? wildcards.findRootValue(propertyName) : value;
     }
 
     void addDefaults(final Map<String, String> properties) {
