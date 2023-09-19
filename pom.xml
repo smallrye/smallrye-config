@@ -64,6 +64,7 @@
   </scm>
 
   <modules>
+    <module>api</module>
     <module>common</module>
     <module>implementation</module>
     <module>cdi</module>
@@ -123,6 +124,11 @@
       <dependency>
         <groupId>io.smallrye.config</groupId>
         <artifactId>smallrye-config-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.smallrye.config</groupId>
+        <artifactId>smallrye-config-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

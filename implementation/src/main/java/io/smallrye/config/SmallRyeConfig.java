@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -45,11 +44,12 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.api.Config;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class SmallRyeConfig implements Config, Serializable {
+public class SmallRyeConfig implements Config {
     public static final String SMALLRYE_CONFIG_PROFILE = "smallrye.config.profile";
     public static final String SMALLRYE_CONFIG_PROFILE_PARENT = "smallrye.config.profile.parent";
     public static final String SMALLRYE_CONFIG_LOCATIONS = "smallrye.config.locations";
@@ -222,7 +222,8 @@ public class SmallRyeConfig implements Config, Serializable {
 
     /**
      *
-     * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
+     * This method handles calls from both {@link org.eclipse.microprofile.config.Config#getValue} and
+     * {@link org.eclipse.microprofile.config.Config#getOptionalValue}.<br>
      */
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
@@ -524,7 +525,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T unwrap(final Class<T> type) {
-        if (Config.class.isAssignableFrom(type)) {
+        if (org.eclipse.microprofile.config.Config.class.isAssignableFrom(type)) {
             return type.cast(this);
         }
 
