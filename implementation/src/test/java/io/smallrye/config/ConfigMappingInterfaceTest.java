@@ -34,6 +34,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.ConfigMappingInterfaceTest.MyRestClientConfig.RestClientConfig;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 class ConfigMappingInterfaceTest {
@@ -1397,6 +1398,8 @@ class ConfigMappingInterfaceTest {
         @WithParentName
         Optional<RestClientConfig> client();
 
+        Map<String, RestClientConfig> map();
+
         interface RestClientConfig {
             URI baseUri();
 
@@ -1422,7 +1425,7 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void envPropertiesWithoutDottedProperties() {
-        Map<String, String> env = new HashMap<String, String>() {
+        Map<String, String> env = new HashMap<>() {
             {
                 put("MY_APP_REST_CONFIG_MY_CLIENT_BASE_URI", "http://localhost:8080");
                 put("MY_APP_REST_CONFIG_MY_CLIENT_KEYSTORE_PATH", "config/keystores/my-keys.p12");
@@ -1430,6 +1433,10 @@ class ConfigMappingInterfaceTest {
                 put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__PATH", "/hello");
                 put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__METHODS_0_", "GET");
                 put("MY_APP_REST_CONFIG_MY_CLIENT_ENDPOINTS_0__METHODS_1_", "POST");
+
+                put("MY_APP_REST_CONFIG_MY_CLIENT_MAP__MY_KEY__BASE_URI", "http://localhost:9090");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_MAP__MY_KEY__KEYSTORE_PATH", "path");
+                put("MY_APP_REST_CONFIG_MY_CLIENT_MAP__MY_KEY__KEYSTORE_PASSWORD", "password");
             }
         };
 
@@ -1460,6 +1467,15 @@ class ConfigMappingInterfaceTest {
         assertEquals("/hello", mapping.client().get().endpoints().get(0).path());
         assertEquals("GET", mapping.client().get().endpoints().get(0).methods().get(0));
         assertEquals("POST", mapping.client().get().endpoints().get(0).methods().get(1));
+
+        assertTrue(properties.contains("my-app.rest-config.my-client.map.\"my.key\".base-uri"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.map.\"my.key\".keystore.path"));
+        assertTrue(properties.contains("my-app.rest-config.my-client.map.\"my.key\".keystore.password"));
+
+        RestClientConfig myDotKey = mapping.map().get("my.key");
+        assertEquals(URI.create("http://localhost:9090"), myDotKey.baseUri());
+        assertEquals(Paths.get("path"), myDotKey.keystore().path());
+        assertEquals("password", myDotKey.keystore().password());
     }
 
     @ConfigMapping(prefix = "optionals")
@@ -2329,5 +2345,31 @@ class ConfigMappingInterfaceTest {
     interface MapWithEnvVarsOnlyInProfile {
         @WithParentName
         Map<String, String> map();
+    }
+
+    @Test
+    void overrideEnvPropertyName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of(
+                        "ENV_PROPERTY__KEY_ONE__NAME", "one",
+                        "ENV_PROPERTY_KEY_TWO_NAME", "two"), 300))
+                .withDefaultValue("env-property.key-two.name", "none")
+                .withMapping(EnvPropertyName.class)
+                .build();
+
+        EnvPropertyName mapping = config.getConfigMapping(EnvPropertyName.class);
+        assertEquals(2, mapping.nested().size());
+        assertEquals("one", mapping.nested().get("key.one").name());
+        assertEquals("two", mapping.nested().get("key-two").name());
+    }
+
+    @ConfigMapping(prefix = "env-property")
+    interface EnvPropertyName {
+        @WithParentName
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String name();
+        }
     }
 }

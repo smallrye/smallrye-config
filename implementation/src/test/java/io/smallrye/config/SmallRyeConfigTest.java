@@ -309,11 +309,9 @@ class SmallRyeConfigTest {
         config = new SmallRyeConfigBuilder().addDefaultInterceptors().addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("smallrye.mp-config.prop", "5678")).build();
         assertEquals("1234", config.getRawValue("SMALLRYE_MP_CONFIG_PROP"));
-        assertEquals("1234", config.getRawValue("smallrye.mp.config.prop"));
         assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp-config.prop"));
-        assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
     }
 
     @Test
@@ -381,19 +379,16 @@ class SmallRyeConfigTest {
 
     @Test
     void quotedKeysInEnv() {
-        KeyMap<String> keyMap = new KeyMap<>();
-        keyMap.findOrAdd("env.\"quoted-key\".value").putRootValue("key-map");
-
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(new EnvConfigSource(singletonMap("ENV__QUOTED_KEY__VALUE", "env"), 300))
-                .withSources(new KeyMapBackedConfigSource("key-map", 100, keyMap))
+                .withSources(config("env.\"quoted-key\".value", "default"))
                 .build();
 
         assertEquals("env", config.getRawValue("env.\"quoted-key\".value"));
 
-        ConfigSource keymap = config.getConfigSource("key-map").get();
-        assertEquals("key-map", keymap.getValue("env.\"quoted-key\".value"));
+        ConfigSource keymap = config.getConfigSource("KeyValuesConfigSource").get();
+        assertEquals("default", keymap.getValue("env.\"quoted-key\".value"));
     }
 
     @Test

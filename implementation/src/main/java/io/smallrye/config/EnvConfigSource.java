@@ -16,9 +16,9 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.isNumeric;
+import static java.lang.Character.toLowerCase;
 import static java.security.AccessController.doPrivileged;
-import static java.util.Collections.emptySet;
 
 import java.io.Serializable;
 import java.security.PrivilegedAction;
@@ -54,30 +54,13 @@ import io.smallrye.config.common.utils.StringUtil;
  * Because an environment variable name may only be represented by a subset of characters, it is not possible
  * to represent exactly a dotted version name from an environment variable name, so consumers must be aware of such
  * limitations.
- * <p>
- *
- * Due to its high ordinality (<code>300</code>), the {@link EnvConfigSource} may be queried on every property name
- * lookup, just to not find a value and proceed to the next source. The conversion rules make such lookups inefficient
- * and unnecessary. In order to reduce lookups, this implementation provides the following mechanisms:
- * <p>
- * Keeps three forms of the environment variables names (original, lowercased and uppercased), to avoid having to
- * transform the property name on each lookup.
- * <br>
- * A dotted property name lookup is first matched to the existing names to avoid mapping and replacing rules in the
- * name. Property names with other special characters always require replacing rules:
- *
- * <ol>
- * <li>A lookup to <code>foo.bar</code> requires <code>FOO_BAR</code> converted to the dotted name <code>foo.bar</code></li>
- * <li>A lookup to <code>foo-bar</code> requires <code>FOO_BAR</code> no match, mapping applied</li>
- * <li>A lookup to <code>foo.baz</code> no match</li>
- * </ol>
  */
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
 
     private static final int DEFAULT_ORDINAL = 300;
 
-    private final Map<String, String> properties;
+    private final Map<EnvProperty, String> properties;
     private final Set<String> names;
 
     protected EnvConfigSource() {
@@ -90,50 +73,36 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     public EnvConfigSource(final Map<String, String> properties, final int ordinal) {
         super("EnvConfigSource", getEnvOrdinal(properties, ordinal));
-        this.properties = new HashMap<>(properties.size() * 3);
+        this.properties = new HashMap<>(properties.size());
         this.names = new HashSet<>(properties.size() * 2);
-        StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, String> entry : properties.entrySet()) {
-            this.properties.put(entry.getKey(), entry.getValue());
-            this.properties.put(entry.getKey().toLowerCase(), entry.getValue());
-            this.properties.put(entry.getKey().toUpperCase(), entry.getValue());
+            this.properties.put(new EnvProperty(entry.getKey()), entry.getValue());
             this.names.add(entry.getKey());
-            this.names.add(StringUtil.toLowerCaseAndDotted(entry.getKey(), builder));
-            builder.setLength(0);
+            this.names.add(StringUtil.toLowerCaseAndDotted(entry.getKey()));
         }
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return this.properties;
+        Map<String, String> properties = new HashMap<>(this.properties.size());
+        for (Map.Entry<EnvProperty, String> entry : this.properties.entrySet()) {
+            properties.put(entry.getKey().getName(), entry.getValue());
+        }
+        return properties;
     }
 
     @Override
     public Set<String> getPropertyNames() {
-        return this.names;
+        return names;
     }
 
     @Override
     public String getValue(final String propertyName) {
-        return getValue(propertyName, getProperties(), names);
+        return this.properties.get(new EnvProperty(propertyName));
     }
 
-    private static String getValue(final String propertyName, final Map<String, String> properties, final Set<String> names) {
-        if (propertyName == null) {
-            return null;
-        }
-
-        // exact match
-        String value = properties.get(propertyName);
-        if (value != null) {
-            return value;
-        }
-
-        if (isDottedFormat(propertyName) && !names.contains(propertyName)) {
-            return null;
-        }
-
-        return properties.get(replaceNonAlphanumericByUnderscores(propertyName));
+    boolean hasPropertyName(final String propertyName) {
+        return properties.containsKey(new EnvProperty(propertyName));
     }
 
     /**
@@ -142,28 +111,23 @@ public class EnvConfigSource extends AbstractConfigSource {
      * instantiated in the heap.
      */
     private static Map<String, String> getEnvProperties() {
-        return doPrivileged((PrivilegedAction<Map<String, String>>) () -> new HashMap<>(System.getenv()));
+        return doPrivileged(new PrivilegedAction<Map<String, String>>() {
+            @Override
+            public Map<String, String> run() {
+                return new HashMap<>(System.getenv());
+            }
+        });
     }
 
     private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {
-        String value = getValue(CONFIG_ORDINAL_KEY, properties, emptySet());
+        String value = properties.get(CONFIG_ORDINAL_KEY);
         if (value == null) {
-            value = getValue(CONFIG_ORDINAL_KEY.toUpperCase(), properties, emptySet());
+            value = properties.get(CONFIG_ORDINAL_KEY.toUpperCase());
         }
         if (value != null) {
             return Converters.INTEGER_CONVERTER.convert(value);
         }
         return ordinal;
-    }
-
-    private static boolean isDottedFormat(final String propertyName) {
-        for (int i = 0; i < propertyName.length(); i++) {
-            char c = propertyName.charAt(i);
-            if (!('a' <= c && c <= 'z') && !('0' <= c && c <= '9') && c != '.') {
-                return false;
-            }
-        }
-        return true;
     }
 
     Object writeReplace() {
@@ -175,6 +139,153 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         Object readResolve() {
             return new EnvConfigSource();
+        }
+    }
+
+    static final class EnvProperty {
+        private final String name;
+
+        public EnvProperty(final String name) {
+            assert name != null;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final EnvProperty that = (EnvProperty) o;
+            return equals(this.name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            int length = name.length();
+            if (length >= 2) {
+                if (name.charAt(length - 1) == '_' && name.charAt(length - 2) == '_') {
+                    length = length - 1;
+                }
+            }
+
+            for (int i = 0; i < length; i++) {
+                char c = name.charAt(i);
+                if (i == 0) {
+                    if (c == '%' || c == '_') {
+                        h = 31 * h + 31;
+                        continue;
+                    }
+                }
+
+                switch (c) {
+                    case '.':
+                    case '_':
+                    case '-':
+                    case '"':
+                    case '*':
+                    case '[':
+                    case ']':
+                    case '/':
+                        continue;
+                }
+                h = 31 * h + Character.toLowerCase(c);
+            }
+            return h;
+        }
+
+        static boolean equals(final String name, final String other) {
+            //noinspection StringEquality
+            if (name == other) {
+                return true;
+            }
+
+            if (name.length() == 0 || other.length() == 0) {
+                return false;
+            }
+
+            char n = name.charAt(0);
+            char o = other.charAt(0);
+
+            if (o == '%' || o == '_') {
+                if (n != '%' && n != '_') {
+                    return false;
+                }
+            }
+
+            int matchPosition = name.length() - 1;
+            for (int i = other.length() - 1; i >= 0; i--) {
+                if (matchPosition == -1) {
+                    return false;
+                }
+
+                o = other.charAt(i);
+                n = name.charAt(matchPosition);
+
+                // profile
+                if (i == 0 && (o == '%' || o == '_')) {
+                    if (n == '%' || n == '_') {
+                        return true;
+                    }
+                }
+
+                if (o == '.') {
+                    if (n != '.' && n != '-' && n != '_') {
+                        return false;
+                    }
+                } else if (o == '-') {
+                    if (n != '.' && n != '_') {
+                        return false;
+                    }
+                } else if (o == '"') {
+                    if (n != '"' && n != '_') {
+                        return false;
+                    } else if (n == '_' && name.length() - 1 == matchPosition) {
+                        matchPosition = name.lastIndexOf("_", matchPosition - 1);
+                        if (matchPosition == -1) {
+                            return false;
+                        }
+                    }
+                } else if (o == ']') {
+                    if (n != ']' && n != '_') {
+                        return false;
+                    }
+                    int beginIndexed = other.lastIndexOf('[', i);
+                    if (beginIndexed != -1) {
+                        int range = i - beginIndexed - 1;
+                        if (name.lastIndexOf('_', matchPosition - 1) == matchPosition - range - 1) {
+                            if (isNumeric(other, beginIndexed + range, i)
+                                    && isNumeric(name, matchPosition - range, matchPosition)) {
+                                matchPosition = matchPosition - range - 2;
+                                i = i - range - 1;
+                                continue;
+                            }
+                        }
+                    }
+                    return false;
+                } else if (o == '_') {
+                    if (n != '.' && n != '-' && n != '_' && n != '"' && n != ']' && n != '[' && n != '/') {
+                        return false;
+                    } else if (n == '"' && other.length() - 1 == i) {
+                        i = other.lastIndexOf("_", i - 1);
+                        if (i == -1) {
+                            return false;
+                        }
+                    }
+                } else if (toLowerCase(o) != toLowerCase(n)) {
+                    return false;
+                }
+                matchPosition--;
+            }
+
+            return matchPosition <= 0;
         }
     }
 }

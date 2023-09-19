@@ -159,67 +159,79 @@ public class StringUtil {
     }
 
     public static String toLowerCaseAndDotted(final String name) {
-        return toLowerCaseAndDotted(name, new StringBuilder(name.length()));
-    }
-
-    public static String toLowerCaseAndDotted(final String name, final StringBuilder sb) {
         int length = name.length();
-        int beginSegment = 0;
+
+        if (length == 0) {
+            return name;
+        }
+
+        byte[] result;
+        if (length > 1 && name.charAt(length - 1) == '_' && name.charAt(length - 2) == '_') { // last quoted segment
+            length--;
+        }
+        result = new byte[length];
+
+        int i = 0;
+        if (name.charAt(0) == '_') { // starting _ is a profile
+            result[0] = '%';
+            i++;
+        }
+
         boolean quotesOpen = false;
-        for (int i = 0; i < length; i++) {
+        for (; i < length; i++) {
             char c = name.charAt(i);
             if ('_' == c) {
-                if (i == 0) {
-                    // leading _ can only mean a profile
-                    sb.append('%');
-                    continue;
-                }
-
-                // Do not convert to index if the first segment is a number
-                if (beginSegment > 0) {
-                    if (isNumeric(sb, beginSegment, i)) {
-                        sb.setCharAt(beginSegment - 1, '[');
-                        sb.append(']');
-
-                        int j = i + 1;
-                        if (j < length) {
-                            if ('_' == name.charAt(j)) {
-                                sb.append('.');
+                int next = i + 1;
+                if (quotesOpen) {
+                    if (next == length) {
+                        result[i] = '"'; // ending quotes
+                    } else if (name.charAt(next) == '_') { // double _ end quote
+                        result[i] = '"';
+                        result[next] = '.';
+                        i++;
+                        quotesOpen = false;
+                    } else {
+                        result[i] = '.';
+                    }
+                } else if (next < length) {
+                    char d = name.charAt(next);
+                    if (Character.isDigit(d)) { // maybe index
+                        result[next] = (byte) d;
+                        int j = next + 1;
+                        for (; j < length; j++) {
+                            d = name.charAt(j);
+                            if (Character.isDigit(d)) { // index
+                                result[j] = (byte) d;
+                            } else if ('_' == d) { // ending index
+                                result[i] = '[';
+                                result[j] = ']';
                                 i = j;
+                                break;
+                            } else { // not an index
+                                result[i] = '.';
+                                i = j;
+                                break;
                             }
                         }
 
-                        continue;
-                    }
-                }
-
-                int j = i + 1;
-                if (j < length) {
-                    if ('_' == name.charAt(j) && !quotesOpen) {
-                        sb.append('.');
-                        sb.append('\"');
-                        i = j;
+                    } else if (name.charAt(next) == '_') { // double _ start quote
+                        result[i] = '.';
+                        result[next] = '"';
+                        i++;
                         quotesOpen = true;
-                    } else if ('_' == name.charAt(j) && quotesOpen) {
-                        sb.append('\"');
-                        // Ending
-                        if (j + 1 < length) {
-                            sb.append('.');
-                        }
-                        i = j;
-                        quotesOpen = false;
                     } else {
-                        sb.append('.');
+                        result[i] = '.';
                     }
                 } else {
-                    sb.append('.');
+                    result[i] = '.';
                 }
-                beginSegment = j;
             } else {
-                sb.append(Character.toLowerCase(c));
+                result[i] = (byte) Character.toLowerCase(c);
             }
         }
-        return sb.toString();
+
+        // https://bugs.openjdk.org/browse/JDK-8295496
+        return new String(result, 0, 0, result.length);
     }
 
     public static boolean isNumeric(CharSequence digits) {
