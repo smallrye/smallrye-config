@@ -741,24 +741,24 @@ public class SmallRyeConfig implements Config, Serializable {
         class PropertyNames implements Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
-            private final Set<String> propertyNames = new HashSet<>();
+            private final Set<String> names = new HashSet<>();
 
             Iterable<String> get() {
-                if (propertyNames.isEmpty()) {
+                if (names.isEmpty()) {
                     return get(true);
                 }
-                return propertyNames;
+                return names;
             }
 
             Iterable<String> get(boolean latest) {
                 if (latest) {
-                    propertyNames.clear();
+                    names.clear();
                     Iterator<String> namesIterator = interceptorChain.iterateNames();
                     while (namesIterator.hasNext()) {
-                        propertyNames.add(namesIterator.next());
+                        names.add(namesIterator.next());
                     }
                 }
-                return Collections.unmodifiableSet(propertyNames);
+                return Collections.unmodifiableSet(names);
             }
         }
     }

@@ -142,7 +142,9 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
     }
 
-    static final class EnvProperty {
+    static final class EnvProperty implements Serializable {
+        private static final long serialVersionUID = -2679716955093904512L;
+
         private final String name;
 
         public EnvProperty(final String name) {
@@ -201,6 +203,7 @@ public class EnvConfigSource extends AbstractConfigSource {
             return h;
         }
 
+        @SuppressWarnings("squid:S4973")
         static boolean equals(final String name, final String other) {
             //noinspection StringEquality
             if (name == other) {

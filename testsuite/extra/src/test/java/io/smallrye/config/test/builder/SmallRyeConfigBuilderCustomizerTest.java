@@ -18,7 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
-public class SmallRyeConfigBuilderCustomizerTest {
+class SmallRyeConfigBuilderCustomizerTest {
     @Test
     void builder() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()

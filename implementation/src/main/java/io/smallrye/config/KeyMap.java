@@ -247,7 +247,7 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
 
     public V findRootValue(final NameIterator ni) {
         StringBuilder sb = new StringBuilder();
-        KeyMap<V> result = find(ni);
+        KeyMap<V> result = find(ni, sb);
         return result == null ? null : result.getRootValue();
     }
 

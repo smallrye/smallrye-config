@@ -20,7 +20,6 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.Config;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class RelocateConfigSourceInterceptorTest {
@@ -254,7 +253,6 @@ class RelocateConfigSourceInterceptorTest {
     }
 
     @Test
-    @Disabled
     void fallbackMaps() {
         FallbackConfigSourceInterceptor fallbackConfigSourceInterceptor = new FallbackConfigSourceInterceptor(name -> {
             if (name.startsWith("child.")) {
