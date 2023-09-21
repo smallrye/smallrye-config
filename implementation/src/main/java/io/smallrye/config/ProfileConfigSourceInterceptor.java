@@ -82,13 +82,14 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         return profiles;
     }
 
-    private String normalizeName(final String name) {
-        for (String profile : profiles) {
-            if (name.startsWith("%" + profile + ".")) {
-                return name.substring(profile.length() + 2);
+    public String normalizeName(final String name) {
+        if (name.length() > 0 && name.charAt(0) == '%') {
+            for (String profile : profiles) {
+                if (name.startsWith(profile + ".", 1)) {
+                    return name.substring(profile.length() + 2);
+                }
             }
         }
-
         return name;
     }
 
