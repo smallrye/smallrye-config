@@ -5,9 +5,10 @@ on:
     types: [closed]
 
 jobs:
-  release:
+  update:
     runs-on: ubuntu-latest
-    name: pulls
+    name: update-milestone
+    if: ${{github.event.pull_request.merged == true}}
 
     steps:
       - uses: radcortez/milestone-set-action@main
