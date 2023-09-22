@@ -42,6 +42,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithParentName;
 
 public class ValidateConfigTest {
@@ -382,6 +383,53 @@ public class ValidateConfigTest {
     @ConfigMapping(prefix = "validator.child")
     public interface Child extends Parent {
 
+    }
+
+    @Test
+    void nestedMethodValidation() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidator(new BeanValidationConfigValidatorImpl())
+                .withMapping(MethodValidation.class)
+                .build();
+
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
+                () -> config.getConfigMapping(MethodValidation.class));
+        List<String> validations = new ArrayList<>();
+        for (int i = 0; i < validationException.getProblemCount(); i++) {
+            validations.add(validationException.getProblem(i).getMessage());
+        }
+
+        assertEquals(1, validationException.getProblemCount());
+        assertTrue(validations.contains("method.validation.nested validation executed"));
+    }
+
+    @ConfigMapping(prefix = "method.validation")
+    interface MethodValidation {
+        @NestedValidation
+        Nested nested();
+
+        interface Nested {
+            @WithDefault("value")
+            String value();
+        }
+    }
+
+    @Target({ METHOD, TYPE })
+    @Retention(RUNTIME)
+    @Constraint(validatedBy = { NestedValidator.class })
+    public @interface NestedValidation {
+        String message() default "validation executed";
+
+        Class<?>[] groups() default {};
+
+        Class<? extends Payload>[] payload() default {};
+    }
+
+    public static class NestedValidator implements ConstraintValidator<NestedValidation, MethodValidation.Nested> {
+        @Override
+        public boolean isValid(final MethodValidation.Nested value, final ConstraintValidatorContext context) {
+            return false;
+        }
     }
 
     private static void assertValidationsEqual(List<String> validations, String... expectedProblemMessages) {
