@@ -96,6 +96,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                     group = optionalGroup.get();
                 }
 
+                validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
                 validateMappingInterface(property.asGroup().getGroupType(), appendPropertyName(currentPath, property),
                         namingStrategy, group, problems);
             } catch (IllegalAccessException e) {
