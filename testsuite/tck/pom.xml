@@ -28,8 +28,7 @@
   <name>SmallRye Config: MicroProfile Config TCK</name>
 
   <properties>
-    <dependency.version.openwebbeans>2.0.27</dependency.version.openwebbeans>
-    <tck.skip.owb>true</tck.skip.owb>
+    <dependency.version.openwebbeans>4.0.0</dependency.version.openwebbeans>
   </properties>
 
   <build>
@@ -82,7 +81,6 @@
               <goal>test</goal>
             </goals>
             <configuration>
-              <skip>${tck.skip.owb}</skip>
               <classpathDependencyExcludes>
                 <exclude>org.jboss.weld:weld-core-impl</exclude>
                 <exclude>org.jboss.arquillian.container:arquillian-weld-embedded</exclude>
