@@ -14,7 +14,11 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     private final KeyMap<String> wildcards;
 
     public DefaultValuesConfigSource(final Map<String, String> properties) {
-        super("DefaultValuesConfigSource", Integer.MIN_VALUE);
+        this(properties, "DefaultValuesConfigSource", Integer.MIN_VALUE);
+    }
+
+    public DefaultValuesConfigSource(final Map<String, String> properties, final String name, final int ordinal) {
+        super(name, ordinal);
         this.properties = new HashMap<>();
         this.wildcards = new KeyMap<>();
         addDefaults(properties);
