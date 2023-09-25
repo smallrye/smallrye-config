@@ -989,24 +989,24 @@
 <p>This Config Source allows to use a Java <code>KeyStore</code> to load configuration values. It uses an ordinal of <code>100</code>.</p>
 <p>The following dependency is required in the classpath to use the KeyStore Config Source:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-keystore<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="nt">&lt;version&gt;</span>3.3.4-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-keystore<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>3.3.4-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 <h2 id="create-a-keystore">Create a KeyStore<a class="headerlink" href="#create-a-keystore" title="Permanent link">#</a></h2>
 <p>The following command creates a simple KeyStore</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>keytool -importpass -alias my.secret -keystore keystore -storepass secret -storetype PKCS12 -v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>keytool<span class="w"> </span>-importpass<span class="w"> </span>-alias<span class="w"> </span>my.secret<span class="w"> </span>-keystore<span class="w"> </span>keystore<span class="w"> </span>-storepass<span class="w"> </span>secret<span class="w"> </span>-storetype<span class="w"> </span>PKCS12<span class="w"> </span>-v
 </code></pre></div>
 <p>The <code>-alias my.secret</code> stores the configuration property name <code>my.secret</code> in the KeyStore. The command will 
 interactively ask for the value to be stored in the KeyStore.</p>
 <h2 id="read-the-keystore">Read the KeyStore<a class="headerlink" href="#read-the-keystore" title="Permanent link">#</a></h2>
 <p>The KeyStore Config Source supports reading multiple keystore files:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">smallrye.config.source.keystore.one.path</span><span class="o">=</span><span class="s">keystore-one</span><span class="w"></span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">smallrye.config.source.keystore.one.password</span><span class="o">=</span><span class="s">password</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">smallrye.config.source.keystore.one.path</span><span class="o">=</span><span class="s">keystore-one</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">smallrye.config.source.keystore.one.password</span><span class="o">=</span><span class="s">password</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">smallrye.config.source.keystore.two.path</span><span class="o">=</span><span class="s">keystore-two</span><span class="w"></span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="na">smallrye.config.source.keystore.two.password</span><span class="o">=</span><span class="s">password</span><span class="w"></span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">smallrye.config.source.keystore.two.path</span><span class="o">=</span><span class="s">keystore-two</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="na">smallrye.config.source.keystore.two.password</span><span class="o">=</span><span class="s">password</span>
 </code></pre></div>
 <p>The names are arbitrary and can be any name. The name <code>one</code> and <code>two</code> are used to distinguish both KeyStores.  </p>
 <p>If a stored configuration property requires a <a href="../../config/secret-keys/">Secret Handler</a> to decode a value, set 

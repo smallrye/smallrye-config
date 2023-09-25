@@ -916,14 +916,14 @@
 values.</p>
 <p>The following dependency is required in the classpath to use the ZooKeeper Config Source:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-zookeeper<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="nt">&lt;version&gt;</span>3.3.4-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-zookeeper<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>3.3.4-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 <p>It also requires to set up additional configuration properties to identify the ZooKeeper instance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">io.smallrye.configsource.zookeeper.url</span><span class="o">=</span><span class="s">localhost:2181</span><span class="w"></span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">io.smallrye.configsource.zookeeper.applicationId</span><span class="o">=</span><span class="s">applicationId</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">io.smallrye.configsource.zookeeper.url</span><span class="o">=</span><span class="s">localhost:2181</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">io.smallrye.configsource.zookeeper.applicationId</span><span class="o">=</span><span class="s">applicationId</span>
 </code></pre></div>
 <p>The ZooKeeper Config Source will look for configuration values in a ZooKeeper instance running in the url set in 
 <code>io.smallrye.configsource.zookeeper.url</code> and in the znodes available in <code>/applicationId/</code>.</p>
