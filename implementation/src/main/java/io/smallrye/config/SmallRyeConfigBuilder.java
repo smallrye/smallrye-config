@@ -28,7 +28,6 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -65,7 +64,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<String> profiles = new ArrayList<>();
     private final Set<String> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
-    private final List<SecretKeysHandler> secretKeysHandlers = new ArrayList<>();
+    private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
     private final Map<String, String> defaultValues = new HashMap<>();
     private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
@@ -328,11 +327,30 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                List<SecretKeysHandler> secretKeysHandlers = new ArrayList<>();
+                for (SecretKeysHandlerWithName secretKeysHandler : SmallRyeConfigBuilder.this.secretKeysHandlers) {
+                    secretKeysHandlers.add(secretKeysHandler.getSecretKeysHandler(new ConfigSourceContext() {
+                        @Override
+                        public ConfigValue getValue(final String name) {
+                            return context.proceed(name);
+                        }
+
+                        @Override
+                        public List<String> getProfiles() {
+                            throw new UnsupportedOperationException();
+                        }
+
+                        @Override
+                        public Iterator<String> iterateNames() {
+                            return context.iterateNames();
+                        }
+                    }));
+                }
+
                 if (isAddDiscoveredSecretKeysHandlers()) {
                     secretKeysHandlers.addAll(discoverSecretKeysHandlers(context));
                 }
-                return new SecretKeysHandlerConfigSourceInterceptor(
-                        isAddDiscoveredSecretKeysHandlers() || !secretKeysHandlers.isEmpty(), secretKeysHandlers);
+                return new SecretKeysHandlerConfigSourceInterceptor(true, secretKeysHandlers);
             }
 
             @Override
@@ -459,8 +477,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    public SmallRyeConfigBuilder withSecretKeysHandlers(SecretKeysHandler... secretKeysHandler) {
-        this.secretKeysHandlers.addAll(Arrays.asList(secretKeysHandler));
+    public SmallRyeConfigBuilder withSecretKeysHandlers(SecretKeysHandler... secretKeysHandlers) {
+        for (SecretKeysHandler secretKeysHandler : secretKeysHandlers) {
+            this.secretKeysHandlers.add(new SecretKeysHandlerWithName(secretKeysHandler));
+        }
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withSecretKeyHandlerFactories(SecretKeysHandlerFactory... secretKeyHandlerFactories) {
+        for (SecretKeysHandlerFactory secretKeyHandlerFactory : secretKeyHandlerFactories) {
+            this.secretKeysHandlers.add(new SecretKeysHandlerWithName(secretKeyHandlerFactory));
+        }
         return this;
     }
 
@@ -742,6 +769,36 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 }
                 return DEFAULT_PRIORITY;
             }
+        }
+    }
+
+    static class SecretKeysHandlerWithName {
+        private final SecretKeysHandlerFactory factory;
+
+        SecretKeysHandlerWithName(SecretKeysHandler secretKeysHandler) {
+            this(new SecretKeysHandlerFactory() {
+                @Override
+                public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
+                    return secretKeysHandler;
+                }
+
+                @Override
+                public String getName() {
+                    return secretKeysHandler.getName();
+                }
+            });
+        }
+
+        SecretKeysHandlerWithName(SecretKeysHandlerFactory factory) {
+            this.factory = factory;
+        }
+
+        io.smallrye.config.SecretKeysHandler getSecretKeysHandler(ConfigSourceContext context) {
+            return factory.getSecretKeysHandler(context);
+        }
+
+        String getName() {
+            return factory.getName();
         }
     }
 }
