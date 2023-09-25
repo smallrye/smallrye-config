@@ -68,6 +68,7 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           milestone-title: ${{steps.metadata.outputs.current-version}}
+          milestone-next: ${{steps.metadata.outputs.next-version}}
 
       - name: generate tck report
         run: |
