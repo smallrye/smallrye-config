@@ -2372,4 +2372,34 @@ class ConfigMappingInterfaceTest {
             String name();
         }
     }
+
+    @Test
+    void doNotOverrideBuilderDefault() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withDefaultValue("override.value", "another")
+                .withDefaultValue("override.map.key.value", "another")
+                .withMapping(DoNotOverrideBuilderDefault.class)
+                .build();
+
+        assertEquals("another", config.getRawValue("override.value"));
+        assertEquals("another", config.getRawValue("override.map.key.value"));
+
+        DoNotOverrideBuilderDefault mapping = config.getConfigMapping(DoNotOverrideBuilderDefault.class);
+        assertEquals("another", mapping.value());
+        assertEquals("another", mapping.map().get("key").value());
+    }
+
+    @ConfigMapping(prefix = "override")
+    interface DoNotOverrideBuilderDefault {
+        @WithDefault("value")
+        String value();
+
+        @WithDefaults
+        Map<String, Nested> map();
+
+        interface Nested {
+            @WithDefault("value")
+            String value();
+        }
+    }
 }

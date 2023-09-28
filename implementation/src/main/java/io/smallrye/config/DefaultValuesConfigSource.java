@@ -37,9 +37,12 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     void addDefaults(final Map<String, String> properties) {
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             if (entry.getKey().indexOf('*') == -1) {
-                this.properties.put(entry.getKey(), entry.getValue());
+                this.properties.putIfAbsent(entry.getKey(), entry.getValue());
             } else {
-                this.wildcards.findOrAdd(entry.getKey()).putRootValue(entry.getValue());
+                KeyMap<String> key = this.wildcards.findOrAdd(entry.getKey());
+                if (!key.hasRootValue()) {
+                    key.putRootValue(entry.getValue());
+                }
             }
         }
     }
