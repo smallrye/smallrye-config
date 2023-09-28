@@ -534,11 +534,16 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.getProfiles();
     }
 
+    public ConfigSource getDefaultValues() {
+        return configSources.defaultValues;
+    }
+
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
         private final List<String> profiles;
         private final List<ConfigSource> sources;
+        private final ConfigSource defaultValues;
         private final ConfigSourceInterceptorContext interceptorChain;
         private final PropertyNames propertyNames;
 
@@ -550,6 +555,10 @@ public class SmallRyeConfig implements Config, Serializable {
         ConfigSources(final SmallRyeConfigBuilder builder) {
             // Add all sources except for ConfigurableConfigSource types. These are initialized later
             List<ConfigSource> sources = buildSources(builder);
+            // Add the default values sources separately, so we can keep a reference to it and add mappings defaults
+            DefaultValuesConfigSource defaultValues = new DefaultValuesConfigSource(builder.getDefaultValues());
+            sources.add(defaultValues);
+
             // Add all interceptors
             List<ConfigSourceInterceptor> interceptors = new ArrayList<>();
             List<InterceptorWithPriority> interceptorWithPriorities = buildInterceptors(builder);
@@ -580,6 +589,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             this.profiles = profiles;
             this.sources = configSources;
+            this.defaultValues = defaultValues;
             this.interceptorChain = current;
             this.propertyNames = new PropertyNames();
         }
@@ -598,7 +608,6 @@ public class SmallRyeConfig implements Config, Serializable {
             if (builder.isAddDefaultSources()) {
                 sourcesToBuild.addAll(builder.getDefaultSources());
             }
-            sourcesToBuild.add(new DefaultValuesConfigSource(builder.getDefaultValues()));
 
             return sourcesToBuild;
         }

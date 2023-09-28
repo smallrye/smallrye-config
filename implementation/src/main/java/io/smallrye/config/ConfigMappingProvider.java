@@ -950,11 +950,11 @@ final class ConfigMappingProvider implements Serializable {
     }
 
     ConfigMappingContext mapConfiguration(SmallRyeConfig config) throws ConfigValidationException {
-        for (ConfigSource configSource : config.getConfigSources()) {
-            if (configSource instanceof DefaultValuesConfigSource) {
-                DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
-                defaultValuesConfigSource.addDefaults(defaultValues);
-            }
+        // We need to set defaults from mappings here, because in a CDI environment mappings are added on an existent Config instance
+        ConfigSource configSource = config.getDefaultValues();
+        if (configSource instanceof DefaultValuesConfigSource) {
+            DefaultValuesConfigSource defaultValuesConfigSource = (DefaultValuesConfigSource) configSource;
+            defaultValuesConfigSource.addDefaults(defaultValues);
         }
         matchPropertiesWithEnv(config, roots.keySet(), getProperties().keySet());
         return SecretKeys.doUnlocked(() -> mapConfigurationInternal(config));
