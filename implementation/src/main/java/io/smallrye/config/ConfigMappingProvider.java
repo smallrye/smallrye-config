@@ -9,6 +9,8 @@ import static io.smallrye.config.ConfigMappingInterface.Property;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMapping;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static java.lang.Integer.parseInt;
 
 import java.io.Serializable;
@@ -1094,8 +1096,11 @@ final class ConfigMappingProvider implements Serializable {
             for (String configuredProperty : configuredProperties) {
                 Set<String> envNames = envConfigSource.getPropertyNames();
                 if (envConfigSource.hasPropertyName(configuredProperty)) {
-                    envNames.remove(configuredProperty);
-                    envNames.add(configuredProperty);
+                    if (!envNames.contains(configuredProperty)) {
+                        // this may be expensive, but it shouldn't happend that often
+                        envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(configuredProperty)));
+                        envNames.add(configuredProperty);
+                    }
                 }
             }
         }

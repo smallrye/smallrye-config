@@ -18,6 +18,7 @@ package io.smallrye.config;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,7 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.stream.StreamSupport;
+import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -88,12 +90,10 @@ class EnvConfigSourceTest {
         assertTrue(
                 stream(config.getPropertyNames().spliterator(), false).collect(toList()).contains("SMALLRYE_MP_CONFIG_EMPTY"));
 
-        ConfigSource envConfigSource = StreamSupport.stream(config.getConfigSources().spliterator(), false)
-                .filter(configSource -> configSource.getName().equals("EnvConfigSource"))
-                .findFirst()
-                .get();
+        Optional<ConfigSource> envConfigSource = config.getConfigSource("EnvConfigSource");
 
-        assertEquals("", envConfigSource.getValue("SMALLRYE_MP_CONFIG_EMPTY"));
+        assertTrue(envConfigSource.isPresent());
+        assertEquals("", envConfigSource.get().getValue("SMALLRYE_MP_CONFIG_EMPTY"));
     }
 
     @Test
@@ -107,7 +107,7 @@ class EnvConfigSourceTest {
 
     @Test
     void indexed() {
-        Map<String, String> env = new HashMap<String, String>() {
+        Map<String, String> env = new HashMap<>() {
             {
                 put("INDEXED_0_", "foo");
                 put("INDEXED_0__PROP", "bar");
@@ -142,7 +142,7 @@ class EnvConfigSourceTest {
 
     @Test
     void map() {
-        Map<String, String> env = new HashMap<String, String>() {
+        Map<String, String> env = new HashMap<>() {
             {
                 put("TEST_LANGUAGE__DE_ETR__", "Einfache Sprache");
                 put("TEST_LANGUAGE_PT_BR", "FROM ENV");
@@ -216,5 +216,20 @@ class EnvConfigSourceTest {
 
         assertEquals(new EnvProperty("TEST_LANGUAGE__DE_ETR_").hashCode(),
                 new EnvProperty("test.language.\"de.etr\"").hashCode());
+    }
+
+    @Test
+    void sameSemanticMeaning() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("foo.bar-baz", "fromOther"))
+                .withSources(new EnvConfigSource(Map.of("FOO_BAR_BAZ", "fromEnv"), 300))
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("FOO_BAR_BAZ"));
+        assertTrue(properties.contains("foo.bar-baz"));
+        assertFalse(properties.contains("foo.bar.baz"));
+
+        assertEquals("fromEnv", config.getRawValue("foo.bar-baz"));
     }
 }
