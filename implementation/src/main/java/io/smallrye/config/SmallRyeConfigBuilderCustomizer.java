@@ -17,7 +17,8 @@ public interface SmallRyeConfigBuilderCustomizer {
     void configBuilder(SmallRyeConfigBuilder builder);
 
     /**
-     * Returns the customizer priority. Customizers are sorted by ascending priority and executed in that order.
+     * Returns the customizer priority. Customizers are sorted by ascending priority and executed in that order, meaning
+     * that higher numeric priorities will be executing last, possible overriding values set by previous customizers.
      *
      * @return the priority value.
      */
