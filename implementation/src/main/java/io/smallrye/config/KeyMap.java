@@ -178,15 +178,20 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         return findOrAdd(new NameIterator(path));
     }
 
-    public KeyMap<V> findOrAdd(final NameIterator ni) {
+    public KeyMap<V> findOrAdd(final NameIterator path) {
+        return findOrAdd(path, new StringBuilder());
+    }
+
+    KeyMap<V> findOrAdd(final NameIterator ni, final StringBuilder sb) {
         if (!ni.hasNext()) {
             return this;
         }
-        String seg = ni.getNextSegment();
+        String seg = ni.getNextSegment(sb).toString();
         ni.next();
         try {
             KeyMap<V> next = getNext(seg);
-            return next.findOrAdd(ni);
+            sb.setLength(0);
+            return next.findOrAdd(ni, sb);
         } finally {
             ni.previous();
         }
