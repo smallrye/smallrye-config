@@ -14,6 +14,7 @@ module io.smallrye.config {
     requires static org.jboss.logging.annotations;
 
     requires static org.objectweb.asm;
+    requires jdk.unsupported;
 
     exports io.smallrye.config;
     exports io.smallrye.config._private to
