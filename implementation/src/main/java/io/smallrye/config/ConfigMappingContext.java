@@ -132,31 +132,17 @@ public final class ConfigMappingContext {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Converter<T> getKeyConverter(Class<?> enclosingType, String field, int degree) {
+    public <T> Converter<T> getKeyConverter(final Class<?> enclosingType, final MapProperty mapProperty) {
         List<Map<Class<?>, Map<String, Converter<?>>>> list = this.keyConvertersByDegreeTypeAndField;
-        while (list.size() <= degree) {
+        while (list.size() < mapProperty.getLevels()) {
             list.add(new IdentityHashMap<>());
         }
-        Map<Class<?>, Map<String, Converter<?>>> map = list.get(degree);
+        Map<Class<?>, Map<String, Converter<?>>> map = list.get(mapProperty.getLevels() - 1);
         return (Converter<T>) map
                 .computeIfAbsent(enclosingType, x -> new HashMap<>())
-                .computeIfAbsent(field, x -> {
-                    ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
-                    Property property = ci.getProperty(field);
-                    MapProperty mapProperty;
-                    if (property.isMap()) {
-                        mapProperty = property.asMap();
-                    } else if (property.isCollection()) {
-                        mapProperty = property.asCollection().getElement().asMap();
-                    } else {
-                        throw new IllegalStateException();
-                    }
-
-                    while (degree + 1 < mapProperty.getLevels()) {
-                        mapProperty = mapProperty.getValueProperty().asMap();
-                    }
+                .computeIfAbsent(mapProperty.getMemberName(), x -> {
                     if (mapProperty.hasKeyConvertWith()) {
-                        return getConverterInstance(mapProperty.getKeyConvertWith());
+                        return ConfigMappingContext.this.getConverterInstance(mapProperty.getKeyConvertWith());
                     } else {
                         // todo: replace with generic converter lookup
                         Class<?> valueRawType = mapProperty.getKeyRawType();

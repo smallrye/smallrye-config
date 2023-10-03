@@ -166,24 +166,20 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         Class<?> type = group.getInterfaceType();
-        HashSet<String> usedProperties = new HashSet<>();
         for (int i = 0; i < group.getPropertyCount(); i++) {
             Property property = group.getProperty(i);
-            String memberName = property.getMethod().getName();
             ArrayDeque<String> propertyPath = new ArrayDeque<>(currentPath);
-            if (usedProperties.add(memberName)) {
-                // process by property type
-                if (!property.isParentPropertyName()) {
-                    NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
-                            : propertyName(property, group, namingStrategy));
-                    while (ni.hasNext()) {
-                        propertyPath.add(ni.getNextSegment());
-                        ni.next();
-                    }
+            // process by property type
+            if (!property.isParentPropertyName()) {
+                NameIterator ni = new NameIterator(property.hasPropertyName() ? property.getPropertyName()
+                        : propertyName(property, group, namingStrategy));
+                while (ni.hasNext()) {
+                    propertyPath.add(ni.getNextSegment());
+                    ni.next();
                 }
-                processProperty(propertyPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
-                        memberName, property);
             }
+            processProperty(propertyPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
+                    property);
         }
     }
 
@@ -195,14 +191,13 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
             final Class<?> type,
-            final String memberName,
             final Property property) {
 
         if (property.isOptional()) {
             // switch to lazy mode
             Property nestedProperty = property.asOptional().getNestedProperty();
             processOptionalProperty(currentPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
-                    memberName, nestedProperty);
+                    nestedProperty);
         } else if (property.isGroup()) {
             processEagerGroup(currentPath, matchActions, defaultValues, namingStrategy, property.asGroup().getGroupType(),
                     new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup(), currentPath));
@@ -245,7 +240,7 @@ final class ConfigMappingProvider implements Serializable {
             CollectionProperty collectionProperty = property.asCollection();
             currentPath.addLast(currentPath.removeLast() + "[*]");
             processProperty(currentPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
-                    memberName, collectionProperty.getElement());
+                    collectionProperty.getElement());
         }
     }
 
@@ -257,7 +252,6 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface group,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
             final Class<?> type,
-            final String memberName,
             final Property property) {
 
         if (property.isGroup()) {
@@ -266,8 +260,7 @@ final class ConfigMappingProvider implements Serializable {
             GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
                     getEnclosingFunction, group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    matchAction,
-                    new HashSet<>());
+                    matchAction);
         } else if (property.isLeaf()) {
             LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
@@ -286,7 +279,7 @@ final class ConfigMappingProvider implements Serializable {
             CollectionProperty collectionProperty = property.asCollection();
             currentPath.addLast(currentPath.removeLast() + "[*]");
             processProperty(currentPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
-                    memberName, collectionProperty.getElement());
+                    collectionProperty.getElement());
         }
     }
 
@@ -296,8 +289,7 @@ final class ConfigMappingProvider implements Serializable {
             final Map<String, String> defaultValues,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
-            final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
-            final HashSet<String> usedProperties) {
+            final BiConsumer<ConfigMappingContext, NameIterator> matchAction) {
         int pc = group.getPropertyCount();
         int pathLen = currentPath.size();
         for (int i = 0; i < pc; i++) {
@@ -310,11 +302,9 @@ final class ConfigMappingProvider implements Serializable {
                     ni.next();
                 }
             }
-            if (usedProperties.add(String.join(".", String.join(".", currentPath), property.getMethod().getName()))) {
-                boolean optional = property.isOptional();
-                processLazyPropertyInGroup(currentPath, matchActions, defaultValues, matchAction, usedProperties,
-                        namingStrategy, group, optional, property);
-            }
+            boolean optional = property.isOptional();
+            processLazyPropertyInGroup(currentPath, matchActions, defaultValues, matchAction, namingStrategy, group, optional,
+                    property);
             while (currentPath.size() > pathLen) {
                 currentPath.removeLast();
             }
@@ -322,7 +312,7 @@ final class ConfigMappingProvider implements Serializable {
         int sc = group.getSuperTypeCount();
         for (int i = 0; i < sc; i++) {
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, group.getSuperType(i),
-                    matchAction, usedProperties);
+                    matchAction);
         }
     }
 
@@ -331,7 +321,6 @@ final class ConfigMappingProvider implements Serializable {
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final Map<String, String> defaultValues,
             final BiConsumer<ConfigMappingContext, NameIterator> matchAction,
-            final HashSet<String> usedProperties,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface group,
             final boolean optional,
@@ -344,7 +333,7 @@ final class ConfigMappingProvider implements Serializable {
                             : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
                     group, nestedGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    nestedEnclosingFunction, new HashSet<>());
+                    nestedEnclosingFunction);
         } else if (property.isGroup()) {
             GroupProperty asGroup = property.asGroup();
             GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
@@ -352,7 +341,7 @@ final class ConfigMappingProvider implements Serializable {
                             : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
                     group, asGroup, currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, asGroup.getGroupType(),
-                    nestedEnclosingFunction, usedProperties);
+                    nestedEnclosingFunction);
         } else if (property.isLeaf() || property.isPrimitive()
                 || optional && property.asOptional().getNestedProperty().isLeaf()) {
             BiConsumer<ConfigMappingContext, NameIterator> actualAction = property.isParentPropertyName() ? matchAction
@@ -398,8 +387,8 @@ final class ConfigMappingProvider implements Serializable {
             CollectionProperty collectionProperty = optional ? property.asOptional().getNestedProperty().asCollection()
                     : property.asCollection();
             currentPath.addLast(currentPath.removeLast() + "[*]");
-            processLazyPropertyInGroup(currentPath, matchActions, defaultValues, matchAction, usedProperties, namingStrategy,
-                    group, false, collectionProperty.getElement());
+            processLazyPropertyInGroup(currentPath, matchActions, defaultValues, matchAction, namingStrategy, group, false,
+                    collectionProperty.getElement());
         }
     }
 
@@ -539,7 +528,7 @@ final class ConfigMappingProvider implements Serializable {
             GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, mapProperty, keyUnnamed,
                     enclosingGroup, property.asGroup(), currentPath);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, property.asGroup().getGroupType(),
-                    ef, new HashSet<>());
+                    ef);
         } else if (property.isCollection()) {
             CollectionProperty collectionProperty = property.asCollection();
             Property element = collectionProperty.getElement();
@@ -561,8 +550,8 @@ final class ConfigMappingProvider implements Serializable {
         KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> current = matchActions.findOrAdd(currentPath);
         Property previous = properties.put(String.join(".", currentPath), property);
         if (current.hasRootValue() && current.getRootValue() != action && previous != null && !previous.equals(property)) {
-            throw ConfigMessages.msg.ambiguousMapping(String.join(".", currentPath), property.getMethod().toString(),
-                    previous.getMethod().toString());
+            throw ConfigMessages.msg.ambiguousMapping(String.join(".", currentPath), property.getMemberName(),
+                    previous.getMemberName());
         }
         current.putRootValue(action);
     }
@@ -678,7 +667,7 @@ final class ConfigMappingProvider implements Serializable {
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String key = indexName(enclosedGroup.getMethod().getName(), groupPath, ni);
+            String key = indexName(enclosedGroup.getMemberName(), groupPath, ni);
             ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType, key, ourEnclosing);
             context.applyNamingStrategy(
                     namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
@@ -789,8 +778,7 @@ final class ConfigMappingProvider implements Serializable {
             mapPath.next();
             String pathKey = mapPath.getAllPreviousSegments();
             mapPath.previous();
-            Converter<?> converterKey = context.getKeyConverter(enclosingGroup.getInterfaceType(),
-                    enclosingMap.getMethod().getName(), enclosingMap.getLevels() - 1);
+            Converter<?> converterKey = context.getKeyConverter(enclosingGroup.getInterfaceType(), enclosingMap);
 
             // This will be the key to use to store the value in the map
             String nameKey = normalizeIfIndexed(rawKey);
@@ -876,7 +864,7 @@ final class ConfigMappingProvider implements Serializable {
             if (consumeName)
                 ni.next();
             Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String key = indexName(enclosedGroup.getMethod().getName(), groupPath, ni);
+            String key = indexName(enclosedGroup.getMemberName(), groupPath, ni);
             Map<?, ?> val = (Map<?, ?>) context.getEnclosedField(enclosingType, key, ourEnclosing);
             context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
             if (val == null) {
@@ -890,26 +878,6 @@ final class ConfigMappingProvider implements Serializable {
         @Override
         public void accept(final ConfigMappingContext context, final NameIterator ni) {
             apply(context, ni);
-        }
-    }
-
-    static class GetFieldOfEnclosing implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> {
-        private final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction;
-        private final Class<?> type;
-        private final String memberName;
-
-        GetFieldOfEnclosing(final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingFunction,
-                final Class<?> type, final String memberName) {
-            this.getEnclosingFunction = getEnclosingFunction;
-            this.type = type;
-            this.memberName = memberName;
-        }
-
-        @Override
-        public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
-            ConfigMappingObject outer = getEnclosingFunction.apply(context, ni);
-            // eagerly populated groups will always exist
-            return (ConfigMappingObject) context.getEnclosedField(type, memberName, outer);
         }
     }
 
