@@ -197,6 +197,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return hasPropertyName() && !propertyName.isEmpty() ? propertyName : method.getName();
         }
 
+        public String getMemberName() {
+            return method.getName();
+        }
+
         public boolean hasPropertyName() {
             return propertyName != null;
         }
