@@ -1,4 +1,4 @@
-package io.smallrye.config;
+package io.smallrye.config._private;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;

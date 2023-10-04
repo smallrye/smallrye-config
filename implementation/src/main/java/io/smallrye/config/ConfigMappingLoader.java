@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.common.classloader.ClassDefiner;
+import io.smallrye.config._private.ConfigMessages;
 
 public final class ConfigMappingLoader {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();

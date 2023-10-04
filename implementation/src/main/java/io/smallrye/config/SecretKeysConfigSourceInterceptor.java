@@ -6,6 +6,8 @@ import java.util.Set;
 
 import jakarta.annotation.Priority;
 
+import io.smallrye.config._private.ConfigMessages;
+
 @Priority(Priorities.LIBRARY + 100)
 public class SecretKeysConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 7291982039729980590L;

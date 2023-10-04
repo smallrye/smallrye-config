@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
+import io.smallrye.config._private.ConfigMessages;
+
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.smallrye.config.SecretKeysHandlerFactory.LazySecretKeysHandler;
+import io.smallrye.config._private.ConfigMessages;
 
 public class SecretKeysHandlerConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -5228028387733656005L;

@@ -28,6 +28,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
 
 /**

@@ -4,7 +4,7 @@ import static io.smallrye.common.expression.Expression.Flag.DOUBLE_COLON;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
 import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
-import static io.smallrye.config.ConfigMessages.msg;
+import static io.smallrye.config._private.ConfigMessages.msg;
 
 import java.util.function.BiConsumer;
 

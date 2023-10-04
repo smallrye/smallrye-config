@@ -41,7 +41,7 @@ import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.config.ConfigMessages;
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigSourceFactory;
