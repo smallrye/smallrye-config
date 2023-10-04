@@ -169,4 +169,30 @@ public interface ConfigMessages {
 
     @Message(id = 50, value = "%s in %s does not map to any root")
     IllegalStateException propertyDoesNotMapToAnyRoot(String name, String location);
+
+    default SecurityException accessDenied(Class<?> ourClass, Class<?> targetType) {
+        Module ourModule = ourClass.getModule();
+        Module targetModule = targetType.getModule();
+        assert targetModule.isNamed(); // otherwise we wouldn't be here
+        if (ourModule.isNamed()) {
+            return accessDenied(ourModule.getName(), targetType, targetType.getPackageName(), targetModule.getName());
+        } else {
+            return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
+        }
+    }
+
+    @Message(id = 51, value = "Access to %2$s was denied in a modular environment. To avoid this error, edit "
+            + "`module-info.java` of %4$s to include `opens %3$s to %1$s`; or, add `--add-opens=%4$s/%3$s=%1$s` to "
+            + "the JVM command line.")
+    SecurityException accessDenied(String ourModuleName, Class<?> targetType, String targetPackage, String targetModuleName);
+
+    @Message(id = 51, value = "Access to %1$s was denied in a mixed-module environment. To avoid this error, "
+            + "add `--add-opens=%3$s/%2$s=ALL-UNNAMED` to the JVM command line.")
+    SecurityException accessDenied(Class<?> targetType, String targetPackage, String targetModuleName);
+
+    @Message(id = 52, value = "Missing a valid constructor on configuration implementation %s")
+    IllegalStateException noConstructor(Class<?> implClass);
+
+    @Message(id = 53, value = "The accessor for a configuration property is not valid")
+    IllegalArgumentException invalidGetter();
 }
