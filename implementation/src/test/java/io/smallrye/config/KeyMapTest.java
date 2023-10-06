@@ -101,14 +101,6 @@ class KeyMapTest {
     }
 
     @Test
-    void empty() {
-        KeyMap<String> map = new KeyMap<>();
-        map.findOrAdd("", "foo").putRootValue("bar");
-
-        assertEquals("bar", map.findRootValue(".foo"));
-    }
-
-    @Test
     void string() {
         KeyMap<String> map = new KeyMap<>();
         map.findOrAdd("root.foo").putRootValue("bar");
@@ -303,5 +295,13 @@ class KeyMapTest {
         assertTrue(keys.contains("root.foo.bar"));
         assertTrue(keys.contains("list[0].foo"));
         assertTrue(keys.contains("list[0]"));
+    }
+
+    @Test
+    void emptySegment() {
+        KeyMap<String> map = new KeyMap<>();
+        map.findOrAdd("root.foo.*").putRootValue("bar");
+        assertEquals("bar", map.findRootValue("root.foo.bar"));
+        assertNull(map.findRootValue("root.foo."));
     }
 }

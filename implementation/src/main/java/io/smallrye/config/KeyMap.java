@@ -118,7 +118,11 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
         if (!ni.hasNext()) {
             return this;
         }
-        KeyMap<V> next = findOrDefault(ni.getNextSegment(sb).toString());
+        String seg = ni.getNextSegment(sb).toString();
+        if (seg.isEmpty()) {
+            return null;
+        }
+        KeyMap<V> next = findOrDefault(seg);
         if (next != null) {
             ni.next();
             sb.setLength(0);
@@ -133,6 +137,9 @@ public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
             return this;
         }
         String seg = iter.next();
+        if (seg.isEmpty()) {
+            return null;
+        }
         KeyMap<V> next = seg.equals("*") ? any : getOrDefault(seg, any);
         return next == null ? null : next.find(iter);
     }
