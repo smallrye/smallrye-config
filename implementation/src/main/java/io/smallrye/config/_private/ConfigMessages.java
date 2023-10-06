@@ -1,4 +1,4 @@
-package io.smallrye.config;
+package io.smallrye.config._private;
 
 import java.io.InvalidObjectException;
 import java.lang.reflect.Type;

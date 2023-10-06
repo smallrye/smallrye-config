@@ -43,6 +43,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.AbstractConverter;
 import io.smallrye.config.common.AbstractDelegatingConverter;
 import io.smallrye.config.common.AbstractSimpleDelegatingConverter;

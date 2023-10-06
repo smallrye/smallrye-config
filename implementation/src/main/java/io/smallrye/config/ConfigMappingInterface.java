@@ -22,6 +22,7 @@ import java.util.function.Function;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
 
 /**

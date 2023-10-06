@@ -19,7 +19,7 @@ package io.smallrye.config.inject;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import io.smallrye.config.ConfigLogging;
+import io.smallrye.config._private.ConfigLogging;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.

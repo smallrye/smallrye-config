@@ -4,12 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 
-import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Converters;
 import io.smallrye.config.SecretKeysHandler;
 import io.smallrye.config.SecretKeysHandlerFactory;
+import io.smallrye.config._private.ConfigMessages;
 
 public class AESGCMNoPaddingSecretKeysHandlerFactory implements SecretKeysHandlerFactory {
     public static final String ENCRYPTION_KEY = "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key";

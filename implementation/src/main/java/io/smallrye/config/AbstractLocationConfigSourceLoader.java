@@ -24,6 +24,8 @@ import java.util.function.Consumer;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config._private.ConfigMessages;
+
 /**
  * This {@link AbstractLocationConfigSourceLoader} loads {@link ConfigSource}s from a list of specific
  * locations.

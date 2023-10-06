@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.config.ConfigMappingInterface.Property;
+import io.smallrye.config._private.ConfigMessages;
 
 public final class ConfigMappings implements Serializable {
     private static final long serialVersionUID = -7790784345796818526L;

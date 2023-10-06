@@ -2,11 +2,11 @@ package io.smallrye.config.jasypt;
 
 import java.util.NoSuchElementException;
 
-import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeysHandler;
 import io.smallrye.config.SecretKeysHandlerFactory;
+import io.smallrye.config._private.ConfigMessages;
 
 public class JasyptSecretKeysHandlerFactory implements SecretKeysHandlerFactory {
     @Override

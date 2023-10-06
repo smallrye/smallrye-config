@@ -23,13 +23,13 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.AbstractLocationConfigSourceFactory;
-import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigSourceFactory;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
 
 public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {

@@ -31,7 +31,7 @@ import static io.smallrye.config.SecretKeys.doLocked;
 import jakarta.annotation.Priority;
 
 import io.smallrye.config.ConfigSourceInterceptor;
-import io.smallrye.config.ConfigLogging;
+import io.smallrye.config._private.ConfigLogging;
 
 @Priority(Priorities.LIBRARY + 200)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {

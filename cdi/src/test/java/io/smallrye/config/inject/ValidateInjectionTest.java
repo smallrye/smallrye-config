@@ -42,11 +42,11 @@ import org.junit.platform.testkit.engine.EngineTestKit;
 import org.junit.platform.testkit.engine.Event;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.ConfigMessages;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config._private.ConfigMessages;
 
 /**
  * The Exception messages caused by Config CDI should have the format:<br>

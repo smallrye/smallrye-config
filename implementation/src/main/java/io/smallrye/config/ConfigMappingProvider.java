@@ -33,6 +33,7 @@ import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.function.Functions;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
 
 /**

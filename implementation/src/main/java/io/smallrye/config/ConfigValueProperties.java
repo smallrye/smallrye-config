@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
 
+import io.smallrye.config._private.ConfigMessages;
+
 /**
  * Loads properties as {@link ConfigValue}.
  * <p>
