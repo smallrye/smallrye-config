@@ -467,7 +467,7 @@ final class ConfigMappingProvider implements Serializable {
                 }
 
                 // Remove quotes if exists
-                if (rawMapKey.charAt(0) == '"' && rawMapKey.charAt(rawMapKey.length() - 1) == '"') {
+                if (rawMapKey.length() > 1 && rawMapKey.charAt(0) == '"' && rawMapKey.charAt(rawMapKey.length() - 1) == '"') {
                     rawMapKey = rawMapKey.substring(1, rawMapKey.length() - 1);
                 }
 

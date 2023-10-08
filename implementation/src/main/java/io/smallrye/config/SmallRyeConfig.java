@@ -47,6 +47,7 @@ import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
 import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -127,12 +128,21 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public List<String> getIndexedProperties(final String property) {
-        List<Integer> indexes = getIndexedPropertiesIndexes(property);
         List<String> indexedProperties = new ArrayList<>();
-        for (Integer index : indexes) {
-            indexedProperties.add(property + "[" + index + "]");
+        for (String propertyName : this.getPropertyNames()) {
+            if (propertyName.length() > property.length() && propertyName.startsWith(property)) {
+                int indexStart = property.length();
+                if (propertyName.charAt(indexStart) == '[') {
+                    int indexEnd = propertyName.indexOf(']', indexStart - 1);
+                    if (indexEnd != -1) {
+                        if (StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
+                            indexedProperties.add(propertyName);
+                        }
+                    }
+                }
+            }
         }
-
+        Collections.sort(indexedProperties);
         return indexedProperties;
     }
 
@@ -140,21 +150,11 @@ public class SmallRyeConfig implements Config, Serializable {
         Set<Integer> indexes = new HashSet<>();
         for (String propertyName : this.getPropertyNames()) {
             if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
-                int index = property.length();
-                if (propertyName.charAt(index) == '[') {
-                    for (;;) {
-                        if (propertyName.charAt(index) == ']') {
-                            try {
-                                indexes.add(Integer.parseInt(propertyName.substring(property.length() + 1, index)));
-                            } catch (NumberFormatException e) {
-                                //NOOP
-                            }
-                            break;
-                        } else if (index < propertyName.length() - 1) {
-                            index++;
-                        } else {
-                            break;
-                        }
+                int indexStart = propertyName.indexOf('[', property.length());
+                int indexEnd = propertyName.indexOf(']', indexStart);
+                if (indexStart != -1 && indexEnd != -1) {
+                    if (StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
+                        indexes.add(Integer.parseInt(propertyName.substring(indexStart + 1, indexEnd)));
                     }
                 }
             }

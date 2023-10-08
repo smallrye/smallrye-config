@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -2401,5 +2402,32 @@ class ConfigMappingInterfaceTest {
             @WithDefault("value")
             String value();
         }
+    }
+
+    @Test
+    void invalidKeys() {
+        ConfigValidationException configValidationException = assertThrows(ConfigValidationException.class,
+                () -> new SmallRyeConfigBuilder()
+                        .withMapping(InvalidKeys.class)
+                        .withSources(config("invalid.value.", "value", "invalid.map.", "value", "invalid.list[0].", "value"))
+                        .build());
+
+        Set<String> messages = new HashSet<>();
+        for (int i = 0; i < configValidationException.getProblemCount(); i++) {
+            messages.add(configValidationException.getProblem(i).getMessage());
+        }
+
+        assertTrue(messages.contains("SRCFG00050: invalid.value. in KeyValuesConfigSource does not map to any root"));
+        assertTrue(messages.contains("SRCFG00050: invalid.list[0]. in KeyValuesConfigSource does not map to any root"));
+        assertTrue(messages.contains("SRCFG00050: invalid.map. in KeyValuesConfigSource does not map to any root"));
+    }
+
+    @ConfigMapping(prefix = "invalid")
+    interface InvalidKeys {
+        String value();
+
+        Map<String, String> map();
+
+        List<String> list();
     }
 }

@@ -585,6 +585,10 @@ public class ConfigMappingGenerator {
                         restoreLength(ctor);
                     }
                 } else {
+                    Label _try = new Label();
+                    Label _catch = new Label();
+                    Label _continue = new Label();
+                    ctor.visitLabel(_try);
                     ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
                     ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
                     ctor.visitLdcInsn(memberName);
@@ -597,6 +601,17 @@ public class ConfigMappingGenerator {
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValues",
                             "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_COLLECTION + ';', false);
                     ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+                    ctor.visitJumpInsn(Opcodes.GOTO, _continue);
+                    ctor.visitLabel(_catch);
+                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
+                    ctor.visitInsn(Opcodes.SWAP);
+                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "reportProblem",
+                            "(L" + I_RUNTIME_EXCEPTION + ";)V", false);
+                    ctor.visitLabel(_continue);
+                    if (restoreLength) {
+                        restoreLength(ctor);
+                    }
+                    ctor.visitTryCatchBlock(_try, _catch, _catch, I_RUNTIME_EXCEPTION);
                 }
 
                 // reset stringbuilder

@@ -243,6 +243,10 @@ public class StringUtil {
             return false;
         }
 
+        if (start == end) {
+            return false;
+        }
+
         for (int i = start; i < end; i++) {
             if (!Character.isDigit(digits.charAt(i))) {
                 return false;
