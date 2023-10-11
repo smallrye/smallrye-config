@@ -158,26 +158,28 @@ public abstract class AbstractLocationConfigSourceLoader {
     }
 
     protected List<ConfigSource> fallbackToUnknownProtocol(final URI uri, final int ordinal, final ClassLoader classLoader) {
-        final List<ConfigSource> configSources = new ArrayList<>();
+        List<ConfigSource> configSources = new ArrayList<>();
         try {
             Enumeration<URL> resources = classLoader.getResources(uri.toString());
             while (resources.hasMoreElements()) {
-                final URL resourceUrl = resources.nextElement();
+                URL resourceUrl = resources.nextElement();
                 if (validExtension(resourceUrl.getFile())) {
-                    final ConfigSource mainSource = addConfigSource(resourceUrl, ordinal, configSources);
+                    ConfigSource mainSource = addConfigSource(resourceUrl, ordinal, configSources);
                     configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
-                        final List<ConfigSource> profileSources = new ArrayList<>();
+                        List<ConfigSource> profileSources = new ArrayList<>();
                         for (int i = profiles.size() - 1; i >= 0; i--) {
-                            final int mainOrdinal = mainSource.getOrdinal() + profiles.size() - i + 1;
-                            final URI profileUri = addProfileName(uri, profiles.get(i));
-                            try {
-                                final Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
-                                while (profileResources.hasMoreElements()) {
-                                    final URL profileUrl = profileResources.nextElement();
-                                    addProfileConfigSource(profileUrl, mainOrdinal, profileSources);
+                            int mainOrdinal = mainSource.getOrdinal() + profiles.size() - i + 1;
+                            for (String fileExtension : getFileExtensions()) {
+                                URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
+                                try {
+                                    Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
+                                    while (profileResources.hasMoreElements()) {
+                                        final URL profileUrl = profileResources.nextElement();
+                                        addProfileConfigSource(profileUrl, mainOrdinal, profileSources);
+                                    }
+                                } catch (IOException e) {
+                                    // It is ok to not find the resource here, because it is an optional profile resource.
                                 }
-                            } catch (IOException e) {
-                                // It is ok to not find the resource here, because it is an optional profile resource.
                             }
                         }
                         return profileSources;
@@ -200,15 +202,18 @@ public abstract class AbstractLocationConfigSourceLoader {
     }
 
     protected List<ConfigSource> tryProfiles(final URI uri, final ConfigSource mainSource) {
-        final List<ConfigSource> configSources = new ArrayList<>();
+        List<ConfigSource> configSources = new ArrayList<>();
         configSources.add(new ConfigurableConfigSource(new ProfileConfigSourceFactory() {
             @Override
             public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
-                final List<ConfigSource> profileSources = new ArrayList<>();
+                List<ConfigSource> profileSources = new ArrayList<>();
                 for (int i = profiles.size() - 1; i >= 0; i--) {
-                    final int ordinal = mainSource.getOrdinal() + profiles.size() - i;
-                    final URI profileUri = addProfileName(uri, profiles.get(i));
-                    AbstractLocationConfigSourceLoader.this.addProfileConfigSource(toURL(profileUri), ordinal, profileSources);
+                    int ordinal = mainSource.getOrdinal() + profiles.size() - i;
+                    for (String fileExtension : getFileExtensions()) {
+                        URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
+                        AbstractLocationConfigSourceLoader.this.addProfileConfigSource(toURL(profileUri), ordinal,
+                                profileSources);
+                    }
                 }
                 return profileSources;
             }
@@ -273,9 +278,9 @@ public abstract class AbstractLocationConfigSourceLoader {
         return false;
     }
 
-    private static URI addProfileName(final URI uri, final String profile) {
+    private static URI addProfileName(final URI uri, final String profile, final String fileExtension) {
         if ("jar".equals(uri.getScheme())) {
-            return URI.create("jar:" + addProfileName(URI.create(uri.getRawSchemeSpecificPart()), profile));
+            return URI.create("jar:" + addProfileName(URI.create(uri.getRawSchemeSpecificPart()), profile, fileExtension));
         }
 
         final String fileName = uri.getPath();
@@ -284,7 +289,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         final int dot = fileName.lastIndexOf(".");
         final String fileNameProfile;
         if (dot != -1 && dot != 0 && fileName.charAt(dot - 1) != '/') {
-            fileNameProfile = fileName.substring(0, dot) + "-" + profile + fileName.substring(dot);
+            fileNameProfile = fileName.substring(0, dot) + "-" + profile + "." + fileExtension;
         } else {
             fileNameProfile = fileName + "-" + profile;
         }
