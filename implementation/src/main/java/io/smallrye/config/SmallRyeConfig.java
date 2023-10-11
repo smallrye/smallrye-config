@@ -717,7 +717,11 @@ public class SmallRyeConfig implements Config, Serializable {
         private static List<ConfigSource> getSources(final List<ConfigSourceWithPriority> sourceWithPriorities) {
             List<ConfigSource> configSources = new ArrayList<>();
             for (ConfigSourceWithPriority configSourceWithPriority : sourceWithPriorities) {
-                configSources.add(configSourceWithPriority.getSource());
+                ConfigSource source = configSourceWithPriority.getSource();
+                configSources.add(source);
+                if (ConfigLogging.log.isDebugEnabled()) {
+                    ConfigLogging.log.loadedConfigSource(source.getName(), source.getOrdinal());
+                }
             }
             return Collections.unmodifiableList(configSources);
         }

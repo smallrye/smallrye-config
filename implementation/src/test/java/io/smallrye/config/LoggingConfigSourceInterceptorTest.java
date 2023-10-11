@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
+import static java.util.logging.Level.ALL;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import org.eclipse.microprofile.config.Config;
@@ -22,7 +22,9 @@ import io.smallrye.testing.logging.LogCapture;
 
 class LoggingConfigSourceInterceptorTest {
     @RegisterExtension
-    static LogCapture logCapture = LogCapture.with(logRecord -> logRecord.getMessage().startsWith("SRCFG"), Level.ALL);
+    static LogCapture logCapture = LogCapture.with(
+            logRecord -> logRecord.getMessage().startsWith("SRCFG01001") || logRecord.getMessage().startsWith("SRCFG01002"),
+            ALL);
 
     @BeforeEach
     void setUp() {
