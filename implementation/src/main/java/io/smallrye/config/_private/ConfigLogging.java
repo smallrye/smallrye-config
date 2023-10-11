@@ -34,4 +34,8 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1005, value = "Could not find sources with %s in %s")
     void configLocationsNotFound(String name, String value);
+
+    @LogMessage(level = Logger.Level.DEBUG)
+    @Message(id = 1006, value = "Loaded ConfigSource %s with ordinal %d")
+    void loadedConfigSource(String name, int ordinal);
 }
