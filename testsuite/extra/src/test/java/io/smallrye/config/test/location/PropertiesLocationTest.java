@@ -429,6 +429,40 @@ public class PropertiesLocationTest {
         }
     }
 
+    @Test
+    void mixedExtensions(@TempDir Path tempDir) throws Exception {
+        JavaArchive jar = ShrinkWrap
+                .create(JavaArchive.class, "resources.jar")
+                .addAsResource(new StringAsset("my:\n" +
+                        "  prop:\n" +
+                        "    one: 1234\n"), "resources.yml")
+                .addAsResource(new StringAsset("my:\n" +
+                        "  prop:\n" +
+                        "    one: 5678\n"), "resources-prod.yaml");
+
+        Path filePath = tempDir.resolve("resources.jar");
+        jar.as(ZipExporter.class).exportTo(filePath.toFile());
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {
+                new URL("jar:" + filePath.toUri() + "!/")
+        }, contextClassLoader)) {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
+
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .addDiscoveredSources()
+                    .addDefaultInterceptors()
+                    .withProfile("prod")
+                    .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "jar:" + filePath.toUri() + "!/resources.yml")
+                    .build();
+
+            assertEquals("5678", config.getRawValue("my.prop.one"));
+            assertEquals(2, countSources(config, YamlConfigSource.class));
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
     private static URLClassLoader urlClassLoader(ClassLoader parent, String... urls) {
         return new URLClassLoader(Stream.of(urls).map(spec -> {
             try {
