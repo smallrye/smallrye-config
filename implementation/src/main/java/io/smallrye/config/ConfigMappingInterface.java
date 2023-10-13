@@ -622,14 +622,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         public MapProperty asMap() {
             return this;
         }
-
-        public int getLevels() {
-            if (valueProperty.isMap()) {
-                return valueProperty.asMap().getLevels() + 1;
-            } else {
-                return 1;
-            }
-        }
     }
 
     public static final class CollectionProperty extends MayBeOptionalProperty {

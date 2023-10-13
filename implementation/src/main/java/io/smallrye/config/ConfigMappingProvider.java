@@ -200,8 +200,16 @@ final class ConfigMappingProvider implements Serializable {
             processOptionalProperty(currentPath, matchActions, defaultValues, namingStrategy, group, getEnclosingFunction, type,
                     nestedProperty);
         } else if (property.isGroup()) {
+            GroupProperty nestedGroup = property.asGroup();
+            GetOrCreateEnclosingGroupInGroup enclosingFunction = new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction,
+                    nestedGroup.getGroupType().getInterfaceType(),
+                    nestedGroup.getMemberName(),
+                    currentPath,
+                    nestedGroup.getGroupType().getNamingStrategy(),
+                    group.getInterfaceType(),
+                    namingStrategy);
             processEagerGroup(currentPath, matchActions, defaultValues, namingStrategy, property.asGroup().getGroupType(),
-                    new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction, group, property.asGroup(), currentPath));
+                    enclosingFunction);
         } else if (property.isPrimitive()) {
             // already processed eagerly
             PrimitiveProperty primitiveProperty = property.asPrimitive();
@@ -258,10 +266,15 @@ final class ConfigMappingProvider implements Serializable {
         if (property.isGroup()) {
             GroupProperty nestedGroup = property.asGroup();
             // on match, always create the outermost group, which recursively creates inner groups
-            GetOrCreateEnclosingGroupInGroup matchAction = new GetOrCreateEnclosingGroupInGroup(
-                    getEnclosingFunction, group, nestedGroup, currentPath);
+            GetOrCreateEnclosingGroupInGroup enclosingFunction = new GetOrCreateEnclosingGroupInGroup(getEnclosingFunction,
+                    nestedGroup.getGroupType().getInterfaceType(),
+                    nestedGroup.getMemberName(),
+                    currentPath,
+                    nestedGroup.getGroupType().getNamingStrategy(),
+                    group.getInterfaceType(),
+                    namingStrategy);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    matchAction);
+                    enclosingFunction);
         } else if (property.isLeaf()) {
             LeafProperty leafProperty = property.asLeaf();
             if (leafProperty.hasDefaultValue()) {
@@ -327,22 +340,35 @@ final class ConfigMappingProvider implements Serializable {
             final boolean optional,
             final Property property) {
 
-        if (optional && property.asOptional().getNestedProperty().isGroup()) {
-            GroupProperty nestedGroup = property.asOptional().getNestedProperty().asGroup();
-            GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
-                    property.isParentPropertyName() ? new GetNestedEnclosing(matchAction)
-                            : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
-                    group, nestedGroup, currentPath);
+        if (property.isGroup() || optional && property.asOptional().getNestedProperty().isGroup()) {
+            BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate = property.isParentPropertyName()
+                    ? new GetNestedEnclosing(matchAction)
+                    : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction));
+            GroupProperty nestedGroup = property.isGroup() ? property.asGroup()
+                    : property.asOptional().getNestedProperty().asGroup();
+            GetOrCreateEnclosingGroupInGroup enclosingFunction = new GetOrCreateEnclosingGroupInGroup(delegate,
+                    nestedGroup.getGroupType().getInterfaceType(),
+                    nestedGroup.getMemberName(),
+                    currentPath,
+                    nestedGroup.getGroupType().getNamingStrategy(),
+                    group.getInterfaceType(),
+                    namingStrategy);
             processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
-                    nestedEnclosingFunction);
+                    enclosingFunction);
         } else if (property.isGroup()) {
-            GroupProperty asGroup = property.asGroup();
-            GetOrCreateEnclosingGroupInGroup nestedEnclosingFunction = new GetOrCreateEnclosingGroupInGroup(
-                    property.isParentPropertyName() ? new GetNestedEnclosing(matchAction)
-                            : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction)),
-                    group, asGroup, currentPath);
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, asGroup.getGroupType(),
-                    nestedEnclosingFunction);
+            GroupProperty nestedGroup = property.asGroup();
+            BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate = property.isParentPropertyName()
+                    ? new GetNestedEnclosing(matchAction)
+                    : new ConsumeOneAndThenFn<>(new GetNestedEnclosing(matchAction));
+            GetOrCreateEnclosingGroupInGroup enclosingFunction = new GetOrCreateEnclosingGroupInGroup(delegate,
+                    nestedGroup.getGroupType().getInterfaceType(),
+                    nestedGroup.getMemberName(),
+                    currentPath,
+                    nestedGroup.getGroupType().getNamingStrategy(),
+                    group.getInterfaceType(),
+                    namingStrategy);
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, nestedGroup.getGroupType(),
+                    enclosingFunction);
         } else if (property.isLeaf() || property.isPrimitive()
                 || optional && property.asOptional().getNestedProperty().isLeaf()) {
             BiConsumer<ConfigMappingContext, NameIterator> actualAction = property.isParentPropertyName() ? matchAction
@@ -397,14 +423,18 @@ final class ConfigMappingProvider implements Serializable {
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final Map<String, String> defaultValues,
-            final MapProperty property,
+            final MapProperty mapProperty,
             final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> getEnclosingGroup,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface enclosingGroup) {
 
-        GetOrCreateEnclosingMapInGroup getEnclosingMap = new GetOrCreateEnclosingMapInGroup(getEnclosingGroup, enclosingGroup,
-                property, currentPath);
-        processLazyMap(currentPath, matchActions, defaultValues, property, getEnclosingMap, namingStrategy, enclosingGroup);
+        BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate = mapProperty.isParentPropertyName()
+                ? getEnclosingGroup
+                : new ConsumeOneAndThenFn<>(getEnclosingGroup);
+        GetOrCreateEnclosingMapInGroup getEnclosingMap = new GetOrCreateEnclosingMapInGroup(delegate,
+                mapProperty.getMemberName(), currentPath, enclosingGroup.getInterfaceType(),
+                enclosingGroup.getNamingStrategy());
+        processLazyMap(currentPath, matchActions, defaultValues, mapProperty, getEnclosingMap, namingStrategy, enclosingGroup);
     }
 
     private void processLazyMap(
@@ -417,130 +447,88 @@ final class ConfigMappingProvider implements Serializable {
             final ConfigMappingInterface enclosingGroup) {
 
         Property valueProperty = property.getValueProperty();
-        Class<? extends Converter<?>> keyConvertWith = property.hasKeyConvertWith() ? property.getKeyConvertWith() : null;
-        Class<?> keyRawType = property.getKeyRawType();
         ArrayDeque<String> unnamedPath = new ArrayDeque<>(currentPath);
         currentPath.addLast("*");
-        processLazyMapValue(currentPath, matchActions, defaultValues, property, valueProperty, false, keyConvertWith,
-                keyRawType,
-                getEnclosingMap, namingStrategy, enclosingGroup);
+        processLazyMapValue(currentPath, matchActions, defaultValues, property, valueProperty, false, getEnclosingMap,
+                namingStrategy, enclosingGroup);
         if (property.hasKeyUnnamed()) {
-            processLazyMapValue(unnamedPath, matchActions, defaultValues, property, valueProperty, true, keyConvertWith,
-                    keyRawType, getEnclosingMap, namingStrategy, enclosingGroup);
+            processLazyMapValue(unnamedPath, matchActions, defaultValues, property, valueProperty, true, getEnclosingMap,
+                    namingStrategy, enclosingGroup);
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void processLazyMapValue(
             final ArrayDeque<String> currentPath,
             final KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> matchActions,
             final Map<String, String> defaultValues,
             final MapProperty mapProperty,
-            final Property property,
+            final Property mapValueProperty,
             final boolean keyUnnamed,
-            final Class<? extends Converter<?>> keyConvertWith,
-            final Class<?> keyRawType,
             final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
             final NamingStrategy namingStrategy,
             final ConfigMappingInterface enclosingGroup) {
 
-        if (property.isLeaf()) {
-            LeafProperty leafProperty = property.asLeaf();
-            Class<? extends Converter<?>> valConvertWith = leafProperty.getConvertWith();
-            Class<?> valueRawType = leafProperty.getValueRawType();
-
+        if (mapValueProperty.isLeaf()) {
+            LeafProperty leafProperty = mapValueProperty.asLeaf();
             String mapPath = String.join(".", currentPath);
-            addAction(currentPath, mapProperty, (mc, ni) -> {
-                // Place the cursor at the map path
-                NameIterator niMapPath = mapPath(mapPath, ni);
-                Map<?, ?> map = getEnclosingMap.apply(mc, niMapPath);
 
-                String rawMapKey;
-                String configKey;
-                boolean indexed = isIndexed(ni.getPreviousSegment());
-                if (indexed && ni.hasPrevious()) {
-                    rawMapKey = normalizeIfIndexed(niMapPath.getName().substring(niMapPath.getPosition() + 1));
-                    configKey = niMapPath.getAllPreviousSegmentsWith(rawMapKey);
-                } else {
-                    rawMapKey = niMapPath.getName().substring(niMapPath.getPosition() + 1);
-                    configKey = ni.getAllPreviousSegments();
-                }
+            CreateValueInMap matchAction = new CreateValueInMap(
+                    getEnclosingMap,
+                    mapPath,
+                    mapProperty.getKeyRawType(), mapProperty.hasKeyConvertWith() ? mapProperty.getKeyConvertWith() : null,
+                    leafProperty.getValueRawType(),
+                    leafProperty.getConvertWith(),
+                    mapProperty.getValueProperty().isCollection(),
+                    mapProperty.getValueProperty().isCollection()
+                            ? mapProperty.getValueProperty().asCollection().getCollectionRawType()
+                            : null);
 
-                // Remove quotes if exists
-                if (rawMapKey.length() > 1 && rawMapKey.charAt(0) == '"' && rawMapKey.charAt(rawMapKey.length() - 1) == '"') {
-                    rawMapKey = rawMapKey.substring(1, rawMapKey.length() - 1);
-                }
+            addAction(currentPath, mapProperty, matchAction);
 
-                Converter<?> keyConv;
-                SmallRyeConfig config = mc.getConfig();
-                if (keyConvertWith != null) {
-                    keyConv = mc.getConverterInstance(keyConvertWith);
-                } else {
-                    keyConv = config.requireConverter(keyRawType);
-                }
-                Converter<?> valueConv;
-                if (valConvertWith != null) {
-                    valueConv = mc.getConverterInstance(valConvertWith);
-                } else {
-                    valueConv = config.requireConverter(valueRawType);
-                }
-
-                if (mapProperty.getValueProperty().isCollection() && valConvertWith == null) {
-                    CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
-                    Class<?> collectionRawType = collectionProperty.getCollectionRawType();
-                    IntFunction collectionFactory = createCollectionFactory(collectionRawType);
-                    ((Map) map).put(keyConv.convert(rawMapKey), config.getValues(configKey, valueConv, collectionFactory));
-                } else {
-                    ((Map) map).put(keyConv.convert(rawMapKey), config.getValue(configKey, valueConv));
-                }
-            });
             // action to match all segments of a key after the map path
-            KeyMap mapAction = matchActions.find(mapPath);
+            KeyMap<BiConsumer<ConfigMappingContext, NameIterator>> mapAction = matchActions.find(mapPath);
             if (mapAction != null) {
                 mapAction.putAny(matchActions.find(mapPath));
             }
-
             // collections may also be represented without [] so we need to register both paths
             if (isCollection(currentPath)) {
                 addAction(inlineCollectionPath(currentPath), leafProperty, DO_NOTHING);
             }
-
-        } else if (property.isMap()) {
-            processLazyMap(currentPath, matchActions, defaultValues, property.asMap(), (mc, ni) -> {
-                if (!keyUnnamed) {
-                    ni.previous();
-                }
-                Map<?, ?> enclosingMap = getEnclosingMap.apply(mc, ni);
-                if (!keyUnnamed) {
-                    ni.next();
-                }
-                String rawMapKey = keyUnnamed ? mapProperty.getKeyUnnamed() : ni.getPreviousSegment();
-                Converter<?> keyConv;
-                SmallRyeConfig config = mc.getConfig();
-                if (keyConvertWith != null) {
-                    keyConv = mc.getConverterInstance(keyConvertWith);
-                } else {
-                    keyConv = config.requireConverter(keyRawType);
-                }
-                Object key = rawMapKey != null ? keyConv.convert(rawMapKey) : null;
-                return (Map) ((Map) enclosingMap).computeIfAbsent(key, map -> new HashMap<>());
-            }, namingStrategy, enclosingGroup);
-        } else if (property.isGroup()) {
-            GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(getEnclosingMap, mapProperty, keyUnnamed,
-                    enclosingGroup, property.asGroup(), currentPath);
-            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy, property.asGroup().getGroupType(),
-                    ef);
-        } else if (property.isCollection()) {
-            CollectionProperty collectionProperty = property.asCollection();
+        } else if (mapValueProperty.isMap()) {
+            GetOrCreateEnclosingMapInMap getNestedEnclosingMap = new GetOrCreateEnclosingMapInMap(
+                    getEnclosingMap,
+                    mapProperty.getKeyRawType(),
+                    keyUnnamed,
+                    mapProperty.getKeyUnnamed(),
+                    mapProperty.hasKeyConvertWith() ? mapProperty.getKeyConvertWith() : null);
+            processLazyMap(currentPath, matchActions, defaultValues, mapValueProperty.asMap(), getNestedEnclosingMap,
+                    namingStrategy, enclosingGroup);
+        } else if (mapValueProperty.isGroup()) {
+            GetOrCreateEnclosingGroupInMap ef = new GetOrCreateEnclosingGroupInMap(
+                    getEnclosingMap,
+                    currentPath,
+                    mapProperty.getKeyRawType(),
+                    keyUnnamed,
+                    mapProperty.getKeyUnnamed(),
+                    mapProperty.hasKeyConvertWith() ? mapProperty.getKeyConvertWith() : null,
+                    mapProperty.getValueProperty().isCollection()
+                            ? mapProperty.getValueProperty().asCollection().getCollectionRawType()
+                            : null,
+                    mapProperty.getValueProperty().isCollection(),
+                    mapValueProperty.asGroup().getGroupType().getInterfaceType(),
+                    mapValueProperty.asGroup().getGroupType().getNamingStrategy(),
+                    enclosingGroup.getInterfaceType(),
+                    enclosingGroup.getNamingStrategy());
+            processLazyGroupInGroup(currentPath, matchActions, defaultValues, namingStrategy,
+                    mapValueProperty.asGroup().getGroupType(), ef);
+        } else if (mapValueProperty.isCollection()) {
+            CollectionProperty collectionProperty = mapValueProperty.asCollection();
             Property element = collectionProperty.getElement();
             if (!element.hasConvertWith() && !keyUnnamed && !element.isLeaf()) {
                 currentPath.addLast(currentPath.removeLast() + "[*]");
             }
-            processLazyMapValue(currentPath, matchActions, defaultValues, mapProperty, element, keyUnnamed, keyConvertWith,
-                    keyRawType,
-                    getEnclosingMap, namingStrategy, enclosingGroup);
-        } else {
-            throw new UnsupportedOperationException();
+            processLazyMapValue(currentPath, matchActions, defaultValues, mapProperty, element, keyUnnamed, getEnclosingMap,
+                    namingStrategy, enclosingGroup);
         }
     }
 
@@ -620,11 +608,12 @@ final class ConfigMappingProvider implements Serializable {
         return namingStrategy(namingStrategy, group.getNamingStrategy()).apply(property.getPropertyName());
     }
 
-    private static NamingStrategy namingStrategy(NamingStrategy parent, NamingStrategy current) {
-        if (!current.isDefault()) {
-            return current;
+    private static NamingStrategy namingStrategy(NamingStrategy enclosing, NamingStrategy enclosed) {
+        // if enclosed element is using default, then use the enclosing naming strategy
+        if (enclosed.isDefault()) {
+            return enclosing;
         } else {
-            return parent;
+            return enclosed;
         }
     }
 
@@ -647,39 +636,46 @@ final class ConfigMappingProvider implements Serializable {
             implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject>,
             BiConsumer<ConfigMappingContext, NameIterator> {
         private final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate;
-        private final ConfigMappingInterface enclosingGroup;
-        private final GroupProperty enclosedGroup;
+        private final Class<?> groupType;
+        private final String groupName;
         private final String groupPath;
         private final int groupDepth;
+        private final NamingStrategy groupNaming;
+        private final Class<?> enclosingGroupType;
+        private final NamingStrategy enclosingGroupNaming;
 
-        GetOrCreateEnclosingGroupInGroup(
+        public GetOrCreateEnclosingGroupInGroup(
                 final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate,
-                final ConfigMappingInterface enclosingGroup,
-                final GroupProperty enclosedGroup,
-                final ArrayDeque<String> path) {
+                final Class<?> groupType,
+                final String groupName,
+                final ArrayDeque<String> groupPath,
+                final NamingStrategy groupNaming,
+                final Class<?> enclosingGroupType,
+                final NamingStrategy enclosingGroupNaming) {
+
             this.delegate = delegate;
-            this.enclosingGroup = enclosingGroup;
-            this.enclosedGroup = enclosedGroup;
-            this.groupPath = String.join(".", path);
-            this.groupDepth = path.size();
+            this.groupType = groupType;
+            this.groupName = groupName;
+            this.groupPath = String.join(".", groupPath);
+            this.groupDepth = groupPath.size();
+            this.groupNaming = groupNaming;
+            this.enclosingGroupType = enclosingGroupType;
+            this.enclosingGroupNaming = enclosingGroupNaming;
         }
 
         @Override
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
-            Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String key = indexName(enclosedGroup.getMemberName(), groupPath, ni);
-            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingType, key, ourEnclosing);
-            context.applyNamingStrategy(
-                    namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
+            String key = indexName(groupName, groupPath, ni);
+            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingGroupType, key, ourEnclosing);
+            context.applyNamingStrategy(namingStrategy(enclosingGroupNaming, groupNaming));
             if (val == null) {
                 NameIterator groupNi = new NameIterator(ni.getName());
                 groupNi.next(groupDepth);
-                // it must be an optional group
                 StringBuilder sb = context.getStringBuilder();
                 sb.replace(0, sb.length(), groupNi.getAllPreviousSegments());
-                val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
-                context.registerEnclosedField(enclosingType, key, ourEnclosing, val);
+                val = (ConfigMappingObject) context.constructGroup(groupType);
+                context.registerEnclosedField(enclosingGroupType, key, ourEnclosing, val);
             }
             return val;
         }
@@ -692,26 +688,46 @@ final class ConfigMappingProvider implements Serializable {
 
     static class GetOrCreateEnclosingGroupInMap implements BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject>,
             BiConsumer<ConfigMappingContext, NameIterator> {
-        private final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap;
-        private final MapProperty enclosingMap;
-        private final boolean keyUnnamed;
-        private final ConfigMappingInterface enclosingGroup;
-        private final GroupProperty enclosedGroup;
-        private final String mapPath;
+        private final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate;
 
-        GetOrCreateEnclosingGroupInMap(
-                final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> getEnclosingMap,
-                final MapProperty enclosingMap,
-                final boolean keyUnnamed,
-                final ConfigMappingInterface enclosingGroup,
-                final GroupProperty enclosedGroup,
-                final ArrayDeque<String> path) {
-            this.getEnclosingMap = getEnclosingMap;
-            this.enclosingMap = enclosingMap;
-            this.keyUnnamed = keyUnnamed;
-            this.enclosingGroup = enclosingGroup;
-            this.enclosedGroup = enclosedGroup;
-            this.mapPath = String.join(".", path);
+        private final String mapPath;
+        private final Class<?> mapKeyRawType;
+        private final boolean mapKeyUnnamed;
+        private final String mapKeyUnnamedKey;
+        private final Class<? extends Converter<?>> mapKeyConverter;
+        private final Class<?> mapValueRawType;
+        private final boolean mapValueCollection;
+        private final Class<?> groupType;
+        private final NamingStrategy groupNaming;
+        private final Class<?> enclosingGroupType;
+        private final NamingStrategy enclosingGroupNaming;
+
+        public GetOrCreateEnclosingGroupInMap(
+                final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate,
+                final ArrayDeque<String> mapPath,
+                final Class<?> mapKeyRawType,
+                final boolean mapKeyUnnamed,
+                final String mapKeyUnnamedKey,
+                final Class<? extends Converter<?>> mapKeyConverter,
+                final Class<?> mapValueRawType,
+                final boolean mapValueCollection,
+                final Class<?> groupType,
+                final NamingStrategy groupNaming,
+                final Class<?> enclosingGroupType,
+                final NamingStrategy enclosingGroupNaming) {
+
+            this.delegate = delegate;
+            this.mapPath = String.join(".", mapPath);
+            this.mapKeyRawType = mapKeyRawType;
+            this.mapKeyUnnamed = mapKeyUnnamed;
+            this.mapKeyUnnamedKey = mapKeyUnnamedKey;
+            this.mapKeyConverter = mapKeyConverter;
+            this.mapValueRawType = mapValueRawType;
+            this.mapValueCollection = mapValueCollection;
+            this.groupType = groupType;
+            this.groupNaming = groupNaming;
+            this.enclosingGroupType = enclosingGroupType;
+            this.enclosingGroupNaming = enclosingGroupNaming;
         }
 
         @Override
@@ -719,27 +735,23 @@ final class ConfigMappingProvider implements Serializable {
         public ConfigMappingObject apply(final ConfigMappingContext context, final NameIterator ni) {
             NameIterator niMapPath = mapPath(mapPath, ni);
             MapKey mapKey = mapKey(context, ni, niMapPath);
-            Map<?, ?> ourEnclosing = getEnclosingMap.apply(context, niMapPath);
-            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingGroup.getInterfaceType(),
-                    mapKey.getKey(), ourEnclosing);
+            Map<?, ?> ourEnclosing = delegate.apply(context, niMapPath);
+            ConfigMappingObject val = (ConfigMappingObject) context.getEnclosedField(enclosingGroupType, mapKey.getKey(),
+                    ourEnclosing);
             if (val == null) {
                 StringBuilder sb = context.getStringBuilder();
-                sb.replace(0, sb.length(), keyUnnamed ? niMapPath.getAllPreviousSegments()
+                sb.replace(0, sb.length(), mapKeyUnnamed ? niMapPath.getAllPreviousSegments()
                         : niMapPath.getAllPreviousSegmentsWith(mapKey.getKey()));
-                context.applyNamingStrategy(
-                        namingStrategy(enclosedGroup.getGroupType().getNamingStrategy(), enclosingGroup.getNamingStrategy()));
-                val = (ConfigMappingObject) context.constructGroup(enclosedGroup.getGroupType().getInterfaceType());
-                context.registerEnclosedField(enclosingGroup.getInterfaceType(), mapKey.getKey(), ourEnclosing, val);
-
-                if (enclosingMap.getValueProperty().isCollection()) {
-                    CollectionProperty collectionProperty = enclosingMap.getValueProperty().asCollection();
+                context.applyNamingStrategy(namingStrategy(enclosingGroupNaming, groupNaming));
+                val = (ConfigMappingObject) context.constructGroup(groupType);
+                context.registerEnclosedField(enclosingGroupType, mapKey.getKey(), ourEnclosing, val);
+                if (mapValueCollection) {
                     Collection collection = (Collection) ourEnclosing.get(mapKey.getConvertedKey());
                     if (collection == null) {
                         // Create the Collection in the Map does not have it
-                        Class<?> collectionRawType = collectionProperty.getCollectionRawType();
-                        IntFunction<Collection<?>> collectionFactory = createCollectionFactory(collectionRawType);
+                        IntFunction<Collection<?>> collectionFactory = createCollectionFactory(mapValueRawType);
                         // Get all the available indexes
-                        List<Integer> indexes = keyUnnamed ? List.of(0)
+                        List<Integer> indexes = mapKeyUnnamed ? List.of(0)
                                 : context.getConfig()
                                         .getIndexedPropertiesIndexes(niMapPath.getAllPreviousSegmentsWith(mapKey.getNameKey()));
                         collection = collectionFactory.apply(indexes.size());
@@ -771,15 +783,20 @@ final class ConfigMappingProvider implements Serializable {
         }
 
         private MapKey mapKey(final ConfigMappingContext context, final NameIterator ni, final NameIterator mapPath) {
-            if (keyUnnamed && enclosingMap.getKeyUnnamed() == null) {
+            if (mapKeyUnnamed && mapKeyUnnamedKey == null) {
                 return new MapKey(null, null, null, 0);
             }
 
-            String rawKey = keyUnnamed ? enclosingMap.getKeyUnnamed() : mapPath.getNextSegment();
+            String rawKey = mapKeyUnnamed ? mapKeyUnnamedKey : mapPath.getNextSegment();
             mapPath.next();
             String pathKey = mapPath.getAllPreviousSegments();
             mapPath.previous();
-            Converter<?> converterKey = context.getKeyConverter(enclosingGroup.getInterfaceType(), enclosingMap);
+            Converter<?> converterKey;
+            if (mapKeyConverter != null) {
+                converterKey = context.getConverterInstance(mapKeyConverter);
+            } else {
+                converterKey = context.getConfig().requireConverter(mapKeyRawType);
+            }
 
             // This will be the key to use to store the value in the map
             String nameKey = normalizeIfIndexed(rawKey);
@@ -789,18 +806,18 @@ final class ConfigMappingProvider implements Serializable {
             }
 
             int index = -1;
-            if (enclosingMap.getValueProperty().isCollection()) {
-                index = keyUnnamed ? 0 : getIndex(rawKey);
+            if (mapValueCollection) {
+                index = mapKeyUnnamed ? 0 : getIndex(rawKey);
             }
 
             // NameIterator#getNextSegment() returns the name without quotes. We need add them if they exist for lookups to work properly
             if (pathKey.charAt(pathKey.length() - 1 - rawKey.length() + nameKey.length()) == '"'
                     && pathKey.charAt(pathKey.length() - 1 - rawKey.length() - 1) == '"') {
                 nameKey = "\"" + nameKey + "\"";
-                rawKey = enclosingMap.getValueProperty().isCollection() ? nameKey + "[" + index + "]" : nameKey;
+                rawKey = mapValueCollection ? nameKey + "[" + index + "]" : nameKey;
             }
 
-            if (!keyUnnamed && (index >= 0 ? rawKey : nameKey).equals(enclosingMap.getKeyUnnamed())) {
+            if (!mapKeyUnnamed && (index >= 0 ? rawKey : nameKey).equals(mapKeyUnnamedKey)) {
                 throw ConfigMessages.msg.explicitNameInUnnamed(ni.getName(), rawKey);
             }
 
@@ -841,39 +858,163 @@ final class ConfigMappingProvider implements Serializable {
     static class GetOrCreateEnclosingMapInGroup implements BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>>,
             BiConsumer<ConfigMappingContext, NameIterator> {
         private final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate;
-        private final ConfigMappingInterface enclosingGroup;
-        private final MapProperty enclosedGroup;
-        private final String groupPath;
+        private final String mapName;
+        private final String mapPath;
+        private final Class<?> enclosingGroupType;
+        private final NamingStrategy enclosingGroupNaming;
 
-        GetOrCreateEnclosingMapInGroup(
+        public GetOrCreateEnclosingMapInGroup(
                 final BiFunction<ConfigMappingContext, NameIterator, ConfigMappingObject> delegate,
-                final ConfigMappingInterface enclosingGroup,
-                final MapProperty enclosedGroup,
-                final ArrayDeque<String> path) {
+                final String mapName,
+                final ArrayDeque<String> mapPath,
+                final Class<?> enclosingGroupType,
+                final NamingStrategy enclosingGroupNaming) {
+
             this.delegate = delegate;
-            this.enclosingGroup = enclosingGroup;
-            this.enclosedGroup = enclosedGroup;
-            this.groupPath = String.join(".", path);
+            this.mapName = mapName;
+            this.mapPath = String.join(".", mapPath);
+            this.enclosingGroupType = enclosingGroupType;
+            this.enclosingGroupNaming = enclosingGroupNaming;
         }
 
         @Override
         public Map<?, ?> apply(final ConfigMappingContext context, final NameIterator ni) {
-            boolean consumeName = !enclosedGroup.isParentPropertyName();
-            if (consumeName)
-                ni.previous();
             ConfigMappingObject ourEnclosing = delegate.apply(context, ni);
-            if (consumeName)
-                ni.next();
-            Class<?> enclosingType = enclosingGroup.getInterfaceType();
-            String key = indexName(enclosedGroup.getMemberName(), groupPath, ni);
-            Map<?, ?> val = (Map<?, ?>) context.getEnclosedField(enclosingType, key, ourEnclosing);
-            context.applyNamingStrategy(enclosingGroup.getNamingStrategy());
+            String key = indexName(mapName, mapPath, ni);
+            Map<?, ?> val = (Map<?, ?>) context.getEnclosedField(enclosingGroupType, key, ourEnclosing);
+            context.applyNamingStrategy(enclosingGroupNaming);
             if (val == null) {
                 // map is not yet constructed
                 val = new HashMap<>();
-                context.registerEnclosedField(enclosingType, key, ourEnclosing, val);
+                context.registerEnclosedField(enclosingGroupType, key, ourEnclosing, val);
             }
             return val;
+        }
+
+        @Override
+        public void accept(final ConfigMappingContext context, final NameIterator ni) {
+            apply(context, ni);
+        }
+    }
+
+    static class CreateValueInMap implements BiConsumer<ConfigMappingContext, NameIterator> {
+        private final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate;
+        private final String mapPath;
+        private final Class<?> mapKeyRawType;
+        private final Class<? extends Converter<?>> mapKeyConverter;
+        private final Class<?> mapValueRawType;
+        private final Class<? extends Converter<?>> mapValueConverter;
+        private final boolean mapValueCollection;
+        private final Class<?> mapValueCollectionRawType;
+
+        public CreateValueInMap(
+                final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate,
+                final String mapPath,
+                final Class<?> mapKeyRawType,
+                final Class<? extends Converter<?>> mapKeyConverter,
+                final Class<?> mapValueRawType,
+                final Class<? extends Converter<?>> mapValueConverter,
+                final boolean mapValueCollection,
+                final Class<?> mapValueCollectionRawType) {
+
+            this.delegate = delegate;
+            this.mapPath = mapPath;
+            this.mapKeyRawType = mapKeyRawType;
+            this.mapKeyConverter = mapKeyConverter;
+            this.mapValueRawType = mapValueRawType;
+            this.mapValueConverter = mapValueConverter;
+            this.mapValueCollection = mapValueCollection;
+            this.mapValueCollectionRawType = mapValueCollectionRawType;
+        }
+
+        @Override
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        public void accept(final ConfigMappingContext context, final NameIterator ni) {
+            // Place the cursor at the map path
+            NameIterator niMapPath = mapPath(mapPath, ni);
+            Map<?, ?> map = delegate.apply(context, niMapPath);
+
+            String rawMapKey;
+            String configKey;
+            boolean indexed = isIndexed(ni.getPreviousSegment());
+            if (indexed && ni.hasPrevious()) {
+                rawMapKey = normalizeIfIndexed(niMapPath.getName().substring(niMapPath.getPosition() + 1));
+                configKey = niMapPath.getAllPreviousSegmentsWith(rawMapKey);
+            } else {
+                rawMapKey = niMapPath.getName().substring(niMapPath.getPosition() + 1);
+                configKey = ni.getAllPreviousSegments();
+            }
+
+            // Remove quotes if exists
+            if (rawMapKey.length() > 1 && rawMapKey.charAt(0) == '"' && rawMapKey.charAt(rawMapKey.length() - 1) == '"') {
+                rawMapKey = rawMapKey.substring(1, rawMapKey.length() - 1);
+            }
+
+            Converter<?> keyConv;
+            SmallRyeConfig config = context.getConfig();
+            if (mapKeyConverter != null) {
+                keyConv = context.getConverterInstance(mapKeyConverter);
+            } else {
+                keyConv = config.requireConverter(mapKeyRawType);
+            }
+            Converter<?> valueConv;
+            if (mapValueConverter != null) {
+                valueConv = context.getConverterInstance(mapValueConverter);
+            } else {
+                valueConv = config.requireConverter(mapValueRawType);
+            }
+
+            if (mapValueCollection && mapValueConverter == null) {
+                IntFunction collectionFactory = createCollectionFactory(mapValueCollectionRawType);
+                ((Map) map).put(keyConv.convert(rawMapKey), config.getValues(configKey, valueConv, collectionFactory));
+            } else {
+                ((Map) map).put(keyConv.convert(rawMapKey), config.getValue(configKey, valueConv));
+            }
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    static class GetOrCreateEnclosingMapInMap implements BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>>,
+            BiConsumer<ConfigMappingContext, NameIterator> {
+        private final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate;
+        private final Class<?> mapKeyRawType;
+        private final boolean mapKeyUnnamed;
+        private final String mapKeyUnnamedKey;
+        private final Class<? extends Converter<?>> mapKeyConverter;
+
+        public GetOrCreateEnclosingMapInMap(
+                final BiFunction<ConfigMappingContext, NameIterator, Map<?, ?>> delegate,
+                final Class<?> mapKeyRawType,
+                final boolean mapKeyUnnamed,
+                final String mapKeyUnnamedKey,
+                final Class<? extends Converter<?>> mapKeyConverter) {
+
+            this.delegate = delegate;
+            this.mapKeyRawType = mapKeyRawType;
+            this.mapKeyUnnamed = mapKeyUnnamed;
+            this.mapKeyUnnamedKey = mapKeyUnnamedKey;
+            this.mapKeyConverter = mapKeyConverter;
+        }
+
+        @Override
+        public Map<?, ?> apply(final ConfigMappingContext context, final NameIterator ni) {
+            if (!mapKeyUnnamed) {
+                ni.previous();
+            }
+            Map<?, ?> enclosingMap = delegate.apply(context, ni);
+            if (!mapKeyUnnamed) {
+                ni.next();
+            }
+            String rawMapKey = mapKeyUnnamed ? mapKeyUnnamedKey : ni.getPreviousSegment();
+            Converter<?> keyConv;
+            SmallRyeConfig config = context.getConfig();
+            if (mapKeyConverter != null) {
+                keyConv = context.getConverterInstance(mapKeyConverter);
+            } else {
+                keyConv = config.requireConverter(mapKeyRawType);
+            }
+            Object key = rawMapKey != null ? keyConv.convert(rawMapKey) : null;
+            return (Map) ((Map) enclosingMap).computeIfAbsent(key, map -> new HashMap<>());
         }
 
         @Override

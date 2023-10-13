@@ -1,12 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingInterface.LeafProperty;
-import static io.smallrye.config.ConfigMappingInterface.MapProperty;
-import static io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
-import static io.smallrye.config.ConfigMappingInterface.Property;
-import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
-import static io.smallrye.config.ConfigMappingInterface.rawTypeOf;
-import static io.smallrye.config.ConfigMappingInterface.typeOfParameter;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
@@ -26,7 +19,6 @@ import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
@@ -38,8 +30,6 @@ import io.smallrye.config.common.utils.StringUtil;
 public final class ConfigMappingContext {
     private final Map<Class<?>, Map<String, Map<Object, Object>>> enclosedThings = new IdentityHashMap<>();
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
-    private final Map<Class<?>, Map<String, Converter<?>>> convertersByTypeAndField = new IdentityHashMap<>();
-    private final List<Map<Class<?>, Map<String, Converter<?>>>> keyConvertersByDegreeTypeAndField = new ArrayList<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
     private final List<ConfigMappingObject> allInstances = new ArrayList<>();
     private final SmallRyeConfig config;
@@ -83,83 +73,6 @@ public final class ConfigMappingContext {
         final T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
         allInstances.add((ConfigMappingObject) mappingObject);
         return mappingObject;
-    }
-
-    @SuppressWarnings({ "unchecked", "unused" })
-    public <T> Converter<T> getValueConverter(Class<?> enclosingType, String field) {
-        return (Converter<T>) convertersByTypeAndField
-                .computeIfAbsent(enclosingType, x -> new HashMap<>())
-                .computeIfAbsent(field, x -> {
-                    ConfigMappingInterface ci = getConfigurationInterface(enclosingType);
-                    Property property = ci.getProperty(field);
-                    return getConverter(property);
-                });
-    }
-
-    private Converter<?> getConverter(final Property property) {
-        boolean optional = property.isOptional();
-        if (property.isLeaf() || optional && property.asOptional().getNestedProperty().isLeaf()) {
-            LeafProperty leafProperty = optional ? property.asOptional().getNestedProperty().asLeaf()
-                    : property.asLeaf();
-            if (leafProperty.hasConvertWith()) {
-                Class<? extends Converter<?>> convertWith = leafProperty.getConvertWith();
-                // todo: generics
-                return getConverterInstance(convertWith);
-            } else {
-                // todo: replace with generic converter lookup
-                Class<?> valueRawType = leafProperty.getValueRawType();
-                if (valueRawType == List.class) {
-                    return config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0)));
-                } else if (valueRawType == Set.class) {
-                    return config.requireConverter(rawTypeOf(typeOfParameter(leafProperty.getValueType(), 0)));
-                } else {
-                    return config.requireConverter(valueRawType);
-                }
-            }
-        } else if (property.isPrimitive()) {
-            PrimitiveProperty primitiveProperty = property.asPrimitive();
-            if (primitiveProperty.hasConvertWith()) {
-                return getConverterInstance(primitiveProperty.getConvertWith());
-            } else {
-                return config.requireConverter(primitiveProperty.getBoxType());
-            }
-        } else if (property.isCollection() || optional && property.asOptional().getNestedProperty().isCollection()) {
-            CollectionProperty collectionProperty = optional ? property.asOptional().getNestedProperty().asCollection()
-                    : property.asCollection();
-            return getConverter(collectionProperty.getElement());
-        } else {
-            throw new IllegalStateException();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> Converter<T> getKeyConverter(final Class<?> enclosingType, final MapProperty mapProperty) {
-        List<Map<Class<?>, Map<String, Converter<?>>>> list = this.keyConvertersByDegreeTypeAndField;
-        while (list.size() < mapProperty.getLevels()) {
-            list.add(new IdentityHashMap<>());
-        }
-        Map<Class<?>, Map<String, Converter<?>>> map = list.get(mapProperty.getLevels() - 1);
-        return (Converter<T>) map
-                .computeIfAbsent(enclosingType, x -> new HashMap<>())
-                .computeIfAbsent(mapProperty.getMemberName(), x -> {
-                    if (mapProperty.hasKeyConvertWith()) {
-                        return ConfigMappingContext.this.getConverterInstance(mapProperty.getKeyConvertWith());
-                    } else {
-                        // todo: replace with generic converter lookup
-                        Class<?> valueRawType = mapProperty.getKeyRawType();
-                        if (valueRawType == List.class) {
-                            return Converters.newCollectionConverter(
-                                    config.requireConverter(rawTypeOf(typeOfParameter(mapProperty.getKeyType(), 0))),
-                                    ArrayList::new);
-                        } else if (valueRawType == Set.class) {
-                            return Converters.newCollectionConverter(
-                                    config.requireConverter(rawTypeOf(typeOfParameter(mapProperty.getKeyType(), 0))),
-                                    HashSet::new);
-                        } else {
-                            return config.requireConverter(valueRawType);
-                        }
-                    }
-                });
     }
 
     @SuppressWarnings("unchecked")
