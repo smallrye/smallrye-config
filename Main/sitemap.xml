@@ -16,6 +16,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://smallrye.io/smallrye-config/Main/config/customizer/</loc>
+         <lastmod>2023-10-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/environment-variables/</loc>
          <lastmod>2023-10-17</lastmod>
          <changefreq>daily</changefreq>
