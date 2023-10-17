@@ -59,6 +59,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
+import io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import io.smallrye.config.ConfigMappingInterface.MapProperty;
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
@@ -406,6 +407,8 @@ public class ConfigMappingGenerator {
 
             // now handle each possible type
             if (property.isCollection() || realProperty.isCollection() && optional) {
+                CollectionProperty collectionProperty = realProperty.asCollection();
+
                 ctor.visitVarInsn(ALOAD, V_THIS);
                 // append property name
                 boolean restoreLength = appendPropertyName(ctor, property);
@@ -414,11 +417,10 @@ public class ConfigMappingGenerator {
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConfig", "()L" + I_SMALLRYE_CONFIG + ';', false);
                 ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
+                // stack config key
 
                 // For Both Group and Optional Group
                 if (realProperty.asCollection().getElement().isGroup() || realProperty.asCollection().getElement().isMap()) {
-                    CollectionProperty collectionProperty = realProperty.asCollection();
-
                     // get properties indexes
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getIndexedPropertiesIndexes",
                             "(L" + I_STRING + ";)L" + I_LIST + ';', false);
@@ -568,17 +570,25 @@ public class ConfigMappingGenerator {
                     }
 
                 } else if (optional) {
-                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
-                    ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
-                    ctor.visitLdcInsn(memberName);
-                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
-                            "(L" + I_CLASS + ";L" + I_STRING + ";)L" + I_CONVERTER + ';', false);
-
-                    ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
-                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
-                            "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValues",
-                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_OPTIONAL + ';', false);
+                    LeafProperty collectionElementProperty = collectionProperty.getElement().asLeaf();
+                    if (collectionElementProperty.hasConvertWith()) {
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(collectionElementProperty.getConvertWith()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConverterInstance",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ';', false);
+                        ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
+                        ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                                "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValues",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_OPTIONAL + ';', false);
+                    } else {
+                        ctor.visitLdcInsn(getType(collectionElementProperty.getValueRawType()));
+                        ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
+                        ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                                "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValues",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_INT_FUNCTION + ";)L" + I_OPTIONAL + ';', false);
+                    }
                     ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
 
                     if (restoreLength) {
@@ -589,18 +599,29 @@ public class ConfigMappingGenerator {
                     Label _catch = new Label();
                     Label _continue = new Label();
                     ctor.visitLabel(_try);
-                    ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
-                    ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
-                    ctor.visitLdcInsn(memberName);
-                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
-                            "(L" + I_CLASS + ";L" + I_STRING + ";)L" + I_CONVERTER + ';', false);
 
-                    ctor.visitLdcInsn(getType(fieldDesc));
-                    ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
-                            "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValues",
-                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_COLLECTION + ';', false);
+                    LeafProperty collectionElementProperty = collectionProperty.getElement().asLeaf();
+                    if (collectionElementProperty.hasConvertWith()) {
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(collectionElementProperty.getConvertWith()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConverterInstance",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ';', false);
+                        ctor.visitLdcInsn(getType(realProperty.asCollection().getCollectionRawType()));
+                        ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                                "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValues",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_INT_FUNCTION + ";)L" + I_COLLECTION + ';',
+                                false);
+                    } else {
+                        ctor.visitLdcInsn(getType(collectionElementProperty.getValueRawType()));
+                        ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
+                        ctor.visitMethodInsn(INVOKESTATIC, I_MAPPING_CONTEXT, "createCollectionFactory",
+                                "(L" + I_CLASS + ";)L" + I_INT_FUNCTION + ";", false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValues",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_INT_FUNCTION + ";)L" + I_COLLECTION + ';', false);
+                    }
                     ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);
+
                     ctor.visitJumpInsn(Opcodes.GOTO, _continue);
                     ctor.visitLabel(_catch);
                     ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
@@ -746,37 +767,58 @@ public class ConfigMappingGenerator {
                 ctor.visitVarInsn(Opcodes.ALOAD, V_STRING_BUILDER);
                 ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
                 // stack: this config key
-                // get the converter to use
-                ctor.visitVarInsn(Opcodes.ALOAD, V_MAPPING_CONTEXT);
-                ctor.visitLdcInsn(getType(mapping.getInterfaceType()));
-                ctor.visitLdcInsn(memberName);
-                ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getValueConverter",
-                        "(L" + I_CLASS + ";L" + I_STRING + ";)L" + I_CONVERTER + ';', false);
-                // stack: this config key converter
                 Label _try = new Label();
                 Label _catch = new Label();
                 Label _continue = new Label();
                 ctor.visitLabel(_try);
                 if (property.isOptional()) {
-                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValue",
-                            "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OPTIONAL + ';', false);
-                } else {
-                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValue",
-                            "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ';', false);
-                }
-                // stack: this value
-                if (property.isPrimitive()) {
-                    PrimitiveProperty prim = property.asPrimitive();
-                    // unbox it
-                    // stack: this box
-                    String boxType = getInternalName(prim.getBoxType());
-                    ctor.visitTypeInsn(Opcodes.CHECKCAST, boxType);
-                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, boxType, prim.getUnboxMethodName(),
-                            prim.getUnboxMethodDescriptor(), false);
-                    // stack: this value
-                } else if (!property.isOptional()) {
-                    assert property.isLeaf();
+                    LeafProperty leafProperty = property.asOptional().getNestedProperty().asLeaf();
+                    if (leafProperty.hasConvertWith()) {
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConverterInstance",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ';', false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValue",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OPTIONAL + ';', false);
+                    } else {
+                        ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getOptionalValue",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ';', false);
+                    }
                     ctor.visitTypeInsn(Opcodes.CHECKCAST, fieldType);
+                } else if (property.isLeaf()) {
+                    LeafProperty leafProperty = property.asLeaf();
+                    if (leafProperty.hasConvertWith()) {
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConverterInstance",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ';', false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValue",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ';', false);
+                    } else {
+                        ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValue",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                    }
+                    ctor.visitTypeInsn(Opcodes.CHECKCAST, fieldType);
+                } else if (property.isPrimitive()) {
+                    PrimitiveProperty primitiveProperty = property.asPrimitive();
+                    if (primitiveProperty.hasConvertWith()) {
+                        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                        ctor.visitLdcInsn(getType(primitiveProperty.getConvertWith()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getConverterInstance",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ';', false);
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValue",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ';', false);
+                    } else {
+                        ctor.visitLdcInsn(getType(primitiveProperty.getBoxType()));
+                        ctor.visitMethodInsn(INVOKEVIRTUAL, I_SMALLRYE_CONFIG, "getValue",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT + ';', false);
+                    }
+                    String boxType = getInternalName(primitiveProperty.getBoxType());
+                    ctor.visitTypeInsn(Opcodes.CHECKCAST, boxType);
+                    ctor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, boxType, primitiveProperty.getUnboxMethodName(),
+                            primitiveProperty.getUnboxMethodDescriptor(), false);
                 }
                 // stack: this value
                 ctor.visitFieldInsn(Opcodes.PUTFIELD, className, memberName, fieldDesc);

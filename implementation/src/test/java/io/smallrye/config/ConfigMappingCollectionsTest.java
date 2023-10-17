@@ -690,6 +690,12 @@ public class ConfigMappingCollectionsTest {
     interface MapOfListWithConverter {
         Map<@WithConverter(KeyConverter.class) String, @WithConverter(ListConverter.class) List<String>> list();
 
+        Map<@WithConverter(KeyConverter.class) String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
+
         class KeyConverter implements Converter<String> {
             @Override
             public String convert(final String value) throws IllegalArgumentException, NullPointerException {
@@ -717,8 +723,8 @@ public class ConfigMappingCollectionsTest {
     void mapWithKeyAndListConverters() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(MapOfListWithConverter.class, "map")
-                .withSources(config("map.list.one", "one,1"))
-                .withSources(config("map.list.two", "two,2"))
+                .withSources(config("map.list.one", "one,1", "map.list.two", "two,2"))
+                .withSources(config("map.nested.one.value", "1234"))
                 .build();
 
         MapOfListWithConverter mapping = config.getConfigMapping(MapOfListWithConverter.class);
@@ -726,6 +732,7 @@ public class ConfigMappingCollectionsTest {
         assertEquals("1", mapping.list().get("1").get(1));
         assertEquals("two", mapping.list().get("2").get(0));
         assertEquals("2", mapping.list().get("2").get(1));
+        assertEquals("1234", mapping.nested().get("1").value());
     }
 
     @ConfigMapping(prefix = "map")
