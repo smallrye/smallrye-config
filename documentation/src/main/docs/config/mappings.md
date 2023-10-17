@@ -75,6 +75,24 @@ For a Config Mapping to be valid, it needs to match every configuration property
 the specified prefix set in `@ConfigMapping`. This prevents unknown configuration properties in the `Config`. This 
 behaviour can be disabled with the configuration `smallrye.config.mapping.validate-unknown=false`.
 
+## Defaults
+
+The `io.smallrye.config.WithDefault` annotation allows to set a default property value into a mapping (and prevent
+errors if the configuration value is not available in any `ConfigSource`).
+
+```java
+public interface Defaults {
+    @WithDefault("foo")
+    String foo();
+
+    @WithDefault("bar")
+    String bar();
+}
+```
+
+No configuration properties are required. The `Defaults#foo()` will return the value `foo` and `Defaults#bar()` will
+return the value `bar`.
+
 ## Nested Groups
 
 A nested mapping provides a way to map sub-groups of configuration properties.
@@ -423,23 +441,38 @@ Map<String, Alias> localhost = server.aliases.get("localhost");
 
      If the unnamed key (in this case `localhost`) is explicitly set in a property name, the mapping will throw an error.
 
-## Defaults
+### `@WithDefaults`
 
-The `io.smallrye.config.WithDefault` annotation allows to set a default property value into a mapping (and prevent 
-errors if the configuration value is not available in any `ConfigSource`).
+The `io.smallrye.config.WithDefaults` is a marker annotation to use only in a `Map` to return the default value for
+the value element on any key lookup:
 
 ```java
-public interface Defaults {
-    @WithDefault("foo")
-    String foo();
-
-    @WithDefault("bar")
-    String bar();
+@ConfigMapping(prefix = "server")
+public interface Server {
+    @WithDefaults
+    Map<String, Alias> aliases();
+    
+    interface Alias {
+        @WithDefault("localhost")
+        String name();
+    }
 }
 ```
 
-No configuration properties are required. The `Defaults#foo()` will return the value `foo` and `Defaults#bar()` will 
-return the value `bar`.
+```properties
+server.aliases.prod.name=prod
+```
+
+A look up to the `aliases` `Map` with the key `localhost`, `any` or any other key, returns a `Alias` instance, where
+`Alias.name` is `localhost`, because that is the default value. A look up to `prod` returns a `Alias` instance, where
+`Alias.name` is `prod` because the property is defined in the configuration as `server.aliases.prod.name=prod`.
+
+```java
+Server server = config.getConfigMapping(Server.class);
+Map<String, Alias> localhost = server.aliases.get("localhost");
+Map<String, Alias> any = server.aliases.get("any");
+Map<String, Alias> any = server.aliases.get("prod");
+```
 
 ## ToString
 
