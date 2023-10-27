@@ -158,7 +158,7 @@ class EnvConfigSourceTest {
 
         assertEquals("Einfache Sprache", config.getRawValue("test.language.\"de.etr\""));
 
-        Map<String, String> map = config.getValuesAsMap("test.language", STRING_CONVERTER, STRING_CONVERTER);
+        Map<String, String> map = config.getValues("test.language", STRING_CONVERTER, STRING_CONVERTER);
         assertEquals(map.get("de.etr"), "Einfache Sprache");
         assertEquals(map.get("pt-br"), "FROM ENV");
     }

@@ -11,9 +11,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -41,11 +43,7 @@ class CustomConverterTest {
     void explicitConverter() {
         // setup
         SmallRyeConfig config = buildConfig("my.prop", "1234").unwrap(SmallRyeConfig.class);// sanity check
-        final Converter<Integer> customConverter = new Converter<Integer>() {
-            public Integer convert(final String value) {
-                return Integer.valueOf(Integer.parseInt(value) * 2);
-            }
-        };
+        Converter<Integer> customConverter = value -> Integer.parseInt(value) * 2;
         // compare against the implicit converter
         // regular read
         assertEquals(1234, config.getValue("my.prop", Integer.class).intValue());
@@ -56,8 +54,9 @@ class CustomConverterTest {
         assertEquals(2468,
                 config.getOptionalValue("my.prop", customConverter).orElseThrow(IllegalStateException::new).intValue());
         // collection
-        assertEquals(singletonList(Integer.valueOf(1234)), config.getValues("my.prop", Integer.class, ArrayList::new));
-        assertEquals(singletonList(Integer.valueOf(2468)), config.getValues("my.prop", customConverter, ArrayList::new));
+        assertEquals(singletonList(1234), config.getValues("my.prop", Integer.class, ArrayList::new));
+        assertEquals(singletonList(2468),
+                config.getValues("my.prop", customConverter, (IntFunction<Collection<Integer>>) value -> new ArrayList<>()));
         // check missing behavior
         // regular read
         try {
@@ -80,7 +79,7 @@ class CustomConverterTest {
         } catch (NoSuchElementException expected) {
         }
         try {
-            config.getValues("missing.prop", customConverter, ArrayList::new);
+            config.getValues("missing.prop", customConverter, (IntFunction<Collection<Integer>>) value -> new ArrayList<>());
             fail("Expected exception");
         } catch (NoSuchElementException expected) {
         }

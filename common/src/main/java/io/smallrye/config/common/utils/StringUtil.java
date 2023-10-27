@@ -234,25 +234,64 @@ public class StringUtil {
         return new String(result, 0, 0, result.length);
     }
 
-    public static boolean isNumeric(CharSequence digits) {
+    public static boolean isNumeric(final CharSequence digits) {
         return isNumeric(digits, 0, digits.length());
     }
 
-    public static boolean isNumeric(CharSequence digits, int start, int end) {
+    public static boolean isNumeric(final CharSequence digits, final int begin, final int end) {
         if (digits.length() == 0) {
             return false;
         }
 
-        if (start == end) {
+        if (begin == end) {
             return false;
         }
 
-        for (int i = start; i < end; i++) {
+        for (int i = begin; i < end; i++) {
             if (!Character.isDigit(digits.charAt(i))) {
                 return false;
             }
         }
         return true;
+    }
+
+    public static String unquoted(final String name) {
+        return unquoted(name, 0);
+    }
+
+    public static String unquoted(final String name, final int begin) {
+        return unquoted(name, begin, name.length());
+    }
+
+    public static String unquoted(final String name, final int begin, final int end) {
+        if (begin < 0 || begin > end || end > name.length()) {
+            throw new StringIndexOutOfBoundsException("begin " + begin + ", end " + end + ", length " + name.length());
+        }
+
+        if (name.length() < 2) {
+            return name;
+        }
+
+        if (name.charAt(begin) == '"' && name.charAt(end - 1) == '"') {
+            return name.substring(begin + 1, end - 1);
+        } else {
+            return name.substring(begin, end);
+        }
+    }
+
+    public static String unindexed(final String name) {
+        if (name.length() < 3) {
+            return name;
+        }
+
+        if (name.charAt(name.length() - 1) == ']') {
+            int begin = name.lastIndexOf('[');
+            if (begin != -1 && isNumeric(name, begin + 1, name.length() - 1)) {
+                return name.substring(0, begin);
+            }
+        }
+
+        return name;
     }
 
     public static String skewer(String camelHumps) {

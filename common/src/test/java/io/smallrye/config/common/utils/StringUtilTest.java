@@ -153,4 +153,27 @@ class StringUtilTest {
         assertTrue(StringUtil.isNumeric("foo[0]", 4, 5));
         assertTrue(StringUtil.isNumeric(new StringBuilder("foo[0]"), 4, 5));
     }
+
+    @Test
+    void unquoted() {
+        assertEquals("", StringUtil.unquoted(""));
+        assertEquals("", StringUtil.unquoted("\"\""));
+        assertEquals("a", StringUtil.unquoted("a"));
+        assertEquals("unquoted", StringUtil.unquoted("\"unquoted\""));
+        assertEquals("unquoted", StringUtil.unquoted("my.\"unquoted\"", 3, 13));
+        assertEquals("unquoted", StringUtil.unquoted("my.unquoted", 3, 11));
+    }
+
+    @Test
+    void unIndexed() {
+        assertEquals("", StringUtil.unindexed(""));
+        assertEquals("[]", StringUtil.unindexed("[]"));
+        assertEquals("", StringUtil.unindexed("[0]"));
+        assertEquals("", StringUtil.unindexed("[999]"));
+        assertEquals("[abc]", StringUtil.unindexed("[abc]"));
+        assertEquals("my.prop", StringUtil.unindexed("my.prop[0]"));
+        assertEquals("my.prop[]", StringUtil.unindexed("my.prop[]"));
+        assertEquals("my.prop[", StringUtil.unindexed("my.prop["));
+        assertEquals("my.prop]", StringUtil.unindexed("my.prop]"));
+    }
 }

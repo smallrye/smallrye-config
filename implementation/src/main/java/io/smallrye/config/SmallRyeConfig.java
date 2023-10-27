@@ -16,6 +16,11 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
+import static io.smallrye.config.Converters.newCollectionConverter;
+import static io.smallrye.config.Converters.newMapConverter;
+import static io.smallrye.config.Converters.newOptionalConverter;
+import static io.smallrye.config.common.utils.StringUtil.unindexed;
+import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -96,8 +101,8 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Override
-    public <T> List<T> getValues(final String propertyName, final Class<T> propertyType) {
-        return getValues(propertyName, propertyType, ArrayList::new);
+    public <T> List<T> getValues(final String name, final Class<T> propertyType) {
+        return getValues(name, propertyType, ArrayList::new);
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Class<T> itemClass, IntFunction<C> collectionFactory) {
@@ -106,7 +111,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
         try {
-            return getValue(name, Converters.newCollectionConverter(converter, collectionFactory));
+            return getValue(name, newCollectionConverter(converter, collectionFactory));
         } catch (NoSuchElementException e) {
             return getIndexedValues(name, converter, collectionFactory);
         }
@@ -164,11 +169,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return sortIndexes;
     }
 
-    @Override
-    public <T> T getValue(String name, Class<T> aClass) {
-        return getValue(name, requireConverter(aClass));
-    }
-
     /**
      * Return the content of the direct sub properties as the requested type of Map.
      *
@@ -182,11 +182,7 @@ public class SmallRyeConfig implements Config, Serializable {
      * @throws NoSuchElementException if no direct sub properties could be found.
      */
     public <K, V> Map<K, V> getValues(String name, Class<K> kClass, Class<V> vClass) {
-        final Map<K, V> result = getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass));
-        if (result == null) {
-            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
-        }
-        return result;
+        return getValues(name, requireConverter(kClass), requireConverter(vClass));
     }
 
     /**
@@ -199,27 +195,65 @@ public class SmallRyeConfig implements Config, Serializable {
      * @param <V> The type of the values.
      * @return the resolved property value as an instance of the requested Map or {@code null} if it could not be found.
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     * @throws NoSuchElementException if no direct sub properties could be found.
      */
-    public <K, V> Map<K, V> getValuesAsMap(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
-        final String prefix = name.endsWith(".") ? name : name + ".";
-        final Map<K, V> result = new HashMap<>();
+    public <K, V> Map<K, V> getValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+        try {
+            return getValue(name, newMapConverter(keyConverter, valueConverter));
+        } catch (NoSuchElementException e) {
+            Map<String, String> mapKeys = getMapKeys(name);
+            if (mapKeys.isEmpty()) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+            }
+
+            Map<K, V> map = new HashMap<>(mapKeys.size());
+            for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
+                map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
+                        keyConverter), getValue(entry.getValue(), valueConverter));
+            }
+            return map;
+        }
+    }
+
+    public <K, V, C extends Collection<V>> Map<K, C> getValues(String name, Class<K> kClass, Class<V> vClass,
+            IntFunction<C> collectionFactory) {
+        return getValues(name, requireConverter(kClass), requireConverter(vClass), collectionFactory);
+    }
+
+    public <K, V, C extends Collection<V>> Map<K, C> getValues(String name, Converter<K> keyConverter,
+            Converter<V> valueConverter, IntFunction<C> collectionFactory) {
+        try {
+            return getValue(name, newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory)));
+        } catch (NoSuchElementException e) {
+            Map<String, String> mapCollectionKeys = getMapKeys(name);
+            if (mapCollectionKeys.isEmpty()) {
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+            }
+
+            Map<K, C> map = new HashMap<>(mapCollectionKeys.size());
+            for (Map.Entry<String, String> entry : mapCollectionKeys.entrySet()) {
+                map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
+                        keyConverter), getValues(entry.getValue(), valueConverter, collectionFactory));
+            }
+            return map;
+        }
+    }
+
+    public Map<String, String> getMapKeys(final String name) {
+        Map<String, String> mapKeys = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
-            if (propertyName.startsWith(prefix)) {
-                NameIterator nameIterator = new NameIterator(propertyName, prefix.length() - 1);
-                if (nameIterator.hasNext()) {
-                    nameIterator.next();
-                    if (nameIterator.hasNext()) {
-                        continue;
-                    }
-                    nameIterator.previous();
-                }
-                final String key = nameIterator.getNextSegment();
-                ConfigValue configValueKey = ConfigValue.builder().withName(propertyName + "#key").withValue(key).build();
-                ConfigValue configValue = getConfigValue(propertyName).withName(propertyName + "#value");
-                result.put(convertValue(configValueKey, keyConverter), convertValue(configValue, valueConverter));
+            if (propertyName.length() > name.length() && propertyName.charAt(name.length()) == '.'
+                    && propertyName.startsWith(name)) {
+                String key = unquoted(unindexed(propertyName), name.length() + 1);
+                mapKeys.put(key, unindexed(propertyName));
             }
         }
-        return result.isEmpty() ? null : result;
+        return mapKeys;
+    }
+
+    @Override
+    public <T> T getValue(String name, Class<T> aClass) {
+        return getValue(name, requireConverter(aClass));
     }
 
     /**
@@ -341,23 +375,8 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, getOptionalConverter(aClass));
     }
 
-    /**
-     * Return the content of the direct sub properties as the requested type of Map.
-     *
-     * @param name The configuration property name
-     * @param kClass the type into which the keys should be converted
-     * @param vClass the type into which the values should be converted
-     * @param <K> the key type
-     * @param <V> the value type
-     * @return the resolved property value as an instance of the requested Map (not {@code null})
-     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
-     */
-    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass) {
-        return Optional.ofNullable(getValuesAsMap(name, requireConverter(kClass), requireConverter(vClass)));
-    }
-
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
-        return getValue(name, Converters.newOptionalConverter(converter));
+        return getValue(name, newOptionalConverter(converter));
     }
 
     public <T> Optional<List<T>> getOptionalValues(final String propertyName, final Class<T> propertyType) {
@@ -371,8 +390,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        final Optional<C> optionalValue = getOptionalValue(name,
-                Converters.newCollectionConverter(converter, collectionFactory));
+        Optional<C> optionalValue = getOptionalValue(name, newCollectionConverter(converter, collectionFactory));
         if (optionalValue.isPresent()) {
             return optionalValue;
         } else {
@@ -398,6 +416,46 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Return the content of the direct sub properties as the requested type of Map.
+     *
+     * @param name The configuration property name
+     * @param kClass the type into which the keys should be converted
+     * @param vClass the type into which the values should be converted
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the resolved property value as an instance of the requested Map (not {@code null})
+     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     */
+    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass) {
+        Optional<Map<K, V>> optionalValue = getOptionalValue(name,
+                newMapConverter(requireConverter(kClass), requireConverter(vClass)));
+        if (optionalValue.isPresent()) {
+            return optionalValue;
+        }
+
+        Map<String, String> mapKeys = getMapKeys(name);
+        if (mapKeys.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(getValues(name, kClass, vClass));
+    }
+
+    public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass,
+            IntFunction<C> collectionFactory) {
+        Optional<Map<K, C>> optionalValue = getOptionalValue(name,
+                newMapConverter(requireConverter(kClass), newCollectionConverter(requireConverter(vClass), collectionFactory)));
+        if (optionalValue.isPresent()) {
+            return optionalValue;
+        }
+
+        Map<String, String> mapKeys = getMapKeys(name);
+        if (mapKeys.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(getValues(name, kClass, vClass, collectionFactory));
     }
 
     public ConfigMappings getConfigMappings() {
@@ -486,7 +544,7 @@ public class SmallRyeConfig implements Config, Serializable {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
         return optionalConverters.computeIfAbsent(asType,
-                clazz -> Converters.newOptionalConverter(requireConverter((Class) clazz)));
+                clazz -> newOptionalConverter(requireConverter((Class) clazz)));
     }
 
     @Deprecated // binary-compatibility bridge method for Quarkus

@@ -57,10 +57,10 @@ class ConfigInjectionTest {
         assertEquals("OK", configBean.getReasonsSupplier().get().get(200));
         assertEquals("Created", configBean.getReasonsSupplier().get().get(201));
         assertFalse(configBean.getReasonsOptional().isPresent());
-        assertEquals(2, configBean.getVersions().size());
+        assertEquals(3, configBean.getVersions().size());
         assertEquals(new Version(1, "The version 1.2.3"), configBean.getVersions().get("v1"));
         assertEquals(new Version(2, "The version 2.0.0"), configBean.getVersions().get("v2"));
-        assertEquals(2, configBean.getVersionsDefault().size());
+        assertEquals(3, configBean.getVersionsDefault().size());
         assertEquals(new Version(1, "The version 1;2;3"), configBean.getVersionsDefault().get("v1=1;2;3"));
         assertEquals(new Version(2, "The version 2;1;0"), configBean.getVersionsDefault().get("v2=2;1;0"));
         assertEquals(1, configBean.getVersionDefault().size());

@@ -188,6 +188,17 @@ public class ConfigExtension implements Extension {
         for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();
 
+            // validate injection config name
+            ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
+            String name;
+            try {
+                name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
+            } catch (IllegalStateException e) {
+                adv.addDeploymentProblem(InjectionMessages.msg.retrieveConfigFailure(null, formatInjectionPoint(injectionPoint),
+                        e.getLocalizedMessage(), e));
+                continue;
+            }
+
             // We don't validate the Optional / Provider / Supplier / ConfigValue for defaultValue.
             if (type instanceof Class && org.eclipse.microprofile.config.ConfigValue.class.isAssignableFrom((Class<?>) type)
                     || type instanceof Class && OptionalInt.class.isAssignableFrom((Class<?>) type)
@@ -200,23 +211,15 @@ public class ConfigExtension implements Extension {
                 continue;
             }
 
-            ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
-            String name;
-            try {
-                name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
-            } catch (IllegalStateException e) {
-                adv.addDeploymentProblem(
-                        InjectionMessages.msg.retrieveConfigFailure(null, formatInjectionPoint(injectionPoint),
-                                e.getLocalizedMessage(), e));
-                continue;
-            }
-
             // Check if the name is part of the properties first.
             // Since properties can be a subset, then search for the actual property for a value.
-            // Check if it is a map
-            // Finally also check if the property is indexed (might be a Collection with indexed properties).
-            if ((!configNames.contains(name) && ConfigProducerUtil.getConfigValue(name, config).getValue() == null)
-                    && !isMap(type) && !isIndexed(type, name, config)) {
+            // Check if the property is indexed (might be a Collection with indexed properties).
+            // Check if the properti is part of a Map
+            if (!configNames.contains(name)
+                    && ConfigProducerUtil.getConfigValue(name, config).getValue() == null
+                    && !isIndexed(type, name, config)
+                    && !isMap(type, name, config)) {
+
                 if (configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
                     adv.addDeploymentProblem(
                             InjectionMessages.msg.noConfigValue(name, formatInjectionPoint(injectionPoint)));
@@ -252,14 +255,9 @@ public class ConfigExtension implements Extension {
                 && !config.getIndexedPropertiesIndexes(name).isEmpty();
     }
 
-    /**
-     * Indicates whether the given type is a type of Map.
-     *
-     * @param type the type to check
-     * @return {@code true} if the given type is a type of Map, {@code false} otherwise.
-     */
-    private static boolean isMap(final Type type) {
-        return type instanceof ParameterizedType &&
-                Map.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType());
+    private static boolean isMap(final Type type, String name, SmallRyeConfig config) {
+        return type instanceof ParameterizedType
+                && Map.class.isAssignableFrom((Class<?>) ((ParameterizedType) type).getRawType())
+                && !config.getMapKeys(name).isEmpty();
     }
 }

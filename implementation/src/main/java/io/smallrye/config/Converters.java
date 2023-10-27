@@ -16,6 +16,8 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.common.utils.StringUtil.unquoted;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -1086,25 +1088,21 @@ public final class Converters {
                     // The key separator has been escaped
                     continue;
                 }
-                processEntry(map, line.substring(0, idx).replace("\\=", "="), line.substring(idx + 1).replace("\\=", "="));
+                processEntry(map, unquoted(line.substring(0, idx).replace("\\=", "=")),
+                        line.substring(idx + 1).replace("\\=", "="));
                 return;
             }
             throw ConfigMessages.msg.valueNotMatchMapFormat(value);
         }
 
         /**
-         * Converts the key/value pair into the expected format and add it to the given map. It will ignore
-         * keys with sub namespace.
+         * Converts the key/value pair into the expected format and add it to the given map.
          *
          * @param map the map to which the key/value pair is added.
          * @param key the key of the key/value pair to add to the map
          * @param value the value of the key/value pair to add to the map
          */
         private void processEntry(Map<K, V> map, String key, String value) {
-            if (key.indexOf('.') >= 0) {
-                // Ignore sub namespaces
-                return;
-            }
             map.put(keyConverter.convert(key), valueConverter.convert(value));
         }
     }

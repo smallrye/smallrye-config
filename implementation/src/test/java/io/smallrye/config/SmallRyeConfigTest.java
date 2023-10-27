@@ -1,6 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -22,6 +21,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -43,7 +43,8 @@ class SmallRyeConfigTest {
     void getValuesConverter() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(config("my.list", "1,2,3,4")).build();
 
-        List<Integer> values = config.getValues("my.list", config.getConverter(Integer.class).get(), ArrayList::new);
+        List<Integer> values = config.getValues("my.list", config.getConverter(Integer.class).get(),
+                (IntFunction<List<Integer>>) value -> new ArrayList<>());
         assertEquals(Arrays.asList(1, 2, 3, 4), values);
     }
 
@@ -362,19 +363,136 @@ class SmallRyeConfigTest {
     }
 
     @Test
-    void getValuesAsMap() {
+    void getValuesMap() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultInterceptors()
                 .withSources(config(
                         "my.prop.key", "value",
                         "my.prop.key.nested", "value",
                         "my.prop.\"key.quoted\"", "value"))
                 .build();
 
-        Map<String, String> map = config.getValuesAsMap("my.prop", STRING_CONVERTER, STRING_CONVERTER);
-        assertEquals(2, map.size());
+        Map<String, String> map = config.getValues("my.prop", String.class, String.class);
+        assertEquals(3, map.size());
         assertEquals("value", map.get("key"));
+        assertEquals("value", map.get("key.nested"));
         assertEquals("value", map.get("key.quoted"));
+
+        Optional<Map<String, String>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class);
+        assertTrue(optionalMap.isPresent());
+        assertEquals(3, optionalMap.get().size());
+        assertEquals("value", optionalMap.get().get("key"));
+        assertEquals("value", optionalMap.get().get("key.nested"));
+        assertEquals("value", optionalMap.get().get("key.quoted"));
+
+        assertTrue(config.getOptionalValues("my.optional", String.class, String.class).isEmpty());
+    }
+
+    @Test
+    void getValuesMapInline() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "key=value;key.nested=value;\"key.quoted\"=value"))
+                .build();
+
+        Map<String, String> map = config.getValues("my.prop", String.class, String.class);
+        assertEquals(3, map.size());
+        assertEquals("value", map.get("key"));
+        assertEquals("value", map.get("key.nested"));
+        assertEquals("value", map.get("key.quoted"));
+
+        Optional<Map<String, String>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class);
+        assertTrue(optionalMap.isPresent());
+        assertEquals(3, optionalMap.get().size());
+        assertEquals("value", optionalMap.get().get("key"));
+        assertEquals("value", optionalMap.get().get("key.nested"));
+        assertEquals("value", optionalMap.get().get("key.quoted"));
+    }
+
+    @Test
+    void getValuesMapList() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "my.prop.key[0]", "value",
+                        "my.prop.key[1]", "value",
+                        "my.prop.key.nested[0]", "value",
+                        "my.prop.key.nested[1]", "value",
+                        "my.prop.\"key.quoted\"[0]", "value",
+                        "my.prop.\"key.quoted\"[1]", "value"))
+                .build();
+
+        Map<String, List<String>> map = config.getValues("my.prop", String.class, String.class, ArrayList::new);
+        assertEquals(3, map.size());
+        assertEquals("value", map.get("key").get(0));
+        assertEquals("value", map.get("key").get(1));
+        assertEquals("value", map.get("key.nested").get(0));
+        assertEquals("value", map.get("key.nested").get(1));
+        assertEquals("value", map.get("key.quoted").get(0));
+        assertEquals("value", map.get("key.quoted").get(1));
+
+        Optional<Map<String, List<String>>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class,
+                ArrayList::new);
+        assertTrue(optionalMap.isPresent());
+        assertEquals(3, optionalMap.get().size());
+        assertEquals("value", optionalMap.get().get("key").get(0));
+        assertEquals("value", optionalMap.get().get("key").get(1));
+        assertEquals("value", optionalMap.get().get("key.nested").get(0));
+        assertEquals("value", optionalMap.get().get("key.nested").get(1));
+        assertEquals("value", optionalMap.get().get("key.quoted").get(0));
+        assertEquals("value", optionalMap.get().get("key.quoted").get(1));
+
+        assertTrue(config.getOptionalValues("my.optional", String.class, String.class, ArrayList::new).isEmpty());
+    }
+
+    @Test
+    void getValuesMapListInline() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("my.prop", "key=value,value;key.nested=value,value;\"key.quoted\"=value,value"))
+                .build();
+
+        Map<String, List<String>> map = config.getValues("my.prop", String.class, String.class, ArrayList::new);
+        assertEquals(3, map.size());
+        assertEquals("value", map.get("key").get(0));
+        assertEquals("value", map.get("key").get(1));
+        assertEquals("value", map.get("key.nested").get(0));
+        assertEquals("value", map.get("key.nested").get(1));
+        assertEquals("value", map.get("key.quoted").get(0));
+        assertEquals("value", map.get("key.quoted").get(1));
+
+        Optional<Map<String, List<String>>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class,
+                ArrayList::new);
+        assertTrue(optionalMap.isPresent());
+        assertEquals(3, optionalMap.get().size());
+        assertEquals("value", optionalMap.get().get("key").get(0));
+        assertEquals("value", optionalMap.get().get("key").get(1));
+        assertEquals("value", optionalMap.get().get("key.nested").get(0));
+        assertEquals("value", optionalMap.get().get("key.nested").get(1));
+        assertEquals("value", optionalMap.get().get("key.quoted").get(0));
+        assertEquals("value", optionalMap.get().get("key.quoted").get(1));
+    }
+
+    @Test
+    void getValuesMapIntegers() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "my", "nothing",
+                        "my.prop", "nothing",
+                        "my.prop.1", "1",
+                        "my.prop.2", "2",
+                        "my.prop.3", "3"))
+                .build();
+
+        Map<Integer, Integer> map = config.getValues("my.prop", Integer.class, Integer.class);
+        assertEquals(3, map.size());
+        assertEquals(1, map.get(1));
+        assertEquals(2, map.get(2));
+        assertEquals(3, map.get(3));
+    }
+
+    @Test
+    void getValuesMapEmpty() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+        assertThrows(NoSuchElementException.class, () -> config.getValues("my.prop", String.class, String.class));
+        assertThrows(NoSuchElementException.class,
+                () -> config.getValues("my.prop", String.class, String.class, ArrayList::new));
     }
 
     @Test
