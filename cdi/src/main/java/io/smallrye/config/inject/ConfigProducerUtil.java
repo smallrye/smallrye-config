@@ -11,6 +11,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,10 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.Converters;
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.common.AbstractConverter;
@@ -87,24 +87,20 @@ public final class ConfigProducerUtil {
             return null;
         }
 
-        final SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
-        final io.smallrye.config.ConfigValue configValue = getConfigValue(name, smallRyeConfig);
-        final io.smallrye.config.ConfigValue configValueWithDefault = configValue
-                .withValue(resolveDefault(configValue.getValue(), defaultValue));
+        SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
+        ConfigValue configValue = getConfigValue(name, smallRyeConfig);
+        ConfigValue configValueWithDefault = configValue.withValue(resolveDefault(configValue.getValue(), defaultValue));
 
         if (hasCollection(type)) {
             return convertValues(configValueWithDefault, type, smallRyeConfig);
         } else if (hasMap(type)) {
-            return smallRyeConfig.convertValue(configValueWithDefault,
-                    resolveConverter(type, smallRyeConfig,
-                            (kC, vC) -> new StaticMapConverter<>(configValueWithDefault.getName(),
-                                    configValueWithDefault.getValue(), config, kC, vC)));
+            return convertMapValues(configValueWithDefault, type, smallRyeConfig);
         }
 
         return smallRyeConfig.convertValue(configValueWithDefault, resolveConverter(type, smallRyeConfig));
     }
 
-    private static <T> T convertValues(io.smallrye.config.ConfigValue configValue, Type type, SmallRyeConfig config) {
+    private static <T> T convertValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
         List<String> indexedProperties = config.getIndexedProperties(configValue.getName());
         // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
         if (configValue.getRawValue() != null || indexedProperties.isEmpty()) {
@@ -124,6 +120,24 @@ public final class ConfigProducerUtil {
         return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
     }
 
+    private static <T> T convertMapValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
+        Map<String, String> mapKeys = config.getMapKeys(configValue.getName());
+        if (configValue.getRawValue() != null || mapKeys.isEmpty()) {
+            return config.convertValue(configValue, resolveConverter(type, config));
+        }
+
+        BiFunction<Converter<?>, Converter<?>, Map<?, ?>> mapConverter = (keyConverter, valueConverter) -> {
+            Map<Object, Object> map = new HashMap<>(mapKeys.size());
+            for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
+                map.put(keyConverter.convert(entry.getKey()),
+                        config.convertValue(getConfigValue(entry.getValue(), config), valueConverter));
+            }
+            return map;
+        };
+
+        return ConfigProducerUtil.<T> resolveConverterForMap(type, config, mapConverter).convert(" ");
+    }
+
     static ConfigValue getConfigValue(InjectionPoint injectionPoint, SmallRyeConfig config) {
         String name = getName(injectionPoint);
         if (name == null) {
@@ -138,7 +152,7 @@ public final class ConfigProducerUtil {
         return configValue;
     }
 
-    static io.smallrye.config.ConfigValue getConfigValue(String name, SmallRyeConfig config) {
+    static ConfigValue getConfigValue(String name, SmallRyeConfig config) {
         return SecretKeys.doUnlocked(() -> config.getConfigValue(name));
     }
 
@@ -146,16 +160,8 @@ public final class ConfigProducerUtil {
         return rawValue != null ? rawValue : defaultValue;
     }
 
-    private static <T> Converter<T> resolveConverter(final Type type, final SmallRyeConfig config) {
-        return resolveConverter(type, config, Converters::newMapConverter);
-    }
-
     @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverter(
-            final Type type,
-            final SmallRyeConfig config,
-            final BiFunction<Converter<Object>, Converter<Object>, Converter<Map<Object, Object>>> mapConverterFactory) {
-
+    private static <T> Converter<T> resolveConverter(final Type type, final SmallRyeConfig config) {
         Class<T> rawType = rawTypeOf(type);
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
@@ -165,17 +171,13 @@ public final class ConfigProducerUtil {
             } else if (rawType == Set.class) {
                 return (Converter<T>) newCollectionConverter(resolveConverter(typeArgs[0], config), HashSet::new);
             } else if (rawType == Map.class) {
-                return (Converter<T>) mapConverterFactory.apply(resolveConverter(typeArgs[0], config),
+                return (Converter<T>) newMapConverter(resolveConverter(typeArgs[0], config),
                         resolveConverter(typeArgs[1], config));
             } else if (rawType == Optional.class) {
-                return (Converter<T>) newOptionalConverter(resolveConverter(typeArgs[0], config, mapConverterFactory));
+                return (Converter<T>) newOptionalConverter(resolveConverter(typeArgs[0], config));
             } else if (rawType == Supplier.class) {
-                return resolveConverter(typeArgs[0], config, mapConverterFactory);
+                return resolveConverter(typeArgs[0], config);
             }
-        } else if (rawType == Map.class) {
-            // No parameterized types have been provided so it assumes that a Map of String is expected
-            return (Converter<T>) mapConverterFactory.apply(resolveConverter(String.class, config),
-                    resolveConverter(String.class, config));
         }
         // just try the raw type
         return config.getConverter(rawType).orElseThrow(() -> InjectionMessages.msg.noRegisteredConverter(rawType));
@@ -213,7 +215,30 @@ public final class ConfigProducerUtil {
             }
         }
 
-        throw new IllegalStateException();
+        throw new IllegalArgumentException();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Converter<T> resolveConverterForMap(
+            final Type type,
+            final SmallRyeConfig config,
+            final BiFunction<Converter<?>, Converter<?>, Map<?, ?>> mapConverter) {
+
+        Class<T> rawType = rawTypeOf(type);
+        if (type instanceof ParameterizedType) {
+            ParameterizedType paramType = (ParameterizedType) type;
+            Type[] typeArgs = paramType.getActualTypeArguments();
+            if (rawType == Map.class) {
+                return (Converter<T>) new MapKeyConverter<>(resolveConverter(typeArgs[0], config),
+                        resolveConverter(typeArgs[1], config), mapConverter);
+            } else if (rawType == Optional.class) {
+                return (Converter<T>) newOptionalConverter(resolveConverterForMap(typeArgs[0], config, mapConverter));
+            } else if (rawType == Supplier.class) {
+                return resolveConverterForMap(typeArgs[0], config, mapConverter);
+            }
+        }
+
+        throw new IllegalArgumentException();
     }
 
     @SuppressWarnings("unchecked")
@@ -229,13 +254,6 @@ public final class ConfigProducerUtil {
         }
     }
 
-    /**
-     * Indicates whether the given type is a type of Map or is a Supplier or Optional of Map.
-     *
-     * @param type the type to check
-     * @return {@code true} if the given type is a type of Map or is a Supplier or Optional of Map,
-     *         {@code false} otherwise.
-     */
     private static boolean hasMap(final Type type) {
         Class<?> rawType = rawTypeOf(type);
         if (rawType == Map.class) {
@@ -339,77 +357,25 @@ public final class ConfigProducerUtil {
         }
     }
 
-    /**
-     * A {@code Converter} of a Map that gives the same Map content whatever the value to convert. It actually relies on
-     * its parameters to convert the sub properties of a fixed parent property as a Map.
-     *
-     * @param <K> The type of the keys.
-     * @param <V> The type of the values.
-     */
-    static final class StaticMapConverter<K, V> extends AbstractConverter<Map<K, V>> {
-        private static final long serialVersionUID = 402894491607011464L;
+    static final class MapKeyConverter<K, V> extends AbstractConverter<Map<? extends K, ? extends V>> {
+        private static final long serialVersionUID = -2920578756435265533L;
 
-        /**
-         * The name of the parent property for which we want the direct sub properties as a Map.
-         */
-        private final String name;
-        /**
-         * The default value to convert in case no sub properties could be found.
-         */
-        private final String defaultValue;
-        /**
-         * The configuration from which the values are retrieved.
-         */
-        private final Config config;
-        /**
-         * The converter to use for the keys.
-         */
-        private final Converter<K> keyConverter;
-        /**
-         * The converter to use the for values.
-         */
-        private final Converter<V> valueConverter;
+        private final Converter<? extends K> keyConverter;
+        private final Converter<? extends V> valueConverter;
+        private final BiFunction<Converter<? extends K>, Converter<? extends V>, Map<? extends K, ? extends V>> mapConverter;
 
-        /**
-         * Construct a {@code StaticMapConverter} with the given parameters.
-         *
-         * @param name the name of the parent property for which we want the direct sub properties as a Map
-         * @param defaultValue the default value to convert in case no sub properties could be found
-         * @param config the configuration from which the values are retrieved
-         * @param keyConverter the converter to use for the keys
-         * @param valueConverter the converter to use the for values
-         */
-        StaticMapConverter(String name, String defaultValue, Config config, Converter<K> keyConverter,
-                Converter<V> valueConverter) {
-            this.name = name;
-            this.defaultValue = defaultValue;
-            this.config = config;
+        public MapKeyConverter(
+                final Converter<? extends K> keyConverter,
+                final Converter<? extends V> valueConverter,
+                final BiFunction<Converter<? extends K>, Converter<? extends V>, Map<? extends K, ? extends V>> mapConverter) {
             this.keyConverter = keyConverter;
             this.valueConverter = valueConverter;
+            this.mapConverter = mapConverter;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * Gives the sub properties as a Map if they exist, otherwise gives the default value converted with a
-         * {@code MapConverter}.
-         */
         @Override
-        public Map<K, V> convert(String value) throws IllegalArgumentException, NullPointerException {
-            Map<K, V> result = getValues(name, config, keyConverter, valueConverter);
-            if (result == null && defaultValue != null) {
-                result = newMapConverter(keyConverter, valueConverter).convert(defaultValue);
-            }
-            return result;
-        }
-
-        /**
-         * @return the content of the direct sub properties as the requested type of Map.
-         */
-        private static <K, V> Map<K, V> getValues(String name, Config config, Converter<K> keyConverter,
-                Converter<V> valueConverter) {
-            return SecretKeys
-                    .doUnlocked(() -> config.unwrap(SmallRyeConfig.class).getValuesAsMap(name, keyConverter, valueConverter));
+        public Map<? extends K, ? extends V> convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return mapConverter.apply(keyConverter, valueConverter);
         }
     }
 }

@@ -537,7 +537,7 @@ public class ConfigMappingCollectionsTest {
                 .withSources(config("map.roles.user[0]", "p1"))
                 .withSources(config("map.roles.admin[0]", "p2", "map.roles.admin[1]", "p3"))
                 .withSources(config("map.alias.user[0]", "p1"))
-                .withSources(config("map.alias.admin[0]", "p2", "map.roles.admin[1]", "p2"))
+                .withSources(config("map.alias.admin[0]", "p2", "map.alias.admin[1]", "p2"))
                 .build();
 
         MapWithCollections mapping = config.getConfigMapping(MapWithCollections.class);
