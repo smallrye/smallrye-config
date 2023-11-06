@@ -92,7 +92,7 @@ class ImplicitConverterTest {
         assertEquals(hyphenateEnumConverter.convert("TrendBreaker"), MyEnum.TrendBreaker);
         assertEquals(hyphenateEnumConverter.convert("trend-breaker"), MyEnum.TrendBreaker);
         assertEquals(hyphenateEnumConverter.convert("MAKING_LifeDifficult"), MyEnum.MAKING_LifeDifficult);
-        //assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyEnum.MAKING_LifeDifficult);
+        assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyEnum.MAKING_LifeDifficult);
     }
 
     @Test
@@ -101,7 +101,7 @@ class ImplicitConverterTest {
         assertEquals(hyphenateEnumConverter.convert("makingLifeDifficult"), MyOtherEnum.makingLifeDifficult);
         assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyOtherEnum.makingLifeDifficult);
         assertEquals(hyphenateEnumConverter.convert("READ__UNCOMMITTED"), MyOtherEnum.READ__UNCOMMITTED);
-        //assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyOtherEnum.READ__UNCOMMITTED);
+        assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyOtherEnum.READ__UNCOMMITTED);
     }
 
     @Test
@@ -111,7 +111,7 @@ class ImplicitConverterTest {
                 () -> hyphenateEnumConverter.convert("READUNCOMMITTED"));
         assertEquals(
                 "SRCFG00049: Cannot convert READUNCOMMITTED to enum class io.smallrye.config.ImplicitConverterTest$MyEnum, " +
-                        "allowed values: trend-breaker,discard,making-l-ife-difficult,sigusr1,read-uncommitted,a-b",
+                        "allowed values: trend-breaker,making-life-difficult,discard,sigusr1,read-uncommitted,a-b",
                 exception.getMessage());
     }
 
