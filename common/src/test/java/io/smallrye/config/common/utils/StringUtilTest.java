@@ -98,20 +98,46 @@ class StringUtilTest {
 
     @Test
     void skewer() {
+        assertEquals("sigusr1", StringUtil.skewer("sigusr1"));
+
         assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer(""));
         assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer("", '.'));
 
         assertEquals("my-property", StringUtil.skewer("myProperty"));
         assertEquals("my.property", StringUtil.skewer("myProperty", '.'));
 
+        assertEquals("-", StringUtil.skewer("-"));
+        assertEquals("_", StringUtil.skewer("_"));
         assertEquals("a", StringUtil.skewer("a"));
+        assertEquals("a", StringUtil.skewer("A"));
         assertEquals("a", StringUtil.skewer("a", '.'));
+        assertEquals("a-b", StringUtil.skewer("a-b"));
+        assertEquals("_a", StringUtil.skewer("_a"));
+        assertEquals("_a-b", StringUtil.skewer("_a_b"));
 
         assertEquals("my-property-abc", StringUtil.skewer("myPropertyABC"));
         assertEquals("my.property.abc", StringUtil.skewer("myPropertyABC", '.'));
 
-        assertEquals("my-property-abc-abc", StringUtil.skewer("myPropertyABCabc"));
-        assertEquals("my.property.abc.abc", StringUtil.skewer("myPropertyABCabc", '.'));
+        assertEquals("my-property-ab-cabc", StringUtil.skewer("myPropertyABCabc"));
+        assertEquals("my.property.ab.cabc", StringUtil.skewer("myPropertyABCabc", '.'));
+
+        assertEquals("is-same-rm-override", StringUtil.skewer("isSameRMOverride"));
+        assertEquals("http-client-http-conduit-factory", StringUtil.skewer("HttpClientHTTPConduitFactory"));
+        assertEquals("url-connection-http-conduit-factory", StringUtil.skewer("URLConnectionHTTPConduitFactory"));
+        assertEquals("abc-default", StringUtil.skewer("ABCDefault"));
+        assertEquals("abc", StringUtil.skewer("ABC"));
+
+        assertEquals("discard", StringUtil.skewer("discard"));
+        assertEquals("a-b", StringUtil.skewer("A_B"));
+        assertEquals("read-uncommitted", StringUtil.skewer("READ_UNCOMMITTED"));
+        assertEquals("_read-uncommitted", StringUtil.skewer("_READ_UNCOMMITTED"));
+        assertEquals("read-uncommitted", StringUtil.skewer("READ__UNCOMMITTED"));
+        assertEquals("_read-uncommitted", StringUtil.skewer("_READ__UNCOMMITTED"));
+        assertEquals("sigusr1", StringUtil.skewer("SIGUSR1"));
+        assertEquals("sigusr1", StringUtil.skewer("sigusr1"));
+        assertEquals("trend-breaker", StringUtil.skewer("TrendBreaker"));
+        assertEquals("making-life-difficult", StringUtil.skewer("MAKING_LifeDifficult"));
+        assertEquals("making-life-difficult", StringUtil.skewer("makingLifeDifficult"));
     }
 
     @Test

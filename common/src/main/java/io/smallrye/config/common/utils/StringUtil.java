@@ -256,77 +256,52 @@ public class StringUtil {
     }
 
     public static String skewer(String camelHumps, char separator) {
-        return skewer(camelHumps, 0, camelHumps.length(), new StringBuilder(), separator);
-    }
-
-    private static String skewer(String camelHumps, int start, int end, StringBuilder b, char separator) {
+        int end = camelHumps.length();
+        StringBuilder b = new StringBuilder();
         if (camelHumps.isEmpty()) {
             throw new IllegalArgumentException("Method seems to have an empty name");
         }
-        int cp = camelHumps.codePointAt(start);
-        b.appendCodePoint(Character.toLowerCase(cp));
-        start += Character.charCount(cp);
-        if (start == end) {
-            // a lonely character at the end of the string
-            return b.toString();
-        }
-        if (Character.isUpperCase(cp)) {
-            // all-uppercase words need one code point of lookahead
-            int nextCp = camelHumps.codePointAt(start);
-            if (Character.isUpperCase(nextCp)) {
-                // it's some kind of `WORD`
-                for (;;) {
-                    b.appendCodePoint(Character.toLowerCase(nextCp));
-                    start += Character.charCount(cp);
-                    cp = nextCp;
-                    if (start == end) {
-                        return b.toString();
-                    }
-                    nextCp = camelHumps.codePointAt(start);
-                    // combine non-letters in with this name
-                    if (Character.isLowerCase(nextCp)) {
+
+        for (int i = 0; i < end; i++) {
+            char c = camelHumps.charAt(i);
+            if (Character.isLowerCase(c)) {
+                b.append(c);
+            } else if (Character.isUpperCase(c)) {
+                if (i > 0) {
+                    char last = camelHumps.charAt(i - 1);
+                    if (last != '_' && last != '-') {
                         b.append(separator);
-                        return skewer(camelHumps, start, end, b, separator);
                     }
                 }
-                // unreachable
+                b.append(Character.toLowerCase(c));
+                int j = i + 1;
+                for (; j < end; j++) {
+                    char u = camelHumps.charAt(j);
+                    if (Character.isUpperCase(u) || Character.isDigit(u)) {
+                        b.append(Character.toLowerCase(u));
+                    } else {
+                        if (j > i + 1 && u != '_') {
+                            b.insert(b.length() - 1, separator);
+                        }
+                        j--;
+                        break;
+                    }
+                }
+                i = j;
+            } else if (Character.isDigit(c)) {
+                b.append(c);
             } else {
-                // it was the start of a `Word`; continue until we hit the end or an uppercase.
-                b.appendCodePoint(nextCp);
-                start += Character.charCount(nextCp);
-                for (;;) {
-                    if (start == end) {
-                        return b.toString();
-                    }
-                    cp = camelHumps.codePointAt(start);
-                    // combine non-letters in with this name
-                    if (Character.isUpperCase(cp)) {
+                if (i > 0) {
+                    char last = camelHumps.charAt(i - 1);
+                    if (last != '_' && last != '-') {
                         b.append(separator);
-                        return skewer(camelHumps, start, end, b, separator);
                     }
-                    b.appendCodePoint(cp);
-                    start += Character.charCount(cp);
-                }
-                // unreachable
-            }
-            // unreachable
-        } else {
-            // it's some kind of `word`
-            for (;;) {
-                cp = camelHumps.codePointAt(start);
-                // combine non-letters in with this name
-                if (Character.isUpperCase(cp)) {
-                    b.append(separator);
-                    return skewer(camelHumps, start, end, b, separator);
-                }
-                b.appendCodePoint(cp);
-                start += Character.charCount(cp);
-                if (start == end) {
-                    return b.toString();
+                } else {
+                    b.append(c);
                 }
             }
-            // unreachable
         }
-        // unreachable
+
+        return b.toString();
     }
 }
