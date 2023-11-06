@@ -210,6 +210,10 @@ public class EnvConfigSource extends AbstractConfigSource {
                 return true;
             }
 
+            if (name.length() == 0 && other.length() == 0) {
+                return true;
+            }
+
             if (name.length() == 0 || other.length() == 0) {
                 return false;
             }
@@ -244,7 +248,7 @@ public class EnvConfigSource extends AbstractConfigSource {
                         return false;
                     }
                 } else if (o == '-') {
-                    if (n != '.' && n != '_') {
+                    if (n != '.' && n != '-' && n != '_') {
                         return false;
                     }
                 } else if (o == '"') {
@@ -263,7 +267,8 @@ public class EnvConfigSource extends AbstractConfigSource {
                     int beginIndexed = other.lastIndexOf('[', i);
                     if (beginIndexed != -1) {
                         int range = i - beginIndexed - 1;
-                        if (name.lastIndexOf('_', matchPosition - 1) == matchPosition - range - 1) {
+                        if (name.lastIndexOf('_', matchPosition - 1) == matchPosition - range - 1
+                                || name.lastIndexOf('[', matchPosition - 1) == matchPosition - range - 1) {
                             if (isNumeric(other, beginIndexed + range, i)
                                     && isNumeric(name, matchPosition - range, matchPosition)) {
                                 matchPosition = matchPosition - range - 2;
