@@ -17,7 +17,6 @@ package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
-import static java.lang.Character.toLowerCase;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.Serializable;
@@ -78,7 +77,9 @@ public class EnvConfigSource extends AbstractConfigSource {
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             this.properties.put(new EnvProperty(entry.getKey()), entry.getValue());
             this.names.add(entry.getKey());
-            this.names.add(StringUtil.toLowerCaseAndDotted(entry.getKey()));
+            String keyLowerCaseAndDotted = StringUtil.toLowerCaseAndDotted(entry.getKey());
+            this.properties.putIfAbsent(new EnvProperty(keyLowerCaseAndDotted), entry.getValue());
+            this.names.add(keyLowerCaseAndDotted);
         }
     }
 
@@ -198,7 +199,7 @@ public class EnvConfigSource extends AbstractConfigSource {
                     case '/':
                         continue;
                 }
-                h = 31 * h + Character.toLowerCase(c);
+                h = 31 * h + c;
             }
             return h;
         }
@@ -244,11 +245,11 @@ public class EnvConfigSource extends AbstractConfigSource {
                 }
 
                 if (o == '.') {
-                    if (n != '.' && n != '-' && n != '_') {
+                    if (n != '.' && n != '-' && n != '_' && n != '/') {
                         return false;
                     }
                 } else if (o == '-') {
-                    if (n != '.' && n != '-' && n != '_') {
+                    if (n != '.' && n != '-' && n != '_' && n != '/') {
                         return false;
                     }
                 } else if (o == '"') {
@@ -287,7 +288,7 @@ public class EnvConfigSource extends AbstractConfigSource {
                             return false;
                         }
                     }
-                } else if (toLowerCase(o) != toLowerCase(n)) {
+                } else if (o != n) {
                     return false;
                 }
                 matchPosition--;
