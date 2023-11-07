@@ -15,6 +15,7 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.BOOLEAN_CONVERTER;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
@@ -175,52 +176,40 @@ class EnvConfigSourceTest {
         assertFalse(EnvProperty.equals("BAR", new String("foo.bar")));
         assertFalse(EnvProperty.equals("foo.bar", new String("BAR")));
 
-        assertTrue(EnvProperty.equals("FOO_BAR", new String("FOO_BAR")));
-        assertTrue(EnvProperty.equals("FOO_BAR", new String("foo.bar")));
-        assertTrue(EnvProperty.equals("FOO_BAR", new String("FOO.BAR")));
-        assertTrue(EnvProperty.equals("FOO_BAR", new String("foo-bar")));
-        assertTrue(EnvProperty.equals("FOO_BAR", new String("foo_bar")));
+        assertTrue(envSourceEquals("FOO_BAR", new String("FOO_BAR")));
+        assertTrue(envSourceEquals("FOO_BAR", new String("foo.bar")));
+        assertTrue(envSourceEquals("FOO_BAR", new String("FOO.BAR")));
+        assertTrue(envSourceEquals("FOO_BAR", new String("foo-bar")));
+        assertTrue(envSourceEquals("FOO_BAR", new String("foo_bar")));
 
         assertTrue(EnvProperty.equals("foo.bar", new String("foo.bar")));
         assertTrue(EnvProperty.equals("foo-bar", new String("foo-bar")));
-        assertTrue(EnvProperty.equals("foo.bar", new String("FOO_BAR")));
         assertTrue(EnvProperty.equals("FOO.BAR", new String("FOO_BAR")));
-        assertTrue(EnvProperty.equals("foo-bar", new String("FOO_BAR")));
-        assertTrue(EnvProperty.equals("foo_bar", new String("FOO_BAR")));
 
-        assertTrue(EnvProperty.equals("FOO__BAR__BAZ", new String("foo.\"bar\".baz")));
-        assertTrue(EnvProperty.equals("foo.\"bar\".baz", new String("FOO__BAR__BAZ")));
+        assertTrue(envSourceEquals("FOO__BAR__BAZ", new String("foo.\"bar\".baz")));
+        assertTrue(envSourceEquals("FOO__BAR__BAZ_0__Z_0_", new String("foo.\"bar\".baz[0].z[0]")));
 
-        assertTrue(EnvProperty.equals("FOO__BAR__BAZ_0__Z_0_", new String("foo.\"bar\".baz[0].z[0]")));
+        assertTrue(envSourceEquals("_DEV_FOO_BAR", new String("%dev.foo.bar")));
+        assertTrue(envSourceEquals("%env.smallrye.mp.config.prop", new String("%env.smallrye.mp.config.prop")));
+        assertTrue(envSourceEquals("_ENV_SMALLRYE_MP_CONFIG_PROP", new String("%env.smallrye.mp.config.prop")));
 
-        assertTrue(EnvProperty.equals("_DEV_FOO_BAR", new String("%dev.foo.bar")));
-        assertTrue(EnvProperty.equals("%dev.foo.bar", new String("_DEV_FOO_BAR")));
-        assertTrue(EnvProperty.equals("_ENV_SMALLRYE_MP_CONFIG_PROP", new String("_ENV_SMALLRYE_MP_CONFIG_PROP")));
-        assertTrue(EnvProperty.equals("%env.smallrye.mp.config.prop", new String("%env.smallrye.mp.config.prop")));
-        assertTrue(EnvProperty.equals("_ENV_SMALLRYE_MP_CONFIG_PROP", new String("%env.smallrye.mp.config.prop")));
-        assertTrue(EnvProperty.equals("%env.smallrye.mp.config.prop", new String("_ENV_SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("indexed[0]", new String("indexed[0]")));
+        assertTrue(envSourceEquals("INDEXED_0_", new String("INDEXED_0_")));
+        assertTrue(envSourceEquals("INDEXED_0_", new String("indexed[0]")));
+        assertTrue(envSourceEquals("foo.bar.indexed[0]", new String("foo.bar.indexed[0]")));
+        assertTrue(envSourceEquals("FOO_BAR_INDEXED_0_", new String("foo.bar.indexed[0]")));
+        assertTrue(envSourceEquals("foo.bar[0].indexed[0]", new String("foo.bar[0].indexed[0]")));
+        assertTrue(envSourceEquals("FOO_BAR_0__INDEXED_0_", new String("foo.bar[0].indexed[0]")));
 
-        assertTrue(EnvProperty.equals("indexed[0]", new String("indexed[0]")));
-        assertTrue(EnvProperty.equals("INDEXED_0_", new String("INDEXED_0_")));
-        assertTrue(EnvProperty.equals("indexed[0]", new String("INDEXED_0_")));
-        assertTrue(EnvProperty.equals("INDEXED_0_", new String("indexed[0]")));
-        assertTrue(EnvProperty.equals("foo.bar.indexed[0]", new String("foo.bar.indexed[0]")));
-        assertTrue(EnvProperty.equals("FOO_BAR_INDEXED_0_", new String("foo.bar.indexed[0]")));
-        assertTrue(EnvProperty.equals("foo.bar[0].indexed[0]", new String("foo.bar[0].indexed[0]")));
-        assertTrue(EnvProperty.equals("FOO_BAR_0__INDEXED_0_", new String("foo.bar[0].indexed[0]")));
+        assertTrue(envSourceEquals("env.\"quoted.key\".value", new String("env.\"quoted.key\".value")));
+        assertTrue(envSourceEquals("ENV__QUOTED_KEY__VALUE", new String("ENV__QUOTED_KEY__VALUE")));
+        assertTrue(envSourceEquals("ENV__QUOTED_KEY__VALUE", new String("env.\"quoted.key\".value")));
+        assertTrue(envSourceEquals("env.\"quoted.key\".value", new String("env.\"quoted-key\".value")));
+        assertTrue(envSourceEquals("env.\"quoted-key\".value", new String("env.\"quoted.key\".value")));
+        assertTrue(envSourceEquals("TEST_LANGUAGE__DE_ETR__", new String("test.language.\"de.etr\"")));
 
-        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", new String("env.\"quoted.key\".value")));
-        assertTrue(EnvProperty.equals("ENV__QUOTED_KEY__VALUE", new String("ENV__QUOTED_KEY__VALUE")));
-        assertTrue(EnvProperty.equals("ENV__QUOTED_KEY__VALUE", new String("env.\"quoted.key\".value")));
-        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", new String("ENV__QUOTED_KEY__VALUE")));
-        assertTrue(EnvProperty.equals("env.\"quoted.key\".value", new String("env.\"quoted-key\".value")));
-        assertTrue(EnvProperty.equals("env.\"quoted-key\".value", new String("env.\"quoted.key\".value")));
-
-        assertTrue(EnvProperty.equals("TEST_LANGUAGE__DE_ETR__", new String("test.language.\"de.etr\"")));
-        assertTrue(EnvProperty.equals("test.language.\"de.etr\"", new String("TEST_LANGUAGE__DE_ETR__")));
-
-        assertEquals(new EnvProperty("TEST_LANGUAGE__DE_ETR_").hashCode(),
-                new EnvProperty("test.language.\"de.etr\"").hashCode());
+        assertTrue(EnvProperty.equals("smallrye/mp/config/prop", new String("smallrye/mp/config/prop")));
+        assertTrue(envSourceEquals("SMALLRYE_MP_CONFIG_PROP", new String("smallrye/mp/config/prop")));
     }
 
     @Test
@@ -236,5 +225,21 @@ class EnvConfigSourceTest {
         assertFalse(properties.contains("foo.bar.baz"));
 
         assertEquals("fromEnv", config.getRawValue("foo.bar-baz"));
+    }
+
+    @Test
+    void sameNames() {
+        EnvConfigSource envConfigSource = new EnvConfigSource(
+                Map.of("my_string_property", "lower", "MY_STRING_PROPERTY", "upper"), 100);
+        assertFalse(EnvProperty.equals("MY_STRING_PROPERTY", "my_string_property"));
+        assertFalse(EnvProperty.equals("my_string_property", "MY_STRING_PROPERTY"));
+        assertTrue(EnvProperty.equals("my_string_property", "my_string_property"));
+        assertTrue(EnvProperty.equals("MY_STRING_PROPERTY", "MY_STRING_PROPERTY"));
+        assertEquals("lower", envConfigSource.getValue("my_string_property"));
+        assertEquals("upper", envConfigSource.getValue("MY_STRING_PROPERTY"));
+    }
+
+    private static boolean envSourceEquals(String name, String lookup) {
+        return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
 }
