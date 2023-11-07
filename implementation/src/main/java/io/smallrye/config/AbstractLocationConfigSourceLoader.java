@@ -80,11 +80,11 @@ public abstract class AbstractLocationConfigSourceLoader {
     protected abstract ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException;
 
     protected List<ConfigSource> loadConfigSources(final String location, final int ordinal) {
-        return loadConfigSources(new String[] { location }, ordinal);
+        return loadConfigSources(location != null ? new String[] { location } : null, ordinal);
     }
 
     protected List<ConfigSource> loadConfigSources(final String location, final int ordinal, final ClassLoader classLoader) {
-        return loadConfigSources(new String[] { location }, ordinal, classLoader);
+        return loadConfigSources(location != null ? new String[] { location } : null, ordinal, classLoader);
     }
 
     protected List<ConfigSource> loadConfigSources(final String[] locations, final int ordinal) {
