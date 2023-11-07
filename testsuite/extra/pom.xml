@@ -30,7 +30,7 @@
   <name>SmallRye Config: Test Suite - Extra</name>
 
   <properties>
-    <kotlin.version>1.9.10</kotlin.version>
+    <kotlin.version>1.9.20</kotlin.version>
   </properties>
 
   <dependencies>
