@@ -2,6 +2,8 @@ package io.smallrye.config;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +19,7 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
     private final String location;
 
     public DotEnvConfigSourceProvider() {
-        this(Paths.get(System.getProperty("user.dir"), ".env").toUri().toString());
+        this(getDotEnvFile(".env"));
     }
 
     public DotEnvConfigSourceProvider(final String location) {
@@ -54,5 +56,10 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
 
     public static List<ConfigSource> dotEnvSources(final String location, final ClassLoader classLoader) {
         return new DotEnvConfigSourceProvider(location).getConfigSources(classLoader);
+    }
+
+    private static String getDotEnvFile(final String filename) {
+        Path dotEnvFile = Paths.get(System.getProperty("user.dir"), filename);
+        return Files.isDirectory(dotEnvFile) ? null : dotEnvFile.toUri().toString();
     }
 }
