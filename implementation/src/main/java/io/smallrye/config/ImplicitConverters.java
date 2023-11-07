@@ -234,8 +234,7 @@ class ImplicitConverters {
         }
 
         private static String hyphenate(String value) {
-            // We cannot be sure about the format of the enum names
-            return StringUtil.skewer(value).replaceAll("_-", "-").replaceAll("_", "-");
+            return StringUtil.skewer(value);
         }
     }
 }
