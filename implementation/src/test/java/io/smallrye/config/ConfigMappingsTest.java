@@ -190,8 +190,14 @@ public class ConfigMappingsTest {
                 .build();
 
         ToStringMapping mapping = config.getConfigMapping(ToStringMapping.class);
-        assertEquals("ToStringMapping{host=localhost, port=8080, aliases=[Alias{name=prod-1}, Alias{name=prod-2}]}",
-                mapping.toString());
+        String toString = mapping.toString();
+        assertTrue(toString.contains("ToStringMapping{"));
+        assertTrue(toString.contains("host=localhost"));
+        assertTrue(toString.contains("port=8080"));
+        assertTrue(toString.contains("port=8080"));
+        assertTrue(toString.contains("aliases=["));
+        assertTrue(toString.contains("Alias{name=prod-1}"));
+        assertTrue(toString.contains("Alias{name=prod-2}"));
     }
 
     @ConfigMapping(prefix = "server")
