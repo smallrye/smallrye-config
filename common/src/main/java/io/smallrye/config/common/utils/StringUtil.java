@@ -277,8 +277,10 @@ public class StringUtil {
                 int j = i + 1;
                 for (; j < end; j++) {
                     char u = camelHumps.charAt(j);
-                    if (Character.isUpperCase(u) || Character.isDigit(u)) {
+                    if (Character.isUpperCase(u)) {
                         b.append(Character.toLowerCase(u));
+                    } else if (Character.isDigit(u) || u == '-') {
+                        b.append(u);
                     } else {
                         if (j > i + 1 && u != '_') {
                             b.insert(b.length() - 1, separator);
