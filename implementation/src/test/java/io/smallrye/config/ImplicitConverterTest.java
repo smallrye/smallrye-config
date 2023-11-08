@@ -81,27 +81,27 @@ class ImplicitConverterTest {
 
     @Test
     public void convertMyEnum() {
-        HyphenateEnumConverter<MyEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyEnum.class);
-        assertEquals(hyphenateEnumConverter.convert("DISCARD"), MyEnum.DISCARD);
-        assertEquals(hyphenateEnumConverter.convert("discard"), MyEnum.DISCARD);
-        assertEquals(hyphenateEnumConverter.convert("READ_UNCOMMITTED"), MyEnum.READ_UNCOMMITTED);
-        assertEquals(hyphenateEnumConverter.convert("a-b"), MyEnum.A_B);
-        assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyEnum.READ_UNCOMMITTED);
-        assertEquals(hyphenateEnumConverter.convert("SIGUSR1"), MyEnum.SIGUSR1);
-        assertEquals(hyphenateEnumConverter.convert("sigusr1"), MyEnum.SIGUSR1);
-        assertEquals(hyphenateEnumConverter.convert("TrendBreaker"), MyEnum.TrendBreaker);
-        assertEquals(hyphenateEnumConverter.convert("trend-breaker"), MyEnum.TrendBreaker);
-        assertEquals(hyphenateEnumConverter.convert("MAKING_LifeDifficult"), MyEnum.MAKING_LifeDifficult);
-        assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyEnum.MAKING_LifeDifficult);
+        HyphenateEnumConverter<MyEnum> converter = new HyphenateEnumConverter<>(MyEnum.class);
+        assertEquals(MyEnum.DISCARD, converter.convert("DISCARD"));
+        assertEquals(MyEnum.DISCARD, converter.convert("discard"));
+        assertEquals(MyEnum.READ_UNCOMMITTED, converter.convert("READ_UNCOMMITTED"));
+        assertEquals(MyEnum.A_B, converter.convert("a-b"));
+        assertEquals(MyEnum.READ_UNCOMMITTED, converter.convert("read-uncommitted"));
+        assertEquals(MyEnum.SIGUSR1, converter.convert("SIGUSR1"));
+        assertEquals(MyEnum.SIGUSR1, converter.convert("sigusr1"));
+        assertEquals(MyEnum.TrendBreaker, converter.convert("TrendBreaker"));
+        assertEquals(MyEnum.TrendBreaker, converter.convert("trend-breaker"));
+        assertEquals(MyEnum.MAKING_LifeDifficult, converter.convert("MAKING_LifeDifficult"));
+        assertEquals(MyEnum.MAKING_LifeDifficult, converter.convert("making-life-difficult"));
     }
 
     @Test
     public void convertMyOtherEnum() {
-        HyphenateEnumConverter<MyOtherEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyOtherEnum.class);
-        assertEquals(hyphenateEnumConverter.convert("makingLifeDifficult"), MyOtherEnum.makingLifeDifficult);
-        assertEquals(hyphenateEnumConverter.convert("making-life-difficult"), MyOtherEnum.makingLifeDifficult);
-        assertEquals(hyphenateEnumConverter.convert("READ__UNCOMMITTED"), MyOtherEnum.READ__UNCOMMITTED);
-        assertEquals(hyphenateEnumConverter.convert("read-uncommitted"), MyOtherEnum.READ__UNCOMMITTED);
+        HyphenateEnumConverter<MyOtherEnum> converter = new HyphenateEnumConverter<>(MyOtherEnum.class);
+        assertEquals(MyOtherEnum.makingLifeDifficult, converter.convert("makingLifeDifficult"));
+        assertEquals(MyOtherEnum.makingLifeDifficult, converter.convert("making-life-difficult"));
+        assertEquals(MyOtherEnum.READ__UNCOMMITTED, converter.convert("READ__UNCOMMITTED"));
+        assertEquals(MyOtherEnum.READ__UNCOMMITTED, converter.convert("read-uncommitted"));
     }
 
     @Test
@@ -120,5 +120,67 @@ class ImplicitConverterTest {
                 .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();
+    }
+
+    public enum KeyEncryptionAlgorithm {
+        RSA_OAEP,
+        RSA_OAEP_256,
+        ECDH_ES,
+        ECDH_ES_A128KW,
+        ECDH_ES_A192KW,
+        ECDH_ES_A256KW,
+        A128KW,
+        A192KW,
+        A256KW,
+        A128GCMKW,
+        A192GCMKW,
+        A256GCMKW,
+        PBES2_HS256_A128KW,
+        PBES2_HS384_A192KW,
+        PBES2_HS512_A256KW;
+    }
+
+    @Test
+    void convertKeyEncryptionAlgorithm() {
+        HyphenateEnumConverter<KeyEncryptionAlgorithm> converter = new HyphenateEnumConverter<>(KeyEncryptionAlgorithm.class);
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP, converter.convert("RSA_OAEP"));
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP, converter.convert("RSA-OAEP"));
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP, converter.convert("rsa-oaep"));
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP_256, converter.convert("RSA_OAEP_256"));
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP_256, converter.convert("RSA-OAEP-256"));
+        assertEquals(KeyEncryptionAlgorithm.RSA_OAEP_256, converter.convert("rsa-oaep-256"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES, converter.convert("ECDH_ES"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES, converter.convert("ECDH-ES"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES, converter.convert("ecdh-es"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A128KW, converter.convert("ECDH_ES_A128KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A128KW, converter.convert("ECDH-ES-A128KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A128KW, converter.convert("ecdh-es-a128kw"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A192KW, converter.convert("ECDH_ES_A192KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A192KW, converter.convert("ECDH-ES-A192KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A192KW, converter.convert("ecdh-es-a192kw"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A256KW, converter.convert("ECDH_ES_A256KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A256KW, converter.convert("ECDH-ES-A256KW"));
+        assertEquals(KeyEncryptionAlgorithm.ECDH_ES_A256KW, converter.convert("ecdh-es-a256kw"));
+        assertEquals(KeyEncryptionAlgorithm.A128KW, converter.convert("A128KW"));
+        assertEquals(KeyEncryptionAlgorithm.A128KW, converter.convert("a128kw"));
+        assertEquals(KeyEncryptionAlgorithm.A192KW, converter.convert("A192KW"));
+        assertEquals(KeyEncryptionAlgorithm.A192KW, converter.convert("a192kw"));
+        assertEquals(KeyEncryptionAlgorithm.A256KW, converter.convert("A256KW"));
+        assertEquals(KeyEncryptionAlgorithm.A256KW, converter.convert("a256kw"));
+        assertEquals(KeyEncryptionAlgorithm.A128GCMKW, converter.convert("A128GCMKW"));
+        assertEquals(KeyEncryptionAlgorithm.A128GCMKW, converter.convert("a128gcmkw"));
+        assertEquals(KeyEncryptionAlgorithm.A192GCMKW, converter.convert("A192GCMKW"));
+        assertEquals(KeyEncryptionAlgorithm.A192GCMKW, converter.convert("a192gcmkw"));
+        assertEquals(KeyEncryptionAlgorithm.A256GCMKW, converter.convert("A256GCMKW"));
+        assertEquals(KeyEncryptionAlgorithm.A256GCMKW, converter.convert("a256gcmkw"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS256_A128KW, converter.convert("PBES2_HS256_A128KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS256_A128KW, converter.convert("PBES2-HS256-A128KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS256_A128KW, converter.convert("pbes2-hs256-a128kw"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS384_A192KW, converter.convert("PBES2_HS384_A192KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS384_A192KW, converter.convert("PBES2-HS384-A192KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS384_A192KW, converter.convert("pbes2-hs384-a192kw"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("PBES2_HS512_A256KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("PBES2-HS512-A256KW"));
+        assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("pbes2-hs512-a256kw"));
     }
 }
