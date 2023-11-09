@@ -1084,8 +1084,11 @@ final class ConfigMappingProvider implements Serializable {
                         for (Integer dash : indexOfDashes) {
                             sb.setCharAt(dash, '-');
                         }
-                        envConfigSource.getPropertyNames().add(sb.toString());
-                        envConfigSource.getPropertyNames().remove(envProperty);
+                        String expectedEnvProperty = sb.toString();
+                        if (!envProperty.equals(expectedEnvProperty)) {
+                            envConfigSource.getPropertyNames().add(sb.toString());
+                            envConfigSource.getPropertyNames().remove(envProperty);
+                        }
                         sb.setLength(0);
                         break;
                     }

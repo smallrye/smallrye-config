@@ -239,6 +239,48 @@ class EnvConfigSourceTest {
         assertEquals("upper", envConfigSource.getValue("MY_STRING_PROPERTY"));
     }
 
+    @Test
+    void dashedEnvNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DashedEnvNames.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "DASHED_ENV_NAMES_VALUE", "value",
+                        "DASHED_ENV_NAMES_NESTED__DASHED_KEY__ANOTHER", "value"), 100))
+                .build();
+
+        DashedEnvNames mapping = config.getConfigMapping(DashedEnvNames.class);
+
+        assertEquals("value", mapping.value());
+        // Unfortunately, we still don't have a good way to determine if the Map key is dashed or not
+        assertEquals("value", mapping.nested().get("dashed.key").another());
+    }
+
+    @Test
+    void dottedDashedEnvNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DashedEnvNames.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "dashed-env-names.value", "value",
+                        "dashed-env-names.nested.dashed-key.another", "value"), 100))
+                .build();
+
+        DashedEnvNames mapping = config.getConfigMapping(DashedEnvNames.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals("value", mapping.nested().get("dashed-key").another());
+    }
+
+    @ConfigMapping(prefix = "dashed-env-names")
+    interface DashedEnvNames {
+        String value();
+
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String another();
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
