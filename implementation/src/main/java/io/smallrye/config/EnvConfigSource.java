@@ -17,6 +17,9 @@ package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
+import static java.lang.Character.toLowerCase;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.Serializable;
@@ -27,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
-import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} to access Environment Variables following the mapping
@@ -59,8 +61,7 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     private static final int DEFAULT_ORDINAL = 300;
 
-    private final Map<EnvProperty, String> properties;
-    private final Set<String> names;
+    private final EnvVars envVars;
 
     protected EnvConfigSource() {
         this(DEFAULT_ORDINAL);
@@ -72,38 +73,35 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     public EnvConfigSource(final Map<String, String> properties, final int ordinal) {
         super("EnvConfigSource", getEnvOrdinal(properties, ordinal));
-        this.properties = new HashMap<>(properties.size());
-        this.names = new HashSet<>(properties.size() * 2);
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            this.properties.put(new EnvProperty(entry.getKey()), entry.getValue());
-            this.names.add(entry.getKey());
-            String keyLowerCaseAndDotted = StringUtil.toLowerCaseAndDotted(entry.getKey());
-            this.properties.putIfAbsent(new EnvProperty(keyLowerCaseAndDotted), entry.getValue());
-            this.names.add(keyLowerCaseAndDotted);
-        }
+        this.envVars = new EnvVars(properties);
     }
 
     @Override
     public Map<String, String> getProperties() {
-        Map<String, String> properties = new HashMap<>(this.properties.size());
-        for (Map.Entry<EnvProperty, String> entry : this.properties.entrySet()) {
-            properties.put(entry.getKey().getName(), entry.getValue());
+        Map<String, String> properties = new HashMap<>();
+        for (Map.Entry<EnvName, EnvEntry> entry : envVars.getEnv().entrySet()) {
+            EnvEntry entryValue = entry.getValue();
+            if (entryValue.getEntries() != null) {
+                properties.putAll(entryValue.getEntries());
+            } else {
+                properties.put(entryValue.getName(), entryValue.getValue());
+            }
         }
         return properties;
     }
 
     @Override
     public Set<String> getPropertyNames() {
-        return names;
+        return envVars.getNames();
     }
 
     @Override
     public String getValue(final String propertyName) {
-        return this.properties.get(new EnvProperty(propertyName));
+        return envVars.get(propertyName);
     }
 
     boolean hasPropertyName(final String propertyName) {
-        return properties.containsKey(new EnvProperty(propertyName));
+        return envVars.getEnv().containsKey(new EnvName(propertyName));
     }
 
     /**
@@ -143,12 +141,67 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
     }
 
-    static final class EnvProperty implements Serializable {
+    static final class EnvVars implements Serializable {
+        private static final long serialVersionUID = -56318356411229247L;
+
+        private final Map<EnvName, EnvEntry> env;
+        private final Set<String> names;
+
+        public EnvVars(final Map<String, String> properties) {
+            this.env = new HashMap<>(properties.size());
+            this.names = new HashSet<>(properties.size() * 2);
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                EnvName envName = new EnvName(entry.getKey());
+                EnvEntry envEntry = env.get(envName);
+                if (envEntry == null) {
+                    env.put(envName, new EnvEntry(entry.getKey(), entry.getValue()));
+                } else {
+                    envEntry.add(entry.getKey(), entry.getValue());
+                }
+                this.names.add(entry.getKey());
+                this.names.add(toLowerCaseAndDotted(entry.getKey()));
+            }
+        }
+
+        public String get(final String propertyName) {
+            EnvEntry envEntry = env.get(new EnvName(propertyName));
+            if (envEntry != null) {
+                String value = envEntry.get();
+                if (value != null) {
+                    return value;
+                }
+
+                value = envEntry.getEntries().get(propertyName);
+                if (value != null) {
+                    return value;
+                }
+
+                String envName = replaceNonAlphanumericByUnderscores(propertyName);
+                value = envEntry.getEntries().get(envName);
+                if (value != null) {
+                    return value;
+                }
+
+                return envEntry.envEntries.get(envName.toUpperCase());
+            }
+            return null;
+        }
+
+        public Map<EnvName, EnvEntry> getEnv() {
+            return env;
+        }
+
+        public Set<String> getNames() {
+            return names;
+        }
+    }
+
+    static final class EnvName implements Serializable {
         private static final long serialVersionUID = -2679716955093904512L;
 
         private final String name;
 
-        public EnvProperty(final String name) {
+        public EnvName(final String name) {
             assert name != null;
             this.name = name;
         }
@@ -165,7 +218,7 @@ public class EnvConfigSource extends AbstractConfigSource {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final EnvProperty that = (EnvProperty) o;
+            final EnvName that = (EnvName) o;
             return equals(this.name, that.name);
         }
 
@@ -199,7 +252,8 @@ public class EnvConfigSource extends AbstractConfigSource {
                     case '/':
                         continue;
                 }
-                h = 31 * h + c;
+                h = 31 * h + toLowerCase(c);
+                // h = 31 * h + c;
             }
             return h;
         }
@@ -288,13 +342,51 @@ public class EnvConfigSource extends AbstractConfigSource {
                             return false;
                         }
                     }
-                } else if (o != n) {
+                    // } else if (o != n) {
+                } else if (toLowerCase(o) != toLowerCase(n)) {
                     return false;
                 }
                 matchPosition--;
             }
 
             return matchPosition <= 0;
+        }
+    }
+
+    static final class EnvEntry implements Serializable {
+        private static final long serialVersionUID = -8786927401082731020L;
+
+        private final String name;
+        private final String value;
+        private Map<String, String> envEntries;
+
+        EnvEntry(final String name, final String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        String getValue() {
+            return value;
+        }
+
+        String get() {
+            return envEntries == null ? value : null;
+        }
+
+        Map<String, String> getEntries() {
+            return envEntries;
+        }
+
+        void add(String name, String value) {
+            if (envEntries == null) {
+                envEntries = new HashMap<>();
+                envEntries.put(this.name, this.value);
+            }
+            envEntries.put(name, value);
         }
     }
 }
