@@ -1,5 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMapping.NamingStrategy.KEBAB_CASE;
+import static io.smallrye.config.ConfigMapping.NamingStrategy.SNAKE_CASE;
+import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,8 +38,8 @@ public class ConfigMappingNamingStrategyTest {
         assertTrue(snake.log().enabled());
     }
 
-    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
-    public interface ServerVerbatimNamingStrategy {
+    @ConfigMapping(prefix = "server", namingStrategy = VERBATIM)
+    interface ServerVerbatimNamingStrategy {
         String theHost();
 
         int thePort();
@@ -48,8 +51,8 @@ public class ConfigMappingNamingStrategyTest {
         }
     }
 
-    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
-    public interface ServerSnakeNamingStrategy {
+    @ConfigMapping(prefix = "server", namingStrategy = SNAKE_CASE)
+    interface ServerSnakeNamingStrategy {
         String theHost();
 
         int thePort();
@@ -100,8 +103,8 @@ public class ConfigMappingNamingStrategyTest {
         assertEquals("log", kebab.theLog().logAppenders().get(0).logName());
     }
 
-    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.SNAKE_CASE)
-    public interface ServerComposedSnakeNaming {
+    @ConfigMapping(prefix = "server", namingStrategy = SNAKE_CASE)
+    interface ServerComposedSnakeNaming {
         String theHost();
 
         int thePort();
@@ -109,8 +112,8 @@ public class ConfigMappingNamingStrategyTest {
         LogInheritedNaming theLog();
     }
 
-    @ConfigMapping(prefix = "server", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
-    public interface ServerComposedVerbatimNaming {
+    @ConfigMapping(prefix = "server", namingStrategy = VERBATIM)
+    interface ServerComposedVerbatimNaming {
         String theHost();
 
         int thePort();
@@ -123,7 +126,7 @@ public class ConfigMappingNamingStrategyTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerComposedKebabNaming {
+    interface ServerComposedKebabNaming {
         String theHost();
 
         int thePort();
@@ -131,7 +134,7 @@ public class ConfigMappingNamingStrategyTest {
         LogInheritedNaming theLog();
     }
 
-    public interface LogInheritedNaming {
+    interface LogInheritedNaming {
         boolean isEnabled();
 
         List<Appender> logAppenders();
@@ -159,12 +162,12 @@ public class ConfigMappingNamingStrategyTest {
     }
 
     @ConfigProperties(prefix = "server")
-    public static class ConfigPropertiesNamingVerbatim {
+    static class ConfigPropertiesNamingVerbatim {
         String theHost;
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ConfigMappingNamingKebab {
+    interface ConfigMappingNamingKebab {
         String theHost();
 
         @WithParentName
@@ -176,8 +179,8 @@ public class ConfigMappingNamingStrategyTest {
     }
 
     // From https://github.com/quarkusio/quarkus/issues/21407
-    @ConfigMapping(prefix = "bugs", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
-    public interface NamingStrategyVerbatimOptionalGroup {
+    @ConfigMapping(prefix = "bugs", namingStrategy = VERBATIM)
+    interface NamingStrategyVerbatimOptionalGroup {
         @WithParentName
         Map<String, ClientConfiguration> bugs();
 
@@ -197,7 +200,7 @@ public class ConfigMappingNamingStrategyTest {
             String scriptSelector();
         }
 
-        @ConfigMapping(namingStrategy = ConfigMapping.NamingStrategy.KEBAB_CASE)
+        @ConfigMapping(namingStrategy = KEBAB_CASE)
         interface OverrideNamingStrategyProperties {
             String feed();
 
@@ -231,5 +234,53 @@ public class ConfigMappingNamingStrategyTest {
         assertEquals("100103", mapping.bugs().get("KEY1").override().get().feed());
         assertEquals("36936471", mapping.bugs().get("KEY1").override().get().customerId());
         assertEquals("RoadRunner_Task1_AAR01", mapping.bugs().get("KEY1").override().get().scriptSelector());
+    }
+
+    @Test
+    void namingStrategyDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NamingStrategyDefaults.class)
+                .build();
+
+        NamingStrategyDefaults mapping = config.getConfigMapping(NamingStrategyDefaults.class);
+
+        assertEquals("value", mapping.verbatimDefault());
+        assertEquals("value", mapping.kebabDefaults().kebabDefault());
+        assertEquals("value", mapping.snakeDefaults().snakeDefault());
+        assertEquals("value", mapping.verbatimDefaults().verbatimDefault());
+
+        assertEquals("value", config.getRawValue("defaults.verbatimDefault"));
+        assertEquals("value", config.getRawValue("defaults.kebabDefaults.kebab-default"));
+        assertEquals("value", config.getRawValue("defaults.snakeDefaults.snake_default"));
+        assertEquals("value", config.getRawValue("defaults.verbatimDefaults.verbatimDefault"));
+    }
+
+    @ConfigMapping(prefix = "defaults", namingStrategy = VERBATIM)
+    interface NamingStrategyDefaults {
+        @WithDefault("value")
+        String verbatimDefault();
+
+        KebabDefaults kebabDefaults();
+
+        SnakeDefaults snakeDefaults();
+
+        VerbatimDefaults verbatimDefaults();
+
+        @ConfigMapping(namingStrategy = KEBAB_CASE)
+        interface KebabDefaults {
+            @WithDefault("value")
+            String kebabDefault();
+        }
+
+        @ConfigMapping(namingStrategy = SNAKE_CASE)
+        interface SnakeDefaults {
+            @WithDefault("value")
+            String snakeDefault();
+        }
+
+        interface VerbatimDefaults {
+            @WithDefault("value")
+            String verbatimDefault();
+        }
     }
 }

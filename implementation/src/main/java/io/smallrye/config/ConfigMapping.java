@@ -8,6 +8,9 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.Function;
+
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * This annotation may be placed in interfaces to group configuration properties with a common prefix.
@@ -50,14 +53,28 @@ public @interface ConfigMapping {
         /**
          * The method name is used as is to map the configuration property.
          */
-        VERBATIM,
+        VERBATIM(name -> name),
         /**
          * The method name is derived by replacing case changes with a dash to map the configuration property.
          */
-        KEBAB_CASE,
+        KEBAB_CASE(name -> {
+            return StringUtil.skewer(name, '-');
+        }),
         /**
          * The method name is derived by replacing case changes with an underscore to map the configuration property.
          */
-        SNAKE_CASE
+        SNAKE_CASE(name -> {
+            return StringUtil.skewer(name, '_');
+        });
+
+        private final Function<String, String> function;
+
+        private NamingStrategy(Function<String, String> function) {
+            this.function = function;
+        }
+
+        public String apply(final String name) {
+            return function.apply(name);
+        }
     }
 }

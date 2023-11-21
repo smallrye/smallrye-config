@@ -1,19 +1,24 @@
 package io.smallrye.config.source.yaml;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import io.smallrye.config.WithParentName;
@@ -513,5 +518,270 @@ class YamlConfigMappingTest {
         interface Nested {
             String value();
         }
+    }
+
+    @Test
+    void unmapped() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource("yaml",
+                        "http:\n" +
+                                "  server:\n" +
+                                "    name: server\n" +
+                                "    alias: server\n" +
+                                "    host: localhost\n" +
+                                "    port: 8080\n" +
+                                "    timeout: 60s\n" +
+                                "    io-threads: 200\n" +
+                                "    bytes: dummy\n" +
+                                "\n" +
+                                "    form:\n" +
+                                "      login-page: login.html\n" +
+                                "      error-page: error.html\n" +
+                                "      landing-page: index.html\n" +
+                                "      positions:\n" +
+                                "        - 10\n" +
+                                "        - 20\n" +
+                                "\n" +
+                                "    ssl:\n" +
+                                "      port: 8443\n" +
+                                "      certificate: certificate\n" +
+                                "\n" +
+                                "    cors:\n" +
+                                "      origins:\n" +
+                                "        - host: some-server\n" +
+                                "          port: 9000\n" +
+                                "        - host: another-server\n" +
+                                "          port: 8000\n" +
+                                "      methods:\n" +
+                                "        - GET\n" +
+                                "        - POST\n" +
+                                "\n" +
+                                "    log:\n" +
+                                "      period: P1D\n" +
+                                "      days: 10\n" +
+                                "\n" +
+                                "cloud:\n" +
+                                "  host: localhost\n" +
+                                "  port: 8080\n" +
+                                "  timeout: 60s\n" +
+                                "  io-threads: 200\n" +
+                                "\n" +
+                                "  form:\n" +
+                                "    login-page: login.html\n" +
+                                "    error-page: error.html\n" +
+                                "    landing-page: index.html\n" +
+                                "\n" +
+                                "  ssl:\n" +
+                                "    port: 8443\n" +
+                                "    certificate: certificate\n" +
+                                "\n" +
+                                "  cors:\n" +
+                                "    origins:\n" +
+                                "      - host: some-server\n" +
+                                "        port: 9000\n" +
+                                "      - host: localhost\n" +
+                                "        port: 1\n" +
+                                "    methods:\n" +
+                                "      - GET\n" +
+                                "      - POST\n" +
+                                "\n" +
+                                "  proxy:\n" +
+                                "    enable: true\n" +
+                                "    timeout: 20\n" +
+                                "\n" +
+                                "  log:\n" +
+                                "    period: P1D\n" +
+                                "    days: 20\n" +
+                                "\n" +
+                                "  info:\n" +
+                                "    name: Bond\n" +
+                                "    code: 007\n" +
+                                "    alias:\n" +
+                                "      - James\n" +
+                                "    admins:\n" +
+                                "      root:\n" +
+                                "        -\n" +
+                                "          username: root\n" +
+                                "        -\n" +
+                                "          username: super\n" +
+                                "    firewall:\n" +
+                                "      accepted:\n" +
+                                "        - 127.0.0.1\n" +
+                                "        - 8.8.8"))
+                .withMapping(Server.class)
+                .withMapping(Cloud.class)
+                .build();
+
+        Server server = config.getConfigMapping(Server.class);
+        assertTrue(server.name().isPresent());
+        assertEquals("server", server.name().get());
+        assertTrue(server.alias().isPresent());
+        assertEquals("server", server.alias().get());
+        assertEquals("localhost", server.host());
+        assertEquals(8080, server.port());
+        assertEquals("60s", server.timeout());
+        assertEquals(200, server.threads());
+        assertArrayEquals(new Server.ByteArrayConverter().convert("dummy"), server.bytes());
+        assertEquals("login.html", server.form().get("form").loginPage());
+        assertEquals("error.html", server.form().get("form").errorPage());
+        assertEquals("index.html", server.form().get("form").landingPage());
+        assertIterableEquals(List.of(10, 20), server.form().get("form").positions());
+        assertTrue(server.ssl().isPresent());
+        assertEquals(8443, server.ssl().get().port());
+        assertEquals("certificate", server.ssl().get().certificate());
+        assertIterableEquals(List.of("TLSv1.3", "TLSv1.2"), server.ssl().get().protocols());
+        assertTrue(server.cors().isPresent());
+        assertEquals("some-server", server.cors().get().origins().get(0).host());
+        assertEquals(9000, server.cors().get().origins().get(0).port());
+        assertEquals("another-server", server.cors().get().origins().get(1).host());
+        assertEquals(8000, server.cors().get().origins().get(1).port());
+        assertEquals("GET", server.cors().get().methods().get(0));
+        assertEquals("POST", server.cors().get().methods().get(1));
+        assertFalse(server.log().enabled());
+        assertEquals(".log", server.log().suffix());
+        assertTrue(server.log().rotate());
+        assertEquals("P1D", server.log().period());
+        assertEquals(10, server.log().days());
+        assertEquals(Server.Log.Pattern.COMMON.name(), server.log().pattern());
+        assertTrue(server.info().name().isEmpty());
+        assertTrue(server.info().code().isEmpty());
+        assertTrue(server.info().alias().isEmpty());
+        assertTrue(server.info().admins().isEmpty());
+        assertTrue(server.info().firewall().isEmpty());
+
+        Cloud cloud = config.getConfigMapping(Cloud.class);
+        assertTrue(cloud.server().ssl().isPresent());
+        assertEquals(8443, cloud.server().ssl().get().port());
+        assertEquals("certificate", cloud.server().ssl().get().certificate());
+    }
+
+    @ConfigMapping(prefix = "cloud")
+    public interface Cloud {
+        @WithParentName
+        Server server();
+    }
+
+    public interface Named {
+        Optional<String> name();
+    }
+
+    public interface Alias extends Named {
+        Optional<String> alias();
+    }
+
+    @ConfigMapping(prefix = "http.server")
+    public interface Server extends Alias {
+        String host();
+
+        int port();
+
+        String timeout();
+
+        @WithName("io-threads")
+        int threads();
+
+        @WithConverter(ByteArrayConverter.class)
+        byte[] bytes();
+
+        @WithParentName
+        Map<String, Form> form();
+
+        Optional<Ssl> ssl();
+
+        Optional<Proxy> proxy();
+
+        Optional<Cors> cors();
+
+        Log log();
+
+        Info info();
+
+        interface Form {
+            String loginPage();
+
+            String errorPage();
+
+            String landingPage();
+
+            Optional<String> cookie();
+
+            @WithDefault("1")
+            List<Integer> positions();
+        }
+
+        interface Proxy {
+            boolean enable();
+
+            int timeout();
+        }
+
+        interface Log {
+            @WithDefault("false")
+            boolean enabled();
+
+            @WithDefault(".log")
+            String suffix();
+
+            @WithDefault("true")
+            boolean rotate();
+
+            @WithDefault("COMMON")
+            String pattern();
+
+            String period();
+
+            int days();
+
+            enum Pattern {
+                COMMON,
+                SHORT,
+                COMBINED,
+                LONG;
+            }
+        }
+
+        interface Cors {
+            List<Origin> origins();
+
+            List<String> methods();
+
+            interface Origin {
+                String host();
+
+                int port();
+            }
+        }
+
+        interface Info {
+            Optional<String> name();
+
+            OptionalInt code();
+
+            Optional<List<String>> alias();
+
+            Map<String, List<Admin>> admins();
+
+            Map<String, List<String>> firewall();
+
+            interface Admin {
+                String username();
+            }
+        }
+
+        class ByteArrayConverter implements Converter<byte[]> {
+            @Override
+            public byte[] convert(String value) throws IllegalArgumentException, NullPointerException {
+                return value.getBytes(StandardCharsets.UTF_8);
+            }
+        }
+    }
+
+    public interface Ssl {
+        int port();
+
+        String certificate();
+
+        @WithDefault("TLSv1.3,TLSv1.2")
+        List<String> protocols();
     }
 }

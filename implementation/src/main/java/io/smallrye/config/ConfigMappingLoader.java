@@ -84,11 +84,24 @@ public final class ConfigMappingLoader {
 
     @SuppressWarnings("unchecked")
     public static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
-        final ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-        if (mappingMetadata == null) {
-            throw ConfigMessages.msg.classIsNotAMapping(type);
+        try {
+            Class<?> implementationClass = type.getClassLoader().loadClass(type.getName() + type.getName().hashCode() + "Impl");
+            if (type.isAssignableFrom(implementationClass)) {
+                return (Class<? extends ConfigMappingObject>) implementationClass;
+            }
+
+            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
+            if (mappingMetadata == null) {
+                throw ConfigMessages.msg.classIsNotAMapping(type);
+            }
+            return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
+        } catch (ClassNotFoundException e) {
+            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
+            if (mappingMetadata == null) {
+                throw ConfigMessages.msg.classIsNotAMapping(type);
+            }
+            return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
         }
-        return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
     }
 
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
@@ -96,7 +109,7 @@ public final class ConfigMappingLoader {
         synchronized (getClassLoaderLock(configMappingMetadata.getClassName())) {
             // Check if the interface implementation was already loaded. If not we will load it.
             try {
-                final Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
+                Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
                 // Check if this is the right classloader class. If not we will load it.
                 if (parent.isAssignableFrom(klass)) {
                     return klass;

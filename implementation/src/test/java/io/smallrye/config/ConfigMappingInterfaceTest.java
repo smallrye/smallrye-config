@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static io.smallrye.config.ConfigMappingInterfaceTest.HyphenatedEnumMapping.HyphenatedEnum.VALUE_ONE;
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.NAF;
 import static io.smallrye.config.ConfigMappingInterfaceTest.MapKeyEnum.ClientId.SOS_DAH;
@@ -10,6 +11,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -20,6 +22,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,38 +44,38 @@ import io.smallrye.config.common.MapBackedConfigSource;
 class ConfigMappingInterfaceTest {
     @Test
     void configMapping() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
-        final Server configProperties = config.getConfigMapping(Server.class, "server");
+        Server configProperties = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
 
     @Test
     void noConfigMapping() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
-        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getConfigMapping(Server.class, "server"));
         assertEquals("SRCFG00027: Could not find a mapping for " + Server.class.getName(), exception.getMessage());
     }
 
     @Test
     void unregisteredConfigMapping() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("host", "localhost", "port", "8080")).build();
-        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getConfigMapping(Server.class));
         assertEquals("SRCFG00027: Could not find a mapping for " + Server.class.getName(), exception.getMessage());
     }
 
     @Test
     void unregistedPrefix() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class)
                 .withSources(config("host", "localhost", "port", "8080")).build();
-        final NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
                 () -> config.getConfigMapping(Server.class, "server"));
         assertEquals("SRCFG00028: Could not find a mapping for " + Server.class.getName() + " with prefix server",
                 exception.getMessage());
@@ -80,10 +83,10 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void noPrefix() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class)
                 .withSources(config("host", "localhost", "port", "8080")).build();
-        final Server configProperties = config.getConfigMapping(Server.class);
+        Server configProperties = config.getConfigMapping(Server.class);
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
@@ -96,11 +99,11 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void ignorePropertiesInUnregisteredRoots() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080", "client.name", "konoha"))
                 .build();
-        final Server configProperties = config.getConfigMapping(Server.class, "server");
+        Server configProperties = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
@@ -115,22 +118,22 @@ class ConfigMappingInterfaceTest {
                         "client.port", "8080", "client.name", "konoha"))
                 .build();
 
-        final Server server = config.getConfigMapping(Server.class, "server");
+        Server server = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
 
-        final Client client = config.getConfigMapping(Client.class, "client");
+        Client client = config.getConfigMapping(Client.class, "client");
         assertEquals("localhost", client.host());
         assertEquals(8080, client.port());
     }
 
     @Test
     void ignoreProperties() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withMapping(Server.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
-        final Server configProperties = config.getConfigMapping(Server.class, "server");
+        Server configProperties = config.getConfigMapping(Server.class, "server");
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
@@ -140,7 +143,7 @@ class ConfigMappingInterfaceTest {
         assertThrows(ConfigValidationException.class,
                 () -> new SmallRyeConfigBuilder().addDefaultSources().withMapping(Server.class).build());
 
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .withMapping(Server.class)
                 .withMapping(Server.class, "server")
@@ -148,21 +151,18 @@ class ConfigMappingInterfaceTest {
                 .withSources(config("server.host", "localhost", "server.port", "8080", "host", "localhost", "port", "8080"))
                 .build();
 
-        final Server configProperties = config.getConfigMapping(Server.class);
+        Server configProperties = config.getConfigMapping(Server.class);
         assertEquals("localhost", configProperties.host());
         assertEquals(8080, configProperties.port());
     }
 
     @Test
     void splitRoots() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
-                config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("server.host", "localhost", "server.port", "8080", "server.name", "konoha"))
+                .withMapping(SplitRootServerHostAndPort.class, "server")
+                .withMapping(SplitRootServerName.class, "server")
                 .build();
-
-        ConfigMappings.mapConfiguration(
-                config, ConfigMappingProvider.builder()
-                        .addRoot("server", SplitRootServerHostAndPort.class)
-                        .addRoot("server", SplitRootServerName.class));
 
         SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
         assertEquals("localhost", server.host());
@@ -174,25 +174,25 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void splitRootsInConfig() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.name",
                         "konoha"))
                 .withMapping(SplitRootServerHostAndPort.class, "server")
                 .withMapping(SplitRootServerName.class, "server")
                 .build();
-        final SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
+        SplitRootServerHostAndPort server = config.getConfigMapping(SplitRootServerHostAndPort.class, "server");
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
     }
 
     @Test
     void subGroups() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.name",
                         "konoha"))
                 .withMapping(ServerSub.class, "server")
                 .build();
-        final ServerSub server = config.getConfigMapping(ServerSub.class, "server");
+        ServerSub server = config.getConfigMapping(ServerSub.class, "server");
         assertEquals("localhost", server.subHostAndPort().host());
         assertEquals(8080, server.subHostAndPort().port());
         assertEquals("konoha", server.subName().name());
@@ -200,22 +200,17 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void types() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("int", "9");
-                put("long", "9999999999");
-                put("float", "99.9");
-                put("double", "99.99");
-                put("char", "c");
-                put("boolean", "true");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "int", "9",
+                        "long", "9999999999",
+                        "float", "99.9",
+                        "double", "99.99",
+                        "char", "c",
+                        "boolean", "true"))
                 .withMapping(SomeTypes.class)
                 .build();
-        final SomeTypes types = config.getConfigMapping(SomeTypes.class);
+        SomeTypes types = config.getConfigMapping(SomeTypes.class);
 
         assertEquals(9, types.intPrimitive());
         assertEquals(9, types.intWrapper());
@@ -233,23 +228,18 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void optionals() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("server.host", "localhost");
-                put("server.port", "8080");
-                put("optional", "optional");
-                put("optional.int", "9");
-                put("info.name", "server");
-                put("info.login", "login");
-                put("info.password", "password");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.host", "localhost",
+                        "server.port", "8080",
+                        "optional", "optional",
+                        "optional.int", "9",
+                        "info.name", "server",
+                        "info.login", "login",
+                        "info.password", "password"))
                 .withMapping(Optionals.class)
                 .build();
-        final Optionals optionals = config.getConfigMapping(Optionals.class);
+        Optionals optionals = config.getConfigMapping(Optionals.class);
 
         assertTrue(optionals.server().isPresent());
         assertEquals("localhost", optionals.server().get().host());
@@ -260,7 +250,7 @@ class ConfigMappingInterfaceTest {
         assertTrue(optionals.optionalInt().isPresent());
         assertEquals(9, optionals.optionalInt().getAsInt());
 
-        assertFalse(optionals.info().isEmpty());
+        assertEquals(1, optionals.info().size());
         assertEquals("server", optionals.info().get("info").name());
         assertTrue(optionals.info().get("info").login().isPresent());
         assertEquals("login", optionals.info().get("info").login().get());
@@ -270,18 +260,11 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void collectionTypes() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("strings", "foo,bar");
-                put("ints", "1,2,3");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("strings", "foo,bar", "ints", "1,2,3"))
                 .withMapping(CollectionTypes.class)
                 .build();
-        final CollectionTypes types = config.getConfigMapping(CollectionTypes.class);
+        CollectionTypes types = config.getConfigMapping(CollectionTypes.class);
 
         assertEquals(Stream.of("foo", "bar").collect(toList()), types.listStrings());
         assertEquals(Stream.of(1, 2, 3).collect(toList()), types.listInts());
@@ -289,24 +272,17 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void maps() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("server.host", "localhost");
-                put("server.port", "8080");
-
-                put("server.server.host", "localhost-server");
-                put("server.server.port", "8080");
-
-                put("server.group.server.host", "localhost-group");
-                put("server.group.server.port", "8080");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.host", "localhost",
+                        "server.port", "8080",
+                        "server.server.host", "localhost-server",
+                        "server.server.port", "8080",
+                        "server.group.server.host", "localhost-group",
+                        "server.group.server.port", "8080"))
                 .withMapping(Maps.class)
                 .build();
-        final Maps maps = config.getConfigMapping(Maps.class);
+        Maps maps = config.getConfigMapping(Maps.class);
 
         assertEquals("localhost", maps.server().get("host"));
         assertEquals(8080, Integer.valueOf(maps.server().get("port")));
@@ -320,24 +296,17 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void mapsEmptyPrefix() {
-        final Map<String, String> typesConfig = new HashMap<>() {
-            {
-                put("host", "localhost");
-                put("port", "8080");
-
-                put("server.host", "localhost");
-                put("server.port", "8080");
-
-                put("group.server.host", "localhost");
-                put("group.server.port", "8080");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "host", "localhost",
+                        "port", "8080",
+                        "server.host", "localhost",
+                        "server.port", "8080",
+                        "group.server.host", "localhost",
+                        "group.server.port", "8080"))
                 .withMapping(Maps.class, "")
                 .build();
-        final Maps maps = config.getConfigMapping(Maps.class, "");
+        Maps maps = config.getConfigMapping(Maps.class, "");
 
         assertEquals("localhost", maps.server().get("host"));
         assertEquals(8080, Integer.valueOf(maps.server().get("port")));
@@ -350,28 +319,12 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void defaults() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(Defaults.class)
-                .build();
-        final Defaults defaults = config.getConfigMapping(Defaults.class);
-
-        assertEquals("foo", defaults.foo());
-        assertEquals("bar", defaults.bar());
-        assertEquals("foo", config.getRawValue("foo"));
-
-        List<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toList());
-        assertTrue(propertyNames.contains("foo"));
-        assertTrue(propertyNames.contains("bar"));
-    }
-
-    @Test
     void converters() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("foo", "notbar"))
                 .withMapping(Converters.class)
                 .build();
-        final Converters converters = config.getConfigMapping(Converters.class);
+        Converters converters = config.getConfigMapping(Converters.class);
 
         assertEquals("bar", converters.foo());
         assertTrue(converters.bprim());
@@ -385,23 +338,18 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void mix() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("server.host", "localhost");
-                put("server.port", "8080");
-                put("server.name", "server");
-                put("client.host", "clienthost");
-                put("client.port", "80");
-                put("client.name", "client");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.host", "localhost",
+                        "server.port", "8080",
+                        "server.name", "server",
+                        "client.host", "clienthost",
+                        "client.port", "80",
+                        "client.name", "client"))
                 .withMapping(ComplexSample.class)
                 .build();
 
-        final ComplexSample sample = config.getConfigMapping(ComplexSample.class);
+        ComplexSample sample = config.getConfigMapping(ComplexSample.class);
         assertEquals("localhost", sample.server().subHostAndPort().host());
         assertEquals(8080, sample.server().subHostAndPort().port());
         assertTrue(sample.client().isPresent());
@@ -411,19 +359,19 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void noDynamicValues() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Server.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
                 .withSources(new MapBackedConfigSource("test", new HashMap<>(), Integer.MAX_VALUE) {
                     private int counter = 1;
 
                     @Override
-                    public String getValue(final String propertyName) {
+                    public String getValue(String propertyName) {
                         return counter++ + "";
                     }
                 }).build();
 
-        final Server server = config.getConfigMapping(Server.class, "server");
+        Server server = config.getConfigMapping(Server.class, "server");
 
         assertNotEquals(config.getRawValue("server.port"), config.getRawValue("server.port"));
         assertEquals(server.port(), server.port());
@@ -431,10 +379,10 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void mapClass() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerClass.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080")).build();
-        final ServerClass server = config.getConfigMapping(ServerClass.class, "server");
+        ServerClass server = config.getConfigMapping(ServerClass.class, "server");
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
@@ -443,35 +391,35 @@ class ConfigMappingInterfaceTest {
         String host;
         int port;
 
-        public String getHost() {
+        String getHost() {
             return host;
         }
 
-        public int getPort() {
+        int getPort() {
             return port;
         }
     }
 
     @Test
     void configMappingAnnotation() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerAnnotated.class, "server")
                 .withMapping(ServerAnnotated.class, "cloud")
                 .withSources(
                         config("server.host", "localhost", "server.port", "8080", "cloud.host", "cloud", "cloud.port", "9090"))
                 .build();
 
-        final ServerAnnotated server = config.getConfigMapping(ServerAnnotated.class, "server");
+        ServerAnnotated server = config.getConfigMapping(ServerAnnotated.class, "server");
         assertNotNull(server);
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
 
-        final ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
+        ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
         assertNotNull(cloud);
         assertEquals("cloud", cloud.host());
         assertEquals(9090, cloud.port());
 
-        final ServerAnnotated cloudNull = config.getConfigMapping(ServerAnnotated.class, null);
+        ServerAnnotated cloudNull = config.getConfigMapping(ServerAnnotated.class, null);
         assertNotNull(cloudNull);
         assertEquals("cloud", cloudNull.host());
         assertEquals(9090, cloudNull.port());
@@ -479,12 +427,12 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void prefixFromAnnotation() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerAnnotated.class)
                 .withSources(config("cloud.host", "cloud", "cloud.port", "9090"))
                 .build();
 
-        final ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
+        ServerAnnotated cloud = config.getConfigMapping(ServerAnnotated.class);
         assertNotNull(cloud);
         assertEquals("cloud", cloud.host());
         assertEquals(9090, cloud.port());
@@ -492,12 +440,12 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void superTypes() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerChild.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
                 .build();
 
-        final ServerChild server = config.getConfigMapping(ServerChild.class, "server");
+        ServerChild server = config.getConfigMapping(ServerChild.class, "server");
         assertNotNull(server);
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
@@ -505,12 +453,12 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void configValue() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerConfigValue.class, "server")
                 .withSources(config("server.host", "localhost", "server.port", "8080"))
                 .build();
 
-        final ServerConfigValue server = config.getConfigMapping(ServerConfigValue.class, "server");
+        ServerConfigValue server = config.getConfigMapping(ServerConfigValue.class, "server");
         assertNotNull(server);
         assertEquals("localhost", server.host().getValue());
         assertEquals(8080, Integer.valueOf(server.port().getValue()));
@@ -565,7 +513,7 @@ class ConfigMappingInterfaceTest {
         String name();
     }
 
-    public interface SomeTypes {
+    interface SomeTypes {
         @WithName("int")
         int intPrimitive();
 
@@ -603,7 +551,7 @@ class ConfigMappingInterfaceTest {
         Boolean booleanWrapper();
     }
 
-    public interface Optionals {
+    interface Optionals {
         Optional<Server> server();
 
         Optional<String> optional();
@@ -623,7 +571,7 @@ class ConfigMappingInterfaceTest {
         }
     }
 
-    public interface CollectionTypes {
+    interface CollectionTypes {
         @WithName("strings")
         List<String> listStrings();
 
@@ -632,7 +580,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface Maps {
+    interface Maps {
         @WithParentName
         Map<String, String> server();
 
@@ -640,14 +588,6 @@ class ConfigMappingInterfaceTest {
 
         @WithParentName
         Map<String, Server> groupParentName();
-    }
-
-    public interface Defaults {
-        @WithDefault("foo")
-        String foo();
-
-        @WithDefault("bar")
-        String bar();
     }
 
     public interface ComplexSample {
@@ -739,34 +679,34 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "cloud")
-    public interface ServerAnnotated {
+    interface ServerAnnotated {
         String host();
 
         int port();
     }
 
-    public interface ServerParent {
+    interface ServerParent {
         String host();
     }
 
-    public interface ServerChild extends ServerParent {
+    interface ServerChild extends ServerParent {
         int port();
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerConfigValue {
+    interface ServerConfigValue {
         ConfigValue host();
 
         ConfigValue port();
     }
 
     @ConfigMapping(prefix = "empty")
-    public interface Empty {
+    interface Empty {
 
     }
 
     @ConfigMapping(prefix = "server")
-    public interface MapsInGroup {
+    interface MapsInGroup {
         Info info();
 
         interface Info {
@@ -784,20 +724,15 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void mapsInGroup() {
-        final Map<String, String> typesConfig = new HashMap<String, String>() {
-            {
-                put("server.info.name", "naruto");
-                put("server.info.values.name", "naruto");
-                put("server.info.data.first.name", "naruto");
-            }
-        };
-
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(typesConfig))
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "server.info.name", "naruto",
+                        "server.info.values.name", "naruto",
+                        "server.info.data.first.name", "naruto"))
                 .withMapping(MapsInGroup.class)
                 .build();
 
-        final MapsInGroup mapping = config.getConfigMapping(MapsInGroup.class);
+        MapsInGroup mapping = config.getConfigMapping(MapsInGroup.class);
         assertNotNull(mapping);
         assertEquals("naruto", mapping.info().name());
         assertEquals("naruto", mapping.info().values().get("name"));
@@ -805,20 +740,20 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerPrefix {
+    interface ServerPrefix {
         String host();
 
         int port();
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerNamePrefix {
+    interface ServerNamePrefix {
         String host();
     }
 
     @Test
     void prefixPropertyInRoot() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerPrefix.class, "server")
                 .withMapping(ServerPrefix.class, "cloud.server")
                 .withMapping(ServerNamePrefix.class, "server")
@@ -872,7 +807,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "mapping.server.env")
-    public interface ServerMapEnv {
+    interface ServerMapEnv {
         @WithParentName
         Map<String, Info> info();
 
@@ -912,7 +847,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerOptionalWithName {
+    interface ServerOptionalWithName {
         @WithName("a_server")
         Optional<Server> aServer();
 
@@ -940,7 +875,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerHierarchy extends Server {
+    interface ServerHierarchy extends Server {
         @WithParentName
         Named named();
 
@@ -973,7 +908,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "server")
-    public interface ServerExpandDefaults {
+    interface ServerExpandDefaults {
         @WithDefault("localhost")
         String host();
 
@@ -1123,7 +1058,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "map")
-    public interface DottedKeyInMap {
+    interface DottedKeyInMap {
         @WithParentName
         Map<String, String> map();
     }
@@ -1142,7 +1077,7 @@ class ConfigMappingInterfaceTest {
 
     // From https://github.com/quarkusio/quarkus/issues/20728
     @ConfigMapping(prefix = "clients")
-    public interface BugsConfiguration {
+    interface BugsConfiguration {
         @WithParentName
         Map<String, ClientConfiguration> clients();
 
@@ -1193,7 +1128,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "defaults")
-    public interface DefaultMethods {
+    interface DefaultMethods {
         default String host() {
             return "localhost";
         }
@@ -1214,7 +1149,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "defaults")
-    public interface DefaultKotlinMethods {
+    interface DefaultKotlinMethods {
         String host();
 
         @WithDefault("8080")
@@ -1265,7 +1200,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "clients", namingStrategy = ConfigMapping.NamingStrategy.VERBATIM)
-    public interface MapKeyEnum {
+    interface MapKeyEnum {
         enum ClientId {
             SOS_DAH,
             NAF
@@ -1354,16 +1289,16 @@ class ConfigMappingInterfaceTest {
             private final Integer min;
             private final Integer max;
 
-            public Range(final Integer min, final Integer max) {
+            Range(final Integer min, final Integer max) {
                 this.min = min;
                 this.max = max;
             }
 
-            public Integer getMin() {
+            Integer getMin() {
                 return min;
             }
 
-            public Integer getMax() {
+            Integer getMax() {
                 return max;
             }
         }
@@ -1395,7 +1330,7 @@ class ConfigMappingInterfaceTest {
     }
 
     @ConfigMapping(prefix = "my-app.rest-config.my-client")
-    public interface MyRestClientConfig {
+    interface MyRestClientConfig {
         @WithParentName
         Optional<RestClientConfig> client();
 
@@ -1587,9 +1522,11 @@ class ConfigMappingInterfaceTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(NestedOptionalMapGroup.class)
                 .withSources(config("optional-map.enable", "true"))
-                .withSources(config("optional-map.map.filter.default.enable", "false",
+                .withSources(config(
+                        "optional-map.map.filter.default.enable", "false",
                         "optional-map.map.filter.get-jokes-uni.enable", "true"))
-                .withSources(config("optional-map.map.client.reaction-api.enable", "true",
+                .withSources(config(
+                        "optional-map.map.client.reaction-api.enable", "true",
                         "optional-map.map.client.setup-api.enable", "true"))
                 .build();
 
@@ -1712,31 +1649,6 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
-    void ignorePartial() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultInterceptors()
-                .withMapping(IgnorePartial.class)
-                .withSources(config("path.key", "value"))
-                .withSources(config("path.main.key", "value"))
-                .withSources(config("path.ignore.key", ""))
-                .withMappingIgnore("path.ignore.**")
-                .build();
-
-        IgnorePartial mapping = config.getConfigMapping(IgnorePartial.class);
-
-        assertEquals("value", mapping.common().get("key"));
-        assertEquals("value", mapping.main().get("key"));
-    }
-
-    @ConfigMapping(prefix = "path")
-    interface IgnorePartial {
-        @WithParentName
-        Map<String, String> common();
-
-        Map<String, String> main();
-    }
-
-    @Test
     void withNameDotted() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
@@ -1798,34 +1710,6 @@ class ConfigMappingInterfaceTest {
                 @WithDefault("default")
                 String description();
             }
-        }
-    }
-
-    @Test
-    void mapKeyLevels() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultInterceptors()
-                .withMapping(MapKeyLevels.class)
-                .withSources(config("map.1.two.value", "value"))
-                .withSources(config("map.one.2.3.value", "value"))
-                .build();
-
-        MapKeyLevels mapping = config.getConfigMapping(MapKeyLevels.class);
-
-        assertEquals("value", mapping.two().get(1L).get("two").value());
-        assertEquals("value", mapping.three().get("one").get(2).get(3L).value());
-    }
-
-    @ConfigMapping(prefix = "map")
-    public interface MapKeyLevels {
-        @WithParentName
-        Map<Long, Map<String, Value>> two();
-
-        @WithParentName
-        Map<String, Map<Integer, Map<Long, Value>>> three();
-
-        interface Value {
-            String value();
         }
     }
 
@@ -1992,7 +1876,7 @@ class ConfigMappingInterfaceTest {
                         "unnamed.triple-map.value", "unnamed",
                         "unnamed.triple-map.one.three.value", "unnamed-2-3",
                         "unnamed.triple-map.one.two.three.value", "triple",
-                        "unnamed.map-list.value", "unnamed",
+                        "unnamed.map-list[0].value", "unnamed",
                         "unnamed.map-list.one[0].value", "one-0",
                         "unnamed.map-list.one[1].value", "one-1",
                         "unnamed.map-list.\"3.three\"[0].value", "3.three-0",
@@ -2044,14 +1928,17 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void explicitUnnamedMapKeys() {
-        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withMapping(UnnamedExplicitMapKeys.class)
                 .withSources(config(
                         "unnamed.map.value", "value",
-                        "unnamed.map.unnamed.value", "explicit"));
+                        "unnamed.map.unnamed.value", "explicit"))
+                .build();
 
-        assertThrows(IllegalArgumentException.class, builder::build);
+        UnnamedExplicitMapKeys mapping = config.getConfigMapping(UnnamedExplicitMapKeys.class);
+        assertEquals(1, mapping.map().size());
+        assertEquals("explicit", mapping.map().get("unnamed").value());
     }
 
     @ConfigMapping(prefix = "unnamed")
@@ -2066,17 +1953,19 @@ class ConfigMappingInterfaceTest {
 
     @Test
     void ambiguousMapping() {
-        assertThrows(IllegalStateException.class,
-                () -> new SmallRyeConfigBuilder().withMapping(AmbiguousMapping.class).build());
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("ambiguous.value", "value"))
+                .withMapping(AmbiguousMapping.class).build();
+
+        AmbiguousMapping mapping = config.getConfigMapping(AmbiguousMapping.class);
+        assertEquals("value", mapping.value());
+        assertEquals("value", mapping.nested().get(null).value());
     }
 
     @ConfigMapping(prefix = "ambiguous")
     interface AmbiguousMapping {
-        // match `ambiguous.value`
         String value();
 
-        // match `ambiguous.value`
-        // match `ambiguous.*.value`
         @WithParentName
         @WithUnnamedKey
         Map<String, Nested> nested();
@@ -2218,7 +2107,6 @@ class ConfigMappingInterfaceTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withMapping(MapDefaultsWithParentName.class)
-                .withSources(config("map.nested.value", "value"))
                 .build();
 
         MapDefaultsWithParentName mapping = config.getConfigMapping(MapDefaultsWithParentName.class);
@@ -2429,5 +2317,146 @@ class ConfigMappingInterfaceTest {
         Map<String, String> map();
 
         List<String> list();
+    }
+
+    @Test
+    void mapWithParentName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("value", "value", "key.value", "value"))
+                .withMapping(MapWithParentName.class)
+                .build();
+
+        MapWithParentName mapping = config.getConfigMapping(MapWithParentName.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals("value", mapping.map().get("key").value());
+    }
+
+    @ConfigMapping
+    interface MapWithParentName {
+        String value();
+
+        @WithParentName
+        Map<String, Nested> map();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void superOptionals() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "markets.config.default.timezone", "Europe/Berlin",
+                        "markets.config.default.activeFrom", "2099-12-31T08:00",
+                        "markets.config.default.disabledFrom", "2099-12-31T08:00",
+                        "markets.config.de.timezone", "Europe/Berlin",
+                        "markets.config.de.activeFrom", "2099-12-31T08:00",
+                        "markets.config.de.disabledFrom", "2099-12-31T08:00"))
+                .withMapping(MarketConfigChild.class)
+                .build();
+
+        MarketConfigChild mapping = config.getConfigMapping(MarketConfigChild.class);
+
+        assertEquals(2, mapping.config().size());
+
+        MarketConfig.MarketConfiguration germanMarket = mapping.config().get("de");
+        assertTrue(germanMarket.activeFrom().isPresent());
+        assertTrue(germanMarket.disabledFrom().isPresent());
+        assertTrue(germanMarket.timezone().isPresent());
+        assertTrue(germanMarket.partners().isEmpty());
+    }
+
+    interface MarketConfig {
+        Map<String, MarketConfiguration> config();
+
+        interface MarketConfiguration {
+            Optional<LocalDateTime> activeFrom();
+
+            Optional<LocalDateTime> disabledFrom();
+
+            Optional<String> timezone();
+
+            Optional<Set<String>> partners();
+        }
+    }
+
+    @ConfigMapping(prefix = "markets", namingStrategy = VERBATIM)
+    public interface MarketConfigChild extends MarketConfig {
+
+    }
+
+    @Test
+    void embeddedMapping() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "example.foo", "foo",
+                        "example.config.map.a", "a",
+                        "example.config.map.b", "b",
+                        "example.config.foo", "bar",
+                        "example.config.list", "foo,bar",
+                        "example.config.nested.nested-name", "nested"))
+                .withMapping(Embedded.class)
+                .withMapping(Embeddable.class)
+                .build();
+
+        Embedded embedded = config.getConfigMapping(Embedded.class);
+        assertEquals("bar", embedded.foo());
+        assertEquals("a", embedded.map().get("a"));
+        assertEquals("b", embedded.map().get("b"));
+        assertIterableEquals(List.of("foo", "bar"), embedded.list());
+        assertEquals("nested", embedded.nested().nestedName());
+
+        Embeddable embeddable = config.getConfigMapping(Embeddable.class);
+        assertEquals("foo", embeddable.foo());
+        assertEquals(embedded.map().get("a"), embeddable.config().map().get("a"));
+        assertEquals(embedded.map().get("b"), embeddable.config().map().get("b"));
+        assertIterableEquals(embedded.list(), embeddable.config().list());
+        assertEquals(embedded.nested().nestedName(), embeddable.config().nested().nestedName());
+    }
+
+    @ConfigMapping(prefix = "example.config")
+    interface Embedded {
+        String foo();
+
+        Map<String, String> map();
+
+        List<String> list();
+
+        NestedConfig nested();
+
+        interface NestedConfig {
+            String nestedName();
+        }
+    }
+
+    @ConfigMapping(prefix = "example")
+    interface Embeddable {
+        String foo();
+
+        Embedded config();
+    }
+
+    @Test
+    void nestedMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("auth.policy.shared1.roles.root", "admin,user"))
+                .withMapping(AuthRuntimeConfig.class)
+                .build();
+
+        AuthRuntimeConfig mapping = config.getConfigMapping(AuthRuntimeConfig.class);
+
+        assertIterableEquals(List.of("admin", "user"), mapping.rolePolicy().get("shared1").roles().get("root"));
+    }
+
+    @ConfigMapping(prefix = "auth")
+    interface AuthRuntimeConfig {
+        @WithName("policy")
+        Map<String, PolicyConfig> rolePolicy();
+
+        interface PolicyConfig {
+            Map<String, List<String>> roles();
+        }
     }
 }
