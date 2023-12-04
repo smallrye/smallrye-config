@@ -98,14 +98,18 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
      * dollar.
      */
     private String escapeDollarIfExists(final String value) {
-        int index = value.indexOf("\\$");
+        return escapeIfExists(escapeIfExists(value, "$$", "$$$$"), "\\$", "$$");
+    }
+
+    private String escapeIfExists(final String value, final String toEscape, final String escaped) {
+        int index = value.indexOf(toEscape);
         if (index != -1) {
             int start = 0;
             StringBuilder builder = new StringBuilder();
             while (index != -1) {
-                builder.append(value, start, index).append("$$");
-                start = index + 2;
-                index = value.indexOf("\\$", start);
+                builder.append(value, start, index).append(escaped);
+                start = index + toEscape.length();
+                index = value.indexOf(toEscape, start);
             }
             builder.append(value.substring(start));
             return builder.toString();
