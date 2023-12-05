@@ -48,10 +48,11 @@ public class ConfigSourceFactoryTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(new ExpressionConfigSourceFactory())
-                .withSources(config("expression.value", "12${DEFAULT:}"))
-                .withSources(new EnvConfigSource(Map.of("DEFAULT", "34"), 100))
+                .withSources(new EnvConfigSource(Map.of("DEFAULT", "1234"), 100))
+                .withMapping(Expression.class)
                 .build();
 
+        assertEquals("1234", config.getConfigMapping(Expression.class).value());
         assertEquals("1234", config.getRawValue("factory.expression"));
     }
 
