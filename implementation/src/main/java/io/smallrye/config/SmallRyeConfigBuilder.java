@@ -697,6 +697,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
 
         ConfigMappingProvider mappingProvider = mappingsBuilder.build();
+        for (Map.Entry<String, String> entry : mappingProvider.getDefaultValues().entrySet()) {
+            defaultValues.putIfAbsent(entry.getKey(), entry.getValue());
+        }
         SmallRyeConfig config = new SmallRyeConfig(this);
         ConfigMappings.mapConfiguration(config, mappingProvider);
         return config;
