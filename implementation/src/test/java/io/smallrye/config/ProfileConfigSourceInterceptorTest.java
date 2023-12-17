@@ -10,6 +10,7 @@ import static org.eclipse.microprofile.config.Config.PROFILE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -500,6 +501,18 @@ class ProfileConfigSourceInterceptorTest {
 
         SmallRyeConfig common = builder.withProfile("common").build();
         assertEquals("double", common.getRawValue("triple.prop"));
+    }
+
+    @Test
+    void duplicatedProfilesActive() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "prod,kubernetes"))
+                .withSources(config(SMALLRYE_CONFIG_PROFILE_PARENT, "cluster"))
+                .withSources(config("%kubernetes." + SMALLRYE_CONFIG_PROFILE_PARENT, "cluster"))
+                .build();
+
+        assertIterableEquals(List.of("kubernetes", "prod", "cluster"), config.getProfiles());
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
