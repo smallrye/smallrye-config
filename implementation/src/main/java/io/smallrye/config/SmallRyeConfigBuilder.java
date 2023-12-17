@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -213,10 +214,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             }
 
             private List<String> getProfile(final ConfigSourceInterceptorContext context) {
-                List<String> profiles = new ArrayList<>();
+                Set<String> profiles = new LinkedHashSet<>();
                 profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE_PARENT));
                 profiles.addAll(getProfiles(context, SMALLRYE_CONFIG_PROFILE));
-                return profiles;
+                return new ArrayList<>(profiles);
             }
 
             private List<String> getProfiles(final ConfigSourceInterceptorContext context, final String propertyName) {
