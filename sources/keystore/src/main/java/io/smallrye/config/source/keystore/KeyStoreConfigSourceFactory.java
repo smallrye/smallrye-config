@@ -127,7 +127,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
             passwordName = "smallrye.config.source.keystore.\"" + name + "\".password";
             password = context.getValue(passwordName);
             if (password == null || password.getValue() == null) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(passwordName));
             }
         }
         return password;
