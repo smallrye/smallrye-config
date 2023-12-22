@@ -41,10 +41,10 @@ jobs:
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         name: tck-report
         with:
-          name: tck-report
+          name: tck-report-java-${{matrix.java}}
           path: testsuite/tck/target/surefire-reports
 
   build-windows:
