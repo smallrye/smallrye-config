@@ -82,6 +82,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private boolean addDiscoveredValidator = false;
 
     public SmallRyeConfigBuilder() {
+        withMappingDefaults(true);
     }
 
     public SmallRyeConfigBuilder addDiscoveredCustomizers() {
@@ -175,13 +176,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return ConfigValidator.EMPTY;
     }
 
+    ConfigMappingProvider.Builder getMappingsBuilder() {
+        return mappingsBuilder;
+    }
+
     @Override
     public SmallRyeConfigBuilder addDefaultSources() {
         addDefaultSources = true;
         return this;
     }
 
-    protected List<ConfigSource> getDefaultSources() {
+    List<ConfigSource> getDefaultSources() {
         List<ConfigSource> defaultSources = new ArrayList<>();
 
         defaultSources.add(new EnvConfigSource());
@@ -531,13 +536,28 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMappingIgnore(String path) {
-        mappingsBuilder.addIgnored(path);
+        mappingsBuilder.ignoredPath(path);
         return this;
     }
 
     public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
         mappingsBuilder.validateUnknown(validateUnknown);
         withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withMappingDefaults(boolean mappingDefaults) {
+        mappingsBuilder.registerDefaults(mappingDefaults ? this : null);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withMappingNames(final Map<String, Map<String, Set<String>>> names) {
+        mappingsBuilder.names(names);
+        return this;
+    }
+
+    public SmallRyeConfigBuilder withMappingKeys(final Set<String> keys) {
+        mappingsBuilder.keys(keys);
         return this;
     }
 
@@ -697,13 +717,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 .sorted(Comparator.comparingInt(SmallRyeConfigBuilderCustomizer::priority))
                 .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
 
-        ConfigMappingProvider mappingProvider = mappingsBuilder.build();
-        for (Map.Entry<String, String> entry : mappingProvider.getDefaultValues().entrySet()) {
-            defaultValues.putIfAbsent(entry.getKey(), entry.getValue());
-        }
-        SmallRyeConfig config = new SmallRyeConfig(this);
-        ConfigMappings.mapConfiguration(config, mappingProvider);
-        return config;
+        return new SmallRyeConfig(this);
     }
 
     static class ConverterWithPriority {

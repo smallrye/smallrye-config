@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -93,6 +91,7 @@ public class ConfigMappingsTest {
     @Test
     void validate() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withConverter(Version.class, 100, new VersionConverter())
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
                 .build();
 
@@ -112,6 +111,7 @@ public class ConfigMappingsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
                 .withMapping(ServerClass.class, "server")
+                .withConverter(Version.class, 100, new VersionConverter())
                 .withValidateUnknown(true)
                 .withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, "false")
                 .build();
@@ -127,6 +127,7 @@ public class ConfigMappingsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
                 .withMapping(ServerClass.class, "server")
+                .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
         ServerClass server = config.getConfigMapping(ServerClass.class);
@@ -279,22 +280,19 @@ public class ConfigMappingsTest {
 
     @Test
     void properties() {
-        Map<String, Property> properties = ConfigMappings.getProperties(configClassWithPrefix(MappedProperties.class));
+        ConfigMappings.ConfigClassWithPrefix configClass = configClassWithPrefix(MappedProperties.class);
+        Map<String, Property> properties = ConfigMappings.getProperties(configClass).get(configClass.getKlass())
+                .get(configClass.getPrefix());
         assertEquals(3, properties.size());
     }
 
     @Test
     void mappedProperties() {
-        Set<String> mappedProperties = mappedProperties(MappedProperties.class, "mapped.value", "mapped.nested.value",
-                "mapped.collection[0].value", "mapped.unknown");
+        Set<String> mappedProperties = ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class),
+                Set.of("mapped.value", "mapped.nested.value", "mapped.collection[0].value", "mapped.unknown"));
         assertEquals(3, mappedProperties.size());
         assertTrue(mappedProperties.contains("mapped.value"));
         assertTrue(mappedProperties.contains("mapped.nested.value"));
         assertTrue(mappedProperties.contains("mapped.collection[0].value"));
-    }
-
-    private static Set<String> mappedProperties(final Class<?> mappingClass, final String... properties) {
-        return ConfigMappings.mappedProperties(configClassWithPrefix(mappingClass),
-                Stream.of(properties).collect(Collectors.toSet()));
     }
 }

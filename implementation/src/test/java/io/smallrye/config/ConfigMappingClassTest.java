@@ -15,36 +15,36 @@ import org.junit.jupiter.api.Test;
 class ConfigMappingClassTest {
     @Test
     void toClass() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerClass.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerClass.class)
                 .withDefaultValue("host", "localhost")
                 .withDefaultValue("port", "8080")
                 .build();
 
-        final ServerClass server = config.getConfigMapping(ServerClass.class);
+        ServerClass server = config.getConfigMapping(ServerClass.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
 
     @Test
     void privateFields() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerPrivate.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerPrivate.class)
                 .withDefaultValue("host", "localhost")
                 .withDefaultValue("port", "8080")
                 .build();
 
-        final ServerPrivate server = config.getConfigMapping(ServerPrivate.class);
+        ServerPrivate server = config.getConfigMapping(ServerPrivate.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
 
     @Test
     void optionals() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerOptional.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerOptional.class)
                 .withDefaultValue("host", "localhost")
                 .withDefaultValue("port", "8080")
                 .build();
 
-        final ServerOptional server = config.getConfigMapping(ServerOptional.class);
+        ServerOptional server = config.getConfigMapping(ServerOptional.class);
         assertTrue(server.getHost().isPresent());
         assertEquals("localhost", server.getHost().get());
         assertTrue(server.getPort().isPresent());
@@ -53,38 +53,38 @@ class ConfigMappingClassTest {
 
     @Test
     void names() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerNames.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerNames.class)
                 .withDefaultValue("h", "localhost")
                 .withDefaultValue("p", "8080")
                 .build();
-        final ServerNames server = config.getConfigMapping(ServerNames.class);
+        ServerNames server = config.getConfigMapping(ServerNames.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
 
     @Test
     void defaults() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerDefaults.class).build();
-        final ServerDefaults server = config.getConfigMapping(ServerDefaults.class);
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerDefaults.class).build();
+        ServerDefaults server = config.getConfigMapping(ServerDefaults.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
 
     @Test
     void converters() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerConverters.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerConverters.class)
                 .withConverters(new Converter[] { new ServerPortConverter() }).build();
-        final ServerConverters server = config.getConfigMapping(ServerConverters.class);
+        ServerConverters server = config.getConfigMapping(ServerConverters.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort().getPort());
     }
 
     @Test
     void initialized() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerInitialized.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerInitialized.class)
                 .withDefaultValue("host", "localhost")
                 .build();
-        final ServerInitialized server = config.getConfigMapping(ServerInitialized.class);
+        ServerInitialized server = config.getConfigMapping(ServerInitialized.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
@@ -96,10 +96,10 @@ class ConfigMappingClassTest {
 
     @Test
     void mpConfig20() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerMPConfig20.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerMPConfig20.class)
                 .withDefaultValue("name", "localhost")
                 .build();
-        final ServerMPConfig20 server = config.getConfigMapping(ServerMPConfig20.class);
+        ServerMPConfig20 server = config.getConfigMapping(ServerMPConfig20.class);
         assertEquals("localhost", server.getHost());
         assertEquals(8080, server.getPort());
     }
@@ -115,12 +115,12 @@ class ConfigMappingClassTest {
 
     @Test
     void camelCase() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerCamelCase.class)
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerCamelCase.class)
                 .withDefaultValue("theHost", "localhost")
                 .withDefaultValue("thePort", "8080")
                 .build();
 
-        final ServerCamelCase server = config.getConfigMapping(ServerCamelCase.class);
+        ServerCamelCase server = config.getConfigMapping(ServerCamelCase.class);
         assertEquals("localhost", server.getTheHost());
         assertEquals(8080, server.getThePort());
     }
@@ -213,7 +213,7 @@ class ConfigMappingClassTest {
     static class ServerPort {
         private int port;
 
-        public ServerPort(final String port) {
+        public ServerPort(String port) {
             this.port = Integer.parseInt(port);
         }
 

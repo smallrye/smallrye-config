@@ -1,14 +1,13 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -217,7 +216,7 @@ public class ConfigMappingCollectionsTest {
     }
 
     @Test
-    void mappingCollectionsOptionals() throws Exception {
+    void mappingCollectionsOptionals() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ServerCollectionsOptionals.class, "server")
                 .withSources(config(
@@ -650,91 +649,6 @@ public class ConfigMappingCollectionsTest {
         assertEquals("root", mapping.aliases().get("admin").alias().get(1));
     }
 
-    @ConfigMapping(prefix = "maps")
-    public interface NestedMaps {
-        Map<String, Map<String, String>> values();
-
-        Map<String, Map<String, List<String>>> roles();
-
-        Map<String, Map<String, List<Aliases>>> aliases();
-
-        interface Aliases {
-            String name();
-        }
-    }
-
-    @Test
-    void nestedMaps() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(NestedMaps.class)
-                .withSources(config(
-                        "maps.values.key1.nested-key1", "value"))
-                .withSources(config(
-                        "maps.roles.user.crud[0]", "read",
-                        "maps.roles.user.crud[1]", "write"))
-                .withSources(config(
-                        "maps.aliases.user.system[0].name", "username",
-                        "maps.aliases.user.system[1].name", "login"))
-                .build();
-
-        NestedMaps configMapping = config.getConfigMapping(NestedMaps.class);
-
-        assertEquals("value", configMapping.values().get("key1").get("nested-key1"));
-        assertEquals("read", configMapping.roles().get("user").get("crud").get(0));
-        assertEquals("write", configMapping.roles().get("user").get("crud").get(1));
-        assertEquals("username", configMapping.aliases().get("user").get("system").get(0).name());
-        assertEquals("login", configMapping.aliases().get("user").get("system").get(1).name());
-    }
-
-    @ConfigMapping(prefix = "map")
-    interface MapOfListWithConverter {
-        Map<@WithConverter(KeyConverter.class) String, @WithConverter(ListConverter.class) List<String>> list();
-
-        Map<@WithConverter(KeyConverter.class) String, Nested> nested();
-
-        interface Nested {
-            String value();
-        }
-
-        class KeyConverter implements Converter<String> {
-            @Override
-            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
-                if (value.equals("one")) {
-                    return "1";
-                } else if (value.equals("two")) {
-                    return "2";
-                } else {
-                    throw new IllegalArgumentException();
-                }
-            }
-        }
-
-        class ListConverter implements Converter<List<String>> {
-            static final Converter<List<String>> DELEGATE = newCollectionConverter(value -> value, ArrayList::new);
-
-            @Override
-            public List<String> convert(final String value) throws IllegalArgumentException, NullPointerException {
-                return DELEGATE.convert(value);
-            }
-        }
-    }
-
-    @Test
-    void mapWithKeyAndListConverters() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(MapOfListWithConverter.class, "map")
-                .withSources(config("map.list.one", "one,1", "map.list.two", "two,2"))
-                .withSources(config("map.nested.one.value", "1234"))
-                .build();
-
-        MapOfListWithConverter mapping = config.getConfigMapping(MapOfListWithConverter.class);
-        assertEquals("one", mapping.list().get("1").get(0));
-        assertEquals("1", mapping.list().get("1").get(1));
-        assertEquals("two", mapping.list().get("2").get(0));
-        assertEquals("2", mapping.list().get("2").get(1));
-        assertEquals("1234", mapping.nested().get("1").value());
-    }
-
     @ConfigMapping(prefix = "map")
     interface MapIndexedAndPlain {
         @WithParentName
@@ -755,5 +669,270 @@ public class ConfigMappingCollectionsTest {
         assertEquals("one", mapping.map().get("one").get(0));
         assertEquals("1", mapping.map().get("one").get(1));
         assertEquals("two", mapping.map().get("two").get(0));
+    }
+
+    @Test
+    void simpleMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SimpleMap.class, "map")
+                .withSources(config("map.one", "value"))
+                .withSources(config("map.key-converter.key", "value"))
+                .withSources(config("map.value-converter.one", "something"))
+                .withSources(config("map.defaults.one", "value"))
+                .withSources(config("map.defaults-value-converter.one", "something"))
+                .build();
+
+        SimpleMap mapping = config.getConfigMapping(SimpleMap.class);
+
+        assertEquals("value", mapping.map().get("one"));
+        assertNull(mapping.map().get("any"));
+        assertEquals("value", mapping.keyConverter().get("one"));
+        assertNull(mapping.keyConverter().get("any"));
+        assertEquals("value", mapping.valueConverter().get("one"));
+        assertNull(mapping.valueConverter().get("any"));
+        assertEquals("value", mapping.defaults().get("one"));
+        assertEquals("any", mapping.defaults().get("any"));
+        assertEquals("value", mapping.defaultsValueConverter().get("one"));
+        assertEquals("value", mapping.defaultsValueConverter().get("any"));
+        assertTrue(mapping.defaultsOnly().isEmpty());
+        assertEquals("any", mapping.defaultsOnly().get("any"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface SimpleMap {
+        @WithParentName
+        Map<String, String> map();
+
+        Map<@WithConverter(KeyConverter.class) String, String> keyConverter();
+
+        Map<String, @WithConverter(ValueConverter.class) String> valueConverter();
+
+        @WithDefault("any")
+        Map<String, String> defaults();
+
+        @WithDefault("any")
+        Map<String, @WithConverter(ValueConverter.class) String> defaultsValueConverter();
+
+        @WithDefault("any")
+        Map<String, String> defaultsOnly();
+
+        class KeyConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "one";
+            }
+        }
+
+        class ValueConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "value";
+            }
+        }
+    }
+
+    @Test
+    void nestedMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "nested.simple.one", "one"))
+                .withSources(config(
+                        "nested.map.one.two", "one-two",
+                        "nested.map.1.2", "1-2",
+                        "nested.map.one.two.three", "one-two-three",
+                        "nested.map.\"1.one\".\"2.two\"", "1.one-2.two"))
+                .withSources(config(
+                        "nested.key-converter.\"1.one\".\"2.two\"", "1.one-2.two"))
+                .withSources(config(
+                        "nested.key-implicit.1.1", "1-1",
+                        "nested.key-implicit.1.\"2\"", "1-2"))
+                .withSources(config(
+                        "nested.value-converter.one.one", "one-one",
+                        "nested.value-converter.one.\"two\"", "one-two"))
+                .withSources(config(
+                        "nested.defaults.one.one", "one-one",
+                        "nested.defaults.one.\"two\"", "one-two"))
+                .withSources(config(
+                        "nested.triple.one.two.one", "one-two-one",
+                        "nested.triple.one.two.two", "one-two-two",
+                        "nested.triple.one.two.three", "one-two-three",
+                        "nested.triple.1.2.3", "1-2-3",
+                        "nested.triple.\"1.one\".\"2.two\".\"3.three\"", "1.one-2.two-3.three"))
+                .withMapping(NestedMaps.class)
+                .build();
+
+        NestedMaps mapping = config.getConfigMapping(NestedMaps.class);
+
+        assertEquals("one", mapping.simple().get("one"));
+
+        assertEquals("one-two", mapping.map().get("one").get("two"));
+        assertEquals("1-2", mapping.map().get("1").get("2"));
+        assertEquals("one-two-three", mapping.map().get("one").get("two.three"));
+        assertEquals("1.one-2.two", mapping.map().get("1.one").get("2.two"));
+
+        assertEquals("1.one-2.two", mapping.keyConverter().get("one").get("one"));
+
+        assertEquals("1-1", mapping.keyImplicit().get(1).get(1));
+        assertEquals("1-2", mapping.keyImplicit().get(1).get(2));
+
+        assertEquals("value", mapping.valueConverter().get("one").get("one"));
+        assertEquals("value", mapping.valueConverter().get("one").get("two"));
+
+        assertEquals("one-one", mapping.defaults().get("one").get("one"));
+        assertEquals("one-two", mapping.defaults().get("one").get("two"));
+        assertEquals("any", mapping.defaults().get("one").get("three"));
+        // TODO - Add defaults for middle maps?
+        //assertEquals("any", mapping.defaults().get("any").get("any"));
+
+        assertEquals("one-two-one", mapping.triple().get("one").get("two").get("one"));
+        assertEquals("one-two-two", mapping.triple().get("one").get("two").get("two"));
+        assertEquals("one-two-three", mapping.triple().get("one").get("two").get("three"));
+        assertEquals("1-2-3", mapping.triple().get("1").get("2").get("3"));
+        assertEquals("1.one-2.two-3.three", mapping.triple().get("1.one").get("2.two").get("3.three"));
+
+        // TODO - Assert keys that do not complete the Map nesting levels
+    }
+
+    @ConfigMapping(prefix = "nested")
+    public interface NestedMaps {
+        Map<String, String> simple();
+
+        Map<String, Map<String, String>> map();
+
+        Map<@WithConverter(KeyConverter.class) String, Map<@WithConverter(KeyConverter.class) String, String>> keyConverter();
+
+        Map<Integer, Map<Integer, String>> keyImplicit();
+
+        Map<String, Map<String, @WithConverter(ValueConverter.class) String>> valueConverter();
+
+        @WithDefault("any")
+        Map<String, Map<String, String>> defaults();
+
+        Map<String, Map<String, Map<String, String>>> triple();
+
+        class KeyConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "one";
+            }
+        }
+
+        class ValueConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "value";
+            }
+        }
+    }
+
+    @Test
+    void simpleMapList() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SimpleMapList.class, "map")
+                .withSources(config("map.one[0]", "value"))
+                .withSources(config("map.key-converter.key[0]", "value"))
+                .withSources(config("map.value-converter.one[0]", "something"))
+                .withSources(config("map.defaults.one[0]", "value"))
+                .withSources(config("map.defaults-value-converter.one[0]", "something"))
+                .build();
+
+        SimpleMapList mapping = config.getConfigMapping(SimpleMapList.class);
+
+        assertEquals("value", mapping.map().get("one").get(0));
+        assertNull(mapping.map().get("any"));
+        assertEquals("value", mapping.keyConverter().get("one").get(0));
+        assertNull(mapping.keyConverter().get("any"));
+        assertEquals("value", mapping.valueConverter().get("one").get(0));
+        assertNull(mapping.valueConverter().get("any"));
+        assertEquals("value", mapping.defaults().get("one").get(0));
+        assertEquals("any", mapping.defaults().get("any").get(0));
+        assertEquals("something", mapping.defaults().get("any").get(1));
+        assertEquals("value", mapping.defaultsValueConverter().get("one").get(0));
+        assertEquals("value", mapping.defaultsValueConverter().get("any").get(0));
+        assertTrue(mapping.defaultsOnly().isEmpty());
+        assertEquals("any", mapping.defaultsOnly().get("any").get(0));
+        assertEquals("something", mapping.defaultsOnly().get("any").get(1));
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface SimpleMapList {
+        @WithParentName
+        Map<String, List<String>> map();
+
+        Map<@WithConverter(KeyConverter.class) String, List<String>> keyConverter();
+
+        Map<String, List<@WithConverter(ValueConverter.class) String>> valueConverter();
+
+        @WithDefault("any,something")
+        Map<String, List<String>> defaults();
+
+        @WithDefault("any")
+        Map<String, @WithConverter(ValueConverter.class) List<String>> defaultsValueConverter();
+
+        @WithDefault("any,something")
+        Map<String, List<String>> defaultsOnly();
+
+        class KeyConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "one";
+            }
+        }
+
+        class ValueConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "value";
+            }
+        }
+    }
+
+    @Test
+    void nestedMapsLists() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "nested.simple.one[1]", "one[1]",
+                        "nested.simple.one[0]", "one[0]"))
+                .withSources(config(
+                        "nested.map.one[1].two", "one[1]-two",
+                        "nested.map.one[0].two", "one[0]-two"))
+                .withSources(config(
+                        "nested.key-converter.1[0].two", "one[0]-two"))
+                .withSources(config(
+                        "nested.mixed.one[0].one[0].one", "one[0].one[0].one",
+                        "nested.mixed.one[0].one[0].two", "one[0].one[0].two"))
+                .withMapping(NestedMapsLists.class)
+                .build();
+
+        NestedMapsLists mapping = config.getConfigMapping(NestedMapsLists.class);
+
+        assertEquals("one[0]", mapping.simple().get("one").get(0));
+        assertEquals("one[1]", mapping.simple().get("one").get(1));
+
+        assertEquals("one[0]-two", mapping.map().get("one").get(0).get("two"));
+        assertEquals("one[1]-two", mapping.map().get("one").get(1).get("two"));
+
+        assertEquals("one[0]-two", mapping.keyConverter().get("one").get(0).get("two"));
+
+        assertEquals("one[0].one[0].one", mapping.mixed().get("one").get(0).get("one").get(0).get("one"));
+        assertEquals("one[0].one[0].two", mapping.mixed().get("one").get(0).get("one").get(0).get("two"));
+    }
+
+    @ConfigMapping(prefix = "nested")
+    interface NestedMapsLists {
+        Map<String, List<String>> simple();
+
+        Map<String, List<Map<String, String>>> map();
+
+        Map<@WithConverter(KeyConverter.class) String, List<Map<String, String>>> keyConverter();
+
+        Map<String, List<Map<String, List<Map<String, String>>>>> mixed();
+
+        class KeyConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                return "one";
+            }
+        }
     }
 }

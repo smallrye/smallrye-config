@@ -14,10 +14,10 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Path;
 import jakarta.validation.Validator;
 
+import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingInterface;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.MapProperty;
-import io.smallrye.config.ConfigMappingInterface.NamingStrategy;
 import io.smallrye.config.ConfigMappingInterface.Property;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValidationException.Problem;

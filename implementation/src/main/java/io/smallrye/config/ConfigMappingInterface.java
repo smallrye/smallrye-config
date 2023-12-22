@@ -17,13 +17,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
-import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * Information about a configuration interface.
@@ -42,7 +41,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
     private final Map<String, Property> propertiesByName;
-    private final NamingStrategy namingStrategy;
     private final ToStringMethod toStringMethod;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
@@ -68,7 +66,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         this.properties = filteredProperties.toArray(new Property[0]);
         this.propertiesByName = propertiesByName;
-        this.namingStrategy = getNamingStrategy(interfaceType);
         this.toStringMethod = toStringMethod;
     }
 
@@ -152,8 +149,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return propertiesByName.get(name);
     }
 
+    public boolean hasNamingStrategy() {
+        return interfaceType.getAnnotation(ConfigMapping.class) != null;
+    }
+
     public NamingStrategy getNamingStrategy() {
-        return namingStrategy;
+        ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
+        return configMapping != null ? configMapping.namingStrategy() : NamingStrategy.KEBAB_CASE;
     }
 
     ToStringMethod getToStringMethod() {
@@ -198,6 +200,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return hasPropertyName() && !propertyName.isEmpty() ? propertyName : method.getName();
         }
 
+        public String getPropertyName(final NamingStrategy namingStrategy) {
+            return hasPropertyName() ? getPropertyName() : namingStrategy.apply(getPropertyName());
+        }
+
         public String getMemberName() {
             return method.getName();
         }
@@ -212,6 +218,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         public boolean isParentPropertyName() {
             return hasPropertyName() && propertyName.isEmpty();
+        }
+
+        public boolean hasDefaultValue() {
+            return false;
+        }
+
+        public String getDefaultValue() {
+            return null;
         }
 
         public boolean isPrimitive() {
@@ -472,6 +486,21 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return nestedProperty.isLeaf();
         }
 
+        @Override
+        public LeafProperty asLeaf() {
+            return isLeaf() ? nestedProperty.asLeaf() : super.asLeaf();
+        }
+
+        @Override
+        public boolean hasDefaultValue() {
+            return isLeaf() && nestedProperty.asLeaf().hasDefaultValue();
+        }
+
+        @Override
+        public String getDefaultValue() {
+            return hasDefaultValue() ? nestedProperty.asLeaf().getDefaultValue() : null;
+        }
+
         public MayBeOptionalProperty getNestedProperty() {
             return nestedProperty;
         }
@@ -497,6 +526,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         @Override
         public GroupProperty asGroup() {
             return this;
+        }
+
+        public boolean hasNamingStrategy() {
+            return groupType.getInterfaceType().isAnnotationPresent(ConfigMapping.class);
+        }
+
+        public NamingStrategy getNamingStrategy() {
+            return groupType.getNamingStrategy();
         }
     }
 
@@ -586,7 +623,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getKeyUnnamed() {
-            return "".equals(keyUnnamed) ? null : keyUnnamed;
+            return keyUnnamed;
         }
 
         public boolean hasKeyUnnamed() {
@@ -1016,54 +1053,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         } else {
             throw ConfigMessages.msg.noRawType(type);
-        }
-    }
-
-    private static NamingStrategy getNamingStrategy(final Class<?> interfaceType) {
-        final ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
-        if (configMapping != null) {
-            switch (configMapping.namingStrategy()) {
-                case VERBATIM:
-                    return VERBATIM_NAMING_STRATEGY;
-                case KEBAB_CASE:
-                    return KEBAB_CASE_NAMING_STRATEGY;
-                case SNAKE_CASE:
-                    return SNAKE_CASE_NAMING_STRATEGY;
-            }
-        }
-
-        return DEFAULT_NAMING_STRATEGY;
-    }
-
-    private static final NamingStrategy DEFAULT_NAMING_STRATEGY = new KebabNamingStrategy();
-    private static final NamingStrategy VERBATIM_NAMING_STRATEGY = new VerbatimNamingStrategy();
-    private static final NamingStrategy KEBAB_CASE_NAMING_STRATEGY = new KebabNamingStrategy();
-    private static final NamingStrategy SNAKE_CASE_NAMING_STRATEGY = new SnakeNamingStrategy();
-
-    public interface NamingStrategy extends Function<String, String> {
-        default boolean isDefault() {
-            return this.equals(DEFAULT_NAMING_STRATEGY);
-        }
-    }
-
-    static class VerbatimNamingStrategy implements NamingStrategy {
-        @Override
-        public String apply(final String s) {
-            return s;
-        }
-    }
-
-    static class KebabNamingStrategy implements NamingStrategy {
-        @Override
-        public String apply(final String s) {
-            return StringUtil.skewer(s, '-');
-        }
-    }
-
-    static class SnakeNamingStrategy implements NamingStrategy {
-        @Override
-        public String apply(final String s) {
-            return StringUtil.skewer(s, '_');
         }
     }
 }

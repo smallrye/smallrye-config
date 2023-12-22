@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonMap;
@@ -272,8 +273,7 @@ class RelocateConfigSourceInterceptorTest {
                         hierarchyCandidates.add("child." + name.substring(7));
                     }
                 }
-                names.addAll(ConfigMappings.mappedProperties(
-                        ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix(Child.class), hierarchyCandidates));
+                names.addAll(ConfigMappings.mappedProperties(configClassWithPrefix(Child.class), hierarchyCandidates));
                 return names.iterator();
             }
         };

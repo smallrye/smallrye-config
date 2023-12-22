@@ -17,7 +17,6 @@ package io.smallrye.config.common.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -100,8 +99,8 @@ class StringUtilTest {
     void skewer() {
         assertEquals("sigusr1", StringUtil.skewer("sigusr1"));
 
-        assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer(""));
-        assertThrows(IllegalArgumentException.class, () -> StringUtil.skewer("", '.'));
+        assertEquals("", StringUtil.skewer(""));
+        assertEquals(".", StringUtil.skewer("."));
 
         assertEquals("my-property", StringUtil.skewer("myProperty"));
         assertEquals("my.property", StringUtil.skewer("myProperty", '.'));
@@ -138,6 +137,11 @@ class StringUtilTest {
         assertEquals("trend-breaker", StringUtil.skewer("TrendBreaker"));
         assertEquals("making-life-difficult", StringUtil.skewer("MAKING_LifeDifficult"));
         assertEquals("making-life-difficult", StringUtil.skewer("makingLifeDifficult"));
+
+        assertEquals("foo.bar", StringUtil.skewer("foo.bar"));
+        assertEquals("foo.bar-baz", StringUtil.skewer("foo.barBaz"));
+        assertEquals("foo.bar-baz[0]", StringUtil.skewer("foo.barBaz[0]"));
+        assertEquals("foo.bar-baz[*]", StringUtil.skewer("foo.barBaz[*]"));
     }
 
     @Test
@@ -186,8 +190,14 @@ class StringUtilTest {
         assertEquals("", StringUtil.unquoted("\"\""));
         assertEquals("a", StringUtil.unquoted("a"));
         assertEquals("unquoted", StringUtil.unquoted("\"unquoted\""));
+        assertEquals("my.\"unquoted\"", StringUtil.unquoted("my.\"unquoted\""));
         assertEquals("unquoted", StringUtil.unquoted("my.\"unquoted\"", 3, 13));
         assertEquals("unquoted", StringUtil.unquoted("my.unquoted", 3, 11));
+    }
+
+    @Test
+    void index() {
+        assertEquals(0, StringUtil.index("foo[0]"));
     }
 
     @Test

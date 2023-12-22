@@ -268,7 +268,7 @@ public class StringUtil {
             throw new StringIndexOutOfBoundsException("begin " + begin + ", end " + end + ", length " + name.length());
         }
 
-        if (name.length() < 2) {
+        if (name.length() < 2 || name.length() <= begin) {
             return name;
         }
 
@@ -277,6 +277,16 @@ public class StringUtil {
         } else {
             return name.substring(begin, end);
         }
+    }
+
+    public static int index(final String name) {
+        if (name.charAt(name.length() - 1) == ']') {
+            int start = name.lastIndexOf('[');
+            if (start != -1 && isNumeric(name, start + 1, name.length() - 1)) {
+                return Integer.parseInt(name.substring(start + 1, name.length() - 1));
+            }
+        }
+        throw new IllegalArgumentException();
     }
 
     public static String unindexed(final String name) {
@@ -294,16 +304,30 @@ public class StringUtil {
         return name;
     }
 
+    public static boolean isIndexed(final String name) {
+        if (name.length() < 3) {
+            return false;
+        }
+
+        if (name.charAt(name.length() - 1) == ']') {
+            int begin = name.lastIndexOf('[');
+            return begin != -1 && isNumeric(name, begin + 1, name.length() - 1);
+        }
+
+        return false;
+    }
+
     public static String skewer(String camelHumps) {
         return skewer(camelHumps, '-');
     }
 
     public static String skewer(String camelHumps, char separator) {
+        if (camelHumps.isEmpty()) {
+            return camelHumps;
+        }
+
         int end = camelHumps.length();
         StringBuilder b = new StringBuilder();
-        if (camelHumps.isEmpty()) {
-            throw new IllegalArgumentException("Method seems to have an empty name");
-        }
 
         for (int i = 0; i < end; i++) {
             char c = camelHumps.charAt(i);
@@ -334,6 +358,8 @@ public class StringUtil {
                 }
                 i = j;
             } else if (Character.isDigit(c)) {
+                b.append(c);
+            } else if (c == '.' || c == '*' || c == '[' || c == ']') {
                 b.append(c);
             } else {
                 if (i > 0) {

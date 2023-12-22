@@ -15,10 +15,13 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
@@ -44,6 +47,7 @@ import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -70,12 +74,16 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<?>> converters;
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
-    private final ConfigMappings mappings;
+    private final ConfigValidator configValidator;
+    private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
+        // This needs to be executed before everything else to make sure that defaults from mappings are available to all sources
+        ConfigMappingProvider mappingProvider = builder.getMappingsBuilder().build();
         this.configSources = new ConfigSources(builder);
         this.converters = buildConverters(builder);
-        this.mappings = new ConfigMappings(builder.getValidator());
+        this.configValidator = builder.getValidator();
+        this.mappings = new ConcurrentHashMap<>(mappingProvider.mapConfiguration(this));
     }
 
     private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
@@ -135,14 +143,13 @@ public class SmallRyeConfig implements Config, Serializable {
     public List<String> getIndexedProperties(final String property) {
         List<String> indexedProperties = new ArrayList<>();
         for (String propertyName : this.getPropertyNames()) {
-            if (propertyName.length() > property.length() && propertyName.startsWith(property)) {
+            if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
                 int indexStart = property.length();
                 if (propertyName.charAt(indexStart) == '[') {
-                    int indexEnd = propertyName.indexOf(']', indexStart - 1);
-                    if (indexEnd != -1) {
-                        if (StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
-                            indexedProperties.add(propertyName);
-                        }
+                    int indexEnd = propertyName.indexOf(']', indexStart);
+                    if (indexEnd != -1 && propertyName.charAt(propertyName.length() - 1) != '.'
+                            && StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
+                        indexedProperties.add(propertyName);
                     }
                 }
             }
@@ -155,10 +162,11 @@ public class SmallRyeConfig implements Config, Serializable {
         Set<Integer> indexes = new HashSet<>();
         for (String propertyName : this.getPropertyNames()) {
             if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
-                int indexStart = propertyName.indexOf('[', property.length());
-                int indexEnd = propertyName.indexOf(']', indexStart);
-                if (indexStart != -1 && indexEnd != -1) {
-                    if (StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
+                int indexStart = property.length();
+                if (propertyName.charAt(indexStart) == '[') {
+                    int indexEnd = propertyName.indexOf(']', indexStart);
+                    if (indexEnd != -1 && propertyName.charAt(propertyName.length() - 1) != '.'
+                            && StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
                         indexes.add(Integer.parseInt(propertyName.substring(indexStart + 1, indexEnd)));
                     }
                 }
@@ -173,16 +181,20 @@ public class SmallRyeConfig implements Config, Serializable {
      * Return the content of the direct sub properties as the requested type of Map.
      *
      * @param name The configuration property name
-     * @param kClass the type into which the keys should be converted
-     * @param vClass the type into which the values should be converted
+     * @param keyClass the type into which the keys should be converted
+     * @param valueClass the type into which the values should be converted
      * @param <K> the key type
      * @param <V> the value type
      * @return the resolved property value as an instance of the requested Map (not {@code null})
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
      * @throws NoSuchElementException if no direct sub properties could be found.
      */
-    public <K, V> Map<K, V> getValues(String name, Class<K> kClass, Class<V> vClass) {
-        return getValues(name, requireConverter(kClass), requireConverter(vClass));
+    public <K, V> Map<K, V> getValues(String name, Class<K> keyClass, Class<V> valueClass) {
+        return getValues(name, requireConverter(keyClass), requireConverter(valueClass));
+    }
+
+    public <K, V> Map<K, V> getValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+        return getValues(name, keyConverter, valueConverter, HashMap::new);
     }
 
     /**
@@ -197,7 +209,11 @@ public class SmallRyeConfig implements Config, Serializable {
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
      * @throws NoSuchElementException if no direct sub properties could be found.
      */
-    public <K, V> Map<K, V> getValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+    public <K, V> Map<K, V> getValues(
+            String name,
+            Converter<K> keyConverter,
+            Converter<V> valueConverter,
+            IntFunction<Map<K, V>> mapFactory) {
         try {
             return getValue(name, newMapConverter(keyConverter, valueConverter));
         } catch (NoSuchElementException e) {
@@ -206,7 +222,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
             }
 
-            Map<K, V> map = new HashMap<>(mapKeys.size());
+            Map<K, V> map = mapFactory.apply(mapKeys.size());
             for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
                 map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
                         keyConverter), getValue(entry.getValue(), valueConverter));
@@ -215,13 +231,20 @@ public class SmallRyeConfig implements Config, Serializable {
         }
     }
 
-    public <K, V, C extends Collection<V>> Map<K, C> getValues(String name, Class<K> kClass, Class<V> vClass,
+    public <K, V, C extends Collection<V>> Map<K, C> getValues(
+            String name,
+            Class<K> keyClass,
+            Class<V> valueClass,
             IntFunction<C> collectionFactory) {
-        return getValues(name, requireConverter(kClass), requireConverter(vClass), collectionFactory);
+        return getValues(name, requireConverter(keyClass), requireConverter(valueClass), HashMap::new, collectionFactory);
     }
 
-    public <K, V, C extends Collection<V>> Map<K, C> getValues(String name, Converter<K> keyConverter,
-            Converter<V> valueConverter, IntFunction<C> collectionFactory) {
+    public <K, V, C extends Collection<V>> Map<K, C> getValues(
+            String name,
+            Converter<K> keyConverter,
+            Converter<V> valueConverter,
+            IntFunction<Map<K, C>> mapFactory,
+            IntFunction<C> collectionFactory) {
         try {
             return getValue(name, newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory)));
         } catch (NoSuchElementException e) {
@@ -230,7 +253,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
             }
 
-            Map<K, C> map = new HashMap<>(mapCollectionKeys.size());
+            Map<K, C> map = mapFactory.apply(mapCollectionKeys.size());
             for (Map.Entry<String, String> entry : mapCollectionKeys.entrySet()) {
                 map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
                         keyConverter), getValues(entry.getValue(), valueConverter, collectionFactory));
@@ -242,9 +265,10 @@ public class SmallRyeConfig implements Config, Serializable {
     public Map<String, String> getMapKeys(final String name) {
         Map<String, String> mapKeys = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
-            if (propertyName.length() > name.length() && propertyName.charAt(name.length()) == '.'
+            if (propertyName.length() > name.length() + 1
+                    && (name.length() == 0 || propertyName.charAt(name.length()) == '.')
                     && propertyName.startsWith(name)) {
-                String key = unquoted(unindexed(propertyName), name.length() + 1);
+                String key = unquoted(unindexed(propertyName), name.length() == 0 ? 0 : name.length() + 1);
                 mapKeys.put(key, unindexed(propertyName));
             }
         }
@@ -422,16 +446,24 @@ public class SmallRyeConfig implements Config, Serializable {
      * Return the content of the direct sub properties as the requested type of Map.
      *
      * @param name The configuration property name
-     * @param kClass the type into which the keys should be converted
-     * @param vClass the type into which the values should be converted
+     * @param keyClass the type into which the keys should be converted
+     * @param valueClass the type into which the values should be converted
      * @param <K> the key type
      * @param <V> the value type
      * @return the resolved property value as an instance of the requested Map (not {@code null})
      * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
      */
-    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass) {
-        Optional<Map<K, V>> optionalValue = getOptionalValue(name,
-                newMapConverter(requireConverter(kClass), requireConverter(vClass)));
+    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> keyClass, Class<V> valueClass) {
+        return getOptionalValues(name, requireConverter(keyClass), requireConverter(valueClass));
+    }
+
+    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+        return getOptionalValues(name, keyConverter, valueConverter, HashMap::new);
+    }
+
+    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter,
+            IntFunction<Map<K, V>> mapFactory) {
+        Optional<Map<K, V>> optionalValue = getOptionalValue(name, newMapConverter(keyConverter, valueConverter));
         if (optionalValue.isPresent()) {
             return optionalValue;
         }
@@ -440,13 +472,26 @@ public class SmallRyeConfig implements Config, Serializable {
         if (mapKeys.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(getValues(name, kClass, vClass));
+        return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory));
     }
 
-    public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(String name, Class<K> kClass, Class<V> vClass,
+    public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
+            String name,
+            Class<K> keyClass,
+            Class<V> valueClass,
+            IntFunction<C> collectionFactory) {
+        return getOptionalValues(name, requireConverter(keyClass), requireConverter(valueClass), HashMap::new,
+                collectionFactory);
+    }
+
+    public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
+            String name,
+            Converter<K> keyConverter,
+            Converter<V> valueConverter,
+            IntFunction<Map<K, C>> mapFactory,
             IntFunction<C> collectionFactory) {
         Optional<Map<K, C>> optionalValue = getOptionalValue(name,
-                newMapConverter(requireConverter(kClass), newCollectionConverter(requireConverter(vClass), collectionFactory)));
+                newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory)));
         if (optionalValue.isPresent()) {
             return optionalValue;
         }
@@ -455,19 +500,48 @@ public class SmallRyeConfig implements Config, Serializable {
         if (mapKeys.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(getValues(name, kClass, vClass, collectionFactory));
+        return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory, collectionFactory));
     }
 
-    public ConfigMappings getConfigMappings() {
+    Map<Class<?>, Map<String, ConfigMappingObject>> getMappings() {
         return mappings;
     }
 
     public <T> T getConfigMapping(Class<T> type) {
-        return mappings.getConfigMapping(type);
+        String prefix;
+        if (type.isInterface()) {
+            ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
+            prefix = configMapping != null ? configMapping.prefix() : "";
+        } else {
+            ConfigProperties configProperties = type.getAnnotation(ConfigProperties.class);
+            prefix = configProperties != null ? configProperties.prefix() : "";
+        }
+        return getConfigMapping(type, prefix);
     }
 
     public <T> T getConfigMapping(Class<T> type, String prefix) {
-        return mappings.getConfigMapping(type, prefix);
+        if (prefix == null) {
+            return getConfigMapping(type);
+        }
+
+        Map<String, ConfigMappingObject> mappingsForType = mappings.get(getConfigMappingClass(type));
+        if (mappingsForType == null) {
+            throw ConfigMessages.msg.mappingNotFound(type.getName());
+        }
+
+        ConfigMappingObject configMappingObject = mappingsForType.get(prefix);
+        if (configMappingObject == null) {
+            throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
+        }
+
+        Object value = configMappingObject;
+        if (configMappingObject instanceof ConfigMappingClassMapper) {
+            value = ((ConfigMappingClassMapper) configMappingObject).map();
+        }
+
+        configValidator.validateMapping(type, prefix, value);
+
+        return type.cast(value);
     }
 
     /**
@@ -774,13 +848,41 @@ public class SmallRyeConfig implements Config, Serializable {
 
         private static List<ConfigSource> getSources(final List<ConfigSourceWithPriority> sourceWithPriorities) {
             List<ConfigSource> configSources = new ArrayList<>();
+
+            List<EnvConfigSource> envSources = new ArrayList<>();
+            List<String> configuredProperties = new ArrayList<>();
+
             for (ConfigSourceWithPriority configSourceWithPriority : sourceWithPriorities) {
                 ConfigSource source = configSourceWithPriority.getSource();
                 configSources.add(source);
                 if (ConfigLogging.log.isDebugEnabled()) {
                     ConfigLogging.log.loadedConfigSource(source.getName(), source.getOrdinal());
                 }
+
+                if (source instanceof EnvConfigSource) {
+                    envSources.add((EnvConfigSource) source);
+                } else {
+                    Set<String> propertyNames = source.getPropertyNames();
+                    if (propertyNames != null) {
+                        configuredProperties.addAll(propertyNames);
+                    }
+                }
             }
+
+            // Match configured properties with Env with the same semantic meaning and use that one
+            for (EnvConfigSource envSource : envSources) {
+                for (String configuredProperty : configuredProperties) {
+                    Set<String> envNames = envSource.getPropertyNames();
+                    if (envSource.hasPropertyName(configuredProperty)) {
+                        if (!envNames.contains(configuredProperty)) {
+                            // this may be expensive, but it shouldn't happend that often
+                            envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(configuredProperty)));
+                            envNames.add(configuredProperty);
+                        }
+                    }
+                }
+            }
+
             return Collections.unmodifiableList(configSources);
         }
 
