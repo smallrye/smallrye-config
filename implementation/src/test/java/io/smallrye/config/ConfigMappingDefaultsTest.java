@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.AsyncHttpClientBuildTimeConfig.AsyncClientType.NETTY;
+import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.SyncHttpClientBuildTimeConfig.SyncClientType.URL;
 import static io.smallrye.config.ConfigMappings.getDefaults;
 import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.KeyValuesConfigSource.config;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -600,5 +603,74 @@ public class ConfigMappingDefaultsTest {
         @WithParentName
         @WithDefault("foo,bar")
         Map<String, List<String>> map();
+    }
+
+    @Test
+    void groupParentDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(S3BuildTimeConfig.class)
+                .build();
+
+        S3BuildTimeConfig mapping = config.getConfigMapping(S3BuildTimeConfig.class);
+        assertEquals(URL, mapping.syncClient().type());
+        assertEquals(NETTY, mapping.asyncClient().type());
+        assertIterableEquals(Set.of("default"), mapping.devservices().buckets());
+        assertFalse(mapping.devservices().shared());
+        assertEquals("localstack", mapping.devservices().serviceName());
+    }
+
+    @ConfigMapping(prefix = "quarkus.s3")
+    public interface S3BuildTimeConfig extends HasSdkBuildTimeConfig {
+        SyncHttpClientBuildTimeConfig syncClient();
+
+        AsyncHttpClientBuildTimeConfig asyncClient();
+
+        S3DevServicesBuildTimeConfig devservices();
+
+        interface SyncHttpClientBuildTimeConfig {
+            @WithDefault(value = "url")
+            SyncClientType type();
+
+            enum SyncClientType {
+                URL,
+                APACHE
+            }
+        }
+
+        interface AsyncHttpClientBuildTimeConfig {
+            @WithDefault(value = "netty")
+            AsyncClientType type();
+
+            enum AsyncClientType {
+                NETTY,
+                AWS_CRT
+            }
+        }
+
+        interface S3DevServicesBuildTimeConfig extends DevServicesBuildTimeConfig {
+            @WithDefault(value = "default")
+            Set<String> buckets();
+        }
+    }
+
+    public interface HasSdkBuildTimeConfig {
+        @WithParentName
+        SdkBuildTimeConfig sdk();
+    }
+
+    public interface SdkBuildTimeConfig {
+        Optional<List<String>> interceptors();
+    }
+
+    public interface DevServicesBuildTimeConfig {
+        Optional<Boolean> enabled();
+
+        @WithDefault(value = "false")
+        boolean shared();
+
+        @WithDefault(value = "localstack")
+        String serviceName();
+
+        Map<String, String> containerProperties();
     }
 }
