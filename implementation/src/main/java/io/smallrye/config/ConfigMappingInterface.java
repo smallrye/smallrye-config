@@ -40,7 +40,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final String className;
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
-    private final Map<String, Property> propertiesByName;
     private final ToStringMethod toStringMethod;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
@@ -50,12 +49,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         this.superTypes = superTypes;
 
         List<Property> filteredProperties = new ArrayList<>();
-        Map<String, Property> propertiesByName = new HashMap<>();
         ToStringMethod toStringMethod = null;
         for (Property property : properties) {
             if (!property.isToStringMethod()) {
                 filteredProperties.add(property);
-                propertiesByName.put(property.getMethod().getName(), property);
             } else {
                 toStringMethod = (ToStringMethod) property;
             }
@@ -65,7 +62,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         this.properties = filteredProperties.toArray(new Property[0]);
-        this.propertiesByName = propertiesByName;
         this.toStringMethod = toStringMethod;
     }
 
@@ -89,64 +85,29 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return interfaceType;
     }
 
-    /**
-     * Get the number of supertypes which define configuration properties. Implemented interfaces which do not
-     * define any configuration properties and whose supertypes in turn do not define any configuration properties
-     * are not counted.
-     *
-     * @return the number of supertypes
-     */
-    int getSuperTypeCount() {
-        return superTypes.length;
-    }
-
     public ConfigMappingInterface[] getSuperTypes() {
         return superTypes;
-    }
-
-    /**
-     * Get the supertype at the given index, which must be greater than or equal to zero and less than the value returned
-     * by {@link #getSuperTypeCount()}.
-     *
-     * @param index the index
-     * @return the supertype definition
-     * @throws IndexOutOfBoundsException if {@code index} is invalid
-     */
-    ConfigMappingInterface getSuperType(int index) throws IndexOutOfBoundsException {
-        if (index < 0 || index >= superTypes.length)
-            throw new IndexOutOfBoundsException();
-        return superTypes[index];
     }
 
     public Property[] getProperties() {
         return properties;
     }
 
-    /**
-     * Get the number of properties defined on this type (excluding supertypes).
-     *
-     * @return the number of properties
-     */
-    int getPropertyCount() {
-        return properties.length;
-    }
-
-    /**
-     * Get the property definition at the given index, which must be greater than or equal to zero and less than the
-     * value returned by {@link #getPropertyCount()}.
-     *
-     * @param index the index
-     * @return the property definition
-     * @throws IndexOutOfBoundsException if {@code index} is invalid
-     */
-    Property getProperty(int index) throws IndexOutOfBoundsException {
-        if (index < 0 || index >= properties.length)
-            throw new IndexOutOfBoundsException();
-        return properties[index];
-    }
-
-    Property getProperty(final String name) {
-        return propertiesByName.get(name);
+    public Property[] getProperties(boolean includeSuper) {
+        if (includeSuper) {
+            Map<String, Property> properties = new HashMap<>();
+            for (ConfigMappingInterface superType : superTypes) {
+                for (Property property : superType.getProperties()) {
+                    properties.put(property.getMethod().getName(), property);
+                }
+            }
+            for (Property property : getProperties()) {
+                properties.put(property.getMethod().getName(), property);
+            }
+            return properties.values().toArray(new Property[0]);
+        } else {
+            return getProperties();
+        }
     }
 
     public boolean hasNamingStrategy() {

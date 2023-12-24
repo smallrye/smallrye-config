@@ -48,9 +48,6 @@ public final class ConfigMappings implements Serializable {
             }
         };
         ConfigMappingInterface configMapping = ConfigMappingLoader.getConfigMapping(configClass.getKlass());
-        for (ConfigMappingInterface superType : configMapping.getSuperTypes()) {
-            getProperties(new GroupProperty(null, null, superType), configMapping.getNamingStrategy(), path, properties);
-        }
         getProperties(new GroupProperty(null, null, configMapping), configMapping.getNamingStrategy(), path, properties);
         return properties;
     }
@@ -73,30 +70,7 @@ public final class ConfigMappings implements Serializable {
     }
 
     public static Map<String, String> getDefaults(final ConfigClassWithPrefix configClass) {
-        Function<String, String> path = new Function<>() {
-            @Override
-            public String apply(final String path) {
-                return configClass.getPrefix().isEmpty() && !path.isEmpty() ? path.substring(1)
-                        : configClass.getPrefix() + path;
-            }
-        };
-        ConfigMappingInterface configMapping = ConfigMappingLoader.getConfigMapping(configClass.getKlass());
         Map<String, String> defaults = new HashMap<>();
-
-        for (ConfigMappingInterface superType : configMapping.getSuperTypes()) {
-            Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
-            getProperties(new GroupProperty(null, null, superType), configMapping.getNamingStrategy(), path, properties);
-            for (Map.Entry<Class<?>, Map<String, Map<String, Property>>> mappingEntry : properties.entrySet()) {
-                for (Map.Entry<String, Map<String, Property>> prefixEntry : mappingEntry.getValue().entrySet()) {
-                    for (Map.Entry<String, Property> propertyEntry : prefixEntry.getValue().entrySet()) {
-                        if (propertyEntry.getValue().hasDefaultValue()) {
-                            defaults.put(propertyEntry.getKey(), propertyEntry.getValue().getDefaultValue());
-                        }
-                    }
-                }
-            }
-        }
-
         Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configClass);
         for (Map.Entry<String, Property> entry : properties.get(configClass.getKlass()).get(configClass.getPrefix())
                 .entrySet()) {
@@ -154,7 +128,7 @@ public final class ConfigMappings implements Serializable {
             final Map<Class<?>, Map<String, Map<String, Property>>> properties,
             final Map<String, Property> groupProperties) {
 
-        for (Property property : groupProperty.getGroupType().getProperties()) {
+        for (Property property : groupProperty.getGroupType().getProperties(true)) {
             getProperty(property, namingStrategy, path, properties, groupProperties);
         }
     }
