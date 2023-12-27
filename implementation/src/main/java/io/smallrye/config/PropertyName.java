@@ -21,6 +21,7 @@ public class PropertyName {
         return equals(this.name, that.name) || equals(that.name, this.name);
     }
 
+    @SuppressWarnings("squid:S4973")
     static boolean equals(final String name, final String other) {
         //noinspection StringEquality
         if (name == other) {
