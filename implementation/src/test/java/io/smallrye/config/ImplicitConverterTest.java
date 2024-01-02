@@ -14,7 +14,6 @@ import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.time.LocalDate;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -23,8 +22,9 @@ import io.smallrye.config.ImplicitConverters.HyphenateEnumConverter;
 class ImplicitConverterTest {
     @Test
     void implicitURLConverter() {
-        Config config = buildConfig(
-                "my.url", "https://github.com/smallrye/smallrye-config/");
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("my.url", "https://github.com/smallrye/smallrye-config/"))
+                .build();
         URL url = config.getValue("my.url", URL.class);
         assertNotNull(url);
         assertEquals("https", url.getProtocol());
@@ -34,8 +34,9 @@ class ImplicitConverterTest {
 
     @Test
     void implicitLocalDateConverter() {
-        Config config = buildConfig(
-                "my.date", "2019-04-01");
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("my.date", "2019-04-01"))
+                .build();
         LocalDate date = config.getValue("my.date", LocalDate.class);
         assertNotNull(date);
         assertEquals(2019, date.getYear());
@@ -105,7 +106,7 @@ class ImplicitConverterTest {
     }
 
     @Test
-    public void testIllegalEnumConfigUtilConversion() {
+    public void illegalEnumConfigUtilConversion() {
         HyphenateEnumConverter<MyEnum> hyphenateEnumConverter = new HyphenateEnumConverter<>(MyEnum.class);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> hyphenateEnumConverter.convert("READUNCOMMITTED"));
@@ -113,13 +114,6 @@ class ImplicitConverterTest {
                 "SRCFG00049: Cannot convert READUNCOMMITTED to enum class io.smallrye.config.ImplicitConverterTest$MyEnum, " +
                         "allowed values: trend-breaker,making-life-difficult,discard,sigusr1,read-uncommitted,a-b",
                 exception.getMessage());
-    }
-
-    private static Config buildConfig(String... keyValues) {
-        return new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config(keyValues))
-                .build();
     }
 
     public enum KeyEncryptionAlgorithm {
@@ -182,5 +176,25 @@ class ImplicitConverterTest {
         assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("PBES2_HS512_A256KW"));
         assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("PBES2-HS512-A256KW"));
         assertEquals(KeyEncryptionAlgorithm.PBES2_HS512_A256KW, converter.convert("pbes2-hs512-a256kw"));
+    }
+
+    enum HTTPConduit {
+        QuarkusCXFDefault,
+        CXFDefault,
+        HttpClientHTTPConduitFactory,
+        URLConnectionHTTPConduitFactory
+    }
+
+    @Test
+    void convertHttpConduit() {
+        HyphenateEnumConverter<HTTPConduit> converter = new HyphenateEnumConverter<>(HTTPConduit.class);
+        assertEquals(HTTPConduit.QuarkusCXFDefault, converter.convert("QuarkusCXFDefault"));
+        assertEquals(HTTPConduit.QuarkusCXFDefault, converter.convert("quarkus-cxf-default"));
+        assertEquals(HTTPConduit.CXFDefault, converter.convert("CXFDefault"));
+        assertEquals(HTTPConduit.CXFDefault, converter.convert("cxf-default"));
+        assertEquals(HTTPConduit.HttpClientHTTPConduitFactory, converter.convert("HttpClientHTTPConduitFactory"));
+        assertEquals(HTTPConduit.HttpClientHTTPConduitFactory, converter.convert("http-client-http-conduit-factory"));
+        assertEquals(HTTPConduit.URLConnectionHTTPConduitFactory, converter.convert("URLConnectionHTTPConduitFactory"));
+        assertEquals(HTTPConduit.URLConnectionHTTPConduitFactory, converter.convert("url-connection-http-conduit-factory"));
     }
 }
