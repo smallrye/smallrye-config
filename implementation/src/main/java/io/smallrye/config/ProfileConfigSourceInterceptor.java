@@ -83,7 +83,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public String normalizeName(final String name) {
-        if (name.length() > 0 && name.charAt(0) == '%') {
+        if (!name.isEmpty() && name.charAt(0) == '%') {
             int profilesEnd = name.indexOf('.', 1);
             int multipleSplit = -1;
             for (int i = 1; i < profilesEnd; i++) {
