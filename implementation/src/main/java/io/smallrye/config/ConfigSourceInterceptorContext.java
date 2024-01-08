@@ -11,16 +11,25 @@ public interface ConfigSourceInterceptorContext extends Serializable {
     /**
      * Proceeds to the next interceptor in the chain.
      *
-     * @param name the configuration name to lookup. Can be the original key.
+     * @param name the configuration name to look up (can be the original key)
      * @return a {@link ConfigValue} with information about the name, value, config source and ordinal, or {@code null}
      *         if the value isn't present.
      */
     ConfigValue proceed(String name);
 
     /**
-     * Proceeds to the next interceptor in the chain.
+     * Re-calls the first interceptor in the chain.
+     * If the original name is given, then it is possible to cause a recursive loop, so care must be taken.
+     * This method is intended to be used by relocating and other compatibility-related interceptors.
      *
-     * @return an Iterator of Strings with configuration names.
+     * @param name the configuration name to look up (can be the original key)
+     * @return a {@link ConfigValue} with information about the name, value, config source and ordinal, or {@code null}
+     *         if the value isn't present.
+     */
+    ConfigValue restart(String name);
+
+    /**
+     * {@return an iterator over the configuration names known to this interceptor.
      */
     Iterator<String> iterateNames();
 

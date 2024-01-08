@@ -31,6 +31,16 @@ public class SmallRyeConfigSourceInterceptors implements ConfigSourceInterceptor
                 return interceptors.get(position++).getValue(this, name);
             }
 
+            public ConfigValue restart(final String name) {
+                int old = position;
+                position = 0;
+                try {
+                    return proceed(name);
+                } finally {
+                    position = old;
+                }
+            }
+
             @Override
             public Iterator<String> iterateNames() {
                 return null;
@@ -41,8 +51,11 @@ public class SmallRyeConfigSourceInterceptors implements ConfigSourceInterceptor
                 return null;
             }
         };
-
         return context.proceed(name);
+    }
+
+    public ConfigValue restart(final String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -154,6 +154,10 @@ class RelocateConfigSourceInterceptorTest {
                 return null;
             }
 
+            public ConfigValue restart(final String name) {
+                return null;
+            }
+
             @Override
             public Iterator<String> iterateNames() {
                 return null;
@@ -194,6 +198,10 @@ class RelocateConfigSourceInterceptorTest {
         Iterator<ConfigValue> configValues = fallbackInterceptor.iterateValues(new ConfigSourceInterceptorContext() {
             @Override
             public ConfigValue proceed(final String name) {
+                return null;
+            }
+
+            public ConfigValue restart(final String name) {
                 return null;
             }
 
