@@ -84,9 +84,48 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     public String normalizeName(final String name) {
         if (name.length() > 0 && name.charAt(0) == '%') {
-            for (String profile : profiles) {
-                if (name.startsWith(profile + ".", 1)) {
-                    return name.substring(profile.length() + 2);
+            int profilesEnd = name.indexOf('.', 1);
+            int multipleSplit = -1;
+            for (int i = 1; i < profilesEnd; i++) {
+                if (name.charAt(i) == ',') {
+                    multipleSplit = i;
+                    break;
+                }
+            }
+
+            if (multipleSplit == -1) {
+                // Single profile property name (%profile.foo.bar)
+                for (String profile : profiles) {
+                    if (profilesEnd == profile.length() + 1 && name.regionMatches(1, profile, 0, profile.length())) {
+                        return name.substring(profilesEnd + 1);
+                    }
+                }
+            } else {
+                // Multiple profile property name (%profile,another.foo.bar)
+                int nextSplit = multipleSplit;
+                int toOffset = 1;
+                while (nextSplit != -1) {
+                    for (String profile : profiles) {
+                        char expectedEnd = name.charAt(toOffset + profile.length());
+                        if ((expectedEnd == '.' || expectedEnd == ',') &&
+                                name.regionMatches(toOffset, profile, 0, profile.length())) {
+                            return name.substring(profilesEnd + 1);
+                        }
+                    }
+
+                    toOffset = nextSplit + 1;
+                    nextSplit = -1;
+
+                    for (int i = toOffset; i < profilesEnd; i++) {
+                        if (name.charAt(i) == ',') {
+                            nextSplit = i;
+                            break;
+                        }
+                    }
+
+                    if (toOffset < profilesEnd && nextSplit == -1) {
+                        nextSplit = profilesEnd;
+                    }
                 }
             }
         }

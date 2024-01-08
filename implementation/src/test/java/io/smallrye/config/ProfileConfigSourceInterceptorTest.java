@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
 class ProfileConfigSourceInterceptorTest {
     @Test
     void profile() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
+        SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
 
@@ -41,28 +42,28 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void profileOnly() {
-        final Config config = buildConfig("%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
+        SmallRyeConfig config = buildConfig("%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getValue("my.prop", String.class));
     }
 
     @Test
     void fallback() {
-        final Config config = buildConfig("my.prop", "1", SMALLRYE_CONFIG_PROFILE, "prof");
+        SmallRyeConfig config = buildConfig("my.prop", "1", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("1", config.getValue("my.prop", String.class));
     }
 
     @Test
     void expressions() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_CONFIG_PROFILE, "prof");
+        SmallRyeConfig config = buildConfig("my.prop", "1", "%prof.my.prop", "${my.prop}", SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertThrows(IllegalArgumentException.class, () -> config.getValue("my.prop", String.class));
     }
 
     @Test
     void profileExpressions() {
-        final Config config = buildConfig("my.prop", "1",
+        SmallRyeConfig config = buildConfig("my.prop", "1",
                 "%prof.my.prop", "${%prof.my.prop.profile}",
                 "%prof.my.prop.profile", "2",
                 SMALLRYE_CONFIG_PROFILE, "prof");
@@ -72,7 +73,7 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void cannotExpand() {
-        final Config config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(config("my.prop", "${another.prop}", SMALLRYE_CONFIG_PROFILE, "prof", "config_ordinal", "1000"))
                 .withSources(config("my.prop", "${another.prop}", "%prof.my.prop", "2", SMALLRYE_CONFIG_PROFILE, "prof"))
@@ -83,8 +84,8 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void customConfigProfile() {
-        final String[] configs = { "my.prop", "1", "%prof.my.prop", "2", "config.profile", "prof" };
-        final Config config = new SmallRyeConfigBuilder()
+        String[] configs = { "my.prop", "1", "%prof.my.prop", "2", "config.profile", "prof" };
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDiscoveredInterceptors()
                 .withSources(config(configs))
@@ -95,8 +96,8 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void noConfigProfile() {
-        final String[] configs = { "my.prop", "1", "%prof.my.prop", "2" };
-        final Config config = new SmallRyeConfigBuilder()
+        String[] configs = { "my.prop", "1", "%prof.my.prop", "2" };
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(config(configs))
                 .build();
@@ -106,7 +107,7 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void priorityProfile() {
-        final Config config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withProfile("prof")
                 .withSources(
@@ -130,7 +131,7 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void priorityOverrideProfile() {
-        final Config config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withSources(
                         new MapBackedConfigSource("higher", new HashMap<String, String>() {
@@ -153,7 +154,7 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void priorityProfileOverOriginal() {
-        final Config config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withProfile("prof")
                 .withSources(
@@ -178,30 +179,36 @@ class ProfileConfigSourceInterceptorTest {
 
     @Test
     void propertyNames() {
-        final Config config = buildConfig("my.prop", "1", "%prof.my.prop", "2", "%prof.prof.only", "1",
+        SmallRyeConfig config = buildConfig(
+                "my.prop", "1",
+                "%prof.my.prop", "2",
+                "%prof.prof.only", "1",
+                "%inactive.prop", "1",
                 SMALLRYE_CONFIG_PROFILE, "prof");
 
         assertEquals("2", config.getConfigValue("my.prop").getValue());
         assertEquals("1", config.getConfigValue("prof.only").getValue());
 
-        final List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertFalse(properties.contains("%prof.my.prop"));
         assertTrue(properties.contains("my.prop"));
         assertTrue(properties.contains("prof.only"));
+        // Inactive profile properties are included. We may need to revise this
+        assertTrue(properties.contains("%inactive.prop"));
     }
 
     @Test
     void excludePropertiesFromInactiveProfiles() {
-        final Config config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
+        SmallRyeConfig config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
 
-        final List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertTrue(properties.contains("my.prop"));
         assertFalse(properties.contains("another"));
     }
 
     @Test
     void profileName() {
-        final SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("my.prop", "1", "%prof.my.prop", "2"))
                 .withProfile("prof")
                 .build();
@@ -371,7 +378,7 @@ class ProfileConfigSourceInterceptorTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
                     @Override
-                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                    public ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
                         Map<String, String> relocations = new HashMap<>();
                         relocations.put(SMALLRYE_CONFIG_PROFILE_PARENT, "quarkus.config.profile.parent");
 
@@ -482,7 +489,8 @@ class ProfileConfigSourceInterceptorTest {
                 .withSources(config("%prod,dev.my.prop", "value", "%prod,dev.my.override", "value", "config_ordinal", "100"))
                 .withSources(config("%dev.my.prop", "minimal", "config_ordinal", "0"))
                 .withSources(config("%prod,dev.another.prop", "multi", "%prod.another.prop", "single"))
-                .withSources(config("%common,prod,dev.triple.prop", "triple", "%common,prod.triple.prop", "double"));
+                .withSources(config("%common,prod,dev.triple.prop", "triple", "%common,prod.triple.prop", "double"))
+                .withSources(config("%commonone,prodone,devone.prop.start.with", "1"));
 
         SmallRyeConfig prod = builder.withProfile("prod").build();
         assertEquals("value", prod.getRawValue("my.prop"));
@@ -491,6 +499,13 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("override", prod.getRawValue("%prod.my.override"));
         assertEquals("single", prod.getRawValue("another.prop"));
         assertEquals("double", prod.getRawValue("triple.prop"));
+        Set<String> prodNames = StreamSupport.stream(prod.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(prodNames.contains("my.prop"));
+        assertTrue(prodNames.contains("my.override"));
+        assertTrue(prodNames.contains("another.prop"));
+        assertTrue(prodNames.contains("triple.prop"));
+        assertFalse(prodNames.contains("prop.start.with"));
+        builder.getProfiles().clear();
 
         SmallRyeConfig dev = builder.withProfile("dev").build();
         assertEquals("value", dev.getRawValue("my.prop"));
@@ -498,9 +513,21 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("value", dev.getRawValue("my.override"));
         assertEquals("value", dev.getRawValue("%dev.my.override"));
         assertEquals("triple", dev.getRawValue("triple.prop"));
+        Set<String> devNames = StreamSupport.stream(dev.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(devNames.contains("my.prop"));
+        assertTrue(devNames.contains("my.override"));
+        assertTrue(devNames.contains("another.prop"));
+        assertTrue(devNames.contains("triple.prop"));
+        assertFalse(devNames.contains("prop.start.with"));
+        builder.getProfiles().clear();
 
         SmallRyeConfig common = builder.withProfile("common").build();
         assertEquals("double", common.getRawValue("triple.prop"));
+        Set<String> commonNames = StreamSupport.stream(common.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(commonNames.contains("triple.prop"));
+        assertFalse(commonNames.contains("my.prop"));
+        assertFalse(commonNames.contains("prop.start.with"));
+        builder.getProfiles().clear();
     }
 
     @Test

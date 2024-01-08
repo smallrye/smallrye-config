@@ -622,6 +622,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
+    public List<String> getProfiles() {
+        return profiles;
+    }
+
     public ConfigValidator getValidator() {
         if (isAddDiscoveredValidator()) {
             this.validator = discoverValidator();
