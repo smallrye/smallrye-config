@@ -29,7 +29,7 @@ public interface ConfigSourceInterceptorContext extends Serializable {
     ConfigValue restart(String name);
 
     /**
-     * {@return an iterator over the configuration names known to this interceptor.
+     * @return an iterator over the configuration names known to this interceptor.
      */
     Iterator<String> iterateNames();
 
