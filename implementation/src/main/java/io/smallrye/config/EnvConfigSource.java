@@ -265,11 +265,11 @@ public class EnvConfigSource extends AbstractConfigSource {
                 return true;
             }
 
-            if (name.length() == 0 && other.length() == 0) {
+            if (name.isEmpty() && other.isEmpty()) {
                 return true;
             }
 
-            if (name.length() == 0 || other.length() == 0) {
+            if (name.isEmpty() || other.isEmpty()) {
                 return false;
             }
 

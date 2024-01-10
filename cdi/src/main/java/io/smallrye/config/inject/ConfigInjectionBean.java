@@ -96,7 +96,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
             }
         } else {
             Class<?> annotatedTypeClass = (Class<?>) annotated.getBaseType();
-            if (defaultValue.length() == 0) {
+            if (defaultValue.isEmpty()) {
                 return (T) getConfig().getValue(key, annotatedTypeClass);
             } else {
                 Optional<T> optionalValue = (Optional<T>) getConfig().getOptionalValue(key, annotatedTypeClass);
