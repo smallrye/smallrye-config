@@ -2538,4 +2538,35 @@ class ConfigMappingInterfaceTest {
             String name();
         }
     }
+
+    @Test
+    void ignorePathsRecursive() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMappingIgnore("ignore.**")
+                .withMappingIgnore("ignore.nested.nested.ignore")
+                .withSources(config(
+                        "ignore.ignore", "ignore",
+                        "ignore.nested.something", "ignore",
+                        "ignore.nested.nested.ignore", "ignore"))
+                .withMapping(IgnorePathsRecursive.class)
+                .build();
+
+        assertNotNull(config.getConfigMapping(IgnorePathsRecursive.class));
+
+        config = new SmallRyeConfigBuilder()
+                .withMappingIgnore("ignore.nested.nested.ignore")
+                .withMappingIgnore("ignore.**")
+                .withSources(config(
+                        "ignore.ignore", "ignore",
+                        "ignore.nested.something", "ignore",
+                        "ignore.nested.nested.ignore", "ignore"))
+                .withMapping(IgnorePathsRecursive.class)
+                .build();
+
+        assertNotNull(config.getConfigMapping(IgnorePathsRecursive.class));
+    }
+
+    @ConfigMapping(prefix = "ignore")
+    interface IgnorePathsRecursive {
+    }
 }
