@@ -304,7 +304,7 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
-                        Map<String, String> mapKeys = getMapKeys(path.length() > 0 && path.charAt(path.length() - 1) == '.'
+                        Map<String, String> mapKeys = getMapKeys(!path.isEmpty() && path.charAt(path.length() - 1) == '.'
                                 ? path.substring(0, path.length() - 1)
                                 : path);
                         Map<K, V> map = defaultValue != null ? new MapWithDefault<>(defaultValue.get())
@@ -617,10 +617,10 @@ public final class ConfigMappingContext {
             Map<String, String> mapKeys = new HashMap<>();
             for (String propertyName : config.getPropertyNames()) {
                 if (propertyName.length() > name.length() + 1
-                        && (name.length() == 0 || propertyName.charAt(name.length()) == '.')
+                        && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
                         && propertyName.startsWith(name)) {
                     // Start at the map root name
-                    NameIterator key = name.length() > 0 ? new NameIterator(unindexed(propertyName), name.length())
+                    NameIterator key = !name.isEmpty() ? new NameIterator(unindexed(propertyName), name.length())
                             : new NameIterator(unindexed(propertyName));
                     // Move to the next key
                     key.next();

@@ -266,9 +266,9 @@ public class SmallRyeConfig implements Config, Serializable {
         Map<String, String> mapKeys = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
             if (propertyName.length() > name.length() + 1
-                    && (name.length() == 0 || propertyName.charAt(name.length()) == '.')
+                    && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
                     && propertyName.startsWith(name)) {
-                String key = unquoted(unindexed(propertyName), name.length() == 0 ? 0 : name.length() + 1);
+                String key = unquoted(unindexed(propertyName), name.isEmpty() ? 0 : name.length() + 1);
                 mapKeys.put(key, unindexed(propertyName));
             }
         }
@@ -354,7 +354,7 @@ public class SmallRyeConfig implements Config, Serializable {
         if (converted == null) {
             if (configValue.getValue() == null) {
                 throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled())); // 2
-            } else if (configValue.getValue().length() == 0) {
+            } else if (configValue.getValue().isEmpty()) {
                 throw ConfigMessages.msg.propertyEmptyString(configValue.getNameProfiled(), converter.getClass().getTypeName()); // 3
             } else {
                 throw ConfigMessages.msg.converterReturnedNull(configValue.getNameProfiled(), configValue.getValue(),
