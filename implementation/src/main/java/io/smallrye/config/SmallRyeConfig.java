@@ -80,7 +80,7 @@ public class SmallRyeConfig implements Config, Serializable {
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
         // This needs to be executed before everything else to make sure that defaults from mappings are available to all sources
         ConfigMappingProvider mappingProvider = builder.getMappingsBuilder().build();
-        this.configSources = new ConfigSources(builder);
+        this.configSources = new ConfigSources(builder, this);
         this.converters = buildConverters(builder);
         this.configValidator = builder.getValidator();
         this.mappings = new ConcurrentHashMap<>(mappingProvider.mapConfiguration(this));
@@ -672,6 +672,10 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.defaultValues;
     }
 
+    ConfigSourceInterceptorContext interceptorChain() {
+        return configSources.interceptorChain;
+    }
+
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
@@ -686,7 +690,7 @@ public class SmallRyeConfig implements Config, Serializable {
          * that this constructor must be used when the Config object is being initialized, because interceptors also
          * require initialization.
          */
-        ConfigSources(final SmallRyeConfigBuilder builder) {
+        ConfigSources(final SmallRyeConfigBuilder builder, final SmallRyeConfig config) {
             // Add all sources except for ConfigurableConfigSource types. These are initialized later
             List<ConfigSource> sources = buildSources(builder);
             // Add the default values sources separately, so we can keep a reference to it and add mappings defaults
@@ -698,27 +702,29 @@ public class SmallRyeConfig implements Config, Serializable {
             List<InterceptorWithPriority> interceptorWithPriorities = buildInterceptors(builder);
 
             // Create the initial chain with initial sources and all interceptors
-            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
-            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(mapSources(sources)), current);
+            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(mapSources(sources)), current,
+                    config);
             for (InterceptorWithPriority interceptorWithPriority : interceptorWithPriorities) {
                 ConfigSourceInterceptor interceptor = interceptorWithPriority.getInterceptor(current);
                 interceptors.add(interceptor);
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
+                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
             }
 
             // Init all late sources
             List<String> profiles = getProfiles(interceptors);
             List<ConfigSourceWithPriority> sourcesWithPriorities = mapLateSources(sources, interceptors, current, profiles,
-                    builder);
+                    builder, config);
             List<ConfigSource> configSources = getSources(sourcesWithPriorities);
 
             // Rebuild the chain with the late sources and new instances of the interceptors
             // The new instance will ensure that we get rid of references to factories and other stuff and keep only
             // the resolved final source or interceptor to use.
-            current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
-            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current);
+            current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities), current,
+                    config);
             for (ConfigSourceInterceptor interceptor : interceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current);
+                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
             }
 
             this.profiles = profiles;
@@ -785,7 +791,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 final List<ConfigSourceInterceptor> interceptors,
                 final ConfigSourceInterceptorContext current,
                 final List<String> profiles,
-                final SmallRyeConfigBuilder builder) {
+                final SmallRyeConfigBuilder builder, final SmallRyeConfig config) {
 
             ConfigSourceWithPriority.resetLoadPriority();
             List<ConfigSourceWithPriority> currentSources = new ArrayList<>();
@@ -806,10 +812,10 @@ public class SmallRyeConfig implements Config, Serializable {
             Collections.reverse(currentSources);
 
             // Rebuild the chain with the profiles sources, so profiles values are also available in factories
-            ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null);
-            context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources), context);
+            ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources), context, config);
             for (ConfigSourceInterceptor interceptor : interceptors) {
-                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context);
+                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, config);
             }
 
             // Init remaining sources, coming from SmallRyeConfig
