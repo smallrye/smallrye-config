@@ -95,19 +95,25 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     public Property[] getProperties(boolean includeSuper) {
         if (includeSuper) {
-            Map<String, Property> properties = new HashMap<>();
-            for (ConfigMappingInterface superType : superTypes) {
-                for (Property property : superType.getProperties()) {
-                    properties.put(property.getMethod().getName(), property);
-                }
-            }
-            for (Property property : getProperties()) {
-                properties.put(property.getMethod().getName(), property);
+            Map<String, Property> properties = getSuperProperties(this);
+            for (Property property : this.properties) {
+                properties.put(property.getMemberName(), property);
             }
             return properties.values().toArray(new Property[0]);
         } else {
             return getProperties();
         }
+    }
+
+    private static Map<String, Property> getSuperProperties(ConfigMappingInterface type) {
+        Map<String, Property> properties = new HashMap<>();
+        for (ConfigMappingInterface superType : type.getSuperTypes()) {
+            properties.putAll(getSuperProperties(superType));
+            for (Property property : superType.getProperties()) {
+                properties.put(property.getMemberName(), property);
+            }
+        }
+        return properties;
     }
 
     public boolean hasNamingStrategy() {
