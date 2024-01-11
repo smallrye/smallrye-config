@@ -673,4 +673,56 @@ public class ConfigMappingDefaultsTest {
 
         Map<String, String> containerProperties();
     }
+
+    @Test
+    void multipleLevelDefaults() {
+        Map<String, String> defaults = getDefaults(configClassWithPrefix(GrandChild.class));
+        assertEquals("parent", defaults.get("parent"));
+        assertEquals("child", defaults.get("child"));
+        assertEquals("grand-child", defaults.get("grand-child"));
+        assertEquals("child", defaults.get("override-by-child"));
+        assertEquals("grand-child", defaults.get("override-by-grand-child"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(GrandChild.class)
+                .build();
+
+        GrandChild mapping = config.getConfigMapping(GrandChild.class);
+        assertEquals("parent", mapping.parent());
+        assertEquals("child", mapping.child());
+        assertEquals("grand-child", mapping.grandChild());
+        assertEquals("child", mapping.overrideByChild());
+        assertEquals("grand-child", mapping.overrideByGrandChild());
+    }
+
+    interface Parent {
+        @WithDefault("parent")
+        String parent();
+
+        @WithDefault("parent")
+        String overrideByChild();
+
+        @WithDefault("parent")
+        String overrideByGrandChild();
+    }
+
+    interface Child extends Parent {
+        @WithDefault("child")
+        String child();
+
+        @WithDefault("child")
+        String overrideByChild();
+
+        @WithDefault("child")
+        String overrideByGrandChild();
+    }
+
+    @ConfigMapping
+    interface GrandChild extends Child {
+        @WithDefault("grand-child")
+        String grandChild();
+
+        @WithDefault("grand-child")
+        String overrideByGrandChild();
+    }
 }
