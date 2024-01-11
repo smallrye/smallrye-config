@@ -615,10 +615,21 @@ public class SmallRyeConfig implements Config, Serializable {
         return value != null ? requireConverter(asType).convert(value) : null;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
-        return optionalConverters.computeIfAbsent(asType,
-                clazz -> newOptionalConverter(requireConverter((Class) clazz)));
+        Converter<Optional<T>> converter = recast(optionalConverters.get(asType));
+        if (converter == null) {
+            converter = newOptionalConverter(requireConverter(asType));
+            Converter<Optional<T>> appearing = recast(optionalConverters.putIfAbsent(asType, recast(converter)));
+            if (appearing != null) {
+                converter = appearing;
+            }
+        }
+        return converter;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T recast(Object obj) {
+        return (T) obj;
     }
 
     @Deprecated // binary-compatibility bridge method for Quarkus
