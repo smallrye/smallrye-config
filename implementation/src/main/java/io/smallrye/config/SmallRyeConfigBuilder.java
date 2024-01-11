@@ -186,7 +186,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    List<ConfigSource> getDefaultSources() {
+    protected List<ConfigSource> getDefaultSources() {
         List<ConfigSource> defaultSources = new ArrayList<>();
 
         defaultSources.add(new EnvConfigSource());
