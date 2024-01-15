@@ -209,7 +209,6 @@ public class StringUtil {
                                 break;
                             } else { // not an index
                                 result[i] = '.';
-                                i = j;
                                 break;
                             }
                         }
