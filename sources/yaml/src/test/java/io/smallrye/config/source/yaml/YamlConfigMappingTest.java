@@ -26,10 +26,233 @@ import io.smallrye.config.WithUnnamedKey;
 
 class YamlConfigMappingTest {
     @Test
-    void yamlConfigMapping() throws Exception {
+    void yamlConfigMapping() {
+        String yaml = "proxies:\n" +
+                "  - type: mssql\n" +
+                "    name: first\n" +
+                "    input:\n" +
+                "      pool:\n" +
+                "        max_pool_size: 100\n" +
+                "        expires_in_seconds: 60\n" +
+                "      mssql:\n" +
+                "        server: 192.168.1.2\n" +
+                "        port: 1434\n" +
+                "        user: 'test'\n" +
+                "        password: 'test'\n" +
+                "    read:\n" +
+                "      pool:\n" +
+                "        max_pool_size: 100\n" +
+                "        expires_in_seconds: 60\n" +
+                "      regex: '(?i)^\\s*select.*'\n" +
+                "      mssql:\n" +
+                "        server: 127.0.0.1\n" +
+                "        port: 1433\n" +
+                "        user: 'sa'\n" +
+                "        password: 'Test!1234'\n" +
+                "    write:\n" +
+                "      pool:\n" +
+                "        max_pool_size: 100\n" +
+                "        expires_in_seconds: 60\n" +
+                "      mssql:\n" +
+                "        server: 127.0.0.1\n" +
+                "        port: 1433\n" +
+                "        user: 'sa'\n" +
+                "        password: 'Test!1234'\n" +
+                "  - type: mssql\n" +
+                "    name: second\n" +
+                "    input:\n" +
+                "      mssql:\n" +
+                "        server: 192.168.1.2\n" +
+                "        port: 1435\n" +
+                "        user: 'test'\n" +
+                "        password: 'test'\n" +
+                "      pool:\n" +
+                "        max_pool_size: 0\n" +
+                "        expires_in_seconds: 0\n" +
+                "      encryption:\n" +
+                "        level: 'SUPPORTED'\n" +
+                "        keystore:\n" +
+                "          location: 'my-location'\n" +
+                "    read:\n" +
+                "      regex: '(?i)^\\s*select.*'\n" +
+                "      mssql:\n" +
+                "        server: 127.0.0.1\n" +
+                "        port: 1433\n" +
+                "        user: 'sa'\n" +
+                "        password: 'Test!1234'\n" +
+                "    write:\n" +
+                "      mssql:\n" +
+                "        server: 127.0.0.1\n" +
+                "        port: 1433\n" +
+                "        user: 'sa'\n" +
+                "        password: 'Test!1234'\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Proxies.class, "proxies")
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-mapping.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .build();
+
+        Proxies proxies = config.getConfigMapping(Proxies.class);
+
+        assertFalse(proxies.allProxies().isEmpty());
+        assertEquals(SQLProxyConfig.DatabaseType.mssql, proxies.allProxies().get(0).type());
+        assertEquals("mssql", proxies.allProxies().get(0).typeAsString());
+        assertEquals("first", proxies.allProxies().get(0).name());
+        assertEquals(-1, proxies.allProxies().get(0).maxAsyncThreads());
+        assertEquals(-1, proxies.allProxies().get(0).maxQueuedThreads());
+
+        assertTrue(proxies.allProxies().get(0).input().pool().isPresent());
+        assertEquals(60, proxies.allProxies().get(0).input().pool().get().expiresInSeconds());
+        assertTrue(proxies.allProxies().get(0).input().pool().get().maxPoolSize().isPresent());
+        assertEquals(100, proxies.allProxies().get(0).input().pool().get().maxPoolSize().getAsInt());
+        assertTrue(proxies.allProxies().get(0).input().mssql().isPresent());
+        assertEquals("192.168.1.2", proxies.allProxies().get(0).input().mssql().get().server());
+        assertEquals(1434, proxies.allProxies().get(0).input().mssql().get().port());
+        assertEquals("test", proxies.allProxies().get(0).input().mssql().get().user());
+        assertEquals("test", proxies.allProxies().get(0).input().mssql().get().password());
+        assertFalse(proxies.allProxies().get(0).input().mssql().get().hostName().isPresent());
+        assertFalse(proxies.allProxies().get(0).input().mssql().get().database().isPresent());
+        assertFalse(proxies.allProxies().get(0).input().mssql().get().timeout().isPresent());
+        assertFalse(proxies.allProxies().get(0).input().regex().isPresent());
+
+        assertTrue(proxies.allProxies().get(0).read().pool().isPresent());
+        assertEquals(60, proxies.allProxies().get(0).read().pool().get().expiresInSeconds());
+        assertTrue(proxies.allProxies().get(0).read().pool().get().maxPoolSize().isPresent());
+        assertEquals(100, proxies.allProxies().get(0).read().pool().get().maxPoolSize().getAsInt());
+        assertTrue(proxies.allProxies().get(0).read().mssql().isPresent());
+        assertEquals("127.0.0.1", proxies.allProxies().get(0).read().mssql().get().server());
+        assertEquals(1433, proxies.allProxies().get(0).read().mssql().get().port());
+        assertEquals("sa", proxies.allProxies().get(0).read().mssql().get().user());
+        assertEquals("Test!1234", proxies.allProxies().get(0).read().mssql().get().password());
+        assertFalse(proxies.allProxies().get(0).read().mssql().get().hostName().isPresent());
+        assertFalse(proxies.allProxies().get(0).read().mssql().get().database().isPresent());
+        assertFalse(proxies.allProxies().get(0).read().mssql().get().timeout().isPresent());
+        assertTrue(proxies.allProxies().get(0).read().regex().isPresent());
+        assertEquals("(?i)^\\s*select.*", proxies.allProxies().get(0).read().regex().get());
+
+        assertTrue(proxies.allProxies().get(0).write().pool().isPresent());
+        assertEquals(60, proxies.allProxies().get(0).write().pool().get().expiresInSeconds());
+        assertTrue(proxies.allProxies().get(0).write().pool().get().maxPoolSize().isPresent());
+        assertEquals(100, proxies.allProxies().get(0).write().pool().get().maxPoolSize().getAsInt());
+        assertTrue(proxies.allProxies().get(0).write().mssql().isPresent());
+        assertEquals("127.0.0.1", proxies.allProxies().get(0).write().mssql().get().server());
+        assertEquals(1433, proxies.allProxies().get(0).write().mssql().get().port());
+        assertEquals("sa", proxies.allProxies().get(0).write().mssql().get().user());
+        assertEquals("Test!1234", proxies.allProxies().get(0).write().mssql().get().password());
+        assertFalse(proxies.allProxies().get(0).write().mssql().get().hostName().isPresent());
+        assertFalse(proxies.allProxies().get(0).write().mssql().get().database().isPresent());
+        assertFalse(proxies.allProxies().get(0).write().mssql().get().timeout().isPresent());
+        assertFalse(proxies.allProxies().get(0).write().regex().isPresent());
+
+        assertEquals(SQLProxyConfig.DatabaseType.mssql, proxies.allProxies().get(1).type());
+        assertEquals("mssql", proxies.allProxies().get(1).typeAsString());
+        assertEquals("second", proxies.allProxies().get(1).name());
+        assertEquals(-1, proxies.allProxies().get(1).maxAsyncThreads());
+        assertEquals(-1, proxies.allProxies().get(1).maxQueuedThreads());
+
+        assertTrue(proxies.allProxies().get(1).input().pool().isPresent());
+        assertEquals(0, proxies.allProxies().get(1).input().pool().get().expiresInSeconds());
+        assertTrue(proxies.allProxies().get(1).input().pool().get().maxPoolSize().isPresent());
+        assertEquals(0, proxies.allProxies().get(1).input().pool().get().maxPoolSize().getAsInt());
+
+        assertTrue(proxies.allProxies().get(1).input().encryption().isPresent());
+        assertEquals("SUPPORTED", proxies.allProxies().get(1).input().encryption().get().levelAsString());
+        assertEquals("TLS", proxies.allProxies().get(1).input().encryption().get().sslProtocol());
+        assertTrue(proxies.allProxies().get(1).input().encryption().get().keystore().isPresent());
+        assertEquals("my-location", proxies.allProxies().get(1).input().encryption().get().keystore().get().location());
+        assertEquals("PCKS12", proxies.allProxies().get(1).input().encryption().get().keystore().get().format());
+    }
+
+    @Test
+    void jsonConfigMapping() {
+        String json = "{\n" +
+                "  \"proxies\": [\n" +
+                "    {\n" +
+                "      \"type\": \"mssql\",\n" +
+                "      \"name\": \"first\",\n" +
+                "      \"input\": {\n" +
+                "        \"pool\": {\n" +
+                "          \"max_pool_size\": 100,\n" +
+                "          \"expires_in_seconds\": 60\n" +
+                "        },\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"192.168.1.2\",\n" +
+                "          \"port\": 1434,\n" +
+                "          \"user\": \"test\",\n" +
+                "          \"password\": \"test\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"read\": {\n" +
+                "        \"pool\": {\n" +
+                "          \"max_pool_size\": 100,\n" +
+                "          \"expires_in_seconds\": 60\n" +
+                "        },\n" +
+                "        \"regex\": \"(?i)^\\\\s*select.*\",\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"127.0.0.1\",\n" +
+                "          \"port\": 1433,\n" +
+                "          \"user\": \"sa\",\n" +
+                "          \"password\": \"Test!1234\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"write\": {\n" +
+                "        \"pool\": {\n" +
+                "          \"max_pool_size\": 100,\n" +
+                "          \"expires_in_seconds\": 60\n" +
+                "        },\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"127.0.0.1\",\n" +
+                "          \"port\": 1433,\n" +
+                "          \"user\": \"sa\",\n" +
+                "          \"password\": \"Test!1234\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"type\": \"mssql\",\n" +
+                "      \"name\": \"second\",\n" +
+                "      \"input\": {\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"192.168.1.2\",\n" +
+                "          \"port\": 1435,\n" +
+                "          \"user\": \"test\",\n" +
+                "          \"password\": \"test\"\n" +
+                "        },\n" +
+                "        \"pool\": {\n" +
+                "          \"max_pool_size\": 0,\n" +
+                "          \"expires_in_seconds\": 0\n" +
+                "        },\n" +
+                "        \"encryption\": {\n" +
+                "          \"level\": \"SUPPORTED\",\n" +
+                "          \"keystore\": {\n" +
+                "            \"location\": \"my-location\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"read\": {\n" +
+                "        \"regex\": \"(?i)^\\\\s*select.*\",\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"127.0.0.1\",\n" +
+                "          \"port\": 1433,\n" +
+                "          \"user\": \"sa\",\n" +
+                "          \"password\": \"Test!1234\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"write\": {\n" +
+                "        \"mssql\": {\n" +
+                "          \"server\": \"127.0.0.1\",\n" +
+                "          \"port\": 1433,\n" +
+                "          \"user\": \"sa\",\n" +
+                "          \"password\": \"Test!1234\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Proxies.class, "proxies")
+                .withSources(new YamlConfigSource("json", json))
                 .build();
 
         Proxies proxies = config.getConfigMapping(Proxies.class);
@@ -244,17 +467,18 @@ class YamlConfigMappingTest {
 
     @Test
     void yamlListMaps() {
+        String yaml = "app:\n" +
+                "  config:\n" +
+                "    - name: Bob\n" +
+                "      foo: thing\n" +
+                "      bar: false\n" +
+                "    - name: Tim\n" +
+                "      baz: stuff\n" +
+                "      qux: 3";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(MapConfig.class, "app")
-                .withSources(new YamlConfigSource("yaml",
-                        "app:\n" +
-                                "  config:\n" +
-                                "    - name: Bob\n" +
-                                "      foo: thing\n" +
-                                "      bar: false\n" +
-                                "    - name: Tim\n" +
-                                "      baz: stuff\n" +
-                                "      qux: 3"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         MapConfig mapping = config.getConfigMapping(MapConfig.class);
@@ -273,26 +497,27 @@ class YamlConfigMappingTest {
 
     @Test
     void yamlMapGroupMap() {
+        String yaml = "parent:\n" +
+                "  goodchildren:\n" +
+                "    child1:\n" +
+                "      name: John\n" +
+                "      attributes:\n" +
+                "        somekey: somevalue\n" +
+                "        anotherkey: anothervalue\n" +
+                "    child2:\n" +
+                "      name: James\n" +
+                "      attributes:\n" +
+                "        something: isbroken\n" +
+                "  badchildren:\n" +
+                "    child3:\n" +
+                "      name: BadJohn\n" +
+                "      attributes:\n" +
+                "        somekeybad: somevaluebad\n" +
+                "        anotherkeybad: anothervaluebad";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(Parent.class, "parent")
-                .withSources(new YamlConfigSource("yaml",
-                        "parent:\n" +
-                                "  goodchildren:\n" +
-                                "    child1:\n" +
-                                "      name: John\n" +
-                                "      attributes:\n" +
-                                "        somekey: somevalue\n" +
-                                "        anotherkey: anothervalue\n" +
-                                "    child2:\n" +
-                                "      name: James\n" +
-                                "      attributes:\n" +
-                                "        something: isbroken\n" +
-                                "  badchildren:\n" +
-                                "    child3:\n" +
-                                "      name: BadJohn\n" +
-                                "      attributes:\n" +
-                                "        somekeybad: somevaluebad\n" +
-                                "        anotherkeybad: anothervaluebad "))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         Parent mapping = config.getConfigMapping(Parent.class);
@@ -330,15 +555,16 @@ class YamlConfigMappingTest {
     }
 
     @Test
-    void yamlMapCollections() throws Exception {
+    void yamlMapCollections() {
+        String yaml = "some:\n" +
+                "  prop:\n" +
+                "    value:    \n" +
+                "      - 0.9\n" +
+                "      - 0.99";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(MapListDouble.class)
-                .withSources(new YamlConfigSource("yaml",
-                        "some:\n" +
-                                "  prop:\n" +
-                                "    value:    \n" +
-                                "      - 0.9\n" +
-                                "      - 0.99"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         MapListDouble mapping = config.getConfigMapping(MapListDouble.class);
@@ -353,22 +579,23 @@ class YamlConfigMappingTest {
 
     @Test
     void yamlMapListsGroup() {
+        String yaml = "channelsuite:\n" +
+                "  permissions:\n" +
+                "    anonymous:\n" +
+                "      - \"p1\"\n" +
+                "    internal-call:\n" +
+                "      - \"p2\"\n" +
+                "      - \"p3\"\n" +
+                "    roles:\n" +
+                "      user:\n" +
+                "        - \"p1\"\n" +
+                "      administrator:\n" +
+                "        - \"p2\"\n" +
+                "        - \"p3\"\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(PermissionsConfig.class)
-                .withSources(new YamlConfigSource("yaml",
-                        "channelsuite:\n" +
-                                "  permissions:\n" +
-                                "    anonymous:\n" +
-                                "      - \"p1\"\n" +
-                                "    internal-call:\n" +
-                                "      - \"p2\"\n" +
-                                "      - \"p3\"\n" +
-                                "    roles:\n" +
-                                "      user:\n" +
-                                "        - \"p1\"\n" +
-                                "      administrator:\n" +
-                                "        - \"p2\"\n" +
-                                "        - \"p3\"\n"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         PermissionsConfig configMapping = config.getConfigMapping(PermissionsConfig.class);
@@ -391,10 +618,51 @@ class YamlConfigMappingTest {
     }
 
     @Test
-    void yamlMapLists() throws Exception {
+    void yamlMapLists() {
+        String yaml = "map:\n" +
+                "  roles:\n" +
+                "    hokage:\n" +
+                "      -\n" +
+                "        name: Senju Hashirama\n" +
+                "        nature: Earth,Water\n" +
+                "      -\n" +
+                "        name: Senju Tobirama\n" +
+                "        nature: Water\n" +
+                "      -\n" +
+                "        name: Sarotobi Hiruzen\n" +
+                "        nature: Fire\n" +
+                "      -\n" +
+                "        name: Namikaze Minato\n" +
+                "        nature: Fire,Wind,Lightning\n" +
+                "      -\n" +
+                "        name: Tsunade\n" +
+                "        nature: Lightning\n" +
+                "      -\n" +
+                "        name: Hatake Kakashi\n" +
+                "        nature: Lightning\n" +
+                "      -\n" +
+                "        name: Uzumaki Naruto\n" +
+                "        nature: Wind\n" +
+                "        jutsus:\n" +
+                "          -\n" +
+                "            name: Rasengan\n" +
+                "            rank: A\n" +
+                "          -\n" +
+                "            name: Bijūdama\n" +
+                "            rank: S\n" +
+                "        teams:\n" +
+                "          \"Team Kakashi\":\n" +
+                "            - Hatake Kakashi\n" +
+                "            - Uchiha Sasuke\n" +
+                "            - Haruno Sakura\n" +
+                "          \"Kazekage Rescue Team\":\n" +
+                "            - Hatake Kakashi\n" +
+                "            - Chiyo\n" +
+                "            - Haruno Sakura\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(MapWithListsGroup.class)
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-map-list.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         MapWithListsGroup mapping = config.getConfigMapping(MapWithListsGroup.class);
@@ -497,12 +765,14 @@ class YamlConfigMappingTest {
 
     @Test
     void unnamedMapKeys() {
+        String yaml = "unnamed:\n" +
+                "    map: \n" +
+                "        value: value\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withMapping(UnnamedMapKeys.class)
-                .withSources(new YamlConfigSource("yaml", "unnamed:\n" +
-                        "    map: \n" +
-                        "        value: value\n"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         UnnamedMapKeys mapping = config.getConfigMapping(UnnamedMapKeys.class);
@@ -522,92 +792,93 @@ class YamlConfigMappingTest {
 
     @Test
     void unmapped() {
+        String yaml = "http:\n" +
+                "  server:\n" +
+                "    name: server\n" +
+                "    alias: server\n" +
+                "    host: localhost\n" +
+                "    port: 8080\n" +
+                "    timeout: 60s\n" +
+                "    io-threads: 200\n" +
+                "    bytes: dummy\n" +
+                "\n" +
+                "    form:\n" +
+                "      login-page: login.html\n" +
+                "      error-page: error.html\n" +
+                "      landing-page: index.html\n" +
+                "      positions:\n" +
+                "        - 10\n" +
+                "        - 20\n" +
+                "\n" +
+                "    ssl:\n" +
+                "      port: 8443\n" +
+                "      certificate: certificate\n" +
+                "\n" +
+                "    cors:\n" +
+                "      origins:\n" +
+                "        - host: some-server\n" +
+                "          port: 9000\n" +
+                "        - host: another-server\n" +
+                "          port: 8000\n" +
+                "      methods:\n" +
+                "        - GET\n" +
+                "        - POST\n" +
+                "\n" +
+                "    log:\n" +
+                "      period: P1D\n" +
+                "      days: 10\n" +
+                "\n" +
+                "cloud:\n" +
+                "  host: localhost\n" +
+                "  port: 8080\n" +
+                "  timeout: 60s\n" +
+                "  io-threads: 200\n" +
+                "\n" +
+                "  form:\n" +
+                "    login-page: login.html\n" +
+                "    error-page: error.html\n" +
+                "    landing-page: index.html\n" +
+                "\n" +
+                "  ssl:\n" +
+                "    port: 8443\n" +
+                "    certificate: certificate\n" +
+                "\n" +
+                "  cors:\n" +
+                "    origins:\n" +
+                "      - host: some-server\n" +
+                "        port: 9000\n" +
+                "      - host: localhost\n" +
+                "        port: 1\n" +
+                "    methods:\n" +
+                "      - GET\n" +
+                "      - POST\n" +
+                "\n" +
+                "  proxy:\n" +
+                "    enable: true\n" +
+                "    timeout: 20\n" +
+                "\n" +
+                "  log:\n" +
+                "    period: P1D\n" +
+                "    days: 20\n" +
+                "\n" +
+                "  info:\n" +
+                "    name: Bond\n" +
+                "    code: 007\n" +
+                "    alias:\n" +
+                "      - James\n" +
+                "    admins:\n" +
+                "      root:\n" +
+                "        -\n" +
+                "          username: root\n" +
+                "        -\n" +
+                "          username: super\n" +
+                "    firewall:\n" +
+                "      accepted:\n" +
+                "        - 127.0.0.1\n" +
+                "        - 8.8.8";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml",
-                        "http:\n" +
-                                "  server:\n" +
-                                "    name: server\n" +
-                                "    alias: server\n" +
-                                "    host: localhost\n" +
-                                "    port: 8080\n" +
-                                "    timeout: 60s\n" +
-                                "    io-threads: 200\n" +
-                                "    bytes: dummy\n" +
-                                "\n" +
-                                "    form:\n" +
-                                "      login-page: login.html\n" +
-                                "      error-page: error.html\n" +
-                                "      landing-page: index.html\n" +
-                                "      positions:\n" +
-                                "        - 10\n" +
-                                "        - 20\n" +
-                                "\n" +
-                                "    ssl:\n" +
-                                "      port: 8443\n" +
-                                "      certificate: certificate\n" +
-                                "\n" +
-                                "    cors:\n" +
-                                "      origins:\n" +
-                                "        - host: some-server\n" +
-                                "          port: 9000\n" +
-                                "        - host: another-server\n" +
-                                "          port: 8000\n" +
-                                "      methods:\n" +
-                                "        - GET\n" +
-                                "        - POST\n" +
-                                "\n" +
-                                "    log:\n" +
-                                "      period: P1D\n" +
-                                "      days: 10\n" +
-                                "\n" +
-                                "cloud:\n" +
-                                "  host: localhost\n" +
-                                "  port: 8080\n" +
-                                "  timeout: 60s\n" +
-                                "  io-threads: 200\n" +
-                                "\n" +
-                                "  form:\n" +
-                                "    login-page: login.html\n" +
-                                "    error-page: error.html\n" +
-                                "    landing-page: index.html\n" +
-                                "\n" +
-                                "  ssl:\n" +
-                                "    port: 8443\n" +
-                                "    certificate: certificate\n" +
-                                "\n" +
-                                "  cors:\n" +
-                                "    origins:\n" +
-                                "      - host: some-server\n" +
-                                "        port: 9000\n" +
-                                "      - host: localhost\n" +
-                                "        port: 1\n" +
-                                "    methods:\n" +
-                                "      - GET\n" +
-                                "      - POST\n" +
-                                "\n" +
-                                "  proxy:\n" +
-                                "    enable: true\n" +
-                                "    timeout: 20\n" +
-                                "\n" +
-                                "  log:\n" +
-                                "    period: P1D\n" +
-                                "    days: 20\n" +
-                                "\n" +
-                                "  info:\n" +
-                                "    name: Bond\n" +
-                                "    code: 007\n" +
-                                "    alias:\n" +
-                                "      - James\n" +
-                                "    admins:\n" +
-                                "      root:\n" +
-                                "        -\n" +
-                                "          username: root\n" +
-                                "        -\n" +
-                                "          username: super\n" +
-                                "    firewall:\n" +
-                                "      accepted:\n" +
-                                "        - 127.0.0.1\n" +
-                                "        - 8.8.8"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withMapping(Server.class)
                 .withMapping(Cloud.class)
                 .build();

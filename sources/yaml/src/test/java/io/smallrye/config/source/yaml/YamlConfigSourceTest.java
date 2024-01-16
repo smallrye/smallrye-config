@@ -27,24 +27,54 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 
 class YamlConfigSourceTest {
     @Test
-    void flatten() throws Exception {
-        YamlConfigSource yaml = new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml"));
-        String value = yaml.getValue("admin.users");
+    void flatten() {
+        String yaml = "admin:\n" +
+                "  users:\n" +
+                "    -\n" +
+                "      email: \"joe@gmail.com\"\n" +
+                "      username: \"joe\"\n" +
+                "      password: \"123456\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n" +
+                "        - \"Admin\"\n" +
+                "    -\n" +
+                "      email: \"jack@gmail.com\"\n" +
+                "      username: \"jack\"\n" +
+                "      password: \"654321\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n";
+
+        YamlConfigSource source = new YamlConfigSource("yaml", yaml);
+        String value = source.getValue("admin.users");
         Users users = new UserConverter().convert(value);
         assertEquals(2, users.getUsers().size());
         assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
 
-        assertEquals("joe@gmail.com", yaml.getValue("admin.users[0].email"));
+        assertEquals("joe@gmail.com", source.getValue("admin.users[0].email"));
     }
 
     @Test
-    void profiles() throws Exception {
-        YamlConfigSource yaml = new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-profiles.yml"));
+    void profiles() {
+        String yaml = "---\n" +
+                "foo:\n" +
+                "  bar:\n" +
+                "    default\n" +
+                "---\n" +
+                "\"%dev\":\n" +
+                "  foo:\n" +
+                "    bar:\n" +
+                "      dev\n" +
+                "---\n" +
+                "\"%prod\":\n" +
+                "  foo:\n" +
+                "    bar:\n" +
+                "      prod\n";
 
-        assertEquals("default", yaml.getValue("foo.bar"));
-        assertEquals("dev", yaml.getValue("%dev.foo.bar"));
-        assertEquals("prod", yaml.getValue("%prod.foo.bar"));
+        YamlConfigSource source = new YamlConfigSource("yaml", yaml);
+        assertEquals("default", source.getValue("foo.bar"));
+        assertEquals("dev", source.getValue("%dev.foo.bar"));
+        assertEquals("prod", source.getValue("%prod.foo.bar"));
     }
 
     @Test
@@ -120,13 +150,29 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void config() throws Exception {
+    void config() {
+        String yaml = "admin:\n" +
+                "  users:\n" +
+                "    -\n" +
+                "      email: \"joe@gmail.com\"\n" +
+                "      username: \"joe\"\n" +
+                "      password: \"123456\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n" +
+                "        - \"Admin\"\n" +
+                "    -\n" +
+                "      email: \"jack@gmail.com\"\n" +
+                "      username: \"jack\"\n" +
+                "      password: \"654321\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withConverter(Users.class, 100, new UserConverter())
                 .build();
 
-        final Users users = config.getValue("admin.users", Users.class);
+        Users users = config.getValue("admin.users", Users.class);
         assertEquals(2, users.getUsers().size());
         assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
         assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
@@ -135,13 +181,41 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void propertyNames() throws Exception {
+    void propertyNames() {
+        String yaml = "quarkus:\n" +
+                "  http:\n" +
+                "    port: 8081\n" +
+                "    ssl-port: 2443\n" +
+                "    cors:\n" +
+                "      ~: true\n" +
+                "      access-control-max-age: 24H\n" +
+                "      exposed-headers: \"SOME-HEADER\"\n" +
+                "      methods: GET,PUT,POST,DELETE,OPTIONS\n" +
+                "    ssl:\n" +
+                "      protocols:\n" +
+                "        - TLSv1.2\n" +
+                "        - TLSv1.3\n" +
+                "      cipher-suites:\n" +
+                "        - TLS_AES_128_GCM_SHA256\n" +
+                "        - TLS_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256\n" +
+                "        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256\n" +
+                "  swagger-ui:\n" +
+                "    always-include: true\n" +
+                "\n" +
+                "  jib:\n" +
+                "    jvm-arguments:\n" +
+                "      - \"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005\"\n" +
+                "      - \"-Dquarkus.http.host=0.0.0.0\"\n" +
+                "      - \"-Djava.util.logging.manager=org.jboss.logmanager.LogManager\"\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
-        final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                .collect(toList());
+        List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
 
         assertTrue(propertyNames.contains("quarkus.http.port"));
         assertTrue(propertyNames.contains("quarkus.http.ssl-port"));
@@ -151,14 +225,20 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void quotedProperties() throws Exception {
+    void quotedProperties() {
+        String yaml = "quarkus:\n" +
+                "  log:\n" +
+                "    category:\n" +
+                "      \"liquibase.changelog.ChangeSet\":\n" +
+                "        level: INFO\n" +
+                "      \"liquibase\":\n" +
+                "        level: WARN\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(
-                        new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-quotes.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
-        final List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                .collect(toList());
+        List<String> propertyNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toList());
 
         assertTrue(propertyNames.contains("quarkus.log.category.liquibase.level"));
         assertTrue(propertyNames.contains("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
@@ -166,9 +246,38 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void commas() throws Exception {
+    void commas() {
+        String yaml = "quarkus:\n" +
+                "  http:\n" +
+                "    port: 8081\n" +
+                "    ssl-port: 2443\n" +
+                "    cors:\n" +
+                "      ~: true\n" +
+                "      access-control-max-age: 24H\n" +
+                "      exposed-headers: \"SOME-HEADER\"\n" +
+                "      methods: GET,PUT,POST,DELETE,OPTIONS\n" +
+                "    ssl:\n" +
+                "      protocols:\n" +
+                "        - TLSv1.2\n" +
+                "        - TLSv1.3\n" +
+                "      cipher-suites:\n" +
+                "        - TLS_AES_128_GCM_SHA256\n" +
+                "        - TLS_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
+                "        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256\n" +
+                "        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256\n" +
+                "  swagger-ui:\n" +
+                "    always-include: true\n" +
+                "\n" +
+                "  jib:\n" +
+                "    jvm-arguments:\n" +
+                "      - \"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005\"\n" +
+                "      - \"-Dquarkus.http.host=0.0.0.0\"\n" +
+                "      - \"-Djava.util.logging.manager=org.jboss.logmanager.LogManager\"\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         String[] values = config.getValue("quarkus.jib.jvm-arguments", String[].class);
@@ -178,9 +287,18 @@ class YamlConfigSourceTest {
 
     @Test
     void intKeys() {
+        String yaml = "storefront:\n" +
+                "  path:\n" +
+                "    appConfig:\n" +
+                "      1: /storefront/appConfig/*\n" +
+                "      2: /storefront/storefront/appConfig/*\n" +
+                "    training:\n" +
+                "      1: /storefront/training/*\n" +
+                "      2: /storefront/storefront/training/*\n";
+
         try {
             new SmallRyeConfigBuilder()
-                    .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-int-keys.yml")))
+                    .withSources(new YamlConfigSource("yaml", yaml))
                     .build();
         } catch (Exception e) {
             fail(e);
@@ -188,9 +306,25 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void mapping() throws Exception {
+    void mapping() {
+        String yaml = "admin:\n" +
+                "  users:\n" +
+                "    -\n" +
+                "      email: \"joe@gmail.com\"\n" +
+                "      username: \"joe\"\n" +
+                "      password: \"123456\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n" +
+                "        - \"Admin\"\n" +
+                "    -\n" +
+                "      email: \"jack@gmail.com\"\n" +
+                "      username: \"jack\"\n" +
+                "      password: \"654321\"\n" +
+                "      roles:\n" +
+                "        - \"Moderator\"\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-216.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withMapping(UsersMapping.class, "admin")
                 .build();
 
@@ -203,9 +337,24 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void mappingCollections() throws Exception {
+    void mappingCollections() {
+        String yaml = "application:\n" +
+                "  environments:\n" +
+                "    - name: dev\n" +
+                "      services:\n" +
+                "        - name: batch\n" +
+                "        - name: rest\n" +
+                "    - name: prod\n" +
+                "      services:\n" +
+                "        - name: web\n" +
+                "        - name: batch\n" +
+                "        - name: rest\n" +
+                "  images:\n" +
+                "    - base\n" +
+                "    - jdk\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/example-collections.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withMapping(Application.class, "application")
                 .build();
 
@@ -225,9 +374,26 @@ class YamlConfigSourceTest {
     }
 
     @Test
-    void optional() throws Exception {
+    void optional() {
+        String yaml = "---\n" +
+                "\"%base\":\n" +
+                "  server:\n" +
+                "    name: localhost\n" +
+                "    config:\n" +
+                "      server: localhost\n" +
+                "      port: 1143\n" +
+                "      user: user\n" +
+                "      password: password\n" +
+                "      version:\n" +
+                "        major: 16\n" +
+                "        minor: 0\n" +
+                "---\n" +
+                "\"%empty\":\n" +
+                "  server:\n" +
+                "    name: localhost\n";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/optional.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withMapping(Server.class, "server")
                 .withProfile("base")
                 .build();
@@ -243,7 +409,7 @@ class YamlConfigSourceTest {
         assertEquals(0, server.config().get().version().minor());
 
         config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource(YamlConfigSourceTest.class.getResource("/optional.yml")))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .withMapping(Server.class, "server")
                 .withProfile("empty")
                 .build();
@@ -255,10 +421,12 @@ class YamlConfigSourceTest {
 
     @Test
     void timestampConverters() {
+        String yaml = "date: 2010-10-10\n" +
+                "dateTime: 2010-10-10T10:10:10\n" +
+                "zonedDateTime: 2020-10-10T10:10:10-05:00";
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml", "date: 2010-10-10\n" +
-                        "dateTime: 2010-10-10T10:10:10\n" +
-                        "zonedDateTime: 2020-10-10T10:10:10-05:00"))
+                .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
         assertEquals(LocalDate.of(2010, 10, 10), config.getValue("date", LocalDate.class));
