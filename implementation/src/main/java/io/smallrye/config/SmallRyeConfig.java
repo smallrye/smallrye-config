@@ -391,7 +391,7 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     public String getRawValue(String name) {
         final ConfigValue configValue = getConfigValue(name);
-        return configValue != null && configValue.getValue() != null ? configValue.getValue() : null;
+        return configValue != null ? configValue.getValue() : null;
     }
 
     @Override
