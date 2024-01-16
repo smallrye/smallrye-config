@@ -40,15 +40,15 @@ class YamlLocationConfigSourceFactoryTest {
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(11, countSources(config));
+        assertEquals(2, countSources(config));
     }
 
     @Test
     void webResource() {
         SmallRyeConfig config = buildConfig(
-                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/example-profiles.yml");
+                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/more.yml");
 
-        assertEquals("default", config.getRawValue("foo.bar"));
+        assertEquals("5678", config.getRawValue("more.prop"));
         assertEquals(1, countSources(config));
     }
 
@@ -63,11 +63,11 @@ class YamlLocationConfigSourceFactoryTest {
     @Test
     void all() {
         SmallRyeConfig config = buildConfig("./src/test/resources",
-                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/example-profiles.yml");
+                "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/more.yml");
 
         assertEquals("1234", config.getRawValue("my.prop"));
         assertEquals("5678", config.getRawValue("more.prop"));
-        assertEquals(12, countSources(config));
+        assertEquals(3, countSources(config));
     }
 
     @Test
