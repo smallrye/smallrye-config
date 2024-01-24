@@ -21,10 +21,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.common.AbstractConfigSource;
@@ -377,12 +379,21 @@ class SmallRyeConfigTest {
         assertEquals("value", map.get("key.nested"));
         assertEquals("value", map.get("key.quoted"));
 
+        Converter<String> stringConverter = config.requireConverter(String.class);
+        Map<String, String> treeMap = config.getValues("my.prop", stringConverter, stringConverter, t -> new TreeMap<>());
+        assertTrue(treeMap instanceof TreeMap);
+
         Optional<Map<String, String>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class);
         assertTrue(optionalMap.isPresent());
         assertEquals(3, optionalMap.get().size());
         assertEquals("value", optionalMap.get().get("key"));
         assertEquals("value", optionalMap.get().get("key.nested"));
         assertEquals("value", optionalMap.get().get("key.quoted"));
+
+        Optional<Map<String, String>> optionalTreeMap = config.getOptionalValues("my.prop", stringConverter, stringConverter,
+                t -> new TreeMap<>());
+        assertTrue(optionalTreeMap.isPresent());
+        assertTrue(optionalTreeMap.get() instanceof TreeMap);
 
         assertTrue(config.getOptionalValues("my.optional", String.class, String.class).isEmpty());
     }
@@ -428,6 +439,11 @@ class SmallRyeConfigTest {
         assertEquals("value", map.get("key.quoted").get(0));
         assertEquals("value", map.get("key.quoted").get(1));
 
+        Converter<String> stringConverter = config.requireConverter(String.class);
+        Map<String, List<String>> treeMap = config.getValues("my.prop", stringConverter, stringConverter, t -> new TreeMap<>(),
+                ArrayList::new);
+        assertTrue(treeMap instanceof TreeMap);
+
         Optional<Map<String, List<String>>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class,
                 ArrayList::new);
         assertTrue(optionalMap.isPresent());
@@ -438,6 +454,11 @@ class SmallRyeConfigTest {
         assertEquals("value", optionalMap.get().get("key.nested").get(1));
         assertEquals("value", optionalMap.get().get("key.quoted").get(0));
         assertEquals("value", optionalMap.get().get("key.quoted").get(1));
+
+        Optional<Map<String, List<String>>> optionalTreeMap = config.getOptionalValues("my.prop", stringConverter,
+                stringConverter, t -> new TreeMap<>(), ArrayList::new);
+        assertTrue(optionalTreeMap.isPresent());
+        assertTrue(optionalTreeMap.get() instanceof TreeMap);
 
         assertTrue(config.getOptionalValues("my.optional", String.class, String.class, ArrayList::new).isEmpty());
     }
