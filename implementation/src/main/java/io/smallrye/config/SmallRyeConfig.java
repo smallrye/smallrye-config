@@ -215,7 +215,7 @@ public class SmallRyeConfig implements Config, Serializable {
             Converter<V> valueConverter,
             IntFunction<Map<K, V>> mapFactory) {
         try {
-            return getValue(name, newMapConverter(keyConverter, valueConverter));
+            return getValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
         } catch (NoSuchElementException e) {
             Map<String, String> mapKeys = getMapKeys(name);
             if (mapKeys.isEmpty()) {
@@ -246,7 +246,8 @@ public class SmallRyeConfig implements Config, Serializable {
             IntFunction<Map<K, C>> mapFactory,
             IntFunction<C> collectionFactory) {
         try {
-            return getValue(name, newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory)));
+            return getValue(name,
+                    newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
         } catch (NoSuchElementException e) {
             Map<String, String> mapCollectionKeys = getMapKeys(name);
             if (mapCollectionKeys.isEmpty()) {
@@ -463,7 +464,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter,
             IntFunction<Map<K, V>> mapFactory) {
-        Optional<Map<K, V>> optionalValue = getOptionalValue(name, newMapConverter(keyConverter, valueConverter));
+        Optional<Map<K, V>> optionalValue = getOptionalValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
         if (optionalValue.isPresent()) {
             return optionalValue;
         }
@@ -491,7 +492,7 @@ public class SmallRyeConfig implements Config, Serializable {
             IntFunction<Map<K, C>> mapFactory,
             IntFunction<C> collectionFactory) {
         Optional<Map<K, C>> optionalValue = getOptionalValue(name,
-                newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory)));
+                newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
         if (optionalValue.isPresent()) {
             return optionalValue;
         }

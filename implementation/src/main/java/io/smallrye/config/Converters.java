@@ -322,9 +322,15 @@ public final class Converters {
      * @param <V> the type of the values
      * @return the new converter (not {@code null})
      */
+    @Deprecated
     public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
             Converter<? extends V> valueConverter) {
-        return new MapConverter<>(keyConverter, valueConverter);
+        return newMapConverter(keyConverter, valueConverter, HashMap::new);
+    }
+
+    public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
+            Converter<? extends V> valueConverter, IntFunction<Map<K, V>> mapFactory) {
+        return new MapConverter<>(keyConverter, valueConverter, mapFactory);
     }
 
     /**
@@ -1037,16 +1043,22 @@ public final class Converters {
          * The converter to use the for values.
          */
         private final Converter<? extends V> valueConverter;
+        private final IntFunction<Map<K, V>> mapFactory;
 
         /**
          * Construct a {@code MapConverter} with the given converters.
          *
          * @param keyConverter the converter to use the for keys
          * @param valueConverter the converter to use the for values
+         * @param mapFactory
          */
-        MapConverter(Converter<? extends K> keyConverter, Converter<? extends V> valueConverter) {
+        MapConverter(
+                final Converter<? extends K> keyConverter,
+                final Converter<? extends V> valueConverter,
+                final IntFunction<Map<K, V>> mapFactory) {
             this.keyConverter = keyConverter;
             this.valueConverter = valueConverter;
+            this.mapFactory = mapFactory;
         }
 
         @Override
@@ -1054,8 +1066,8 @@ public final class Converters {
             if (value == null) {
                 return null;
             }
-            final Map<K, V> map = new HashMap<>();
-            final StringBuilder currentLine = new StringBuilder(value.length());
+            Map<K, V> map = mapFactory.apply(0);
+            StringBuilder currentLine = new StringBuilder(value.length());
             int fromIndex = 0;
             for (int idx; (idx = value.indexOf(';', fromIndex)) >= 0; fromIndex = idx + 1) {
                 if (value.charAt(idx - 1) == '\\') {
@@ -1082,7 +1094,7 @@ public final class Converters {
          * @throws NoSuchElementException if the line could not be converted into an entry or doesn't have the expected format.
          */
         private void processLine(Map<K, V> map, String value, String rawLine) {
-            final String line = rawLine.replace("\\;", ";");
+            String line = rawLine.replace("\\;", ";");
             for (int idx, fromIndex = 0; (idx = line.indexOf('=', fromIndex)) >= 0; fromIndex = idx + 1) {
                 if (line.charAt(idx - 1) == '\\') {
                     // The key separator has been escaped

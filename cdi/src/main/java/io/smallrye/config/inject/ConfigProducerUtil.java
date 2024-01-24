@@ -172,7 +172,7 @@ public final class ConfigProducerUtil {
                 return (Converter<T>) newCollectionConverter(resolveConverter(typeArgs[0], config), HashSet::new);
             } else if (rawType == Map.class) {
                 return (Converter<T>) newMapConverter(resolveConverter(typeArgs[0], config),
-                        resolveConverter(typeArgs[1], config));
+                        resolveConverter(typeArgs[1], config), HashMap::new);
             } else if (rawType == Optional.class) {
                 return (Converter<T>) newOptionalConverter(resolveConverter(typeArgs[0], config));
             } else if (rawType == Supplier.class) {
