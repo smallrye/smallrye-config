@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -239,16 +240,30 @@ class EnvConfigSourceTest {
     @Test
     void sameSemanticMeaning() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("foo.bar-baz", "fromOther"))
-                .withSources(new EnvConfigSource(Map.of("FOO_BAR_BAZ", "fromEnv"), 300))
+                .withSources(config(
+                        "foo.bar-baz", "fromOther",
+                        "%dev.foo.bar-devbaz", "fromOther",
+                        "foo.bar-commonbaz", "fromOther"))
+                .withSources(new EnvConfigSource(Map.of(
+                        "FOO_BAR_BAZ", "fromEnv",
+                        "FOO_BAR_DEVBAZ", "fromEnv",
+                        "_COMMON_FOO_BAR_COMMONBAZ", "fromEnv"), 300))
+                .withProfiles(List.of("dev", "common"))
                 .build();
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(properties.contains("FOO_BAR_BAZ"));
         assertTrue(properties.contains("foo.bar-baz"));
         assertFalse(properties.contains("foo.bar.baz"));
-
         assertEquals("fromEnv", config.getRawValue("foo.bar-baz"));
+
+        assertTrue(properties.contains("FOO_BAR_DEVBAZ"));
+        assertTrue(properties.contains("foo.bar-devbaz"));
+        assertFalse(properties.contains("foo.bar.devbaz"));
+        assertEquals("fromEnv", config.getRawValue("foo.bar-devbaz"));
+
+        assertTrue(properties.contains("foo.bar-commonbaz"));
+        assertEquals("fromEnv", config.getRawValue("foo.bar-commonbaz"));
     }
 
     @Test
@@ -302,6 +317,101 @@ class EnvConfigSourceTest {
 
         interface Nested {
             String another();
+        }
+    }
+
+    @Test
+    void ignoreUnmappedWithMappingIgnore() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMappingIgnore("ignore.**")
+                .withMapping(IgnoreUnmappedWithMappingIgnore.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "IGNORE_VALUE", "value",
+                        "IGNORE_LIST_0_", "0",
+                        "IGNORE_NESTED_VALUE", "nested",
+                        "IGNORE_IGNORE", "ignore",
+                        "IGNORE_NESTED_IGNORE", "ignore"), 100))
+                .build();
+
+        IgnoreUnmappedWithMappingIgnore mapping = config.getConfigMapping(IgnoreUnmappedWithMappingIgnore.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals(0, mapping.list().get(0));
+        assertEquals("nested", mapping.nested().value());
+    }
+
+    @ConfigMapping(prefix = "ignore")
+    public interface IgnoreUnmappedWithMappingIgnore {
+        String value();
+
+        List<Integer> list();
+
+        Nested nested();
+
+        interface Nested {
+            String value();
+        }
+    }
+
+    @Test
+    void unmappedProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(UnmappedProfile.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "_DEV_UNMAPPED_A_VALUE", "value",
+                        "_DEV_UNMAPPED_NESTED_TYPE_VALUE", "value"), 100))
+                .withProfile("dev")
+                .build();
+
+        UnmappedProfile mapping = config.getConfigMapping(UnmappedProfile.class);
+        assertTrue(mapping.aValue().isPresent());
+        assertEquals("value", mapping.aValue().get());
+        assertEquals("value", mapping.nestedType().value());
+
+        config = new SmallRyeConfigBuilder()
+                .withMapping(UnmappedProfile.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "_DEV_UNMAPPED_A_VALUE", "value",
+                        "_DEV_UNMAPPED_NESTED_TYPE_VALUE", "value"), 200))
+                .withSources(config(
+                        "%dev.unmapped.nested-type.value", "value"))
+                .withSources(config(
+                        "unmapped.a.value", "value",
+                        "unmapped.nested.type.value", "value"))
+                .withProfile("dev")
+                .build();
+
+        mapping = config.getConfigMapping(UnmappedProfile.class);
+        assertTrue(mapping.aValue().isPresent());
+        assertEquals("value", mapping.aValue().get());
+        assertEquals("value", mapping.nestedType().value());
+
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .withMapping(UnmappedProfile.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "_DEV_UNMAPPED_A_VALUE", "value",
+                        "_DEV_UNMAPPED_NESTED_TYPE_VALUE", "value",
+                        "_DEV_UNMAPPED_UNMAPPED", "value"), 200))
+                .withSources(config(
+                        "%dev.unmapped.nested-type.value", "value"))
+                .withSources(config(
+                        "unmapped.a.value", "value",
+                        "unmapped.nested.type.value", "value"))
+                .withProfile("dev");
+
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, builder::build);
+        assertEquals("SRCFG00050: unmapped.unmapped in EnvConfigSource does not map to any root",
+                exception.getProblem(0).getMessage());
+    }
+
+    @ConfigMapping(prefix = "unmapped")
+    interface UnmappedProfile {
+        Optional<String> aValue();
+
+        Nested nestedType();
+
+        interface Nested {
+            String value();
         }
     }
 
