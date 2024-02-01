@@ -178,6 +178,8 @@ class StringUtilTest {
         assertEquals("foo.bar.baz[20]", StringUtil.toLowerCaseAndDotted("FOO_BAR_BAZ_20_"));
         assertEquals("foo.bar.\"baz\".i[20].e", StringUtil.toLowerCaseAndDotted("FOO_BAR__BAZ__I_20__E"));
         assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
+        assertEquals("%foo.bar", StringUtil.toLowerCaseAndDotted("_FOO_BAR"));
+        assertEquals(".\"foo.bar", StringUtil.toLowerCaseAndDotted("__FOO_BAR"));
     }
 
     @Test

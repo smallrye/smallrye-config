@@ -235,6 +235,25 @@ class EnvConfigSourceTest {
         assertEquals(new EnvName("TEST_LANGUAGE__DE_ETR_").hashCode(), new EnvName("test.language.\"de.etr\"").hashCode());
 
         assertTrue(envSourceEquals("SMALLRYE_MP_CONFIG_PROP", new String("smallrye/mp/config/prop")));
+        assertTrue(envSourceEquals("__SMALLRYE", new String("$$smallrye")));
+        assertTrue(envSourceEquals("$$smallrye", new String("__SMALLRYE")));
+
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("$$SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("&&SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("$$SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("$$SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE$MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE$MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("&&SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("&&SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("##SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("##SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("!!SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("!!SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("++SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("++SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("__SMALLRYE_MP_CONFIG_PROP", new String("??SMALLRYE_MP_CONFIG_PROP")));
+        assertTrue(envSourceEquals("??SMALLRYE_MP_CONFIG_PROP", new String("__SMALLRYE_MP_CONFIG_PROP")));
     }
 
     @Test
