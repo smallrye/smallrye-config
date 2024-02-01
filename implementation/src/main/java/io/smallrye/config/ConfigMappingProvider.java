@@ -5,7 +5,10 @@ import static io.smallrye.config.ConfigMappings.getDefaults;
 import static io.smallrye.config.ConfigMappings.getNames;
 import static io.smallrye.config.ConfigMappings.getProperties;
 import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.*;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -30,14 +34,12 @@ final class ConfigMappingProvider implements Serializable {
     private static final long serialVersionUID = 3977667610888849912L;
 
     private final Map<String, List<Class<?>>> roots;
-    private final Set<String> keys;
     private final Map<String, Map<String, Set<String>>> names;
-    private final List<String[]> ignoredPaths;
+    private final List<String> ignoredPaths;
     private final boolean validateUnknown;
 
     ConfigMappingProvider(final Builder builder) {
         this.roots = new HashMap<>(builder.roots);
-        this.keys = builder.keys;
         this.names = builder.names;
         this.ignoredPaths = builder.ignoredPaths;
         this.validateUnknown = builder.validateUnknown;
@@ -49,12 +51,12 @@ final class ConfigMappingProvider implements Serializable {
 
     Map<Class<?>, Map<String, ConfigMappingObject>> mapConfiguration(final SmallRyeConfig config)
             throws ConfigValidationException {
+        // Register additional dissabiguation property names comparing mapped keys and env names
+        matchPropertiesWithEnv(config);
+
         if (roots.isEmpty()) {
             return Collections.emptyMap();
         }
-
-        // Register additional dissabiguation property names comparing mapped keys and env names
-        matchPropertiesWithEnv(config, roots.keySet(), keys);
 
         // Perform the config mapping
         ConfigMappingContext context = SecretKeys.doUnlocked(new Supplier<ConfigMappingContext>() {
@@ -76,49 +78,98 @@ final class ConfigMappingProvider implements Serializable {
         return context.getRootsMap();
     }
 
-    private static void matchPropertiesWithEnv(
-            final SmallRyeConfig config,
-            final Set<String> roots,
-            final Set<String> mappedProperties) {
+    private void matchPropertiesWithEnv(final SmallRyeConfig config) {
         // TODO - We shouldn't be mutating the EnvSource.
         // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
 
-        // Check Env properties
+        String[] profiles = config.getProfiles().toArray(new String[0]);
+        boolean all = roots.containsKey("");
         StringBuilder sb = new StringBuilder();
+
         for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
+            if (roots.isEmpty()) {
+                break;
+            }
+
             EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
-            // Filter Envs with roots
-            List<String> envProperties = new ArrayList<>();
-            if (roots.contains("")) {
-                envProperties.addAll(envConfigSource.getPropertyNames());
-            } else {
-                for (String envProperty : envConfigSource.getPropertyNames()) {
-                    for (String root : roots) {
-                        if (isEnvPropertyInRoot(envProperty, root)) {
-                            envProperties.add(envProperty);
+            Set<String> mutableEnvProperties = envConfigSource.getPropertyNames();
+            List<String> envProperties = new ArrayList<>(mutableEnvProperties);
+            for (String envProperty : envProperties) {
+                String activeEnvProperty;
+                if (envProperty.charAt(0) == '%') {
+                    activeEnvProperty = activeName(envProperty, profiles);
+                } else {
+                    activeEnvProperty = envProperty;
+                }
+
+                String matchedRoot = null;
+                if (!all) {
+                    for (String root : roots.keySet()) {
+                        if (isEnvPropertyInRoot(activeEnvProperty, root)) {
+                            matchedRoot = root;
                             break;
                         }
                     }
+                    if (matchedRoot == null) {
+                        continue;
+                    }
+                } else {
+                    matchedRoot = "";
+                }
+
+                for (Map<String, Set<String>> rootNames : names.values()) {
+                    Set<String> mappedProperties = rootNames.get(matchedRoot);
+                    if (mappedProperties != null) {
+                        for (String mappedProperty : mappedProperties) {
+                            // Try to match Env with Root mapped property and generate the expected format
+                            List<Integer> indexOfDashes = indexOfDashes(mappedProperty, activeEnvProperty);
+                            if (indexOfDashes != null) {
+                                sb.append(activeEnvProperty);
+                                for (Integer dash : indexOfDashes) {
+                                    sb.setCharAt(dash, '-');
+                                }
+                                String expectedEnvProperty = sb.toString();
+                                if (!activeEnvProperty.equals(expectedEnvProperty)) {
+                                    envConfigSource.getPropertyNames().add(sb.toString());
+                                    envConfigSource.getPropertyNames().remove(envProperty);
+                                    ignoredPaths.add(activeEnvProperty);
+                                }
+                                sb.setLength(0);
+                                break;
+                            }
+                        }
+                        break;
+                    }
                 }
             }
+        }
 
-            // Try to match Env with Root mapped property and generate the expected format
-            for (String envProperty : envProperties) {
-                // We improve matching here by filtering only mapped properties from the matched root
-                for (String mappedProperty : mappedProperties) {
-                    List<Integer> indexOfDashes = indexOfDashes(mappedProperty, envProperty);
-                    if (indexOfDashes != null) {
-                        sb.append(envProperty);
-                        for (Integer dash : indexOfDashes) {
-                            sb.setCharAt(dash, '-');
+        // Match dotted properties from other sources with Env with the same semantic meaning
+        // This needs to happen after matching dashed names from mappings
+        List<String> dottedProperties = new ArrayList<>();
+        for (ConfigSource configSource : config.getConfigSources()) {
+            if (!(configSource instanceof EnvConfigSource)) {
+                Set<String> propertyNames = configSource.getPropertyNames();
+                if (propertyNames != null) {
+                    dottedProperties.addAll(propertyNames.stream().map(new Function<String, String>() {
+                        @Override
+                        public String apply(final String name) {
+                            return activeName(name, profiles);
                         }
-                        String expectedEnvProperty = sb.toString();
-                        if (!envProperty.equals(expectedEnvProperty)) {
-                            envConfigSource.getPropertyNames().add(sb.toString());
-                            envConfigSource.getPropertyNames().remove(envProperty);
-                        }
-                        sb.setLength(0);
-                        break;
+                    }).collect(Collectors.toList()));
+                }
+            }
+        }
+
+        for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
+            EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
+            for (String dottedProperty : dottedProperties) {
+                Set<String> envNames = envConfigSource.getPropertyNames();
+                if (envConfigSource.hasPropertyName(dottedProperty)) {
+                    if (!envNames.contains(dottedProperty)) {
+                        // this may be expensive, but it shouldn't happend that often
+                        envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(dottedProperty)));
+                        envNames.add(dottedProperty);
                     }
                 }
             }
@@ -227,7 +278,7 @@ final class ConfigMappingProvider implements Serializable {
         Map<String, List<Class<?>>> roots = new HashMap<>();
         Set<String> keys = new HashSet<>();
         Map<String, Map<String, Set<String>>> names = new HashMap<>();
-        List<String[]> ignoredPaths = new ArrayList<>();
+        List<String> ignoredPaths = new ArrayList<>();
         boolean validateUnknown = true;
         SmallRyeConfigBuilder configBuilder = null;
 
@@ -266,7 +317,7 @@ final class ConfigMappingProvider implements Serializable {
 
         Builder ignoredPath(String ignoredPath) {
             Assert.checkNotNullParam("ignoredPath", ignoredPath);
-            ignoredPaths.add(ignoredPath.split("\\."));
+            ignoredPaths.add(ignoredPath);
             return this;
         }
 

@@ -32,7 +32,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         if (profiles.length > 0) {
-            final String normalizeName = normalizeName(name);
+            final String normalizeName = activeName(name, profiles);
             final ConfigValue profileValue = getProfileValue(context, normalizeName);
             if (profileValue != null) {
                 final ConfigValue originalValue = context.proceed(normalizeName);
@@ -62,7 +62,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         final Set<String> names = new HashSet<>();
         final Iterator<String> namesIterator = context.iterateNames();
         while (namesIterator.hasNext()) {
-            names.add(normalizeName(namesIterator.next()));
+            names.add(activeName(namesIterator.next(), profiles));
         }
         return names.iterator();
     }
@@ -73,7 +73,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         final Iterator<ConfigValue> valuesIterator = context.iterateValues();
         while (valuesIterator.hasNext()) {
             final ConfigValue value = valuesIterator.next();
-            values.add(value.withName(normalizeName(value.getName())));
+            values.add(value.withName(activeName(value.getName(), profiles)));
         }
         return values.iterator();
     }
@@ -82,7 +82,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         return profiles;
     }
 
-    public String normalizeName(final String name) {
+    public static String activeName(final String name, final String[] profiles) {
         if (!name.isEmpty() && name.charAt(0) == '%') {
             int profilesEnd = name.indexOf('.', 1);
             int multipleSplit = -1;
