@@ -137,13 +137,12 @@ public final class ConfigMappingContext {
         return roots;
     }
 
-    void reportUnknown(final List<String[]> ignoredPaths) {
+    void reportUnknown(final List<String> ignoredPaths) {
         KeyMap<Boolean> ignoredProperties = new KeyMap<>();
-        for (String[] ignoredPath : ignoredPaths) {
-            int len = ignoredPath.length;
+        for (String ignoredPath : ignoredPaths) {
             KeyMap<Boolean> found;
-            if (ignoredPath[len - 1].equals("**")) {
-                found = ignoredProperties.findOrAdd(ignoredPath, 0, len - 1);
+            if (ignoredPath.endsWith(".**")) {
+                found = ignoredProperties.findOrAdd(ignoredPath.substring(0, ignoredPath.length() - 3));
                 found.putRootValue(Boolean.TRUE);
                 ignoreRecursively(found);
             } else {

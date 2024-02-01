@@ -253,7 +253,6 @@ public class EnvConfigSource extends AbstractConfigSource {
                         continue;
                 }
                 h = 31 * h + toLowerCase(c);
-                // h = 31 * h + c;
             }
             return h;
         }
@@ -342,7 +341,6 @@ public class EnvConfigSource extends AbstractConfigSource {
                             return false;
                         }
                     }
-                    // } else if (o != n) {
                 } else if (toLowerCase(o) != toLowerCase(n)) {
                     return false;
                 }

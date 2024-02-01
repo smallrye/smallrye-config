@@ -20,8 +20,6 @@ import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
@@ -860,41 +858,13 @@ public class SmallRyeConfig implements Config, Serializable {
 
         private static List<ConfigSource> getSources(final List<ConfigSourceWithPriority> sourceWithPriorities) {
             List<ConfigSource> configSources = new ArrayList<>();
-
-            List<EnvConfigSource> envSources = new ArrayList<>();
-            List<String> configuredProperties = new ArrayList<>();
-
             for (ConfigSourceWithPriority configSourceWithPriority : sourceWithPriorities) {
                 ConfigSource source = configSourceWithPriority.getSource();
                 configSources.add(source);
                 if (ConfigLogging.log.isDebugEnabled()) {
                     ConfigLogging.log.loadedConfigSource(source.getName(), source.getOrdinal());
                 }
-
-                if (source instanceof EnvConfigSource) {
-                    envSources.add((EnvConfigSource) source);
-                } else {
-                    Set<String> propertyNames = source.getPropertyNames();
-                    if (propertyNames != null) {
-                        configuredProperties.addAll(propertyNames);
-                    }
-                }
             }
-
-            // Match configured properties with Env with the same semantic meaning and use that one
-            for (EnvConfigSource envSource : envSources) {
-                for (String configuredProperty : configuredProperties) {
-                    Set<String> envNames = envSource.getPropertyNames();
-                    if (envSource.hasPropertyName(configuredProperty)) {
-                        if (!envNames.contains(configuredProperty)) {
-                            // this may be expensive, but it shouldn't happend that often
-                            envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(configuredProperty)));
-                            envNames.add(configuredProperty);
-                        }
-                    }
-                }
-            }
-
             return Collections.unmodifiableList(configSources);
         }
 
