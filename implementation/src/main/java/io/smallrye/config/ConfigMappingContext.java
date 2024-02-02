@@ -163,6 +163,10 @@ public final class ConfigMappingContext {
 
             if (!ignoredProperties.hasRootValue(name)) {
                 ConfigValue configValue = config.getConfigValue(name);
+                // TODO - https://github.com/quarkusio/quarkus/issues/38479
+                if (configValue.getSourceName().equals(EnvConfigSource.NAME)) {
+                    continue;
+                }
                 problems.add(new Problem(
                         ConfigMessages.msg.propertyDoesNotMapToAnyRoot(name, configValue.getLocation())));
             }
