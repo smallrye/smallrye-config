@@ -57,12 +57,13 @@ import io.smallrye.config.common.AbstractConfigSource;
 public class EnvConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -4525015934376795496L;
 
-    private static final int DEFAULT_ORDINAL = 300;
+    public static final String NAME = "EnvConfigSource";
+    public static final int ORDINAL = 300;
 
     private final EnvVars envVars;
 
     protected EnvConfigSource() {
-        this(DEFAULT_ORDINAL);
+        this(ORDINAL);
     }
 
     protected EnvConfigSource(final int ordinal) {
@@ -70,7 +71,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     }
 
     public EnvConfigSource(final Map<String, String> properties, final int ordinal) {
-        super("EnvConfigSource", getEnvOrdinal(properties, ordinal));
+        super(NAME, getEnvOrdinal(properties, ordinal));
         this.envVars = new EnvVars(properties);
     }
 
