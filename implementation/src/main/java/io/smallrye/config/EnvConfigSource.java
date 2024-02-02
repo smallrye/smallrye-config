@@ -16,6 +16,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+import static io.smallrye.config.common.utils.StringUtil.isAsciiLetterOrDigit;
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
@@ -32,18 +33,15 @@ import java.util.Set;
 import io.smallrye.config.common.AbstractConfigSource;
 
 /**
- * A {@link org.eclipse.microprofile.config.spi.ConfigSource} to access Environment Variables following the mapping
- * rules defined by the MicroProfile Config specification.
+ * A {@link org.eclipse.microprofile.config.spi.ConfigSource} to access Environment Variables.
  * <p>
  *
- * For a given property name <code>foo.bar.baz</code>, is matched to an environment variable with the following rules:
+ * A property name matches to an environment variable with the following rules:
  *
  * <ol>
- * <li>Exact match (<code>foo.bar.baz</code>)</li>
- * <li>Replace each character that is neither alphanumeric nor <code>_</code> with <code>_</code>
- * (<code>foo_bar_baz</code>)</li>
- * <li>Replace each character that is neither alphanumeric nor <code>_</code> with <code>_</code>; then convert the name to
- * upper case (<code>FOO_BAR_BAZ</code>)</li>
+ * <li>Match alphanumeric characters (any case)</li>
+ * <li>Match non-alphanumeric characters with <code>_</code></li>
+ * <li>Closing quotes in the end of a property name require a double <code>_</code></li>
  * </ol>
  * <p>
  *
@@ -234,25 +232,17 @@ public class EnvConfigSource extends AbstractConfigSource {
 
             for (int i = 0; i < length; i++) {
                 char c = name.charAt(i);
-                if (i == 0) {
-                    if (c == '%' || c == '_') {
+                if (i == 0 && length > 1) {
+                    // The first '%' or '_' is meaninful because it represents a profiled property name
+                    if ((c == '%' || c == '_') && isAsciiLetterOrDigit(name.charAt(i + 1))) {
                         h = 31 * h + 31;
                         continue;
                     }
                 }
 
-                switch (c) {
-                    case '.':
-                    case '_':
-                    case '-':
-                    case '"':
-                    case '*':
-                    case '[':
-                    case ']':
-                    case '/':
-                        continue;
+                if (isAsciiLetterOrDigit(c)) {
+                    h = 31 * h + toLowerCase(c);
                 }
-                h = 31 * h + toLowerCase(c);
             }
             return h;
         }
@@ -272,14 +262,8 @@ public class EnvConfigSource extends AbstractConfigSource {
                 return false;
             }
 
-            char n = name.charAt(0);
-            char o = other.charAt(0);
-
-            if (o == '%' || o == '_') {
-                if (n != '%' && n != '_') {
-                    return false;
-                }
-            }
+            char n;
+            char o;
 
             int matchPosition = name.length() - 1;
             for (int i = other.length() - 1; i >= 0; i--) {
@@ -333,13 +317,18 @@ public class EnvConfigSource extends AbstractConfigSource {
                     }
                     return false;
                 } else if (o == '_') {
-                    if (n != '.' && n != '-' && n != '_' && n != '"' && n != ']' && n != '[' && n != '/') {
+                    if (isAsciiLetterOrDigit(n)) {
                         return false;
                     } else if (n == '"' && other.length() - 1 == i) {
                         i = other.lastIndexOf("_", i - 1);
                         if (i == -1) {
                             return false;
                         }
+                    }
+                } else if (!isAsciiLetterOrDigit(o)) {
+                    if (o != n && n != '_') {
+                        return false;
+
                     }
                 } else if (toLowerCase(o) != toLowerCase(n)) {
                     return false;
