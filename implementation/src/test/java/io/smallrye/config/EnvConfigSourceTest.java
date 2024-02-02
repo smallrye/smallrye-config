@@ -435,6 +435,41 @@ class EnvConfigSourceTest {
         }
     }
 
+    @Test
+    void ignoreUnmappedWithMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(IgnoreUnmappedWithMap.class)
+                .withSources(new EnvConfigSource(Map.of(
+                        "IGNORE_VALUE", "value",
+                        "IGNORE_LIST_0_", "0",
+                        "IGNORE_NESTED_VALUE", "nested",
+                        "IGNORE_IGNORE", "ignore",
+                        "IGNORE_NESTED_IGNORE", "ignore"), 100))
+                .build();
+
+        IgnoreUnmappedWithMap mapping = config.getConfigMapping(IgnoreUnmappedWithMap.class);
+
+        assertEquals("value", mapping.value());
+        assertEquals(0, mapping.list().get(0));
+        assertEquals("nested", mapping.nested().value());
+    }
+
+    @ConfigMapping(prefix = "ignore")
+    public interface IgnoreUnmappedWithMap {
+        String value();
+
+        List<Integer> list();
+
+        Nested nested();
+
+        @WithParentName
+        Map<String, String> ignore();
+
+        interface Nested {
+            String value();
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
