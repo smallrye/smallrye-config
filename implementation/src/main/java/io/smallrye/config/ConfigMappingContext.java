@@ -575,10 +575,7 @@ public final class ConfigMappingContext {
                     @Override
                     public Object apply(final String propertyName) {
                         usedProperties.add(propertyName);
-                        for (String mapKey : config.getMapKeys(propertyName).values()) {
-                            usedProperties.add(mapKey);
-                            usedProperties.addAll(config.getIndexedProperties(mapKey));
-                        }
+                        usedProperties.addAll(config.getMapKeys(propertyName).values());
                         Converter<K> keyConverter = getConverter(keyRawType, keyConvertWith);
                         Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
 
