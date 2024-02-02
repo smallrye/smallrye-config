@@ -247,7 +247,7 @@ public class SmallRyeConfig implements Config, Serializable {
             return getValue(name,
                     newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
         } catch (NoSuchElementException e) {
-            Map<String, String> mapCollectionKeys = getMapKeys(name);
+            Map<String, String> mapCollectionKeys = getMapIndexedKeys(name);
             if (mapCollectionKeys.isEmpty()) {
                 throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
             }
@@ -267,8 +267,22 @@ public class SmallRyeConfig implements Config, Serializable {
             if (propertyName.length() > name.length() + 1
                     && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
                     && propertyName.startsWith(name)) {
-                String key = unquoted(unindexed(propertyName), name.isEmpty() ? 0 : name.length() + 1);
-                mapKeys.put(key, unindexed(propertyName));
+                String key = unquoted(propertyName, name.isEmpty() ? 0 : name.length() + 1);
+                mapKeys.put(key, propertyName);
+            }
+        }
+        return mapKeys;
+    }
+
+    public Map<String, String> getMapIndexedKeys(final String name) {
+        Map<String, String> mapKeys = new HashMap<>();
+        for (String propertyName : getPropertyNames()) {
+            if (propertyName.length() > name.length() + 1
+                    && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
+                    && propertyName.startsWith(name)) {
+                String unindexedName = unindexed(propertyName);
+                String key = unquoted(unindexedName, name.isEmpty() ? 0 : name.length() + 1);
+                mapKeys.put(key, unindexedName);
             }
         }
         return mapKeys;
@@ -495,7 +509,7 @@ public class SmallRyeConfig implements Config, Serializable {
             return optionalValue;
         }
 
-        Map<String, String> mapKeys = getMapKeys(name);
+        Map<String, String> mapKeys = getMapIndexedKeys(name);
         if (mapKeys.isEmpty()) {
             return Optional.empty();
         }
