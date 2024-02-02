@@ -276,22 +276,25 @@ class ConfigMappingInterfaceTest {
                 .withSources(config(
                         "server.host", "localhost",
                         "server.port", "8080",
-                        "server.server.host", "localhost-server",
-                        "server.server.port", "8080",
                         "server.group.server.host", "localhost-group",
-                        "server.group.server.port", "8080"))
+                        "server.group.server.port", "8081",
+                        "server.server.host", "localhost-server",
+                        "server.server.port", "8082"))
                 .withMapping(Maps.class)
                 .build();
         Maps maps = config.getConfigMapping(Maps.class);
 
+        assertEquals(6, maps.server().size());
         assertEquals("localhost", maps.server().get("host"));
         assertEquals(8080, Integer.valueOf(maps.server().get("port")));
 
+        assertEquals(1, maps.group().size());
         assertEquals("localhost-group", maps.group().get("server").host());
-        assertEquals(8080, maps.group().get("server").port());
+        assertEquals(8081, maps.group().get("server").port());
 
+        assertEquals(1, maps.groupParentName().size());
         assertEquals("localhost-server", maps.groupParentName().get("server").host());
-        assertEquals(8080, maps.groupParentName().get("server").port());
+        assertEquals(8082, maps.groupParentName().get("server").port());
     }
 
     @Test
@@ -300,22 +303,25 @@ class ConfigMappingInterfaceTest {
                 .withSources(config(
                         "host", "localhost",
                         "port", "8080",
-                        "server.host", "localhost",
-                        "server.port", "8080",
                         "group.server.host", "localhost",
-                        "group.server.port", "8080"))
+                        "group.server.port", "8081",
+                        "server.host", "localhost",
+                        "server.port", "8082"))
                 .withMapping(Maps.class, "")
                 .build();
         Maps maps = config.getConfigMapping(Maps.class, "");
 
+        assertEquals(6, maps.server().size());
         assertEquals("localhost", maps.server().get("host"));
         assertEquals(8080, Integer.valueOf(maps.server().get("port")));
 
+        assertEquals(1, maps.group().size());
         assertEquals("localhost", maps.group().get("server").host());
-        assertEquals(8080, maps.group().get("server").port());
+        assertEquals(8081, maps.group().get("server").port());
 
+        assertEquals(1, maps.groupParentName().size());
         assertEquals("localhost", maps.groupParentName().get("server").host());
-        assertEquals(8080, maps.groupParentName().get("server").port());
+        assertEquals(8082, maps.groupParentName().get("server").port());
     }
 
     @Test
@@ -823,7 +829,7 @@ class ConfigMappingInterfaceTest {
     @Test
     void mapEnv() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new EnvConfigSource(new HashMap<String, String>() {
+                .withSources(new EnvConfigSource(new HashMap<>() {
                     {
                         put("MAPPING_SERVER_ENV__LOCALHOST__NAME", "development");
                         put("MAPPING_SERVER_ENV__LOCALHOST__ALIAS", "dev");
@@ -1672,10 +1678,12 @@ class ConfigMappingInterfaceTest {
         assertEquals("value", mapping.dottedName());
         assertEquals("value", mapping.nested().dottedName());
         assertEquals("default", mapping.nested().dotted().name());
+        assertEquals(1, mapping.map().size());
         assertEquals("value", mapping.map().get("key").dottedName());
         assertEquals("value", mapping.map().get("key").name());
         assertEquals("another", mapping.map().get("key").dotted().name());
         assertEquals("value", mapping.map().get("key").dotted().description());
+        assertEquals(1, mapping.nestedMap().size());
         assertEquals("value", mapping.nestedMap().get("key").get("nested-key").name());
         assertEquals("another", mapping.nestedMap().get("key").get("nested-key").dotted().name());
         assertEquals("value", mapping.nestedMap().get("key").get("nested-key").dotted().description());
@@ -2457,6 +2465,36 @@ class ConfigMappingInterfaceTest {
 
         interface PolicyConfig {
             Map<String, List<String>> roles();
+        }
+    }
+
+    @Test
+    void ambiguousUnnamedKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "ambiguous.value", "value",
+                        "ambiguous.ambiguous.value", "value"))
+                .withMapping(AmbiguousUnnamedKeys.class)
+                .build();
+
+        AmbiguousUnnamedKeys mapping = config.getConfigMapping(AmbiguousUnnamedKeys.class);
+        assertEquals(1, mapping.map().size());
+    }
+
+    @ConfigMapping(prefix = "ambiguous")
+    interface AmbiguousUnnamedKeys {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        Map<String, Nested> map();
+
+        interface Nested {
+            Optional<String> value();
+
+            Ambiguous ambiguous();
+
+            interface Ambiguous {
+                Optional<String> value();
+            }
         }
     }
 }
