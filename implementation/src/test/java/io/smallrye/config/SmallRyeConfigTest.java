@@ -370,14 +370,16 @@ class SmallRyeConfigTest {
                 .withSources(config(
                         "my.prop.key", "value",
                         "my.prop.key.nested", "value",
-                        "my.prop.\"key.quoted\"", "value"))
+                        "my.prop.\"key.quoted\"", "value",
+                        "my.prop.key.indexed[0]", "value"))
                 .build();
 
         Map<String, String> map = config.getValues("my.prop", String.class, String.class);
-        assertEquals(3, map.size());
+        assertEquals(4, map.size());
         assertEquals("value", map.get("key"));
         assertEquals("value", map.get("key.nested"));
         assertEquals("value", map.get("key.quoted"));
+        assertEquals("value", map.get("key.indexed[0]"));
 
         Converter<String> stringConverter = config.requireConverter(String.class);
         Map<String, String> treeMap = config.getValues("my.prop", stringConverter, stringConverter, t -> new TreeMap<>());
@@ -385,10 +387,11 @@ class SmallRyeConfigTest {
 
         Optional<Map<String, String>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class);
         assertTrue(optionalMap.isPresent());
-        assertEquals(3, optionalMap.get().size());
+        assertEquals(4, optionalMap.get().size());
         assertEquals("value", optionalMap.get().get("key"));
         assertEquals("value", optionalMap.get().get("key.nested"));
         assertEquals("value", optionalMap.get().get("key.quoted"));
+        assertEquals("value", optionalMap.get().get("key.indexed[0]"));
 
         Optional<Map<String, String>> optionalTreeMap = config.getOptionalValues("my.prop", stringConverter, stringConverter,
                 t -> new TreeMap<>());
