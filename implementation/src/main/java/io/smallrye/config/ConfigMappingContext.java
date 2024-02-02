@@ -307,22 +307,7 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
-                        Map<String, String> mapKeys = getMapKeys(!path.isEmpty() && path.charAt(path.length() - 1) == '.'
-                                ? path.substring(0, path.length() - 1)
-                                : path);
-                        Map<K, V> map = defaultValue != null ? new MapWithDefault<>(defaultValue.get())
-                                : new HashMap<>(mapKeys.size());
-                        for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
-                            nestedCreators.add(new Consumer<>() {
-                                @Override
-                                public void accept(Function<String, Object> get) {
-                                    V value = (V) get.apply(entry.getValue());
-                                    if (value != null) {
-                                        map.putIfAbsent(keyConverter.convert(entry.getKey()), value);
-                                    }
-                                }
-                            });
-                        }
+                        Map<K, V> map = defaultValue != null ? new MapWithDefault<>(defaultValue.get()) : new HashMap<>();
 
                         if (unnamedKey != null) {
                             nestedCreators.add(new Consumer<>() {
@@ -330,10 +315,49 @@ public final class ConfigMappingContext {
                                 public void accept(Function<String, Object> get) {
                                     V value = (V) get.apply(path);
                                     if (value != null) {
-                                        map.putIfAbsent(unnamedKey.equals("") ? null : keyConverter.convert(unnamedKey), value);
+                                        map.put(unnamedKey.equals("") ? null : keyConverter.convert(unnamedKey), value);
                                     }
                                 }
                             });
+                        }
+
+                        Set<String> mapKeys = new HashSet<>();
+                        for (String propertyName : config.getPropertyNames()) {
+                            if (propertyName.length() > path.length() + 1 // only consider properties bigger than the map path
+                                    && (path.isEmpty() || propertyName.charAt(path.length()) == '.') // next char must be a dot (for the key)
+                                    && propertyName.startsWith(path)) { // the property must start with the map path
+
+                                // Start at the map root path
+                                NameIterator mapProperty = !path.isEmpty()
+                                        ? new NameIterator(unindexed(propertyName), path.length())
+                                        : new NameIterator(unindexed(propertyName));
+                                // Move to the next key
+                                mapProperty.next();
+
+                                String mapKey = unindexed(mapProperty.getPreviousSegment());
+                                // Nested property names use the same key for the same element, so track keys and skip if we already handled it
+                                if (mapKeys.contains(mapKey)) {
+                                    continue;
+                                }
+
+                                mapKeys.add(mapKey);
+                                String mapNext = unindexed(propertyName.substring(0, mapProperty.getPosition()));
+
+                                nestedCreators.add(new Consumer<>() {
+                                    @Override
+                                    public void accept(Function<String, Object> get) {
+                                        // The properties may have been used ih the unnamed key, which cause clashes, so we skip them
+                                        if (unnamedKey != null && usedProperties.contains(propertyName)) {
+                                            return;
+                                        }
+
+                                        V value = (V) get.apply(mapNext);
+                                        if (value != null) {
+                                            map.put(keyConverter.convert(mapKey), value);
+                                        }
+                                    }
+                                });
+                            }
                         }
 
                         return map;
@@ -611,24 +635,6 @@ public final class ConfigMappingContext {
 
         private <V> Converter<V> getConverter(final Class<V> rawType, final Class<? extends Converter<V>> convertWith) {
             return convertWith == null ? config.requireConverter(rawType) : getConverterInstance(convertWith);
-        }
-
-        private Map<String, String> getMapKeys(final String name) {
-            Map<String, String> mapKeys = new HashMap<>();
-            for (String propertyName : config.getPropertyNames()) {
-                if (propertyName.length() > name.length() + 1
-                        && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
-                        && propertyName.startsWith(name)) {
-                    // Start at the map root name
-                    NameIterator key = !name.isEmpty() ? new NameIterator(unindexed(propertyName), name.length())
-                            : new NameIterator(unindexed(propertyName));
-                    // Move to the next key
-                    key.next();
-                    // Record key and map root name plus key
-                    mapKeys.put(unindexed(key.getPreviousSegment()), unindexed(propertyName.substring(0, key.getPosition())));
-                }
-            }
-            return mapKeys;
         }
 
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
