@@ -146,8 +146,10 @@ public final class ConfigMappingContext {
                 found.putRootValue(Boolean.TRUE);
                 ignoreRecursively(found);
             } else {
-                found = ignoredProperties.findOrAdd(ignoredPath);
-                found.putRootValue(Boolean.TRUE);
+                if (!ignoredProperties.hasRootValue(ignoredPath)) {
+                    found = ignoredProperties.findOrAdd(ignoredPath);
+                    found.putRootValue(Boolean.TRUE);
+                }
             }
         }
 
@@ -164,7 +166,7 @@ public final class ConfigMappingContext {
             if (!ignoredProperties.hasRootValue(name)) {
                 ConfigValue configValue = config.getConfigValue(name);
                 // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                if (configValue.getSourceName().equals(EnvConfigSource.NAME)) {
+                if (configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
                     continue;
                 }
                 problems.add(new Problem(
