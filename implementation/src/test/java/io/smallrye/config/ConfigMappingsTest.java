@@ -201,6 +201,44 @@ public class ConfigMappingsTest {
         assertTrue(toString.contains("Alias{name=prod-2}"));
     }
 
+    @ConfigMapping(prefix = "app")
+    interface SuperToStringMapping {
+        List<Bar> foo();
+
+        String toString();
+
+        interface Bar extends Foo {
+            String child();
+
+            String toString();
+        }
+
+        interface Foo {
+            String parent();
+
+            String toString();
+        }
+    }
+
+    @Test
+    void superToString() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SuperToStringMapping.class)
+                .withSources(config(
+                        "app.foo[0].parent", "parent",
+                        "app.foo[0].child", "child"))
+                .build();
+
+        SuperToStringMapping mapping = config.getConfigMapping(SuperToStringMapping.class);
+
+        assertEquals("parent", mapping.foo().get(0).parent());
+        assertEquals("child", mapping.foo().get(0).child());
+
+        String toString = mapping.toString();
+        assertTrue(toString.contains("parent=parent"));
+        assertTrue(toString.contains("child=child"));
+    }
+
     @ConfigMapping(prefix = "server")
     interface Server {
         String host();
