@@ -284,21 +284,28 @@ public class StringUtil {
                     }
                 }
                 b.append(Character.toLowerCase(c));
+                // lookahead for all upper case words, like fooBAR transform to foo_bar and not foo_b_a_r
+                // move caret by 1
                 int j = i + 1;
                 for (; j < end; j++) {
                     char u = camelHumps.charAt(j);
                     if (Character.isUpperCase(u)) {
                         b.append(Character.toLowerCase(u));
                     } else if (Character.isDigit(u) || u == '-') {
+                        // A digit in the middle will break the all upper case word, the main cycle can resume
                         b.append(u);
                     } else {
-                        if (j > i + 1 && u != '_') {
+                        // it is an all upper case word if j > i + 1, the initial value
+                        if (j > i + 1 && u != '_' && !Character.isDigit(b.charAt(b.length() - 1))) {
+                            // all upper case word done, but last upper starts a new word, so we need to insert the separator
                             b.insert(b.length() - 1, separator);
                         }
+                        // we don't know what is coming next, so we go back and let the main cycle handle it
                         j--;
                         break;
                     }
                 }
+                // restore caret
                 i = j;
             } else if (Character.isDigit(c)) {
                 b.append(c);

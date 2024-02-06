@@ -142,6 +142,12 @@ class StringUtilTest {
         assertEquals("foo.bar-baz", StringUtil.skewer("foo.barBaz"));
         assertEquals("foo.bar-baz[0]", StringUtil.skewer("foo.barBaz[0]"));
         assertEquals("foo.bar-baz[*]", StringUtil.skewer("foo.barBaz[*]"));
+
+        assertEquals("across-b2b", StringUtil.skewer("acrossB2b"));
+        assertEquals("across-b22b", StringUtil.skewer("acrossB22b"));
+        assertEquals("across-b22b", StringUtil.skewer("acrossB22B"));
+        assertEquals("across-b22bb", StringUtil.skewer("acrossB22BB"));
+        assertEquals("across-b22b-bb", StringUtil.skewer("acrossB22BBb"));
     }
 
     @Test
