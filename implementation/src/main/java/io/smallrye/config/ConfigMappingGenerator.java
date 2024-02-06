@@ -718,7 +718,7 @@ public class ConfigMappingGenerator {
         ts.visitLdcInsn(mapping.getInterfaceType().getSimpleName() + "{");
         ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
 
-        Property[] properties = mapping.getProperties();
+        Property[] properties = mapping.getProperties(true);
         for (int i = 0, propertiesLength = properties.length; i < propertiesLength; i++) {
             Property property = properties[i];
             if (property.isDefaultMethod()) {
