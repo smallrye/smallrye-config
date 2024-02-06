@@ -2497,4 +2497,45 @@ class ConfigMappingInterfaceTest {
             }
         }
     }
+
+    @Test
+    void ambiguousMapKeyWithGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "ambiguous.query.sql", "sql",
+                        "ambiguous.default.name", "name"))
+                .withMapping(AmbiguousMapKeyWithGroup.class)
+                .build();
+
+        AmbiguousMapKeyWithGroup mapping = config.getConfigMapping(AmbiguousMapKeyWithGroup.class);
+        assertEquals("sql", mapping.query().sql());
+        assertEquals("name", mapping.datasources().get("default").name());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "ambiguous.query.sql", "sql",
+                        "ambiguous.query.name", "name"))
+                .withMapping(AmbiguousMapKeyWithGroup.class)
+                .build();
+
+        mapping = config.getConfigMapping(AmbiguousMapKeyWithGroup.class);
+        assertEquals("sql", mapping.query().sql());
+        assertEquals("name", mapping.datasources().get("query").name());
+    }
+
+    @ConfigMapping(prefix = "ambiguous")
+    interface AmbiguousMapKeyWithGroup {
+        Query query();
+
+        @WithParentName
+        Map<String, Datasource> datasources();
+
+        interface Query {
+            String sql();
+        }
+
+        interface Datasource {
+            String name();
+        }
+    }
 }
