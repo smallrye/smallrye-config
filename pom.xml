@@ -27,7 +27,7 @@
 
   <groupId>io.smallrye.config</groupId>
   <artifactId>smallrye-config-parent</artifactId>
-  <version>3.5.5-SNAPSHOT</version>
+  <version>3.5.4-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye Config: Parent</name>

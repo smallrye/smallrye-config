@@ -26,7 +26,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>mapping</artifactId>
-  <version>3.5.5-SNAPSHOT</version>
+  <version>3.5.4-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: Config Mapping</name>
 
