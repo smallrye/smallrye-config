@@ -323,7 +323,8 @@ public final class ConfigMappingContext {
                             });
                         }
 
-                        Set<String> mapKeys = new HashSet<>();
+                        Map<String, String> mapKeys = new HashMap<>();
+                        Map<String, List<String>> mapProperties = new HashMap<>();
                         for (String propertyName : config.getPropertyNames()) {
                             if (propertyName.length() > path.length() + 1 // only consider properties bigger than the map path
                                     && (path.isEmpty() || propertyName.charAt(path.length()) == '.') // next char must be a dot (for the key)
@@ -337,29 +338,49 @@ public final class ConfigMappingContext {
                                 mapProperty.next();
 
                                 String mapKey = unindexed(mapProperty.getPreviousSegment());
-                                // Nested property names use the same key for the same element, so track keys and skip if we already handled it
-                                if (mapKeys.contains(mapKey)) {
-                                    continue;
-                                }
-
-                                mapKeys.add(mapKey);
-                                String mapNext = unindexed(propertyName.substring(0, mapProperty.getPosition()));
-
-                                nestedCreators.add(new Consumer<>() {
+                                mapKeys.computeIfAbsent(mapKey, new Function<String, String>() {
                                     @Override
-                                    public void accept(Function<String, Object> get) {
-                                        // The properties may have been used ih the unnamed key, which cause clashes, so we skip them
-                                        if (unnamedKey != null && usedProperties.contains(propertyName)) {
-                                            return;
-                                        }
-
-                                        V value = (V) get.apply(mapNext);
-                                        if (value != null) {
-                                            map.put(keyConverter.convert(mapKey), value);
-                                        }
+                                    public String apply(final String s) {
+                                        return unindexed(propertyName.substring(0, mapProperty.getPosition()));
                                     }
                                 });
+
+                                mapProperties.computeIfAbsent(mapKey, new Function<String, List<String>>() {
+                                    @Override
+                                    public List<String> apply(final String s) {
+                                        return new ArrayList<>();
+                                    }
+                                });
+                                mapProperties.get(mapKey).add(propertyName);
                             }
+                        }
+
+                        for (Map.Entry<String, String> mapKey : mapKeys.entrySet()) {
+                            nestedCreators.add(new Consumer<>() {
+                                @Override
+                                public void accept(Function<String, Object> get) {
+                                    // The properties may have been used ih the unnamed key, which cause clashes, so we skip them
+                                    if (unnamedKey != null) {
+                                        boolean allUsed = true;
+                                        for (String mapProperty : mapProperties.get(mapKey.getKey())) {
+                                            if (!usedProperties.contains(mapProperty)) {
+                                                allUsed = false;
+                                                break;
+                                            }
+                                        }
+                                        if (allUsed) {
+                                            return;
+                                        }
+                                    }
+
+                                    // This is the full path plus the map key
+                                    V value = (V) get.apply(mapKey.getValue());
+                                    if (value != null) {
+                                        map.put(keyConverter.convert(mapKey.getKey()), value);
+                                    }
+                                }
+                            });
+
                         }
 
                         return map;
