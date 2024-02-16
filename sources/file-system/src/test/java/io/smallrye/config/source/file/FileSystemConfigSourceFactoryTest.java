@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Iterator;
-import java.util.List;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -40,7 +39,6 @@ class FileSystemConfigSourceFactoryTest {
 
     private ConfigSourceContext newConfigSourceContext(String value) {
         return new ConfigSourceContext() {
-
             @Override
             public Iterator<String> iterateNames() {
                 return null;
@@ -49,11 +47,6 @@ class FileSystemConfigSourceFactoryTest {
             @Override
             public ConfigValue getValue(String name) {
                 return new ConfigValueBuilder().withValue(value).build();
-            }
-
-            @Override
-            public List<String> getProfiles() {
-                return null;
             }
         };
     }

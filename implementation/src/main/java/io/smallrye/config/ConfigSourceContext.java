@@ -13,9 +13,15 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public interface ConfigSourceContext {
     ConfigValue getValue(String name);
 
-    List<String> getProfiles();
-
     Iterator<String> iterateNames();
+
+    default List<String> getProfiles() {
+        throw new UnsupportedOperationException();
+    }
+
+    default List<ConfigSource> getConfigSources() {
+        throw new UnsupportedOperationException();
+    }
 
     class ConfigSourceContextConfigSource implements ConfigSource {
         private final ConfigSourceContext context;
@@ -43,6 +49,11 @@ public interface ConfigSourceContext {
         @Override
         public String getName() {
             return ConfigSourceContextConfigSource.class.getName();
+        }
+
+        @Override
+        public int getOrdinal() {
+            return Integer.MAX_VALUE;
         }
     }
 }

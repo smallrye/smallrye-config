@@ -18,6 +18,7 @@ package io.smallrye.config;
 import static io.smallrye.config.Converters.BOOLEAN_CONVERTER;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
@@ -360,7 +361,7 @@ class EnvConfigSourceTest {
     }
 
     @ConfigMapping(prefix = "ignore")
-    public interface IgnoreUnmappedWithMappingIgnore {
+    interface IgnoreUnmappedWithMappingIgnore {
         String value();
 
         List<Integer> list();
@@ -455,7 +456,7 @@ class EnvConfigSourceTest {
     }
 
     @ConfigMapping(prefix = "ignore")
-    public interface IgnoreUnmappedWithMap {
+    interface IgnoreUnmappedWithMap {
         String value();
 
         List<Integer> list();
@@ -468,6 +469,32 @@ class EnvConfigSourceTest {
         interface Nested {
             String value();
         }
+    }
+
+    @Test
+    void mappingFactory() {
+        ConfigSourceFactory.ConfigurableConfigSourceFactory<MappingFactory> sourceFactory = new ConfigSourceFactory.ConfigurableConfigSourceFactory<>() {
+            @Override
+            public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, final MappingFactory mapping) {
+                assertEquals("value", mapping.aValue());
+                assertEquals("value", mapping.aMap().get("key"));
+                return emptyList();
+            }
+        };
+
+        new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of(
+                        "MAPPING_A_VALUE", "value",
+                        "MAPPING_A_MAP_KEY", "value"), 300))
+                .withSources(sourceFactory)
+                .build();
+    }
+
+    @ConfigMapping(prefix = "mapping")
+    interface MappingFactory {
+        String aValue();
+
+        Map<String, String> aMap();
     }
 
     private static boolean envSourceEquals(String name, String lookup) {
