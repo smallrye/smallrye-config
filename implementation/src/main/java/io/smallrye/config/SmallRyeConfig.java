@@ -22,6 +22,7 @@ import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
+import static java.util.stream.Collectors.toList;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -815,14 +816,15 @@ public class SmallRyeConfig implements Config, Serializable {
                 final List<ConfigSourceInterceptor> interceptors,
                 final ConfigSourceInterceptorContext current,
                 final List<String> profiles,
-                final SmallRyeConfigBuilder builder, final SmallRyeConfig config) {
+                final SmallRyeConfigBuilder builder,
+                final SmallRyeConfig config) {
 
             ConfigSourceWithPriority.resetLoadPriority();
             List<ConfigSourceWithPriority> currentSources = new ArrayList<>();
 
             // Init all profile sources first
             List<ConfigSource> profileSources = new ArrayList<>();
-            ConfigSourceContext mainContext = new SmallRyeConfigSourceContext(current, profiles);
+            ConfigSourceContext mainContext = new SmallRyeConfigSourceContext(current, profiles, sources);
             for (ConfigurableConfigSource profileSource : getConfigurableSources(sources)) {
                 if (profileSource.getFactory() instanceof ProfileConfigSourceFactory) {
                     profileSources.addAll(profileSource.getConfigSources(mainContext));
@@ -845,7 +847,8 @@ public class SmallRyeConfig implements Config, Serializable {
             // Init remaining sources, coming from SmallRyeConfig
             int countSourcesFromLocations = 0;
             List<ConfigSource> lateSources = new ArrayList<>();
-            ConfigSourceContext profileContext = new SmallRyeConfigSourceContext(context, profiles);
+            ConfigSourceContext profileContext = new SmallRyeConfigSourceContext(context, profiles,
+                    currentSources.stream().map(ConfigSourceWithPriority::getSource).collect(toList()));
             for (ConfigurableConfigSource lateSource : getConfigurableSources(sources)) {
                 if (!(lateSource.getFactory() instanceof ProfileConfigSourceFactory)) {
                     List<ConfigSource> configSources = lateSource.getConfigSources(profileContext);
@@ -966,6 +969,42 @@ public class SmallRyeConfig implements Config, Serializable {
 
         static void resetLoadPriority() {
             loadPrioritySequence = 0;
+        }
+    }
+
+    private static class SmallRyeConfigSourceContext implements ConfigSourceContext {
+        private final ConfigSourceInterceptorContext context;
+        private final List<String> profiles;
+        private final List<ConfigSource> sources;
+
+        public SmallRyeConfigSourceContext(
+                final ConfigSourceInterceptorContext context,
+                final List<String> profiles,
+                final List<ConfigSource> sources) {
+            this.context = context;
+            this.profiles = profiles;
+            this.sources = sources;
+        }
+
+        @Override
+        public ConfigValue getValue(final String name) {
+            ConfigValue value = context.proceed(name);
+            return value != null ? value : ConfigValue.builder().withName(name).build();
+        }
+
+        @Override
+        public List<String> getProfiles() {
+            return profiles;
+        }
+
+        @Override
+        public List<ConfigSource> getConfigSources() {
+            return sources;
+        }
+
+        @Override
+        public Iterator<String> iterateNames() {
+            return context.iterateNames();
         }
     }
 

@@ -344,11 +344,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                         }
 
                         @Override
-                        public List<String> getProfiles() {
-                            throw new UnsupportedOperationException();
-                        }
-
-                        @Override
                         public Iterator<String> iterateNames() {
                             return context.iterateNames();
                         }
@@ -398,11 +393,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                                             @Override
                                             public ConfigValue getValue(final String name) {
                                                 return context.proceed(name);
-                                            }
-
-                                            @Override
-                                            public List<String> getProfiles() {
-                                                throw new UnsupportedOperationException();
                                             }
 
                                             @Override

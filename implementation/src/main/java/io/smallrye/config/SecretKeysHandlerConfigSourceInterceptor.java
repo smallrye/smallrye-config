@@ -47,11 +47,6 @@ public class SecretKeysHandlerConfigSourceInterceptor implements ConfigSourceInt
                 }
 
                 @Override
-                public List<String> getProfiles() {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
                 public Iterator<String> iterateNames() {
                     return context.iterateNames();
                 }

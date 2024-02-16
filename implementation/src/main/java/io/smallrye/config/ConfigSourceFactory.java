@@ -50,6 +50,7 @@ public interface ConfigSourceFactory {
 
             SmallRyeConfig config = new SmallRyeConfigBuilder()
                     .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
+                    .withSources(context.getConfigSources())
                     .withMapping((Class<? extends MAPPING>) typeArgument)
                     .build();
 

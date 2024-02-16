@@ -40,7 +40,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
         // A keystore may contain the encryption key for a handler, so we load keystore that do not have handlers
         Map<String, KeyStoreConfig.KeyStore> prioritized = new HashMap<>();
         Map<String, KeyStoreConfig.KeyStore> late = new HashMap<>();
-        for (final Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : keyStoreConfig.keystores().entrySet()) {
+        for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : keyStoreConfig.keystores().entrySet()) {
             if (keyStoreEntry.getValue().handler().isEmpty()) {
                 prioritized.put(keyStoreEntry.getKey(), keyStoreEntry.getValue());
             } else {
@@ -50,7 +50,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
 
         List<ConfigSource> keyStoreSources = new ArrayList<>();
         for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : prioritized.entrySet()) {
-            for (final ConfigSource configSource : loadKeyStoreSources(context, keyStoreEntry.getKey(),
+            for (ConfigSource configSource : loadKeyStoreSources(context, keyStoreEntry.getKey(),
                     keyStoreEntry.getValue())) {
                 keyStoreSources.add(configSource);
             }
@@ -67,18 +67,13 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
             }
 
             @Override
-            public List<String> getProfiles() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
             public Iterator<String> iterateNames() {
                 return contextConfig.getPropertyNames().iterator();
             }
         };
 
         for (Map.Entry<String, KeyStoreConfig.KeyStore> keyStoreEntry : late.entrySet()) {
-            for (final ConfigSource configSource : loadKeyStoreSources(keyStoreContext, keyStoreEntry.getKey(),
+            for (ConfigSource configSource : loadKeyStoreSources(keyStoreContext, keyStoreEntry.getKey(),
                     keyStoreEntry.getValue())) {
                 keyStoreSources.add(configSource);
             }
