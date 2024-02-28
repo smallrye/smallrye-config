@@ -10,6 +10,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
+@Deprecated(forRemoval = true)
 public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSource implements ConfigValueConfigSource {
     private static final long serialVersionUID = -4619155951589529987L;
 
