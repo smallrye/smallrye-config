@@ -41,20 +41,4 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
         }
         return context.iterateNames();
     }
-
-    @Override
-    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
-        if (SecretKeys.isLocked()) {
-            Set<ConfigValue> values = new HashSet<>();
-            Iterator<ConfigValue> valuesIterator = context.iterateValues();
-            while (valuesIterator.hasNext()) {
-                ConfigValue value = valuesIterator.next();
-                if (!secrets.contains(value.getName())) {
-                    values.add(value);
-                }
-            }
-            return values.iterator();
-        }
-        return context.iterateValues();
-    }
 }

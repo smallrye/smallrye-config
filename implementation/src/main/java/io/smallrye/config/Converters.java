@@ -318,16 +318,11 @@ public final class Converters {
      *
      * @param keyConverter the converter used to convert the keys
      * @param valueConverter the converter used to convert the values
+     * @param mapFactory the map factory (must not be {@code null})
+     * @return the new converter (not {@code null})
      * @param <K> the type of the keys
      * @param <V> the type of the values
-     * @return the new converter (not {@code null})
      */
-    @Deprecated
-    public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
-            Converter<? extends V> valueConverter) {
-        return newMapConverter(keyConverter, valueConverter, HashMap::new);
-    }
-
     public static <K, V> Converter<Map<K, V>> newMapConverter(Converter<? extends K> keyConverter,
             Converter<? extends V> valueConverter, IntFunction<Map<K, V>> mapFactory) {
         return new MapConverter<>(keyConverter, valueConverter, mapFactory);

@@ -41,11 +41,6 @@ class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorC
         return interceptor.iterateNames(next);
     }
 
-    @Override
-    public Iterator<ConfigValue> iterateValues() {
-        return interceptor.iterateValues(next);
-    }
-
     static final class RecursionCount {
         int count;
 

@@ -55,20 +55,6 @@ public interface ConfigSourceInterceptor extends Serializable {
         return context.iterateNames();
     }
 
-    /**
-     * Intercept the resolution of the configuration {@link ConfigValue}. Calling
-     * {@link ConfigSourceInterceptorContext#iterateNames()} will continue to execute the interceptor chain. The chain
-     * can be short-circuited by returning another instance of the Iterator.
-     *
-     * @param context the interceptor context. See {@link ConfigSourceInterceptorContext}
-     *
-     * @return an Iterator of {@link ConfigValue} with information about the name, value, config source and ordinal.
-     */
-    @Deprecated(forRemoval = true)
-    default Iterator<ConfigValue> iterateValues(ConfigSourceInterceptorContext context) {
-        return context.iterateValues();
-    }
-
     ConfigSourceInterceptor EMPTY = new ConfigSourceInterceptor() {
         private static final long serialVersionUID = 5749001327530543433L;
 
@@ -79,11 +65,6 @@ public interface ConfigSourceInterceptor extends Serializable {
 
         @Override
         public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-            return Collections.emptyIterator();
-        }
-
-        @Override
-        public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
             return Collections.emptyIterator();
         }
     };

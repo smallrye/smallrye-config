@@ -39,30 +39,6 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
         return names.iterator();
     }
 
-    @Override
-    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
-        final Set<ConfigValue> values = new HashSet<>();
-        final Iterator<ConfigValue> valuesIterator = context.iterateValues();
-        while (valuesIterator.hasNext()) {
-            final ConfigValue value = valuesIterator.next();
-            values.add(value);
-            final String mappedName = mapping.apply(value.getName());
-            if (mappedName != null) {
-                values.add(ConfigValue.builder()
-                        .withName(mappedName)
-                        .withValue(value.getValue())
-                        .withRawValue(value.getRawValue())
-                        .withProfile(value.getProfile())
-                        .withConfigSourceName(value.getConfigSourceName())
-                        .withConfigSourcePosition(value.getConfigSourcePosition())
-                        .withConfigSourceOrdinal(value.getConfigSourceOrdinal())
-                        .withLineNumber(value.getLineNumber())
-                        .build());
-            }
-        }
-        return values.iterator();
-    }
-
     protected Function<String, String> getMapping() {
         return mapping;
     }

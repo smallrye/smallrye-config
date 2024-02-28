@@ -67,17 +67,6 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         return names.iterator();
     }
 
-    @Override
-    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
-        final Set<ConfigValue> values = new HashSet<>();
-        final Iterator<ConfigValue> valuesIterator = context.iterateValues();
-        while (valuesIterator.hasNext()) {
-            final ConfigValue value = valuesIterator.next();
-            values.add(value.withName(activeName(value.getName(), profiles)));
-        }
-        return values.iterator();
-    }
-
     public String[] getProfiles() {
         return profiles;
     }

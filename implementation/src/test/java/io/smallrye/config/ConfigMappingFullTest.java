@@ -162,10 +162,8 @@ public class ConfigMappingFullTest {
         @WithDefault("false")
         boolean metricsEnabled();
 
-        @Deprecated
         Optional<String> url();
 
-        @Deprecated
         Optional<String> driver();
 
         interface DataSourceBuildTimeConfig {
