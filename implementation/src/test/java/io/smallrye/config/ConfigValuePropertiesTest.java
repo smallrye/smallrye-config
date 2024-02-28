@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 class ConfigValuePropertiesTest {
     @Test
     void singleLine() throws Exception {
-        final ConfigValueProperties map = new ConfigValueProperties("config", 1);
+        final ConfigValuePropertiesConfigSource.ConfigValueProperties map = new ConfigValuePropertiesConfigSource.ConfigValueProperties(
+                "config", 1);
         map.load(new StringReader("key=value"));
 
         assertEquals(1, map.get("key").getLineNumber());
@@ -17,7 +18,8 @@ class ConfigValuePropertiesTest {
 
     @Test
     void multipleLines() throws Exception {
-        final ConfigValueProperties map = new ConfigValueProperties("config", 1);
+        final ConfigValuePropertiesConfigSource.ConfigValueProperties map = new ConfigValuePropertiesConfigSource.ConfigValueProperties(
+                "config", 1);
         map.load(new StringReader(
                 "key=value\n" +
                         "key2=value\n" +
@@ -48,7 +50,8 @@ class ConfigValuePropertiesTest {
 
     @Test
     void comments() throws Exception {
-        final ConfigValueProperties map = new ConfigValueProperties("config", 1);
+        final ConfigValuePropertiesConfigSource.ConfigValueProperties map = new ConfigValuePropertiesConfigSource.ConfigValueProperties(
+                "config", 1);
         map.load(new StringReader(
                 "key=value\n" +
                         "key2=value\n" +
@@ -64,7 +67,8 @@ class ConfigValuePropertiesTest {
 
     @Test
     void wrapValue() throws Exception {
-        final ConfigValueProperties map = new ConfigValueProperties("config", 1);
+        final ConfigValuePropertiesConfigSource.ConfigValueProperties map = new ConfigValuePropertiesConfigSource.ConfigValueProperties(
+                "config", 1);
         map.load(new StringReader(
                 "key=value\\wrap\n" +
                         "key2=value\\\nwrap\n" +

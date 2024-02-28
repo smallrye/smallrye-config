@@ -54,6 +54,6 @@ class ConfigValueConfigSourceWrapperTest {
     }
 
     private static ConfigValueConfigSource config() {
-        return ConfigValueConfigSourceWrapper.wrap(KeyValuesConfigSource.config("my.prop", "1234"));
+        return SmallRyeConfigSources.ConfigValueConfigSourceWrapper.wrap(KeyValuesConfigSource.config("my.prop", "1234"));
     }
 }

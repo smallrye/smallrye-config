@@ -60,6 +60,8 @@ public final class Converters {
     private Converters() {
     }
 
+    static final Converter<ConfigValue> CONFIG_VALUE_CONVERTER = new ConfigValueConverter();
+
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
 
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
@@ -632,6 +634,19 @@ public final class Converters {
                 converter.equals(Converters.OPTIONAL_INT_CONVERTER) ||
                 converter.equals(Converters.OPTIONAL_LONG_CONVERTER) ||
                 converter.equals(Converters.OPTIONAL_DOUBLE_CONVERTER);
+    }
+
+    /**
+     * This Converter should not be used directly. This is only used as a marker to use to return a ConfigValue directly
+     * after a configuration property lookup.
+     */
+    static final class ConfigValueConverter implements Converter<ConfigValue> {
+        private static final long serialVersionUID = -5005688684588039934L;
+
+        @Override
+        public ConfigValue convert(final String value) throws IllegalArgumentException, NullPointerException {
+            throw new IllegalStateException();
+        }
     }
 
     static final class PatternCheckConverter<T> implements Converter<T>, Serializable {

@@ -101,7 +101,7 @@ public class SmallRyeConfig implements Config, Serializable {
         for (Map.Entry<Type, SmallRyeConfigBuilder.ConverterWithPriority> entry : convertersToBuild.entrySet()) {
             converters.put(entry.getKey(), entry.getValue().getConverter());
         }
-        converters.put(ConfigValue.class, ConfigValueConverter.CONFIG_VALUE_CONVERTER);
+        converters.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
 
         return converters;
     }
@@ -300,12 +300,12 @@ public class SmallRyeConfig implements Config, Serializable {
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Converter<T> converter) {
         ConfigValue configValue = getConfigValue(name);
-        if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(converter)) {
+        if (Converters.CONFIG_VALUE_CONVERTER.equals(converter)) {
             return (T) configValue.noProblems();
         }
 
         if (converter instanceof Converters.OptionalConverter<?>) {
-            if (ConfigValueConverter.CONFIG_VALUE_CONVERTER.equals(
+            if (Converters.CONFIG_VALUE_CONVERTER.equals(
                     ((Converters.OptionalConverter<?>) converter).getDelegate())) {
                 return (T) Optional.of(configValue.noProblems());
             }
@@ -600,7 +600,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSourcesByType;
     }
 
-    @Experimental("To retrieve a ConfigSource by name")
     public Optional<ConfigSource> getConfigSource(final String name) {
         for (ConfigSource configSource : getConfigSources()) {
             final String configSourceName = configSource.getName();

@@ -8,6 +8,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
+@Deprecated(forRemoval = true)
 public class KeyMapBackedConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 4378754290346888762L;
 
