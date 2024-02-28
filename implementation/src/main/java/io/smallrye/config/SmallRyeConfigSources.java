@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import io.smallrye.config.SmallRyeConfig.ConfigSourceWithPriority;
@@ -44,17 +43,5 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
             }
         }
         return names.iterator();
-    }
-
-    @Override
-    public Iterator<ConfigValue> iterateValues(final ConfigSourceInterceptorContext context) {
-        final Set<ConfigValue> values = new HashSet<>();
-        for (final ConfigValueConfigSource configSource : configSources) {
-            final Map<String, ConfigValue> configValueProperties = configSource.getConfigValueProperties();
-            if (configValueProperties != null) {
-                values.addAll(configValueProperties.values());
-            }
-        }
-        return values.iterator();
     }
 }

@@ -138,95 +138,26 @@ class RelocateConfigSourceInterceptorTest {
 
     @Test
     void relocatePropertyNames() {
-        Config config = buildConfig("smallrye.jwt.token.header", "Authorization");
+        SmallRyeConfig config = buildConfig("smallrye.jwt.token.header", "Authorization");
 
-        assertEquals("Authorization", config.getValue("smallrye.jwt.token.header", String.class));
+        assertEquals("Authorization", config.getRawValue("smallrye.jwt.token.header"));
+        assertEquals("Authorization", config.getRawValue("mp.jwt.token.header"));
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertEquals(2, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
         assertTrue(names.contains("mp.jwt.token.header"));
-
-        RelocateConfigSourceInterceptor relocateInterceptor = new RelocateConfigSourceInterceptor(
-                s -> s.replaceAll("smallrye\\.jwt\\.token\\.header", "mp.jwt.token.header"));
-        Iterator<ConfigValue> configValues = relocateInterceptor.iterateValues(new ConfigSourceInterceptorContext() {
-            @Override
-            public ConfigValue proceed(final String name) {
-                return null;
-            }
-
-            public ConfigValue restart(final String name) {
-                return null;
-            }
-
-            @Override
-            public Iterator<String> iterateNames() {
-                return null;
-            }
-
-            @Override
-            public Iterator<ConfigValue> iterateValues() {
-                Set<ConfigValue> values = new HashSet<>();
-                values.add(
-                        ConfigValue.builder().withName("smallrye.jwt.token.header").withValue("Authorization").build());
-                return values.iterator();
-            }
-        });
-
-        Map<String, ConfigValue> values = new HashMap<>();
-        while (configValues.hasNext()) {
-            ConfigValue configValue = configValues.next();
-            values.put(configValue.getName(), configValue);
-        }
-
-        assertEquals(2, values.size());
-        assertEquals("Authorization", values.get("smallrye.jwt.token.header").getValue());
-        assertEquals("Authorization", values.get("mp.jwt.token.header").getValue());
     }
 
     @Test
     void fallbackPropertyNames() {
         SmallRyeConfig config = buildConfig("mp.jwt.token.header", "Authorization");
 
-        assertEquals("Authorization", config.getValue("smallrye.jwt.token.header", String.class));
+        assertEquals("Authorization", config.getRawValue("smallrye.jwt.token.header"));
+        assertEquals("Authorization", config.getRawValue("mp.jwt.token.header"));
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertEquals(2, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
         assertTrue(names.contains("mp.jwt.token.header"));
-
-        FallbackConfigSourceInterceptor fallbackInterceptor = new FallbackConfigSourceInterceptor(
-                s -> s.replaceAll("mp\\.jwt\\.token\\.header", "smallrye.jwt.token.header"));
-        Iterator<ConfigValue> configValues = fallbackInterceptor.iterateValues(new ConfigSourceInterceptorContext() {
-            @Override
-            public ConfigValue proceed(final String name) {
-                return null;
-            }
-
-            public ConfigValue restart(final String name) {
-                return null;
-            }
-
-            @Override
-            public Iterator<String> iterateNames() {
-                return null;
-            }
-
-            @Override
-            public Iterator<ConfigValue> iterateValues() {
-                Set<ConfigValue> values = new HashSet<>();
-                values.add(ConfigValue.builder().withName("mp.jwt.token.header").withValue("Authorization").build());
-                return values.iterator();
-            }
-        });
-
-        Map<String, ConfigValue> values = new HashMap<>();
-        while (configValues.hasNext()) {
-            ConfigValue configValue = configValues.next();
-            values.put(configValue.getName(), configValue);
-        }
-
-        assertEquals(2, values.size());
-        assertEquals("Authorization", values.get("smallrye.jwt.token.header").getValue());
-        assertEquals("Authorization", values.get("mp.jwt.token.header").getValue());
     }
 
     @Test

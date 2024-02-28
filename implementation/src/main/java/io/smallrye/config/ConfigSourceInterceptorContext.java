@@ -32,12 +32,4 @@ public interface ConfigSourceInterceptorContext extends Serializable {
      * @return an iterator over the configuration names known to this interceptor.
      */
     Iterator<String> iterateNames();
-
-    /**
-     * Proceeds to the next interceptor in the chain.
-     *
-     * @return an Iterator of {@link ConfigValue} with information about the name, value, config source and ordinal.
-     */
-    @Deprecated(forRemoval = true)
-    Iterator<ConfigValue> iterateValues();
 }

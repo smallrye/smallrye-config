@@ -70,14 +70,6 @@ class SmallRyeConfigTest {
     }
 
     @Test
-    void rawValueEquals() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(config("my.prop", "1234")).build();
-
-        assertTrue(config.rawValueEquals("my.prop", "1234"));
-        assertFalse(config.rawValueEquals("my.prop", "0"));
-    }
-
-    @Test
     void convert() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
 
