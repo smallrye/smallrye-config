@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -268,12 +267,8 @@ class SmallRyeConfigTest {
     @Test
     void isPropertyPresent() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("my.prop", "1234", "my.expansion", "${not.available}"))
-                .withSources(new MapBackedConfigSource("hidder", new HashMap<String, String>() {
-                    {
-                        put("my.hidden", "hidden");
-                    }
-                }) {
+                .withSources(config("my.prop", "1234", "my.expansion", "${not.available}", "empty", ""))
+                .withSources(new MapBackedConfigSource("hidder", Map.of("my.hidden", "hidden")) {
                     @Override
                     public Set<String> getPropertyNames() {
                         return Collections.emptySet();
@@ -285,9 +280,10 @@ class SmallRyeConfigTest {
         assertTrue(config.isPropertyPresent("my.expansion"));
         assertFalse(config.isPropertyPresent("not.available"));
         assertTrue(config.isPropertyPresent("my.hidden"));
+        assertFalse(config.isPropertyPresent("empty"));
 
         Set<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        assertEquals(2, names.size());
+        assertEquals(3, names.size());
         assertTrue(names.contains("my.prop"));
         assertTrue(names.contains("my.expansion"));
     }

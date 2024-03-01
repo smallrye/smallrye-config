@@ -582,7 +582,10 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     @Experimental("Check if a property is present")
     public boolean isPropertyPresent(String name) {
-        return Expressions.withoutExpansion(() -> getConfigValue(name).getValue() != null);
+        return Expressions.withoutExpansion(() -> {
+            ConfigValue configValue = SmallRyeConfig.this.getConfigValue(name);
+            return configValue.getValue() != null && !configValue.getValue().isEmpty();
+        });
     }
 
     @Override
