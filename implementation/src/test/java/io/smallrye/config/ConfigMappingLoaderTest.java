@@ -226,4 +226,32 @@ class ConfigMappingLoaderTest {
         assertTrue(mappings.contains(ServerParent.class));
         assertTrue(mappings.contains(ServerParent.ServerParentNested.class));
     }
+
+    interface MyConfig {
+        GlobalConfig global();
+
+        interface CommonConfig {
+            Optional<String> commonTest();
+
+            UserConfig user();
+        }
+
+        interface GlobalConfig extends CommonConfig {
+            Optional<String> globalTest();
+        }
+
+        interface UserConfig {
+            Optional<String> name();
+        }
+    }
+
+    @Test
+    void nestedParents() {
+        List<ConfigMappingMetadata> mappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(MyConfig.class);
+        List<Class<?>> mappings = mappingsMetadata.stream().map(ConfigMappingMetadata::getInterfaceType).collect(toList());
+        assertTrue(mappings.contains(MyConfig.class));
+        assertTrue(mappings.contains(MyConfig.GlobalConfig.class));
+        assertTrue(mappings.contains(MyConfig.CommonConfig.class));
+        assertTrue(mappings.contains(MyConfig.UserConfig.class));
+    }
 }
