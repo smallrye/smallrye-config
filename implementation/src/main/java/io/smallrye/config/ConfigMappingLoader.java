@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,9 +25,9 @@ public final class ConfigMappingLoader {
         }
     };
 
-    public static List<ConfigMappingMetadata> getConfigMappingsMetadata(Class<?> type) {
-        final List<ConfigMappingMetadata> mappings = new ArrayList<>();
-        final ConfigMappingInterface configurationInterface = ConfigMappingInterface.getConfigurationInterface(type);
+    public static List<ConfigMappingMetadata> getConfigMappingsMetadata(final Class<?> type) {
+        List<ConfigMappingMetadata> mappings = new ArrayList<>();
+        ConfigMappingInterface configurationInterface = ConfigMappingInterface.getConfigurationInterface(type);
         if (configurationInterface != null) {
             mappings.add(configurationInterface);
             mappings.addAll(configurationInterface.getNested());
@@ -35,12 +36,12 @@ public final class ConfigMappingLoader {
                 mappings.addAll(superType.getNested());
             }
         }
-        final ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
+        ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass != null) {
             mappings.add(configMappingClass);
             mappings.addAll(getConfigMappingsMetadata(getConfigMapping(type).getInterfaceType()));
         }
-        return mappings;
+        return List.copyOf(mappings);
     }
 
     public static ConfigMappingInterface getConfigMapping(final Class<?> type) {
@@ -58,7 +59,7 @@ public final class ConfigMappingLoader {
         }
     }
 
-    static <T> T configMappingObject(Class<T> interfaceType, ConfigMappingContext configMappingContext) {
+    static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
         ConfigMappingObject instance;
         try {
             Constructor<? extends ConfigMappingObject> constructor = CACHE.get(interfaceType).getImplementationClass()
@@ -83,7 +84,7 @@ public final class ConfigMappingLoader {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Class<? extends ConfigMappingObject> getImplementationClass(Class<T> type) {
+    public static <T> Class<? extends ConfigMappingObject> getImplementationClass(final Class<T> type) {
         try {
             Class<?> implementationClass = type.getClassLoader().loadClass(type.getName() + type.getName().hashCode() + "Impl");
             if (type.isAssignableFrom(implementationClass)) {
@@ -146,7 +147,7 @@ public final class ConfigMappingLoader {
         return ClassDefiner.defineClass(LOOKUP, parent, className, classBytes);
     }
 
-    private static Object getClassLoaderLock(String className) {
+    private static Object getClassLoaderLock(final String className) {
         return classLoaderLocks.computeIfAbsent(className, c -> new Object());
     }
 

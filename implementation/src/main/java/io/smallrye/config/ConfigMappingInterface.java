@@ -11,7 +11,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -138,9 +141,9 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     List<ConfigMappingInterface> getNested() {
-        ArrayList<ConfigMappingInterface> nested = new ArrayList<>();
+        Set<ConfigMappingInterface> nested = new LinkedHashSet<>();
         getNested(properties, nested);
-        return nested;
+        return new ArrayList<>(nested);
     }
 
     public byte[] getClassBytes() {
@@ -954,13 +957,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    private static void getNested(final Property[] properties, final List<ConfigMappingInterface> nested) {
+    private static void getNested(final Property[] properties, final Set<ConfigMappingInterface> nested) {
         for (Property property : properties) {
             if (property instanceof GroupProperty) {
                 GroupProperty groupProperty = (GroupProperty) property;
                 ConfigMappingInterface group = groupProperty.getGroupType();
                 nested.add(group);
-                getNested(group.properties, nested);
+                Collections.addAll(nested, group.superTypes);
+                getNested(group.getProperties(true), nested);
             }
 
             if (property instanceof OptionalProperty) {
@@ -969,7 +973,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                     GroupProperty groupProperty = (GroupProperty) optionalProperty.getNestedProperty();
                     ConfigMappingInterface group = groupProperty.getGroupType();
                     nested.add(group);
-                    getNested(group.properties, nested);
+                    Collections.addAll(nested, group.superTypes);
+                    getNested(group.getProperties(true), nested);
                 } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty) {
                     CollectionProperty collectionProperty = (CollectionProperty) optionalProperty.getNestedProperty();
                     getNested(new Property[] { collectionProperty.element }, nested);
