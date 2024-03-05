@@ -46,7 +46,7 @@ class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorC
 
         void increment() {
             int old = count;
-            if (old == 20) {
+            if (old == 2000) {
                 throw new IllegalStateException("Too many recursive interceptor actions");
             }
             count = old + 1;
