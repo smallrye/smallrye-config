@@ -9,7 +9,7 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 public interface ConfigLogging extends BasicLogger {
-    ConfigLogging log = Logger.getMessageLogger(ConfigLogging.class, ConfigLogging.class.getPackage().getName());
+    ConfigLogging log = Logger.getMessageLogger(ConfigLogging.class, "io.smallrye.config");
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1000, value = "Unable to get context classloader instance")
