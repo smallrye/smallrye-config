@@ -74,6 +74,36 @@ class LoggingConfigSourceInterceptorTest {
     }
 
     @Test
+    void explicitInterceptor() throws Exception {
+        Config config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withInterceptors(new LoggingConfigSourceInterceptor())
+                .withSources(new ConfigValuePropertiesConfigSource(
+                        LoggingConfigSourceInterceptorTest.class.getResource("/config-values.properties")))
+                .withSecretKeys("secret")
+                .build();
+
+        assertEquals("abc", config.getValue("my.prop", String.class));
+        // No log is done here to not expose any sensitive information
+        assertThrows(SecurityException.class, () -> config.getValue("secret", String.class));
+        assertThrows(NoSuchElementException.class, () -> config.getValue("not.found", String.class));
+
+        // This should not log the secret value:
+        assertEquals("12345678", SecretKeys.doUnlocked(() -> config.getValue("secret", String.class)));
+
+        List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
+        // my.prop lookup
+        assertTrue(logs.stream()
+                .anyMatch(log -> log.contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource")));
+        assertTrue(logs.stream().anyMatch(log -> log.contains(":1 with the value abc")));
+        // not.found lookup
+        assertTrue(logs.contains("SRCFG01002: The config not.found was not found"));
+        // secret lookup, shows the key but hides the source and value
+        assertTrue(logs.contains("SRCFG01001: The config secret was loaded from secret with the value secret"));
+    }
+
+    @Test
     void expansion() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
