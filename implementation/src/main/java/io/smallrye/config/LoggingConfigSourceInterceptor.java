@@ -12,6 +12,10 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     private final boolean enabled;
 
+    public LoggingConfigSourceInterceptor() {
+        this(true);
+    }
+
     public LoggingConfigSourceInterceptor(final boolean enabled) {
         this.enabled = enabled;
     }
