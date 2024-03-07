@@ -756,6 +756,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             this.priority = factory.getPriority().orElse(DEFAULT_PRIORITY);
         }
 
+        InterceptorWithPriority(ConfigSourceInterceptor interceptor, int priority) {
+            this(new ConfigSourceInterceptorFactory() {
+                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                    return interceptor;
+                }
+
+                public OptionalInt getPriority() {
+                    return OptionalInt.of(priority);
+                }
+            });
+        }
+
         ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {
             return factory.getInterceptor(context);
         }

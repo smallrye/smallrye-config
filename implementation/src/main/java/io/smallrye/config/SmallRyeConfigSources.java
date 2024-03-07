@@ -16,11 +16,15 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
     private static final long serialVersionUID = 7560201715403486552L;
 
     private final List<ConfigValueConfigSource> configSources;
+    private final boolean negative;
 
-    SmallRyeConfigSources(final List<ConfigSourceWithPriority> configSourcesWithPriorities) {
+    SmallRyeConfigSources(final List<ConfigSourceWithPriority> configSourcesWithPriorities, boolean negative) {
+        this.negative = negative;
         List<ConfigValueConfigSource> configSources = new ArrayList<>();
         for (ConfigSourceWithPriority configSource : configSourcesWithPriorities) {
-            configSources.add(ConfigValueConfigSourceWrapper.wrap(configSource.getSource()));
+            if ((configSource.priority() < 0) == negative) {
+                configSources.add(ConfigValueConfigSourceWrapper.wrap(configSource.getSource()));
+            }
         }
         this.configSources = configSources;
     }
@@ -34,7 +38,7 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
                 return configValue.from().withConfigSourcePosition(i).build();
             }
         }
-        return null;
+        return context.proceed(name);
     }
 
     @Override
@@ -46,7 +50,13 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
                 names.addAll(propertyNames);
             }
         }
+        Iterator<String> iter = context.iterateNames();
+        iter.forEachRemaining(names::add);
         return names.iterator();
+    }
+
+    boolean negative() {
+        return negative;
     }
 
     static final class ConfigValueConfigSourceWrapper implements ConfigValueConfigSource, Serializable {
