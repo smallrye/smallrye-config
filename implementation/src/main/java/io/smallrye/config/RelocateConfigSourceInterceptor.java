@@ -31,9 +31,15 @@ public class RelocateConfigSourceInterceptor extends AbstractMappingConfigSource
         ConfigValue configValue = context.proceed(name);
         // Check which one comes from a higher ordinal source
         if (relocateValue != null && configValue != null) {
-            return CONFIG_SOURCE_COMPARATOR.compare(relocateValue, configValue) >= 0 ? relocateValue : configValue;
+            return CONFIG_SOURCE_COMPARATOR.compare(relocateValue, configValue) >= 0 ? relocateValue
+                    : configValue.withName(map);
         } else {
-            return relocateValue != null ? relocateValue : configValue;
+            if (relocateValue != null) {
+                return relocateValue;
+            } else if (configValue != null) {
+                return configValue.withName(map);
+            }
+            return null;
         }
     }
 }

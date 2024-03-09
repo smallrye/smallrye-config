@@ -566,7 +566,7 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     @Experimental("Retrieve an updated list of all configuration property names")
     public Iterable<String> getLatestPropertyNames() {
-        return configSources.getPropertyNames().get(true);
+        return configSources.getPropertyNames().latest();
     }
 
     /**
@@ -913,19 +913,18 @@ public class SmallRyeConfig implements Config, Serializable {
 
             Iterable<String> get() {
                 if (names.isEmpty()) {
-                    return get(true);
+                    return latest();
                 }
                 return names;
             }
 
-            Iterable<String> get(boolean latest) {
-                if (latest) {
-                    names.clear();
-                    Iterator<String> namesIterator = interceptorChain.iterateNames();
-                    while (namesIterator.hasNext()) {
-                        names.add(namesIterator.next());
-                    }
+            Iterable<String> latest() {
+                names.clear();
+                Iterator<String> namesIterator = interceptorChain.iterateNames();
+                while (namesIterator.hasNext()) {
+                    names.add(namesIterator.next());
                 }
+                names.remove(ConfigSource.CONFIG_ORDINAL);
                 return Collections.unmodifiableSet(names);
             }
         }
