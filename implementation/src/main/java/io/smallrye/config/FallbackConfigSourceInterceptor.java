@@ -31,9 +31,15 @@ public class FallbackConfigSourceInterceptor extends AbstractMappingConfigSource
         ConfigValue fallbackValue = context.proceed(map);
         // Check which one comes from a higher ordinal source
         if (configValue != null && fallbackValue != null) {
-            return CONFIG_SOURCE_COMPARATOR.compare(configValue, fallbackValue) >= 0 ? configValue : fallbackValue;
+            return CONFIG_SOURCE_COMPARATOR.compare(configValue, fallbackValue) >= 0 ? configValue
+                    : fallbackValue.withName(name);
         } else {
-            return configValue != null ? configValue : fallbackValue;
+            if (configValue != null) {
+                return configValue;
+            } else if (fallbackValue != null) {
+                return fallbackValue.withName(name);
+            }
+            return null;
         }
     }
 }
