@@ -463,16 +463,12 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter,
             IntFunction<Map<K, V>> mapFactory) {
-        Optional<Map<K, V>> optionalValue = getOptionalValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
-        if (optionalValue.isPresent()) {
-            return optionalValue;
+        Map<String, String> mapKeys = getMapKeys(name);
+        if (!mapKeys.isEmpty()) {
+            return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory));
         }
 
-        Map<String, String> mapKeys = getMapKeys(name);
-        if (mapKeys.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory));
+        return getOptionalValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
     }
 
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(

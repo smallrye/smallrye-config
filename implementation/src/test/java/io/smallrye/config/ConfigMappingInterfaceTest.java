@@ -2569,4 +2569,28 @@ class ConfigMappingInterfaceTest {
     @ConfigMapping(prefix = "ignore")
     interface IgnorePathsRecursive {
     }
+
+    @Test
+    void nestedLeafsMaps() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "maps.one.two", "value",
+                        "maps.one.two.three", "value"))
+                .withMapping(NestedLeadfsMaps.class)
+                .build();
+
+        NestedLeadfsMaps mapping = config.getConfigMapping(NestedLeadfsMaps.class);
+
+        assertEquals("value", mapping.doubleMap().get("one").get("two"));
+        assertEquals("value", mapping.tripleMap().get("one").get("two").get("three"));
+    }
+
+    @ConfigMapping(prefix = "maps")
+    interface NestedLeadfsMaps {
+        @WithParentName
+        Map<String, Map<String, String>> doubleMap();
+
+        @WithParentName
+        Map<String, Map<String, Map<String, String>>> tripleMap();
+    }
 }
