@@ -200,7 +200,7 @@ class ConfigConfigSourceTest {
 
                     @Override
                     public OptionalInt getPriority() {
-                        return OptionalInt.of(Integer.MIN_VALUE);
+                        return OptionalInt.of(0);
                     }
                 })
                 .withSources(new MapBackedConfigSource("test", new HashMap<String, String>() {
