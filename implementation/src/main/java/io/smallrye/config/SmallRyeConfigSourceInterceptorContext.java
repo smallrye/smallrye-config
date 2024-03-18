@@ -32,7 +32,10 @@ class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorC
         try {
             return config.interceptorChain().proceed(name);
         } finally {
-            rc.decrement();
+            if (rc.decrement()) {
+                // avoid leaking if the thread is cached
+                rcHolder.remove();
+            }
         }
     }
 
@@ -52,8 +55,8 @@ class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorC
             count = old + 1;
         }
 
-        void decrement() {
-            count--;
+        boolean decrement() {
+            return --count == 0;
         }
     }
 }
