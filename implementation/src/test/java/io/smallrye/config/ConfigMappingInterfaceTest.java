@@ -2573,14 +2573,27 @@ class ConfigMappingInterfaceTest {
     @Test
     void nestedLeafsMaps() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("maps.one.two", "value"))
+                .withMapping(NestedLeadfsMaps.class)
+                .build();
+        NestedLeadfsMaps mapping = config.getConfigMapping(NestedLeadfsMaps.class);
+        assertEquals("value", mapping.doubleMap().get("one").get("two"));
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "maps.one.two.three", "value"))
+                .withMapping(NestedLeadfsMaps.class)
+                .build();
+        mapping = config.getConfigMapping(NestedLeadfsMaps.class);
+        assertEquals("value", mapping.tripleMap().get("one").get("two").get("three"));
+
+        config = new SmallRyeConfigBuilder()
                 .withSources(config(
                         "maps.one.two", "value",
                         "maps.one.two.three", "value"))
                 .withMapping(NestedLeadfsMaps.class)
                 .build();
-
-        NestedLeadfsMaps mapping = config.getConfigMapping(NestedLeadfsMaps.class);
-
+        mapping = config.getConfigMapping(NestedLeadfsMaps.class);
         assertEquals("value", mapping.doubleMap().get("one").get("two"));
         assertEquals("value", mapping.tripleMap().get("one").get("two").get("three"));
     }

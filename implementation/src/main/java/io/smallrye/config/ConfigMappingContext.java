@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
+import static java.util.Collections.EMPTY_MAP;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -591,8 +593,12 @@ public final class ConfigMappingContext {
 
                         if (defaultValue == null) {
                             // TODO - We should use getValues here, but this makes the Map to be required. This is a breaking change
-                            return config.getOptionalValues(propertyName, keyConverter, valueConverter, HashMap::new)
-                                    .orElse(new HashMap<>());
+                            try {
+                                return config.getOptionalValues(propertyName, keyConverter, valueConverter, HashMap::new)
+                                        .orElse(EMPTY_MAP);
+                            } catch (NoSuchElementException e) { // Can be thrown by MapConverter, but mappings shouldn't use inline map values
+                                return EMPTY_MAP;
+                            }
                         } else {
                             IntFunction<Map<K, V>> mapFactory = new IntFunction<>() {
                                 @Override
@@ -600,8 +606,12 @@ public final class ConfigMappingContext {
                                     return new MapWithDefault<>(valueConverter.convert(defaultValue));
                                 }
                             };
-                            return config.getOptionalValues(propertyName, keyConverter, valueConverter, mapFactory)
-                                    .orElse(mapFactory.apply(0));
+                            try {
+                                return config.getOptionalValues(propertyName, keyConverter, valueConverter, mapFactory)
+                                        .orElse(mapFactory.apply(0));
+                            } catch (NoSuchElementException e) { // Can be thrown by MapConverter, but mappings shouldn't use inline map values
+                                return mapFactory.apply(0);
+                            }
                         }
                     }
                 };
