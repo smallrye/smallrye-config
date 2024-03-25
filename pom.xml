@@ -36,7 +36,7 @@
   <properties>
     <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
     <version.smallrye.common>2.2.0</version.smallrye.common>
-    <version.asm>9.6</version.asm>
+    <version.asm>9.7</version.asm>
 
     <version.smallrye.testing>2.3.0</version.smallrye.testing>
 
