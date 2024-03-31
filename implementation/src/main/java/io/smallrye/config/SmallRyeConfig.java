@@ -294,7 +294,6 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     *
      * This method handles calls from both {@link Config#getValue} and {@link Config#getOptionalValue}.<br>
      */
     @SuppressWarnings("unchecked")
@@ -607,6 +606,37 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Returns a {@link Config} containing every key from the current {@link Config} that starts with the specified
+     * prefix. The prefix is removed from the keys in the subset. For example, if the configuration contains the following
+     * properties:
+     *
+     * <pre>
+     *    prefix.number = 1
+     *    prefix.string = Hello
+     *    prefixed.foo = bar
+     *    prefix = World
+     * </pre>
+     * <p>
+     * the Configuration returned by {@code subset("prefix")} will contain the properties:
+     *
+     * <pre>
+     *    number = 1
+     *    string = Hello
+     *    = World
+     * </pre>
+     * <p>
+     * (The key for the value "World" is an empty string)
+     * <p>
+     *
+     * @param prefix The prefix used to select the properties.
+     * @return a subset configuration
+     */
+    @Experimental("Return a subset of the configuration")
+    public Config subset(final String prefix) {
+        return new SmallRyeSubsetConfig(prefix, this);
     }
 
     public <T> T convert(String value, Class<T> asType) {
