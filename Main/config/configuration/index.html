@@ -969,9 +969,14 @@
 <td></td>
 </tr>
 <tr>
-<td><code>smallrye.config.mapping.validate-unknown</code><br><a href="../mappings/#retrieval">Validates</a> that a <code>@ConfigMapping</code> maps every available configuration name contained in the      mapping prefix.</td>
+<td><code>smallrye.config.mapping.validate-unknown</code><br><a href="../mappings/#retrieval">Validates</a> that a <code>@ConfigMapping</code> maps every available configuration name contained in the mapping prefix.</td>
 <td>boolean</td>
 <td>false</td>
+</tr>
+<tr>
+<td><code>smallrye.config.secret-handlers</code><br>The names of the secret handlers to be loaded. A value of <code>all</code> loads all available secret handlers and a value of <code>none</code> skips the load.</td>
+<td>String[]</td>
+<td>all</td>
 </tr>
 <tr>
 <td><code>smallrye.config.log.values</code><br>Enable logging of configuration values lookup in DEBUG log level.</td>
