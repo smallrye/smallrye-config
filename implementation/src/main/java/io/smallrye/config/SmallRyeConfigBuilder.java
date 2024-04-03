@@ -25,6 +25,7 @@ import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_SECRET_HANDLERS;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -238,6 +239,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return profiles;
             }
         }));
+
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -304,6 +306,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 }
             }
         }));
+
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
@@ -312,35 +315,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 if (expressionsValue != null) {
                     expressions = Boolean.parseBoolean(expressionsValue.getValue());
                 }
-                return new ExpressionConfigSourceInterceptor(expressions);
-            }
 
-            @Override
-            public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 300);
-            }
-        }));
-
-        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
-            @Override
-            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return new SecretKeysConfigSourceInterceptor(SmallRyeConfigBuilder.this.secretKeys);
-            }
-
-            @Override
-            public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 100);
-            }
-        }));
-        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
-            @Override
-            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
                 List<SecretKeysHandler> secretKeysHandlers = new ArrayList<>();
                 for (SecretKeysHandlerWithName secretKeysHandler : SmallRyeConfigBuilder.this.secretKeysHandlers) {
                     secretKeysHandlers.add(secretKeysHandler.getSecretKeysHandler(new ConfigSourceContext() {
                         @Override
                         public ConfigValue getValue(final String name) {
-                            return context.proceed(name);
+                            return new ExpressionConfigSourceInterceptor().getValue(context, name);
                         }
 
                         @Override
@@ -353,16 +334,17 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 if (isAddDiscoveredSecretKeysHandlers()) {
                     secretKeysHandlers.addAll(discoverSecretKeysHandlers(context));
                 }
-                return new SecretKeysHandlerConfigSourceInterceptor(true, secretKeysHandlers);
+
+                return new ExpressionConfigSourceInterceptor(expressions, secretKeysHandlers);
             }
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 310);
+                return OptionalInt.of(Priorities.LIBRARY + 300);
             }
 
             private List<String> getEnabledHandlers(final ConfigSourceInterceptorContext context) {
-                ConfigValue enabledHandlers = context.proceed("smallrye.config.secret-handlers");
+                ConfigValue enabledHandlers = context.proceed(SMALLRYE_CONFIG_SECRET_HANDLERS);
                 if (enabledHandlers == null || enabledHandlers.getValue().equals("all")) {
                     return List.of();
                 }
@@ -404,6 +386,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 }
 
                 return discoveredHandlers;
+            }
+        }));
+
+        interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
+            @Override
+            public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                return new SecretKeysConfigSourceInterceptor(SmallRyeConfigBuilder.this.secretKeys);
+            }
+
+            @Override
+            public OptionalInt getPriority() {
+                return OptionalInt.of(Priorities.LIBRARY + 100);
             }
         }));
 
@@ -754,18 +748,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         InterceptorWithPriority(ConfigSourceInterceptorFactory factory) {
             this.factory = factory;
             this.priority = factory.getPriority().orElse(DEFAULT_PRIORITY);
-        }
-
-        InterceptorWithPriority(ConfigSourceInterceptor interceptor, int priority) {
-            this(new ConfigSourceInterceptorFactory() {
-                public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                    return interceptor;
-                }
-
-                public OptionalInt getPriority() {
-                    return OptionalInt.of(priority);
-                }
-            });
         }
 
         ConfigSourceInterceptor getInterceptor(ConfigSourceInterceptorContext context) {

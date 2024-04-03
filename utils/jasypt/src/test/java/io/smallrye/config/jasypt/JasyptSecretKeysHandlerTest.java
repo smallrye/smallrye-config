@@ -26,4 +26,21 @@ class JasyptSecretKeysHandlerTest {
 
         assertEquals("12345678", config.getRawValue("my.secret"));
     }
+
+    @Test
+    void expression() {
+        Map<String, String> properties = Map.of(
+                "smallrye.config.secret-handler.jasypt.password", "jasypt",
+                "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",
+                "my.secret", "${my.expression}",
+                "my.expression", "${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withSources(new PropertiesConfigSource(properties, "", 0))
+                .build();
+
+        assertEquals("12345678", config.getRawValue("my.secret"));
+    }
 }

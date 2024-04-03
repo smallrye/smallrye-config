@@ -1,5 +1,8 @@
 package io.smallrye.config.crypto;
 
+import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_SECRET_HANDLERS;
+import static io.smallrye.config.crypto.AESGCMNoPaddingSecretKeysHandler.DECODE_KEY;
+import static io.smallrye.config.crypto.AESGCMNoPaddingSecretKeysHandler.ENCRYPTION_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,8 +26,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
                 .withDefaultValues(Map.of(
-                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
-                        "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                        ENCRYPTION_KEY, "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
                         "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true",
                         "my.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
                         "my.expression", "${not.found:default}",
@@ -42,8 +44,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
                 .withDefaultValues(Map.of(
-                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
-                        "somearbitrarycrazystringthatdoesnotmatter",
+                        ENCRYPTION_KEY, "somearbitrarycrazystringthatdoesnotmatter",
                         "my.secret", "${aes-gcm-nopadding::DPZqAC4GZNAXi6_43A4O2SBmaQssGkq6PS7rz8tzHDt1}"))
                 .build();
 
@@ -79,7 +80,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
 
         assertThrows(NoSuchElementException.class, () -> config.getConfigValue("my.secret"));
 
-        Map<String, String> properties = Map.of("smallrye.config.secret-handlers", "none");
+        Map<String, String> properties = Map.of(SMALLRYE_CONFIG_SECRET_HANDLERS, "none");
         new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
@@ -100,12 +101,42 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "smallrye.config.source.keystore.test.handler", "aes-gcm-nopadding"))
                 .withSources((ConfigSourceFactory) context -> List.of(
                         new PropertiesConfigSource(Map.of(
-                                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key",
-                                "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
-                                "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true"), "", 0)))
+                                ENCRYPTION_KEY, "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                                DECODE_KEY, "true"), "", 0)))
                 .build();
 
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("decoded", secret.getValue());
+    }
+
+    @Test
+    void expression() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withDefaultValues(Map.of(
+                        ENCRYPTION_KEY, "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                        DECODE_KEY, "true",
+                        "my.secret", "${my.expression}",
+                        "my.expression", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}"))
+                .build();
+
+        assertEquals("decoded", config.getRawValue("my.secret"));
+    }
+
+    @Test
+    void configurableExpression() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withDefaultValues(Map.of(
+                        ENCRYPTION_KEY, "${key}",
+                        DECODE_KEY, "true",
+                        "my.secret", "${my.expression}",
+                        "my.expression", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
+                        "key", "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI"))
+                .build();
+
+        assertEquals("decoded", config.getRawValue("my.secret"));
     }
 }

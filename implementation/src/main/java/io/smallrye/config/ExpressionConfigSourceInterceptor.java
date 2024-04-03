@@ -6,6 +6,11 @@ import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 import static io.smallrye.config._private.ConfigMessages.msg;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import jakarta.annotation.Priority;
@@ -13,6 +18,7 @@ import jakarta.annotation.Priority;
 import io.smallrye.common.expression.Expression;
 import io.smallrye.common.expression.ResolveContext;
 import io.smallrye.config.ConfigValidationException.Problem;
+import io.smallrye.config._private.ConfigMessages;
 
 @Priority(Priorities.LIBRARY + 300)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
@@ -21,13 +27,17 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
     private static final int MAX_DEPTH = 32;
 
     private final boolean enabled;
+    private final Map<String, SecretKeysHandler> handlers = new HashMap<>();
 
     public ExpressionConfigSourceInterceptor() {
-        this(true);
+        this(true, Collections.emptyList());
     }
 
-    public ExpressionConfigSourceInterceptor(final boolean enabled) {
+    public ExpressionConfigSourceInterceptor(final boolean enabled, final List<SecretKeysHandler> handlers) {
         this.enabled = enabled;
+        for (SecretKeysHandler handler : handlers) {
+            this.handlers.put(handler.getName(), handler);
+        }
     }
 
     @Override
@@ -66,8 +76,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 // Requires a handler lookup
                 int index = key.indexOf("::");
                 if (index != -1) {
-                    valueBuilder.withExtendedExpressionHandler(key.substring(0, index));
-                    stringBuilder.append(key, index + 2, key.length());
+                    stringBuilder.append(getHandler(key.substring(0, index), context).decode(key.substring(index + 2)));
                     return;
                 }
 
@@ -111,5 +120,27 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return builder.toString();
         }
         return value;
+    }
+
+    private SecretKeysHandler getHandler(final String handlerName, final ConfigSourceInterceptorContext context) {
+        SecretKeysHandler handler = handlers.get(handlerName);
+        if (handler == null) {
+            throw ConfigMessages.msg.secretKeyHandlerNotFound(handlerName);
+        }
+
+        if (handler instanceof SecretKeysHandlerFactory.LazySecretKeysHandler) {
+            handler = ((SecretKeysHandlerFactory.LazySecretKeysHandler) handler).get(new ConfigSourceContext() {
+                @Override
+                public ConfigValue getValue(final String name) {
+                    return new ExpressionConfigSourceInterceptor().getValue(context, name);
+                }
+
+                @Override
+                public Iterator<String> iterateNames() {
+                    return context.iterateNames();
+                }
+            });
+        }
+        return handler;
     }
 }
