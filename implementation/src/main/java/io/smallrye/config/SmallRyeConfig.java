@@ -64,6 +64,7 @@ public class SmallRyeConfig implements Config, Serializable {
     public static final String SMALLRYE_CONFIG_PROFILE_PARENT = "smallrye.config.profile.parent";
     public static final String SMALLRYE_CONFIG_LOCATIONS = "smallrye.config.locations";
     public static final String SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN = "smallrye.config.mapping.validate-unknown";
+    public static final String SMALLRYE_CONFIG_SECRET_HANDLERS = "smallrye.config.secret-handlers";
     public static final String SMALLRYE_CONFIG_LOG_VALUES = "smallrye.config.log.values";
 
     private static final long serialVersionUID = 8138651532357898263L;

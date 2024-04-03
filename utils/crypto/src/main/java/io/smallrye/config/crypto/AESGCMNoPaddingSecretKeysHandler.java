@@ -13,6 +13,9 @@ import javax.crypto.spec.SecretKeySpec;
 import io.smallrye.config.SecretKeysHandler;
 
 public class AESGCMNoPaddingSecretKeysHandler implements SecretKeysHandler {
+    public static final String ENCRYPTION_KEY = "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key";
+    public static final String DECODE_KEY = "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode";
+
     private final SecretKeySpec encryptionKey;
 
     public AESGCMNoPaddingSecretKeysHandler(final byte[] encryptionKey) {

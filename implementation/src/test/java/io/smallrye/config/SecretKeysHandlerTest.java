@@ -71,4 +71,26 @@ class SecretKeysHandlerTest {
 
         assertEquals("decoded", config.getRawValue("my.secret"));
     }
+
+    @Test
+    void expression() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSecretKeysHandlers(new SecretKeysHandler() {
+                    @Override
+                    public String decode(final String secret) {
+                        return "decoded";
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "handler";
+                    }
+                })
+                .withDefaultValue("my.secret", "${my.expression}")
+                .withDefaultValue("my.expression", "${handler::secret}")
+                .build();
+
+        assertEquals("decoded", config.getRawValue("my.secret"));
+    }
 }

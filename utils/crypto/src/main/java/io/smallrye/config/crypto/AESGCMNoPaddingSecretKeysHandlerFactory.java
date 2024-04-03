@@ -1,5 +1,8 @@
 package io.smallrye.config.crypto;
 
+import static io.smallrye.config.crypto.AESGCMNoPaddingSecretKeysHandler.DECODE_KEY;
+import static io.smallrye.config.crypto.AESGCMNoPaddingSecretKeysHandler.ENCRYPTION_KEY;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.NoSuchElementException;
@@ -12,8 +15,6 @@ import io.smallrye.config.SecretKeysHandlerFactory;
 import io.smallrye.config._private.ConfigMessages;
 
 public class AESGCMNoPaddingSecretKeysHandlerFactory implements SecretKeysHandlerFactory {
-    public static final String ENCRYPTION_KEY = "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key";
-
     @Override
     public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
         return new LazySecretKeysHandler(new SecretKeysHandlerFactory() {
@@ -25,7 +26,7 @@ public class AESGCMNoPaddingSecretKeysHandlerFactory implements SecretKeysHandle
                 }
 
                 boolean decode = false;
-                ConfigValue plain = context.getValue("smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode");
+                ConfigValue plain = context.getValue(DECODE_KEY);
                 if (plain != null && plain.getValue() != null) {
                     decode = Converters.getImplicitConverter(Boolean.class).convert(plain.getValue());
                 }
