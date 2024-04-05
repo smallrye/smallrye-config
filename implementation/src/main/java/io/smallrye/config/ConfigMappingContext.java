@@ -1,6 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterface.getNames;
 import static io.smallrye.config.ConfigValidationException.Problem;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static java.util.Collections.EMPTY_MAP;
 
@@ -21,10 +23,12 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
@@ -32,49 +36,55 @@ import io.smallrye.config._private.ConfigMessages;
  */
 public final class ConfigMappingContext {
     private final SmallRyeConfig config;
+    private final ConfigMappingNames names;
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
     private NamingStrategy namingStrategy;
-    private final StringBuilder stringBuilder = new StringBuilder();
+    private String rootPath;
+    private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
 
-    private final ConfigMappingNames names;
+    public ConfigMappingContext(final SmallRyeConfig config, final Map<Class<?>, Set<String>> roots) {
+        this(config, new Supplier<Map<String, Map<String, Set<String>>>>() {
+            @Override
+            public Map<String, Map<String, Set<String>>> get() {
+                // All mapping names must be loaded first because of split mappings
+                Map<String, Map<String, Set<String>>> names = new HashMap<>();
+                for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
+                    for (Map.Entry<String, Map<String, Set<String>>> entry : ConfigMappingLoader
+                            .configMappingNames(mapping.getKey()).entrySet()) {
+                        names.putIfAbsent(entry.getKey(), new HashMap<>());
+                        names.get(entry.getKey()).putAll(entry.getValue());
+                    }
+                }
+                return names;
+            }
+        }.get(), roots);
+    }
 
-    public ConfigMappingContext(
+    ConfigMappingContext(
             final SmallRyeConfig config,
-            final Map<String, List<Class<?>>> roots,
-            final Map<String, Map<String, Set<String>>> names) {
+            final Map<String, Map<String, Set<String>>> names,
+            final Map<Class<?>, Set<String>> roots) {
 
         this.config = config;
         this.names = new ConfigMappingNames(names);
-
-        for (Map.Entry<String, List<Class<?>>> entry : roots.entrySet()) {
-            String path = entry.getKey();
-            for (Class<?> root : entry.getValue()) {
-                registerRoot(root, path);
+        matchPropertiesWithEnv(roots);
+        for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
+            Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
+            for (String rootPath : mapping.getValue()) {
+                applyNamingStrategy(null);
+                applyRootPath(rootPath);
+                applyNameBuilder(rootPath);
+                mappingObjects.put(rootPath, (ConfigMappingObject) constructRoot(mapping.getKey()));
             }
+            this.roots.put(mapping.getKey(), mappingObjects);
         }
     }
 
-    private void registerRoot(Class<?> rootType, String rootPath) {
-        roots.computeIfAbsent(rootType, new Function<Class<?>, Map<String, ConfigMappingObject>>() {
-            @Override
-            public Map<String, ConfigMappingObject> apply(final Class<?> mapping) {
-                return new HashMap<>();
-            }
-        }).computeIfAbsent(rootPath, new Function<String, ConfigMappingObject>() {
-            @Override
-            public ConfigMappingObject apply(final String path) {
-                namingStrategy = null;
-                stringBuilder.replace(0, stringBuilder.length(), rootPath);
-                return (ConfigMappingObject) constructRoot(rootType);
-            }
-        });
-    }
-
-    public <T> T constructRoot(Class<T> interfaceType) {
+    <T> T constructRoot(Class<T> interfaceType) {
         return constructGroup(interfaceType);
     }
 
@@ -113,7 +123,7 @@ public final class ConfigMappingContext {
         });
     }
 
-    public NamingStrategy applyNamingStrategy(NamingStrategy namingStrategy) {
+    public NamingStrategy applyNamingStrategy(final NamingStrategy namingStrategy) {
         if (namingStrategy != null) {
             this.namingStrategy = namingStrategy;
         } else if (this.namingStrategy == null) {
@@ -122,12 +132,23 @@ public final class ConfigMappingContext {
         return this.namingStrategy;
     }
 
-    public StringBuilder getStringBuilder() {
-        return stringBuilder;
+    public String applyRootPath(final String rootPath) {
+        this.rootPath = rootPath;
+        return rootPath;
+    }
+
+    public StringBuilder applyNameBuilder(final String rootPath) {
+        this.nameBuilder.replace(0, nameBuilder.length(), rootPath);
+        return this.nameBuilder;
+    }
+
+    public StringBuilder getNameBuilder() {
+        return nameBuilder;
     }
 
     @SuppressWarnings("unused")
     public void reportProblem(RuntimeException problem) {
+        problem.printStackTrace();
         problems.add(new Problem(problem.toString()));
     }
 
@@ -137,6 +158,138 @@ public final class ConfigMappingContext {
 
     Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
         return roots;
+    }
+
+    private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> roots) {
+        // TODO - We shouldn't be mutating the EnvSource.
+        // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
+
+        Set<String> rootPaths = new HashSet<>();
+        for (Set<String> paths : roots.values()) {
+            rootPaths.addAll(paths);
+        }
+        boolean all = rootPaths.contains("");
+        StringBuilder sb = new StringBuilder();
+
+        for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
+            if (roots.isEmpty()) {
+                break;
+            }
+
+            EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
+            Set<String> mutableEnvProperties = envConfigSource.getPropertyNames();
+            List<String> envProperties = new ArrayList<>(mutableEnvProperties);
+            for (String envProperty : envProperties) {
+                String activeEnvProperty;
+                if (envProperty.charAt(0) == '%') {
+                    activeEnvProperty = activeName(envProperty, config.getProfiles());
+                } else {
+                    activeEnvProperty = envProperty;
+                }
+
+                String matchedRoot = null;
+                if (!all) {
+                    for (String rootPath : rootPaths) {
+                        if (StringUtil.isInPath(rootPath, activeEnvProperty)) {
+                            matchedRoot = rootPath;
+                            break;
+                        }
+                    }
+                    if (matchedRoot == null) {
+                        continue;
+                    }
+                } else {
+                    matchedRoot = "";
+                }
+
+                for (Map<PropertyName, Set<PropertyName>> mappingsNames : names.getNames().values()) {
+                    Set<PropertyName> propertyNames = mappingsNames.get(new PropertyName(""));
+                    if (propertyNames == null) {
+                        continue;
+                    }
+
+                    for (PropertyName mappedName : propertyNames) {
+                        String name = matchedRoot.isEmpty() ? mappedName.getName() : matchedRoot + "." + mappedName.getName();
+                        // Try to match Env with Root mapped property and generate the expected format
+                        List<Integer> indexOfDashes = indexOfDashes(name, activeEnvProperty);
+                        if (indexOfDashes != null) {
+                            sb.append(activeEnvProperty);
+                            for (Integer dash : indexOfDashes) {
+                                sb.setCharAt(dash, '-');
+                            }
+                            String expectedEnvProperty = sb.toString();
+                            if (!activeEnvProperty.equals(expectedEnvProperty)) {
+                                envConfigSource.getPropertyNames().add(sb.toString());
+                                envConfigSource.getPropertyNames().remove(envProperty);
+                                // TODO - https://github.com/quarkusio/quarkus/issues/38479
+                                //ignoredPaths.add(activeEnvProperty);
+                            }
+                            sb.setLength(0);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Finds and returns all indexes from a dotted Environment property name, related to its matched mapped
+     * property name that must be replaced with a dash. This allows to set single environment variables as
+     * <code>FOO_BAR_BAZ</code> and match them to mappeds properties like <code>foo.*.baz</code>,
+     * <code>foo-bar.baz</code> or any other combinations find in mappings, without the need of additional metadata.
+     *
+     * @param mappedProperty the mapping property name.
+     * @param envProperty a generated dotted property from the {@link EnvConfigSource}.
+     * @return a List of indexes from the env property name to replace with a dash.
+     */
+    private static List<Integer> indexOfDashes(final String mappedProperty, final String envProperty) {
+        if (mappedProperty.length() > envProperty.length()) {
+            return null;
+        }
+
+        List<Integer> dashesPosition = null;
+        int matchPosition = envProperty.length() - 1;
+        for (int i = mappedProperty.length() - 1; i >= 0; i--) {
+            if (matchPosition == -1) {
+                return null;
+            }
+
+            char c = mappedProperty.charAt(i);
+            if (c == '.' || c == '-') {
+                char p = envProperty.charAt(matchPosition);
+                if (p != '.' && p != '-') { // a property coming from env can either be . or -
+                    return null;
+                }
+                if (c == '-') {
+                    if (dashesPosition == null) {
+                        dashesPosition = new ArrayList<>();
+                    }
+                    dashesPosition.add(matchPosition);
+                }
+                matchPosition--;
+            } else if (c == '*') { // it's a map - skip to next separator
+                char p = envProperty.charAt(matchPosition);
+                if (p == '"') {
+                    matchPosition = envProperty.lastIndexOf('"', matchPosition - 1);
+                    if (matchPosition != -1) {
+                        matchPosition = envProperty.lastIndexOf('.', matchPosition);
+                    }
+                }
+                matchPosition = envProperty.lastIndexOf('.', matchPosition);
+            } else if (c == ']') { // it's a collection - skip to next separator
+                i = i - 2;
+                matchPosition = envProperty.lastIndexOf('[', matchPosition);
+                if (matchPosition != -1) {
+                    matchPosition--;
+                }
+            } else if (c != envProperty.charAt(matchPosition)) {
+                return null;
+            } else {
+                matchPosition--;
+            }
+        }
+        return dashesPosition;
     }
 
     void reportUnknown(final List<String> ignoredPaths) {
@@ -287,10 +440,10 @@ public final class ConfigMappingContext {
                 supplier = new Supplier<V>() {
                     @Override
                     public V get() {
-                        int length = stringBuilder.length();
-                        stringBuilder.append(".*");
+                        int length = nameBuilder.length();
+                        nameBuilder.append(".*");
                         V defaultValue = constructGroup(defaultClass);
-                        stringBuilder.setLength(length);
+                        nameBuilder.setLength(length);
                         return defaultValue;
                     }
                 };
@@ -451,7 +604,7 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public G apply(final String path) {
-                        StringBuilder sb = ConfigMappingContext.this.getStringBuilder();
+                        StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
                         int length = sb.length();
                         sb.append(path, length, path.length());
                         G group = constructGroup(groupType);
@@ -469,7 +622,7 @@ public final class ConfigMappingContext {
                     @Override
                     public G apply(final String path) {
                         if (createRequired(groupType, path)) {
-                            StringBuilder sb = ConfigMappingContext.this.getStringBuilder();
+                            StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
                             int length = sb.length();
                             sb.append(path, length, path.length());
                             G group = constructGroup(groupType);
@@ -490,7 +643,7 @@ public final class ConfigMappingContext {
                     @Override
                     public Optional<G> apply(final String path) {
                         if (createRequired(groupType, path)) {
-                            StringBuilder sb = ConfigMappingContext.this.getStringBuilder();
+                            StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
                             int length = sb.length();
                             sb.append(path, length, path.length());
                             G group = constructGroup(groupType);
@@ -671,17 +824,7 @@ public final class ConfigMappingContext {
         }
 
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
-            Set<PropertyName> names = ConfigMappingContext.this.names.get(groupType.getName(), path);
-            if (names == null) {
-                return false;
-            }
-
-            for (String propertyName : config.getPropertyNames()) {
-                if (propertyName.startsWith(path) && names.contains(new PropertyName(propertyName))) {
-                    return true;
-                }
-            }
-            return false;
+            return ConfigMappingContext.this.names.hasAnyName(groupType.getName(), rootPath, path, config.getPropertyNames());
         }
 
         private IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {

@@ -1,257 +1,113 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
-import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
-import static java.lang.Boolean.TRUE;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 
-import io.smallrye.config.ConfigMapping.NamingStrategy;
-import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
-import io.smallrye.config.ConfigMappingInterface.GroupProperty;
-import io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
 
-public final class ConfigMappings implements Serializable {
-    private static final long serialVersionUID = -7790784345796818526L;
+/**
+ * Utility class for {@link ConfigMapping} annotated classes.
+ */
+public final class ConfigMappings {
 
+    /**
+     * Registers additional {@link ConfigMapping} annotated classes with a {@link SmallRyeConfig} instance.
+     * <p>
+     * The recommended method of registering {@link ConfigMapping} is with a
+     * {@link SmallRyeConfigBuilder#withMapping(Class, String)}. In certain cases, this is not possible (ex. a CDI
+     * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
+     *
+     * @param config the {@link SmallRyeConfig} instance
+     * @param configClasses a <code>Set</code> of {@link ConfigMapping} annotated classes with prefixes
+     * @throws ConfigValidationException if a {@link ConfigMapping} cannot be registed with the
+     *         {@link SmallRyeConfig} instance
+     */
     public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
-            Boolean validateUnknown = config.getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.class)
-                    .orElse(TRUE);
-            mapConfiguration(config, ConfigMappingProvider.builder().validateUnknown(validateUnknown), configClasses);
+            mapConfiguration(config, new SmallRyeConfigBuilder(), configClasses);
         }
     }
 
+    /**
+     * Registers additional <code>ConfigProperties</code>> annotated classes with a {@link SmallRyeConfig} instance.
+     * <p>
+     * The recommended method of registering <code>ConfigProperties</code>> is with a
+     * {@link SmallRyeConfigBuilder#withMapping(Class, String)}. In certain cases, this is not possible (ex. a CDI
+     * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
+     *
+     * @param config the {@link SmallRyeConfig} instance
+     * @param configClasses a <code>Set</code> of <code>ConfigProperties</code>> annotated classes with prefixes
+     * @throws ConfigValidationException if a <code>ConfigProperties</code>> cannot be registed with the
+     *         {@link SmallRyeConfig} instance
+     */
     public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
-            mapConfiguration(config, ConfigMappingProvider.builder().validateUnknown(false), configClasses);
+            mapConfiguration(config, new SmallRyeConfigBuilder().withValidateUnknown(false), configClasses);
         }
     }
 
-    public static Map<Class<?>, Map<String, Map<String, Property>>> getProperties(final ConfigClassWithPrefix configClass) {
-        Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
-        Function<String, String> path = new Function<>() {
-            @Override
-            public String apply(final String path) {
-                return configClass.getPrefix().isEmpty() && !path.isEmpty() ? path.substring(1)
-                        : configClass.getPrefix() + path;
-            }
-        };
-        ConfigMappingInterface configMapping = ConfigMappingLoader.getConfigMapping(configClass.getKlass());
-        getProperties(new GroupProperty(null, null, configMapping), configMapping.getNamingStrategy(), path, properties);
+    /**
+     * Constructs a representation of all {@link Property} contained in a mapping class. The <code>Map</code> key is
+     * the full path to the {@link Property}, including the mapping class prefix.
+     *
+     * @param configClass the {@link ConfigMapping} annotated class and <code>String</code> prefix
+     * @see ConfigMappingInterface#getProperties(ConfigMappingInterface)
+     * @return a <code>Map</code> with all mapping class {@link Property}.
+     */
+    public static Map<String, Property> getProperties(final ConfigClassWithPrefix configClass) {
+        Map<String, Property> properties = new HashMap<>();
+        // Because the properties key names do not include the path prefix we need to add it
+        for (Map.Entry<String, Property> entry : ConfigMappingInterface
+                .getProperties(ConfigMappingLoader.getConfigMapping(configClass.getKlass()))
+                .get(configClass.getKlass())
+                .get("").entrySet()) {
+            properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
+        }
         return properties;
     }
 
-    public static Map<String, Map<String, Set<String>>> getNames(final ConfigClassWithPrefix configClass) {
-        Map<String, Map<String, Set<String>>> names = new HashMap<>();
-        Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configClass);
-        for (Map.Entry<Class<?>, Map<String, Map<String, Property>>> entry : properties.entrySet()) {
-            Map<String, Set<String>> groups = new HashMap<>();
-            for (Map.Entry<String, Map<String, Property>> group : entry.getValue().entrySet()) {
-                groups.put(group.getKey(), group.getValue().keySet());
-            }
-            names.put(entry.getKey().getName(), groups);
-        }
-        return names;
-    }
-
-    public static Set<String> getKeys(final ConfigClassWithPrefix configClass) {
-        return getProperties(configClass).get(configClass.getKlass()).get(configClass.getPrefix()).keySet();
-    }
-
-    public static Map<String, String> getDefaults(final ConfigClassWithPrefix configClass) {
-        Map<String, String> defaults = new HashMap<>();
-        Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configClass);
-        for (Map.Entry<String, Property> entry : properties.get(configClass.getKlass()).get(configClass.getPrefix())
-                .entrySet()) {
-            if (entry.getValue().hasDefaultValue()) {
-                defaults.put(entry.getKey(), entry.getValue().getDefaultValue());
-            }
-        }
-        return defaults;
-    }
-
+    @Deprecated
     public static Set<String> mappedProperties(final ConfigClassWithPrefix configClass, final Set<String> properties) {
-        Set<PropertyName> names = new ConfigMappingNames(getNames(configClass))
-                .get(configClass.getKlass().getName(), configClass.getPrefix());
-        Set<String> mappedProperties = new HashSet<>();
+        ConfigMappingNames names = new ConfigMappingNames(
+                ConfigMappingLoader.getConfigMapping(configClass.getKlass()).getNames());
+        Set<String> mappedNames = new HashSet<>();
         for (String property : properties) {
-            if (names.contains(new PropertyName(property))) {
-                mappedProperties.add(property);
+            if (names.hasAnyName(configClass.getKlass().getName(), configClass.getPrefix(), configClass.getPrefix(),
+                    Set.of(property))) {
+                mappedNames.add(property);
             }
         }
-        return mappedProperties;
+        return mappedNames;
     }
 
     private static void mapConfiguration(
             final SmallRyeConfig config,
-            final ConfigMappingProvider.Builder builder,
+            final SmallRyeConfigBuilder configBuilder,
             final Set<ConfigClassWithPrefix> configClasses)
             throws ConfigValidationException {
-        DefaultValuesConfigSource defaultValues = (DefaultValuesConfigSource) config.getDefaultValues();
         for (ConfigClassWithPrefix configClass : configClasses) {
-            builder.addRoot(configClass.getPrefix(), configClass.getKlass());
-            defaultValues.addDefaults(
-                    getDefaults(configClassWithPrefix(getConfigMappingClass(configClass.getKlass()), configClass.getPrefix())));
+            configBuilder.withMapping(configClass.getKlass(), configClass.getPrefix());
         }
-        config.getMappings().putAll(builder.build().mapConfiguration(config));
+        config.getDefaultValues().addDefaults(configBuilder.getDefaultValues());
+        config.getMappings().putAll(config.buildMappings(configBuilder));
     }
 
-    private static void getProperties(
-            final GroupProperty groupProperty,
-            final NamingStrategy namingStrategy,
-            final Function<String, String> path,
-            final Map<Class<?>, Map<String, Map<String, Property>>> properties) {
-
-        ConfigMappingInterface groupType = groupProperty.getGroupType();
-        Map<String, Property> groupProperties = properties
-                .computeIfAbsent(groupType.getInterfaceType(), group -> new HashMap<>())
-                .computeIfAbsent(path.apply(""), s -> new HashMap<>());
-
-        getProperties(groupProperty, namingStrategy, path, properties, groupProperties);
-    }
-
-    private static void getProperties(
-            final GroupProperty groupProperty,
-            final NamingStrategy namingStrategy,
-            final Function<String, String> path,
-            final Map<Class<?>, Map<String, Map<String, Property>>> properties,
-            final Map<String, Property> groupProperties) {
-
-        for (Property property : groupProperty.getGroupType().getProperties()) {
-            getProperty(property, namingStrategy, path, properties, groupProperties);
-        }
-    }
-
-    private static void getProperty(
-            final Property property,
-            final NamingStrategy namingStrategy,
-            final Function<String, String> path,
-            final Map<Class<?>, Map<String, Map<String, Property>>> properties,
-            final Map<String, Property> groupProperties) {
-
-        if (property.isLeaf()) {
-            groupProperties.put(
-                    path.apply(property.isParentPropertyName() ? "" : "." + property.getPropertyName(namingStrategy)),
-                    property);
-        } else if (property.isPrimitive()) {
-            groupProperties.put(
-                    path.apply(property.isParentPropertyName() ? "" : "." + property.getPropertyName(namingStrategy)),
-                    property);
-        } else if (property.isGroup()) {
-            GroupProperty groupProperty = property.asGroup();
-            NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
-                    : namingStrategy;
-            Function<String, String> groupPath = new Function<>() {
-                @Override
-                public String apply(final String name) {
-                    return property.isParentPropertyName() ? path.apply("") + name
-                            : path.apply("." + property.getPropertyName(namingStrategy)) + name;
-                }
-            };
-            getProperties(groupProperty, groupNamingStrategy, groupPath, properties);
-            getProperties(groupProperty, groupNamingStrategy, groupPath, properties, groupProperties);
-        } else if (property.isMap()) {
-            ConfigMappingInterface.MapProperty mapProperty = property.asMap();
-            if (mapProperty.getValueProperty().isLeaf()) {
-                groupProperties.put(property.isParentPropertyName() ? path.apply(".*")
-                        : path.apply("." + property.getPropertyName(namingStrategy) + ".*"), mapProperty);
-                if (mapProperty.hasKeyUnnamed()) {
-                    groupProperties.put(property.isParentPropertyName() ? path.apply("")
-                            : path.apply("." + property.getPropertyName(namingStrategy)), mapProperty);
-                }
-            } else if (mapProperty.getValueProperty().isGroup()) {
-                GroupProperty groupProperty = mapProperty.getValueProperty().asGroup();
-                NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
-                        : namingStrategy;
-                Function<String, String> groupPath = new Function<>() {
-                    @Override
-                    public String apply(final String name) {
-                        return property.isParentPropertyName() ? path.apply(".*") + name
-                                : path.apply("." + mapProperty.getPropertyName(namingStrategy) + ".*") + name;
-                    }
-                };
-                getProperties(groupProperty, groupNamingStrategy, groupPath, properties);
-                getProperties(groupProperty, groupNamingStrategy, groupPath, properties, groupProperties);
-                if (mapProperty.hasKeyUnnamed()) {
-                    Function<String, String> unnamedGroupPath = new Function<>() {
-                        @Override
-                        public String apply(final String name) {
-                            return property.isParentPropertyName() ? path.apply(name)
-                                    : path.apply("." + mapProperty.getPropertyName(namingStrategy)) + name;
-                        }
-                    };
-                    getProperties(groupProperty, groupNamingStrategy, unnamedGroupPath, properties);
-                    getProperties(groupProperty, groupNamingStrategy, unnamedGroupPath, properties, groupProperties);
-                }
-            } else if (mapProperty.getValueProperty().isCollection()) {
-                CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
-                Property element = collectionProperty.getElement();
-                if (element.isLeaf()) {
-                    LeafProperty leafProperty = new LeafProperty(element.getMethod(), element.getPropertyName(),
-                            element.asLeaf().getValueType(), element.asLeaf().getConvertWith(), null);
-                    getProperty(leafProperty, namingStrategy, new Function<String, String>() {
-                        @Override
-                        public String apply(final String name) {
-                            return path.apply(name + ".*");
-                        }
-                    }, properties, groupProperties);
-                }
-                getProperty(element, namingStrategy, new Function<String, String>() {
-                    @Override
-                    public String apply(final String name) {
-                        return path.apply(name + ".*[*]");
-                    }
-                }, properties, groupProperties);
-                if (mapProperty.hasKeyUnnamed()) {
-                    getProperty(element, namingStrategy, new Function<String, String>() {
-                        @Override
-                        public String apply(final String name) {
-                            return path.apply(name + "[*]");
-                        }
-                    }, properties, groupProperties);
-                }
-            } else if (mapProperty.getValueProperty().isMap()) {
-                getProperty(mapProperty.getValueProperty(), namingStrategy,
-                        new Function<String, String>() {
-                            @Override
-                            public String apply(final String name) {
-                                return path.apply(name + ".*");
-                            }
-                        }, properties, groupProperties);
-                if (mapProperty.hasKeyUnnamed()) {
-                    getProperty(mapProperty.getValueProperty(), namingStrategy,
-                            new Function<String, String>() {
-                                @Override
-                                public String apply(final String name) {
-                                    return path.apply(name);
-                                }
-                            }, properties, groupProperties);
-                }
-            }
-        } else if (property.isCollection()) {
-            CollectionProperty collectionProperty = property.asCollection();
-            if (collectionProperty.getElement().isLeaf()) {
-                getProperty(collectionProperty.getElement(), namingStrategy, path, properties, groupProperties);
-            }
-            getProperty(collectionProperty.getElement(), namingStrategy, new Function<String, String>() {
-                @Override
-                public String apply(final String name) {
-                    return path.apply(name.endsWith(".*") ? name.substring(0, name.length() - 2) + "[*].*" : name + "[*]");
-                }
-            }, properties, groupProperties);
-        } else if (property.isOptional()) {
-            getProperty(property.asOptional().getNestedProperty(), namingStrategy, path, properties, groupProperties);
+    static String prefix(final String prefix, final String path) {
+        if (prefix.isEmpty()) {
+            return path;
+        } else if (path.isEmpty()) {
+            return prefix;
+        } else if (path.charAt(0) == '[') {
+            return prefix + path;
+        } else {
+            return prefix + "." + path;
         }
     }
 
@@ -260,6 +116,10 @@ public final class ConfigMappings implements Serializable {
         return configMapping != null ? configMapping.prefix() : "";
     }
 
+    /**
+     * A representation of a {@link ConfigMapping} or <code>@ConfigProperties</code> with a <code>Class</code> and the
+     * prefix.
+     */
     public static final class ConfigClassWithPrefix {
         private final Class<?> klass;
         private final String prefix;

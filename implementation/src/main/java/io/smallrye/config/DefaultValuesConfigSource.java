@@ -43,7 +43,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         if (name.indexOf('*') == -1) {
             this.properties.putIfAbsent(name, value);
         } else {
-            this.wildcards.put(new PropertyName(name), value);
+            this.wildcards.putIfAbsent(new PropertyName(name), value);
         }
     }
 }

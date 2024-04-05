@@ -16,6 +16,8 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
+import static io.smallrye.config.ConfigMappings.prefix;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
@@ -52,6 +54,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.common.constraint.Assert;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -71,7 +74,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
     private final Map<String, String> defaultValues = new HashMap<>();
-    private final ConfigMappingProvider.Builder mappingsBuilder = ConfigMappingProvider.builder();
+    private final MappingBuilder mappingsBuilder = new MappingBuilder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
     private boolean addDefaultSources = false;
@@ -81,10 +84,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private boolean addDiscoveredInterceptors = false;
     private boolean addDiscoveredSecretKeysHandlers = false;
     private boolean addDiscoveredValidator = false;
-
-    public SmallRyeConfigBuilder() {
-        withMappingDefaults(true);
-    }
 
     public SmallRyeConfigBuilder addDiscoveredCustomizers() {
         addDiscoveredCustomizers = true;
@@ -175,10 +174,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             return iterator.next();
         }
         return ConfigValidator.EMPTY;
-    }
-
-    ConfigMappingProvider.Builder getMappingsBuilder() {
-        return mappingsBuilder;
     }
 
     @Override
@@ -515,7 +510,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
-        mappingsBuilder.addRoot(prefix, klass);
+        mappingsBuilder.mapping(klass, prefix);
         return this;
     }
 
@@ -525,23 +520,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
-        mappingsBuilder.validateUnknown(validateUnknown);
         withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
-        return this;
-    }
-
-    public SmallRyeConfigBuilder withMappingDefaults(boolean mappingDefaults) {
-        mappingsBuilder.registerDefaults(mappingDefaults ? this : null);
-        return this;
-    }
-
-    public SmallRyeConfigBuilder withMappingNames(final Map<String, Map<String, Set<String>>> names) {
-        mappingsBuilder.names(names);
-        return this;
-    }
-
-    public SmallRyeConfigBuilder withMappingKeys(final Set<String> keys) {
-        mappingsBuilder.keys(keys);
         return this;
     }
 
@@ -619,6 +598,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public Map<String, String> getDefaultValues() {
         return defaultValues;
+    }
+
+    public MappingBuilder getMappingsBuilder() {
+        return mappingsBuilder;
     }
 
     public ClassLoader getClassLoader() {
@@ -706,6 +689,43 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
 
         return new SmallRyeConfig(this);
+    }
+
+    final class MappingBuilder {
+        private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
+        private final List<String> ignoredPaths = new ArrayList<>();
+
+        MappingBuilder mapping(Class<?> type, String prefix) {
+            Assert.checkNotNullParam("type", type);
+            Assert.checkNotNullParam("path", prefix);
+            Class<?> mappingClass = getConfigMappingClass(type);
+            // It is an MP ConfigProperties, so ignore unmapped properties
+            if (ConfigMappingClass.getConfigurationClass(type) != null) {
+                ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
+            }
+            mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
+            // Load the mapping defaults, to make the defaults available to all config sources
+
+            for (Map.Entry<String, String> defaultEntry : ConfigMappingLoader.configMappingDefaults(mappingClass).entrySet()) {
+                // Do not override builder defaults with mapping defaults
+                defaultValues.putIfAbsent(prefix(prefix, defaultEntry.getKey()), defaultEntry.getValue());
+            }
+            return this;
+        }
+
+        MappingBuilder ignoredPath(String ignoredPath) {
+            Assert.checkNotNullParam("ignoredPath", ignoredPath);
+            ignoredPaths.add(ignoredPath);
+            return this;
+        }
+
+        Map<Class<?>, Set<String>> getMappings() {
+            return mappings;
+        }
+
+        List<String> getIgnoredPaths() {
+            return ignoredPaths;
+        }
     }
 
     static class ConverterWithPriority {

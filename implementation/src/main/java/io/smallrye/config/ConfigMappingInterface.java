@@ -29,7 +29,7 @@ import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
- * Information about a configuration interface.
+ * The metadata reprensentation of a {@link ConfigMapping} annotated class.
  */
 public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
@@ -89,7 +89,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return interfaceType;
     }
 
-    public ConfigMappingInterface[] getSuperTypes() {
+    ConfigMappingInterface[] getSuperTypes() {
         return superTypes;
     }
 
@@ -97,6 +97,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         Set<Property> properties = getSuperProperties(this);
         properties.addAll(Arrays.asList(this.properties));
         return properties.toArray(new Property[0]);
+    }
+
+    /**
+     * Constructs a representation of all {@link Property} names contained in the {@link ConfigMappingInterface}.
+     *
+     * @return a <code>Map</code> with the mapping properties names
+     * @see ConfigMappingInterface#getNames(ConfigMappingInterface)
+     */
+    public Map<String, Map<String, Set<String>>> getNames() {
+        return ConfigMappingInterface.getNames(this);
     }
 
     private static Set<Property> getSuperProperties(ConfigMappingInterface type) {
@@ -1007,6 +1017,254 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         } else {
             throw ConfigMessages.msg.noRawType(type);
+        }
+    }
+
+    /**
+     * Constructs a representation of all {@link Property} names contained in the {@link ConfigMappingInterface}.
+     * <p>
+     *
+     * <ul>
+     * <li>The first level <code>Map</code> key is each <code>Class</code> name that is part of the mapping</li>
+     * <li>The second level <code>Map</code> key is each <code>String</code> path</li>
+     * <li>The <code>Set</code> contains all {@link Property} <code>String</code> names under the mapping path,
+     * including sub-elements and nested elements</li>
+     * </ul>
+     *
+     * The path names do not include the {@link ConfigMapping#prefix()} because the same {@link ConfigMappingInterface}
+     * can be registered for multiple prefixes.
+     * <p>
+     * The mapping class root {@link Property} use the empty <code>String</code> for the path key.
+     *
+     * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
+     * @return a <code>Map</code> with the mapping properties names
+     */
+    public static Map<String, Map<String, Set<String>>> getNames(final ConfigMappingInterface configMapping) {
+        Map<String, Map<String, Set<String>>> names = new HashMap<>();
+        Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configMapping);
+        for (Map.Entry<Class<?>, Map<String, Map<String, Property>>> entry : properties.entrySet()) {
+            Map<String, Set<String>> groups = new HashMap<>();
+            for (Map.Entry<String, Map<String, Property>> group : entry.getValue().entrySet()) {
+                groups.put(group.getKey(), group.getValue().keySet());
+            }
+            names.put(entry.getKey().getName(), groups);
+        }
+        return names;
+    }
+
+    /**
+     * Constructs a representation of all {@link Property} contained in the {@link ConfigMappingInterface}.
+     * <p>
+     *
+     * <ul>
+     * <li>The first level <code>Map</code> key is each <code>Class</code> that is part of the mapping</li>
+     * <li>The second level <code>Map</code> key is each <code>String</code> path in the mapping to a {@link Property}</li>
+     * <li>The third level <code>Map</code> key is each <code>String</code> {@link Property} name under the mapping
+     * path, including sub-elements and nested elements</li>
+     * </ul>
+     *
+     * The path names do not include the {@link ConfigMapping#prefix()} because the same {@link ConfigMappingInterface}
+     * can be registered for multiple prefixes.
+     * <p>
+     * The mapping class root {@link Property} use the empty <code>String</code> for the path key.
+     *
+     * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
+     * @return a <code>Map</code> with {@link Property} values
+     */
+    public static Map<Class<?>, Map<String, Map<String, Property>>> getProperties(final ConfigMappingInterface configMapping) {
+        Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
+        getProperties(new GroupProperty(null, null, configMapping), configMapping.getNamingStrategy(), new Path(), properties);
+        return properties;
+    }
+
+    private static void getProperties(
+            final GroupProperty groupProperty,
+            final NamingStrategy namingStrategy,
+            final Path path,
+            final Map<Class<?>, Map<String, Map<String, Property>>> properties) {
+
+        ConfigMappingInterface groupType = groupProperty.getGroupType();
+        Map<String, Property> groupProperties = properties
+                .computeIfAbsent(groupType.getInterfaceType(), group -> new HashMap<>())
+                .computeIfAbsent(path.get(), s -> new HashMap<>());
+
+        getProperties(groupProperty, namingStrategy, path, properties, groupProperties);
+    }
+
+    private static void getProperties(
+            final GroupProperty groupProperty,
+            final NamingStrategy namingStrategy,
+            final Path path,
+            final Map<Class<?>, Map<String, Map<String, Property>>> properties,
+            final Map<String, Property> groupProperties) {
+
+        for (Property property : groupProperty.getGroupType().getProperties()) {
+            getProperty(property, namingStrategy, path, properties, groupProperties);
+        }
+    }
+
+    private static void getProperty(
+            final Property property,
+            final NamingStrategy namingStrategy,
+            final Path path,
+            final Map<Class<?>, Map<String, Map<String, Property>>> properties,
+            final Map<String, Property> groupProperties) {
+
+        if (property.isLeaf() || property.isPrimitive()) {
+            groupProperties.put(path.get(property, namingStrategy), property);
+        } else if (property.isGroup()) {
+            GroupProperty groupProperty = property.asGroup();
+            NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
+                    : namingStrategy;
+            Path groupPath = path.group(groupProperty, namingStrategy);
+            getProperties(groupProperty, groupNamingStrategy, groupPath, properties);
+            getProperties(groupProperty, groupNamingStrategy, groupPath, properties, groupProperties);
+        } else if (property.isMap()) {
+            ConfigMappingInterface.MapProperty mapProperty = property.asMap();
+            if (mapProperty.getValueProperty().isLeaf()) {
+                groupProperties.put(path.map(property, namingStrategy).get(), property);
+                if (mapProperty.hasKeyUnnamed()) {
+                    groupProperties.put(path.unnamedMap(property, namingStrategy).get(), property);
+                }
+            } else if (mapProperty.getValueProperty().isGroup()) {
+                GroupProperty groupProperty = mapProperty.getValueProperty().asGroup();
+                NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
+                        : namingStrategy;
+                Path mapPath = path.map(mapProperty, namingStrategy);
+                getProperties(groupProperty, groupNamingStrategy, mapPath, properties);
+                getProperties(groupProperty, groupNamingStrategy, mapPath, properties, groupProperties);
+                if (mapProperty.hasKeyUnnamed()) {
+                    Path unnamedMapPath = path.unnamedMap(mapProperty, namingStrategy);
+                    getProperties(groupProperty, groupNamingStrategy, unnamedMapPath, properties);
+                    getProperties(groupProperty, groupNamingStrategy, unnamedMapPath, properties, groupProperties);
+                }
+            } else if (mapProperty.getValueProperty().isCollection()) {
+                CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
+                Property element = collectionProperty.getElement();
+                if (element.isLeaf()) {
+                    groupProperties.put(path.map().collection().get(property, namingStrategy), property);
+                    // We use a different leaf to remove the default, to not duplicate defaults properties, because
+                    // leaf collections can use the single name or use the name with square brackets
+                    groupProperties.put(path.map().get(property, namingStrategy),
+                            new LeafProperty(element.getMethod(), element.getPropertyName(), element.asLeaf().getValueType(),
+                                    element.asLeaf().getConvertWith(), null));
+                    if (mapProperty.hasKeyUnnamed()) {
+                        groupProperties.put(path.collection().get(property, namingStrategy), property);
+                    }
+                } else {
+                    getProperty(element, namingStrategy, path.map().collection(), properties, groupProperties);
+                    if (mapProperty.hasKeyUnnamed()) {
+                        getProperty(element, namingStrategy, path.collection(), properties, groupProperties);
+                    }
+                }
+            } else if (mapProperty.getValueProperty().isMap()) {
+                getProperty(mapProperty.getValueProperty(), namingStrategy, path.map(), properties, groupProperties);
+                if (mapProperty.hasKeyUnnamed()) {
+                    getProperty(mapProperty.getValueProperty(), namingStrategy, path.unnamedMap(), properties, groupProperties);
+                }
+            }
+        } else if (property.isCollection()) {
+            CollectionProperty collectionProperty = property.asCollection();
+            if (collectionProperty.getElement().isLeaf()) {
+                getProperty(collectionProperty.getElement(), namingStrategy, path, properties, groupProperties);
+            }
+            getProperty(collectionProperty.getElement(), namingStrategy, path.collection(), properties, groupProperties);
+        } else if (property.isOptional()) {
+            getProperty(property.asOptional().getNestedProperty(), namingStrategy, path, properties, groupProperties);
+        }
+    }
+
+    static class Path {
+        private final String path;
+        private final List<String> elements;
+
+        Path() {
+            this("");
+        }
+
+        Path(final String path) {
+            this(path, new ArrayList<>());
+        }
+
+        Path(final String path, final List<String> elements) {
+            this.path = path;
+            this.elements = elements;
+        }
+
+        Path group(final String path) {
+            return new Path(get(path));
+        }
+
+        Path group(final Property property, final NamingStrategy namingStrategy) {
+            if (property.isParentPropertyName()) {
+                return group("");
+            } else {
+                return group(property.getPropertyName(namingStrategy));
+            }
+        }
+
+        Path map() {
+            List<String> elements = new ArrayList<>(this.elements);
+            elements.add(path.isEmpty() && elements.isEmpty() ? "*" : ".*");
+            return new Path(get(), elements);
+        }
+
+        Path map(final String path) {
+            return new Path(get(path));
+        }
+
+        Path map(final Property property, final NamingStrategy namingStrategy) {
+            if (property.isParentPropertyName()) {
+                this.elements.add(path.isEmpty() && this.elements.isEmpty() ? "*" : ".*");
+                return map("");
+            } else {
+                this.elements.add(".*");
+                return map(property.getPropertyName(namingStrategy));
+            }
+        }
+
+        Path collection() {
+            List<String> elements = new ArrayList<>(this.elements);
+            elements.add("[*]");
+            return new Path(get(), elements);
+        }
+
+        Path unnamedMap() {
+            return this;
+        }
+
+        Path unnamedMap(final String path) {
+            return new Path(get(path));
+        }
+
+        Path unnamedMap(final Property property, final NamingStrategy namingStrategy) {
+            return unnamedMap(property.isParentPropertyName() ? "" : property.getPropertyName(namingStrategy));
+        }
+
+        String get(final String path) {
+            String elements = String.join("", this.elements);
+            this.elements.clear();
+            if (this.path.isEmpty()) {
+                if (path.isEmpty()) {
+                    return elements;
+                } else {
+                    if (!elements.isEmpty() && elements.charAt(0) == '*') {
+                        return path + "." + elements;
+                    } else {
+                        return path + elements;
+                    }
+                }
+            } else {
+                return path.isEmpty() ? this.path + elements : this.path + "." + path + elements;
+            }
+        }
+
+        String get(final Property property, final NamingStrategy namingStrategy) {
+            return get(property.isParentPropertyName() ? "" : property.getPropertyName(namingStrategy));
+        }
+
+        String get() {
+            return path;
         }
     }
 }

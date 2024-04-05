@@ -20,6 +20,9 @@ import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 import static java.util.stream.Collectors.toList;
@@ -40,7 +43,10 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -76,12 +82,14 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
-        // This needs to be executed before everything else to make sure that defaults from mappings are available to all sources
-        ConfigMappingProvider mappingProvider = builder.getMappingsBuilder().build();
         this.configSources = new ConfigSources(builder, this);
         this.converters = buildConverters(builder);
         this.configValidator = builder.getValidator();
-        this.mappings = new ConcurrentHashMap<>(mappingProvider.mapConfiguration(this));
+        this.mappings = new ConcurrentHashMap<>(buildMappings(builder));
+
+        // Match dotted properties from other sources with Env with the same semantic meaning
+        // This needs to happen after matching dashed names from mappings
+        matchPropertiesWithEnv();
     }
 
     private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
@@ -104,6 +112,64 @@ public class SmallRyeConfig implements Config, Serializable {
         converters.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
 
         return converters;
+    }
+
+    Map<Class<?>, Map<String, ConfigMappingObject>> buildMappings(final SmallRyeConfigBuilder builder)
+            throws ConfigValidationException {
+        SmallRyeConfigBuilder.MappingBuilder mappingsBuilder = builder.getMappingsBuilder();
+        if (mappingsBuilder.getMappings().isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // Perform the config mapping
+        ConfigMappingContext context = SecretKeys.doUnlocked(new Supplier<ConfigMappingContext>() {
+            @Override
+            public ConfigMappingContext get() {
+                return new ConfigMappingContext(SmallRyeConfig.this, mappingsBuilder.getMappings());
+            }
+        });
+
+        if (getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(true)) {
+            context.reportUnknown(mappingsBuilder.getIgnoredPaths());
+        }
+
+        List<ConfigValidationException.Problem> problems = context.getProblems();
+        if (!problems.isEmpty()) {
+            throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
+        }
+
+        return context.getRootsMap();
+    }
+
+    private void matchPropertiesWithEnv() {
+        List<String> dottedProperties = new ArrayList<>();
+        for (ConfigSource configSource : getConfigSources()) {
+            if (!(configSource instanceof EnvConfigSource)) {
+                Set<String> propertyNames = configSource.getPropertyNames();
+                if (propertyNames != null) {
+                    dottedProperties.addAll(propertyNames.stream().map(new Function<String, String>() {
+                        @Override
+                        public String apply(final String name) {
+                            return activeName(name, getProfiles());
+                        }
+                    }).collect(Collectors.toList()));
+                }
+            }
+        }
+
+        for (ConfigSource configSource : getConfigSources(EnvConfigSource.class)) {
+            EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
+            for (String dottedProperty : dottedProperties) {
+                Set<String> envNames = envConfigSource.getPropertyNames();
+                if (envConfigSource.hasPropertyName(dottedProperty)) {
+                    if (!envNames.contains(dottedProperty)) {
+                        // this may be expensive, but it shouldn't happen that often
+                        envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(dottedProperty)));
+                        envNames.add(dottedProperty);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -609,6 +675,10 @@ public class SmallRyeConfig implements Config, Serializable {
         return Optional.empty();
     }
 
+    DefaultValuesConfigSource getDefaultValues() {
+        return configSources.defaultValues;
+    }
+
     public <T> T convert(String value, Class<T> asType) {
         return value != null ? requireConverter(asType).convert(value) : null;
     }
@@ -677,10 +747,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.getProfiles();
     }
 
-    public ConfigSource getDefaultValues() {
-        return configSources.defaultValues;
-    }
-
     ConfigSourceInterceptorContext interceptorChain() {
         return configSources.interceptorChain;
     }
@@ -690,7 +756,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
         private final List<String> profiles;
         private final List<ConfigSource> sources;
-        private final ConfigSource defaultValues;
+        private final DefaultValuesConfigSource defaultValues;
         private final ConfigSourceInterceptorContext interceptorChain;
         private final PropertyNames propertyNames;
 

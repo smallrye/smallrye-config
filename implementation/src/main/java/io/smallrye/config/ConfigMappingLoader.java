@@ -3,9 +3,12 @@ package io.smallrye.config;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -50,11 +53,50 @@ public final class ConfigMappingLoader {
     static Class<?> getConfigMappingClass(final Class<?> type) {
         validateAnnotations(type);
 
-        final ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
+        ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass == null) {
             return type;
         } else {
             return loadClass(type, configMappingClass);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Map<String, Map<String, Set<String>>> configMappingNames(final Class<T> interfaceType) {
+        try {
+            Method getNames = CACHE.get(interfaceType).getImplementationClass().getDeclaredMethod("getNames");
+            return (Map<String, Map<String, Set<String>>>) getNames.invoke(null);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error e2) {
+                throw e2;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
+            }
+        }
+    }
+
+    static <T> Map<String, String> configMappingDefaults(final Class<T> interfaceType) {
+        try {
+            Method getDefaults = CACHE.get(interfaceType).getImplementationClass().getDeclaredMethod("getDefaults");
+            return (Map<String, String>) getDefaults.invoke(null);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error e2) {
+                throw e2;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
+            }
         }
     }
 

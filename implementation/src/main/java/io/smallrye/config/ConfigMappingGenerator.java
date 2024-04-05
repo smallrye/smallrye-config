@@ -5,6 +5,7 @@ import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
@@ -40,6 +41,7 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -83,7 +85,6 @@ public class ConfigMappingGenerator {
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
     private static final String I_STRING = getInternalName(String.class);
     private static final String I_NAMING_STRATEGY = getInternalName(NamingStrategy.class);
-    private static final String I_SET = getInternalName(Set.class);
     private static final String I_FIELD = getInternalName(Field.class);
 
     private static final int V_THIS = 0;
@@ -129,7 +130,7 @@ public class ConfigMappingGenerator {
         // stack: -
         ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
         // stack: ctxt
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getStringBuilder", "()L" + I_STRING_BUILDER + ';',
+        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getNameBuilder", "()L" + I_STRING_BUILDER + ';',
                 false);
         // stack: sb
         ctor.visitInsn(DUP);
@@ -158,13 +159,14 @@ public class ConfigMappingGenerator {
                 "(L" + I_NAMING_STRATEGY + ";)L" + I_NAMING_STRATEGY + ";", false);
         ctor.visitVarInsn(ASTORE, V_NAMING_STRATEGY);
 
-        // stack: -
         addProperties(visitor, ctor, new HashSet<>(), mapping, mapping.getClassInternalName());
-        // stack: -
         if (mapping.getToStringMethod().generate()) {
             addToString(visitor, mapping);
         }
-        // stack: -
+
+        generateNames(visitor, mapping);
+        generateDefaults(visitor, mapping);
+
         ctor.visitInsn(RETURN);
         ctor.visitLabel(ctorEnd);
         ctor.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, ctorStart, ctorEnd, V_MAPPING_CONTEXT);
@@ -750,6 +752,81 @@ public class ConfigMappingGenerator {
         ts.visitInsn(ARETURN);
         ts.visitEnd();
         ts.visitMaxs(0, 0);
+    }
+
+    private static void generateNames(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
+        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getNames", "()Ljava/util/Map;",
+                "()Ljava/util/Map<Ljava/lang/String;Ljava/util/Map<Ljava/lang/String;Ljava/util/Set<Ljava/lang/String;>;>;>;",
+                null);
+
+        mv.visitTypeInsn(NEW, "java/util/HashMap");
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+        mv.visitVarInsn(ASTORE, 0);
+
+        for (Map.Entry<String, Map<String, Set<String>>> mappings : mapping.getNames().entrySet()) {
+            mv.visitTypeInsn(NEW, "java/util/HashMap");
+            mv.visitInsn(DUP);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+            mv.visitVarInsn(ASTORE, 1);
+            for (Map.Entry<String, Set<String>> paths : mappings.getValue().entrySet()) {
+                mv.visitTypeInsn(NEW, "java/util/HashSet");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "()V", false);
+                mv.visitVarInsn(ASTORE, 2);
+                for (String name : paths.getValue()) {
+                    mv.visitVarInsn(ALOAD, 2);
+                    mv.visitLdcInsn(name);
+                    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
+                    mv.visitInsn(POP);
+                }
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitLdcInsn(paths.getKey());
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
+                        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
+                mv.visitInsn(POP);
+            }
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitLdcInsn(mappings.getKey());
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
+                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
+            mv.visitInsn(POP);
+        }
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void generateDefaults(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
+        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getDefaults", "()Ljava/util/Map;",
+                "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;",
+                null);
+
+        mv.visitTypeInsn(NEW, "java/util/HashMap");
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+        mv.visitVarInsn(ASTORE, 0);
+
+        for (Map.Entry<String, Property> entry : ConfigMappingInterface.getProperties(mapping)
+                .get(mapping.getInterfaceType())
+                .get("").entrySet()) {
+            if (entry.getValue().hasDefaultValue()) {
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitLdcInsn(entry.getKey());
+                mv.visitLdcInsn(entry.getValue().getDefaultValue());
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
+                        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
+                mv.visitInsn(POP);
+            }
+        }
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
     }
 
     private static boolean hasDefaultValue(final Class<?> klass, final Object value) {

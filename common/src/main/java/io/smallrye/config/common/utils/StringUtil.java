@@ -190,6 +190,44 @@ public class StringUtil {
         return new String(result, 0, 0, result.length);
     }
 
+    /**
+     * Matches if a dotted property name is part of a dotted path.
+     *
+     * @param path the dotted path
+     * @param name a dotted property name
+     * @return <code>true</code> if the dotted property name ir part of a dotted path, or <code>false</code> otherwise.
+     */
+    public static boolean isInPath(final String path, final String name) {
+        if (name.equals(path)) {
+            return true;
+        }
+
+        // if property is less than the root no way to match
+        if (name.length() <= path.length()) {
+            return false;
+        }
+
+        // foo.bar
+        // foo.bar."baz"
+        // foo.bar[0]
+        char e = name.charAt(path.length());
+        if ((e == '.') || e == '[') {
+            for (int i = 0; i < path.length(); i++) {
+                char r = path.charAt(i);
+                e = name.charAt(i);
+                if (r == '-') {
+                    if (e != '.' && e != '-') {
+                        return false;
+                    }
+                } else if (r != e) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static boolean isNumeric(final CharSequence digits) {
         return isNumeric(digits, 0, digits.length());
     }

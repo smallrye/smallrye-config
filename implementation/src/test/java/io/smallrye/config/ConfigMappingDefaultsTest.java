@@ -2,8 +2,6 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.AsyncHttpClientBuildTimeConfig.AsyncClientType.NETTY;
 import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.SyncHttpClientBuildTimeConfig.SyncClientType.URL;
-import static io.smallrye.config.ConfigMappings.getDefaults;
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,6 +15,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMappingDefaultsTest.DataSourcesJdbcBuildTimeConfig.DataSourceJdbcOuterNamedBuildTimeConfig;
@@ -555,10 +554,14 @@ public class ConfigMappingDefaultsTest {
 
     @Test
     void parentDefaults() {
-        Map<String, String> defaults = getDefaults(configClassWithPrefix(ExtendsBase.class));
-        assertEquals(2, defaults.size());
-        assertEquals("default", defaults.get("base.base"));
-        assertEquals("default", defaults.get("base.my-prop"));
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ExtendsBase.class)
+                .build();
+
+        ConfigSource defaults = config.getDefaultValues();
+        assertEquals(2, defaults.getPropertyNames().size());
+        assertEquals("default", defaults.getValue("base.base"));
+        assertEquals("default", defaults.getValue("base.my-prop"));
     }
 
     public interface Base {
@@ -676,13 +679,6 @@ public class ConfigMappingDefaultsTest {
 
     @Test
     void multipleLevelDefaults() {
-        Map<String, String> defaults = getDefaults(configClassWithPrefix(GrandChild.class));
-        assertEquals("parent", defaults.get("parent"));
-        assertEquals("child", defaults.get("child"));
-        assertEquals("grand-child", defaults.get("grand-child"));
-        assertEquals("child", defaults.get("override-by-child"));
-        assertEquals("grand-child", defaults.get("override-by-grand-child"));
-
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(GrandChild.class)
                 .build();
