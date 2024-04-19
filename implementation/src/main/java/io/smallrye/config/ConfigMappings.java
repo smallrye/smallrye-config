@@ -128,7 +128,7 @@ public final class ConfigMappings implements Serializable {
             final Map<Class<?>, Map<String, Map<String, Property>>> properties,
             final Map<String, Property> groupProperties) {
 
-        for (Property property : groupProperty.getGroupType().getProperties(true)) {
+        for (Property property : groupProperty.getGroupType().getProperties()) {
             getProperty(property, namingStrategy, path, properties, groupProperties);
         }
     }
