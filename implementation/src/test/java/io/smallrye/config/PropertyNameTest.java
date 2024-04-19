@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.PropertyName.name;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -8,45 +9,52 @@ import org.junit.jupiter.api.Test;
 class PropertyNameTest {
     @Test
     void mappingNameEquals() {
-        assertEquals(new PropertyName(new String("foo")), new PropertyName(new String("foo")));
-        assertEquals(new PropertyName(new String("foo.bar")), new PropertyName(new String("foo.bar")));
-        assertEquals(new PropertyName("foo.*"), new PropertyName("foo.bar"));
-        assertEquals(new PropertyName(new String("foo.*")), new PropertyName(new String("foo.*")));
-        assertEquals(new PropertyName("*"), new PropertyName("foo"));
-        assertEquals(new PropertyName("foo"), new PropertyName("*"));
-        assertEquals(new PropertyName("foo.*.bar"), new PropertyName("foo.bar.bar"));
-        assertEquals(new PropertyName("foo.bar.bar"), new PropertyName("foo.*.bar"));
-        assertEquals(new PropertyName("foo.*.bar"), new PropertyName("foo.\"bar\".bar"));
-        assertEquals(new PropertyName("foo.\"bar\".bar"), new PropertyName("foo.*.bar"));
-        assertEquals(new PropertyName("foo.*.bar"), new PropertyName("foo.\"bar-baz\".bar"));
-        assertEquals(new PropertyName("foo.\"bar-baz\".bar"), new PropertyName("foo.*.bar"));
-        assertNotEquals(new PropertyName("foo.*.bar"), new PropertyName("foo.bar.baz"));
-        assertNotEquals(new PropertyName("foo.bar.baz"), new PropertyName("foo.*.bar"));
-        assertEquals(new PropertyName(new String("foo.bar[*]")), new PropertyName(new String("foo.bar[*]")));
-        assertEquals(new PropertyName("foo.bar[*]"), new PropertyName("foo.bar[0]"));
-        assertEquals(new PropertyName("foo.bar[0]"), new PropertyName("foo.bar[*]"));
-        assertEquals(new PropertyName("foo.*[*]"), new PropertyName("foo.bar[0]"));
-        assertEquals(new PropertyName("foo.bar[0]"), new PropertyName("foo.*[*]"));
-        assertEquals(new PropertyName("foo.*[*]"), new PropertyName("foo.baz[1]"));
-        assertEquals(new PropertyName("foo.baz[1]"), new PropertyName("foo.*[*]"));
-        assertNotEquals(new PropertyName("foo.*[*]"), new PropertyName("foo.baz[x]"));
-        assertNotEquals(new PropertyName("foo.baz[x]"), new PropertyName("foo.*[*]"));
-        assertEquals(new PropertyName("foo.*[*].bar[*]"), new PropertyName("foo.baz[0].bar[0]"));
-        assertEquals(new PropertyName(new String("foo.*[*].bar[*]")), new PropertyName(new String("foo.*[*].bar[*]")));
-        assertEquals(new PropertyName("foo.baz[0].bar[0]"), new PropertyName("foo.*[*].bar[*]"));
-        assertEquals(new PropertyName(new String("foo.baz[0].bar[0]")), new PropertyName(new String("foo.baz[0].bar[0]")));
-        assertNotEquals(new PropertyName("foo.bar.baz[*]").hashCode(), new PropertyName("foo.bar.*").hashCode());
-        assertNotEquals(new PropertyName("foo.bar.baz[*]"), new PropertyName("foo.bar.*"));
+        assertEquals(name(new String("foo")), name(new String("foo")));
+        assertEquals(name(new String("foo.bar")), name(new String("foo.bar")));
+        assertEquals(name("foo.*"), name("foo.bar"));
+        assertEquals(name(new String("foo.*")), name(new String("foo.*")));
+        assertEquals(name("*"), name("foo"));
+        assertEquals(name("foo"), name("*"));
+        assertEquals(name("foo.*.bar"), name("foo.bar.bar"));
+        assertEquals(name("foo.bar.bar"), name("foo.*.bar"));
+        assertEquals(name("foo.*.bar"), name("foo.\"bar\".bar"));
+        assertEquals(name("foo.\"bar\".bar"), name("foo.*.bar"));
+        assertEquals(name("foo.*.bar"), name("foo.\"bar-baz\".bar"));
+        assertEquals(name("foo.\"bar-baz\".bar"), name("foo.*.bar"));
+        assertNotEquals(name("foo.*.bar"), name("foo.bar.baz"));
+        assertNotEquals(name("foo.bar.baz"), name("foo.*.bar"));
+        assertEquals(name(new String("foo.bar[*]")), name(new String("foo.bar[*]")));
+        assertEquals(name("foo.bar[*]"), name("foo.bar[0]"));
+        assertEquals(name("foo.bar[0]"), name("foo.bar[*]"));
+        assertEquals(name("foo.*[*]"), name("foo.bar[0]"));
+        assertEquals(name("foo.bar[0]"), name("foo.*[*]"));
+        assertEquals(name("foo.*[*]"), name("foo.baz[1]"));
+        assertEquals(name("foo.baz[1]"), name("foo.*[*]"));
+        assertNotEquals(name("foo.*[*]"), name("foo.baz[x]"));
+        assertNotEquals(name("foo.baz[x]"), name("foo.*[*]"));
+        assertEquals(name("foo.*[*].bar[*]"), name("foo.baz[0].bar[0]"));
+        assertEquals(name(new String("foo.*[*].bar[*]")), name(new String("foo.*[*].bar[*]")));
+        assertEquals(name("foo.baz[0].bar[0]"), name("foo.*[*].bar[*]"));
+        assertEquals(name(new String("foo.baz[0].bar[0]")), name(new String("foo.baz[0].bar[0]")));
+        assertNotEquals(name("foo.bar.baz[*]").hashCode(), name("foo.bar.*").hashCode());
+        assertNotEquals(name("foo.bar.baz[*]"), name("foo.bar.*"));
 
-        assertEquals(new PropertyName("foo").hashCode(), new PropertyName("foo").hashCode());
-        assertEquals(new PropertyName("foo.bar").hashCode(), new PropertyName("foo.bar").hashCode());
-        assertEquals(new PropertyName("foo.*").hashCode(), new PropertyName("foo.bar").hashCode());
-        assertEquals(new PropertyName("foo.*.bar").hashCode(), new PropertyName("foo.bar.bar").hashCode());
-        assertEquals(new PropertyName("foo.*.bar").hashCode(), new PropertyName("foo.\"bar\".bar").hashCode());
-        assertEquals(new PropertyName(new String("foo.\"bar\".bar")).hashCode(),
-                new PropertyName(new String("foo.\"bar\".bar")).hashCode());
-        assertEquals(new PropertyName("foo.*.bar").hashCode(), new PropertyName("foo.\"bar-baz\".bar").hashCode());
-        assertEquals(new PropertyName(new String("foo.\"bar-baz\".bar")).hashCode(),
-                new PropertyName(new String("foo.\"bar-baz\".bar")).hashCode());
+        assertEquals(name("foo").hashCode(), name("foo").hashCode());
+        assertEquals(name("foo.bar").hashCode(), name("foo.bar").hashCode());
+        assertEquals(name("foo.*").hashCode(), name("foo.bar").hashCode());
+        assertEquals(name("foo.*.bar").hashCode(), name("foo.bar.bar").hashCode());
+        assertEquals(name("foo.*.bar").hashCode(), name("foo.\"bar\".bar").hashCode());
+        assertEquals(name(new String("foo.\"bar\".bar")).hashCode(), name(new String("foo.\"bar\".bar")).hashCode());
+        assertEquals(name("foo.*.bar").hashCode(), name("foo.\"bar-baz\".bar").hashCode());
+        assertEquals(name(new String("foo.\"bar-baz\".bar")).hashCode(), name(new String("foo.\"bar-baz\".bar")).hashCode());
+
+        assertEquals(name("*"), name("\"foo\""));
+        assertEquals(name("\"foo\""), name("*"));
+
+        assertEquals(name("*.bar"), name("foo.bar"));
+        assertEquals(name("*.bar"), name("\"foo\".bar"));
+
+        assertNotEquals(name("*"), name(""));
+        assertNotEquals(name(""), name("*"));
     }
 }

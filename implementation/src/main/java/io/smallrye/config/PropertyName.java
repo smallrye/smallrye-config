@@ -9,6 +9,10 @@ public class PropertyName {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -28,6 +32,10 @@ public class PropertyName {
             return true;
         }
 
+        if (name.equals("*") && (other.equals("") || other.equals("\"\""))) {
+            return false;
+        }
+
         char n;
         char o;
 
@@ -45,8 +53,12 @@ public class PropertyName {
                     return false;
                 } else if (o == '"') {
                     int beginQuote = other.lastIndexOf('"', i - 1);
-                    if (beginQuote != -1 && beginQuote != 0 && other.charAt(beginQuote - 1) == '.') {
-                        i = beginQuote;
+                    if (beginQuote != -1) {
+                        if (beginQuote != 0 && other.charAt(beginQuote - 1) == '.') {
+                            i = beginQuote;
+                        } else {
+                            i = beginQuote;
+                        }
                     }
                 } else {
                     int previousDot = other.lastIndexOf('.', i);
@@ -104,5 +116,14 @@ public class PropertyName {
             h = 31 * h + c;
         }
         return h;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    public static PropertyName name(final String name) {
+        return new PropertyName(name);
     }
 }
