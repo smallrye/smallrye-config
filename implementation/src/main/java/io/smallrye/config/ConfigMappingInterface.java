@@ -11,8 +11,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,28 +94,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     public Property[] getProperties() {
-        return properties;
+        Set<Property> properties = getSuperProperties(this);
+        properties.addAll(Arrays.asList(this.properties));
+        return properties.toArray(new Property[0]);
     }
 
-    public Property[] getProperties(boolean includeSuper) {
-        if (includeSuper) {
-            Map<String, Property> properties = getSuperProperties(this);
-            for (Property property : this.properties) {
-                properties.put(property.getMemberName(), property);
-            }
-            return properties.values().toArray(new Property[0]);
-        } else {
-            return getProperties();
-        }
-    }
-
-    private static Map<String, Property> getSuperProperties(ConfigMappingInterface type) {
-        Map<String, Property> properties = new HashMap<>();
+    private static Set<Property> getSuperProperties(ConfigMappingInterface type) {
+        Set<Property> properties = new HashSet<>();
         for (ConfigMappingInterface superType : type.getSuperTypes()) {
-            properties.putAll(getSuperProperties(superType));
-            for (Property property : superType.getProperties()) {
-                properties.put(property.getMemberName(), property);
-            }
+            properties.addAll(getSuperProperties(superType));
+            properties.addAll(Arrays.asList(superType.getProperties()));
         }
         return properties;
     }
@@ -170,6 +160,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getPropertyName(final NamingStrategy namingStrategy) {
+            // TODO - Transform in a single class that checks isPropertyName?
             return hasPropertyName() ? getPropertyName() : namingStrategy.apply(getPropertyName());
         }
 
@@ -963,7 +954,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 ConfigMappingInterface group = groupProperty.getGroupType();
                 nested.add(group);
                 Collections.addAll(nested, group.superTypes);
-                getNested(group.getProperties(true), nested);
+                getNested(group.getProperties(), nested);
             }
 
             if (property instanceof OptionalProperty) {
@@ -973,7 +964,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                     ConfigMappingInterface group = groupProperty.getGroupType();
                     nested.add(group);
                     Collections.addAll(nested, group.superTypes);
-                    getNested(group.getProperties(true), nested);
+                    getNested(group.getProperties(), nested);
                 } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty) {
                     CollectionProperty collectionProperty = (CollectionProperty) optionalProperty.getNestedProperty();
                     getNested(new Property[] { collectionProperty.element }, nested);
@@ -995,14 +986,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static AnnotatedType typeOfParameter(final AnnotatedType type, final int index) {
         if (type instanceof AnnotatedParameterizedType) {
             return ((AnnotatedParameterizedType) type).getAnnotatedActualTypeArguments()[index];
-        } else {
-            return type;
-        }
-    }
-
-    static Type typeOfParameter(final Type type, final int index) {
-        if (type instanceof ParameterizedType) {
-            return ((ParameterizedType) type).getActualTypeArguments()[index];
         } else {
             return type;
         }

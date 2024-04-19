@@ -460,10 +460,6 @@ public class ConfigMappingGenerator {
                 ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
             }
         }
-
-        for (ConfigMappingInterface superType : mapping.getSuperTypes()) {
-            addProperties(cv, ctor, visited, superType, className);
-        }
     }
 
     private static void generateProperty(final MethodVisitor ctor, final Property property) {
@@ -718,7 +714,7 @@ public class ConfigMappingGenerator {
         ts.visitLdcInsn(mapping.getInterfaceType().getSimpleName() + "{");
         ts.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ";", false);
 
-        Property[] properties = mapping.getProperties(true);
+        Property[] properties = mapping.getProperties();
         for (int i = 0, propertiesLength = properties.length; i < propertiesLength; i++) {
             Property property = properties[i];
             if (property.isDefaultMethod()) {
