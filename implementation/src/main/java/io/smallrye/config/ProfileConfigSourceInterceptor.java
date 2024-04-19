@@ -17,7 +17,7 @@ import jakarta.annotation.Priority;
 @Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -6305289277993917313L;
-    private final String[] profiles;
+    private final List<String> profiles;
 
     public ProfileConfigSourceInterceptor(final String profile) {
         this(profile != null ? convertProfile(profile) : new ArrayList<>());
@@ -26,12 +26,12 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public ProfileConfigSourceInterceptor(final List<String> profiles) {
         List<String> reverseProfiles = new ArrayList<>(profiles);
         Collections.reverse(reverseProfiles);
-        this.profiles = reverseProfiles.toArray(new String[0]);
+        this.profiles = reverseProfiles;
     }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        if (profiles.length > 0) {
+        if (profiles.size() > 0) {
             final String normalizeName = activeName(name, profiles);
             final ConfigValue profileValue = getProfileValue(context, normalizeName);
             if (profileValue != null) {
@@ -67,11 +67,11 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         return names.iterator();
     }
 
-    public String[] getProfiles() {
+    public List<String> getProfiles() {
         return profiles;
     }
 
-    public static String activeName(final String name, final String[] profiles) {
+    public static String activeName(final String name, final List<String> profiles) {
         if (!name.isEmpty() && name.charAt(0) == '%') {
             int profilesEnd = name.indexOf('.', 1);
             int multipleSplit = -1;

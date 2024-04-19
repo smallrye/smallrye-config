@@ -28,7 +28,6 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -361,18 +360,18 @@ public class SmallRyeConfig implements Config, Serializable {
                 // See if the Converter is designed to handle a missing (null) value i.e. Optional Converters
                 converted = converter.convert("");
             } catch (IllegalArgumentException ignored) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled())); // 2
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled()));
             }
         }
 
         if (converted == null) {
             if (configValue.getValue() == null) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled())); // 2
+                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(configValue.getNameProfiled()));
             } else if (configValue.getValue().isEmpty()) {
-                throw ConfigMessages.msg.propertyEmptyString(configValue.getNameProfiled(), converter.getClass().getTypeName()); // 3
+                throw ConfigMessages.msg.propertyEmptyString(configValue.getNameProfiled(), converter.getClass().getTypeName());
             } else {
                 throw ConfigMessages.msg.converterReturnedNull(configValue.getNameProfiled(), configValue.getValue(),
-                        converter.getClass().getTypeName()); // 4
+                        converter.getClass().getTypeName());
             }
         }
 
@@ -807,7 +806,7 @@ public class SmallRyeConfig implements Config, Serializable {
         private static List<String> getProfiles(final List<ConfigSourceInterceptor> interceptors) {
             for (ConfigSourceInterceptor interceptor : interceptors) {
                 if (interceptor instanceof ProfileConfigSourceInterceptor) {
-                    return Arrays.asList(((ProfileConfigSourceInterceptor) interceptor).getProfiles());
+                    return ((ProfileConfigSourceInterceptor) interceptor).getProfiles();
                 }
             }
             return Collections.emptyList();

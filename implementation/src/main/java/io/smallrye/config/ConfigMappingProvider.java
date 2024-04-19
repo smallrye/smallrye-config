@@ -82,7 +82,7 @@ final class ConfigMappingProvider implements Serializable {
         // TODO - We shouldn't be mutating the EnvSource.
         // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
 
-        String[] profiles = config.getProfiles().toArray(new String[0]);
+        List<String> profiles = config.getProfiles();
         boolean all = roots.containsKey("");
         StringBuilder sb = new StringBuilder();
 
