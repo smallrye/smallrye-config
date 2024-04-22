@@ -35,15 +35,15 @@ public final class ConfigMappings {
     }
 
     /**
-     * Registers additional <code>ConfigProperties</code>> annotated classes with a {@link SmallRyeConfig} instance.
+     * Registers additional <code>ConfigProperties</code> annotated classes with a {@link SmallRyeConfig} instance.
      * <p>
-     * The recommended method of registering <code>ConfigProperties</code>> is with a
+     * The recommended method of registering <code>ConfigProperties</code> is with a
      * {@link SmallRyeConfigBuilder#withMapping(Class, String)}. In certain cases, this is not possible (ex. a CDI
      * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
      *
      * @param config the {@link SmallRyeConfig} instance
-     * @param configClasses a <code>Set</code> of <code>ConfigProperties</code>> annotated classes with prefixes
-     * @throws ConfigValidationException if a <code>ConfigProperties</code>> cannot be registed with the
+     * @param configClasses a <code>Set</code> of <code>ConfigProperties</code> annotated classes with prefixes
+     * @throws ConfigValidationException if a <code>ConfigProperties</code> cannot be registed with the
      *         {@link SmallRyeConfig} instance
      */
     public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)

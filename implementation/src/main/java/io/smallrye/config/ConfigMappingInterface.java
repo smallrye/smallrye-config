@@ -1022,7 +1022,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     /**
      * Constructs a representation of all {@link Property} names contained in the {@link ConfigMappingInterface}.
-     * <p>
      *
      * <ul>
      * <li>The first level <code>Map</code> key is each <code>Class</code> name that is part of the mapping</li>
@@ -1054,7 +1053,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     /**
      * Constructs a representation of all {@link Property} contained in the {@link ConfigMappingInterface}.
-     * <p>
      *
      * <ul>
      * <li>The first level <code>Map</code> key is each <code>Class</code> that is part of the mapping</li>
