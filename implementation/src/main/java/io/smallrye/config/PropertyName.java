@@ -54,11 +54,7 @@ public class PropertyName {
                 } else if (o == '"') {
                     int beginQuote = other.lastIndexOf('"', i - 1);
                     if (beginQuote != -1) {
-                        if (beginQuote != 0 && other.charAt(beginQuote - 1) == '.') {
-                            i = beginQuote;
-                        } else {
-                            i = beginQuote;
-                        }
+                        i = beginQuote;
                     }
                 } else {
                     int previousDot = other.lastIndexOf('.', i);

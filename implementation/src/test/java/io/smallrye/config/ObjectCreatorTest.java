@@ -1,7 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappings.getNames;
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,8 +41,8 @@ public class ObjectCreatorTest {
                         "optional-list-group[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>(),
-                getNames(configClassWithPrefix(ObjectCreator.class)));
+        ConfigMappingContext context = new ConfigMappingContext(config,
+                ConfigMappingLoader.getConfigMapping(ObjectCreator.class).getNames(), new HashMap<>());
         ObjectCreator mapping = new ObjectCreatorImpl(context);
 
         assertEquals(2, mapping.unnamed().size());
@@ -124,7 +122,7 @@ public class ObjectCreatorTest {
 
         @SuppressWarnings("unchecked")
         public ObjectCreatorImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getStringBuilder();
+            StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
             ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
 
@@ -271,8 +269,8 @@ public class ObjectCreatorTest {
                         "optional.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>(),
-                getNames(configClassWithPrefix(OptionalGroup.class)));
+        ConfigMappingContext context = new ConfigMappingContext(config,
+                ConfigMappingLoader.getConfigMapping(OptionalGroup.class).getNames(), new HashMap<>());
         OptionalGroup mapping = new OptionalGroupImpl(context);
 
         assertTrue(mapping.optional().isPresent());
@@ -297,7 +295,7 @@ public class ObjectCreatorTest {
         Optional<Nested> empty;
 
         public OptionalGroupImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getStringBuilder();
+            StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
             ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
 
@@ -334,9 +332,10 @@ public class ObjectCreatorTest {
                         "unnamed.key.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>(),
-                getNames(configClassWithPrefix(UnnamedKeys.class)));
-        context.getStringBuilder().append("unnamed");
+        ConfigMappingContext context = new ConfigMappingContext(config,
+                ConfigMappingLoader.getConfigMapping(UnnamedKeys.class).getNames(), new HashMap<>());
+        context.applyRootPath("unnamed");
+        context.getNameBuilder().append("unnamed");
 
         UnnamedKeys mapping = new UnnamedKeysImpl(context);
         assertEquals("unnamed", mapping.map().get(null).value());
@@ -364,7 +363,7 @@ public class ObjectCreatorTest {
         Map<String, Nested> map;
 
         public UnnamedKeysImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getStringBuilder();
+            StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
 
             ConfigMappingContext.ObjectCreator<Map<String, Nested>> map = context.new ObjectCreator<Map<String, Nested>>(
@@ -393,9 +392,10 @@ public class ObjectCreatorTest {
                         "map.defaults-list.one[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>(),
-                getNames(configClassWithPrefix(MapDefaults.class)));
-        context.getStringBuilder().append("map.");
+        ConfigMappingContext context = new ConfigMappingContext(config,
+                ConfigMappingLoader.getConfigMapping(MapDefaults.class).getNames(), new HashMap<>());
+        context.applyRootPath("map");
+        context.getNameBuilder().append("map.");
         MapDefaults mapping = new MapDefaultsImpl(context);
 
         assertEquals("value", mapping.defaults().get("one"));
@@ -442,7 +442,7 @@ public class ObjectCreatorTest {
         Map<String, List<Nested>> defaultsList;
 
         public MapDefaultsImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getStringBuilder();
+            StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
             ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
 
@@ -502,9 +502,9 @@ public class ObjectCreatorTest {
                         "naming.nested_value.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>(),
-                getNames(configClassWithPrefix(Naming.class)));
-        context.getStringBuilder().append("naming.");
+        ConfigMappingContext context = new ConfigMappingContext(config,
+                ConfigMappingLoader.getConfigMapping(Naming.class).getNames(), new HashMap<>());
+        context.getNameBuilder().append("naming.");
         Naming naming = new NamingImpl(context);
 
         assertEquals("value", naming.nestedValue().value());
@@ -526,7 +526,7 @@ public class ObjectCreatorTest {
 
         public NamingImpl(ConfigMappingContext context) {
             ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.SNAKE_CASE;
-            StringBuilder sb = context.getStringBuilder();
+            StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
 
             sb.append(ns.apply("nestedValue"));

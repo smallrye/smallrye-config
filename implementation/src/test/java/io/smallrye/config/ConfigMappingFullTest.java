@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -231,6 +232,67 @@ public class ConfigMappingFullTest {
 
                 @WithDefault("false")
                 boolean telemetry();
+            }
+        }
+    }
+
+    @Test
+    void splitMappings() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("SMALLRYE_CONFIG_ORM_DATABASE_GENERATION", "drop-and-create"), 100))
+                .withMapping(OrmConfig.class)
+                .withMapping(OrmRuntimeConfig.class)
+                .build();
+
+        OrmConfig ormConfig = config.getConfigMapping(OrmConfig.class);
+        assertEquals(1, ormConfig.persistenceUnits().size());
+        OrmRuntimeConfig ormRuntimeConfig = config.getConfigMapping(OrmRuntimeConfig.class);
+        assertEquals(1, ormRuntimeConfig.persistenceUnits().size());
+        assertEquals("drop-and-create",
+                ormRuntimeConfig.persistenceUnits().get("<default>").database().generation().generation());
+    }
+
+    @ConfigMapping(prefix = "smallrye.config-orm")
+    interface OrmConfig {
+        OrmConfigDatabase database();
+
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, OrmConfigPersistenceUnit> persistenceUnits();
+
+        interface OrmConfigDatabase {
+
+        }
+
+        interface OrmConfigPersistenceUnit {
+            OrmConfigPersistenceUnitDatabase database();
+
+            interface OrmConfigPersistenceUnitDatabase {
+                @WithDefault("false")
+                boolean globallyQuotedIdentifiers();
+            }
+        }
+    }
+
+    @ConfigMapping(prefix = "smallrye.config-orm")
+    interface OrmRuntimeConfig {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, OrmRuntimeConfigPersistenceUnit> persistenceUnits();
+
+        interface OrmRuntimeConfigPersistenceUnit {
+            OrmConfigPersistenceUnitDatabase database();
+
+            interface OrmConfigPersistenceUnitDatabase {
+                OrmConfigPersistenceUnitDatabaseGeneration generation();
+            }
+
+            interface OrmConfigPersistenceUnitDatabaseGeneration {
+                @WithParentName
+                @WithDefault("none")
+                String generation();
             }
         }
     }

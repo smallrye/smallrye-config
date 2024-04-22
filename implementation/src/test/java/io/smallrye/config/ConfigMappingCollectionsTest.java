@@ -935,4 +935,38 @@ public class ConfigMappingCollectionsTest {
             }
         }
     }
+
+    @Test
+    void withParentList() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "list[0].value", "value",
+                        "list[0].optional.value", "value",
+                        "list[1].value", "value"))
+                .withMapping(WithParentList.class)
+                .build();
+
+        WithParentList mapping = config.getConfigMapping(WithParentList.class);
+
+        assertEquals("value", mapping.list().get(0).value());
+        assertTrue(mapping.list().get(0).optional().isPresent());
+        assertEquals("value", mapping.list().get(0).optional().get().value());
+        assertEquals("value", mapping.list().get(1).value());
+    }
+
+    @ConfigMapping(prefix = "list")
+    interface WithParentList {
+        @WithParentName
+        List<Nested> list();
+
+        interface Nested {
+            String value();
+
+            Optional<NestedOptional> optional();
+
+            interface NestedOptional {
+                String value();
+            }
+        }
+    }
 }

@@ -319,9 +319,11 @@ public class ConfigMappingsTest {
     @Test
     void properties() {
         ConfigMappings.ConfigClassWithPrefix configClass = configClassWithPrefix(MappedProperties.class);
-        Map<String, Property> properties = ConfigMappings.getProperties(configClass).get(configClass.getKlass())
-                .get(configClass.getPrefix());
+        Map<String, Property> properties = ConfigMappings.getProperties(configClass);
         assertEquals(3, properties.size());
+        assertTrue(properties.containsKey("mapped.nested.value"));
+        assertTrue(properties.containsKey("mapped.value"));
+        assertTrue(properties.containsKey("mapped.collection[*].value"));
     }
 
     @Test
