@@ -89,10 +89,32 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return interfaceType;
     }
 
-    ConfigMappingInterface[] getSuperTypes() {
+    /**
+     * Get the generated implementation class name. The class name is the configuration interface type name, plus the
+     * hashcode of the configuration interface type name with the suffix <code>Impl</code>.
+     *
+     * @return the generated implementation class name
+     */
+    public String getClassName() {
+        return className;
+    }
+
+    /**
+     * Get the array of {@link ConfigMappingInterface} super types relative to this {@link ConfigMappingInterface}. The
+     * array includes all super types until <code>java.lang.Object</code>.
+     *
+     * @return the array of {@link ConfigMappingInterface} super types
+     */
+    public ConfigMappingInterface[] getSuperTypes() {
         return superTypes;
     }
 
+    /**
+     * Get the array of {@link Property} relative to this {@link ConfigMappingInterface}. The array includes all
+     * properties, including properties contributed by super types.
+     *
+     * @return the array of {@link Property}
+     */
     public Property[] getProperties() {
         Set<Property> properties = getSuperProperties(this);
         properties.addAll(Arrays.asList(this.properties));
@@ -129,10 +151,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     ToStringMethod getToStringMethod() {
         return toStringMethod;
-    }
-
-    public String getClassName() {
-        return className;
     }
 
     String getClassInternalName() {
