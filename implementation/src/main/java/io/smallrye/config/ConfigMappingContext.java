@@ -202,8 +202,8 @@ public final class ConfigMappingContext {
                     matchedRoot = "";
                 }
 
-                for (Map<PropertyName, Set<PropertyName>> mappingsNames : names.getNames().values()) {
-                    Set<PropertyName> propertyNames = mappingsNames.get(new PropertyName(""));
+                for (Map<PropertyName, List<PropertyName>> mappingsNames : names.getNames().values()) {
+                    List<PropertyName> propertyNames = mappingsNames.get(new PropertyName(""));
                     if (propertyNames == null) {
                         continue;
                     }

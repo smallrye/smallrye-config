@@ -2,8 +2,9 @@ package io.smallrye.config;
 
 import static io.smallrye.config.PropertyName.name;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,36 +12,31 @@ import java.util.Set;
  * Represents the full structure of mapping classes per class name, relative path and property name.
  */
 class ConfigMappingNames {
-    private final Map<String, Map<PropertyName, Set<PropertyName>>> names;
+    private final Map<String, Map<PropertyName, List<PropertyName>>> names;
 
     ConfigMappingNames(final Map<String, Map<String, Set<String>>> names) {
         this.names = new HashMap<>(names.size());
 
         for (Map.Entry<String, Map<String, Set<String>>> mappings : names.entrySet()) {
-            Map<PropertyName, Set<PropertyName>> mappingPropertyNames = new HashMap<>();
+            // We chance this to be a List because different names may equal the PropertyName
+            Map<PropertyName, List<PropertyName>> mappingPropertyNames = new HashMap<>();
             for (Map.Entry<String, Set<String>> mappingNames : mappings.getValue().entrySet()) {
                 PropertyName key = name(mappingNames.getKey());
-                mappingPropertyNames.putIfAbsent(key, new HashSet<>());
+                mappingPropertyNames.putIfAbsent(key, new ArrayList<>());
                 // Give priority to the star key
                 if (key.getName().contains("*")) {
                     mappingPropertyNames.put(key, mappingPropertyNames.remove(key));
                 }
 
-                Set<PropertyName> values = mappingPropertyNames.get(key);
                 for (String value : mappingNames.getValue()) {
-                    // Give priority to the star key
-                    if (value.contains("*")) {
-                        values.remove(name(value));
-                    }
-                    values.add(name(value));
+                    mappingPropertyNames.get(key).add(name(value));
                 }
-                mappingPropertyNames.get(key).addAll(values);
             }
             this.names.put(mappings.getKey(), mappingPropertyNames);
         }
     }
 
-    public Map<String, Map<PropertyName, Set<PropertyName>>> getNames() {
+    public Map<String, Map<PropertyName, List<PropertyName>>> getNames() {
         return names;
     }
 
@@ -56,7 +52,7 @@ class ConfigMappingNames {
      * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
      */
     boolean hasAnyName(final String mapping, final String rootPath, final String path, final Iterable<String> names) {
-        Map<PropertyName, Set<PropertyName>> mappings = this.names.get(mapping);
+        Map<PropertyName, List<PropertyName>> mappings = this.names.get(mapping);
         if (mappings == null) {
             return false;
         }
@@ -81,7 +77,7 @@ class ConfigMappingNames {
         } else {
             mappingName = name(path.substring(rootPath.length()));
         }
-        Set<PropertyName> mappingNames = mappings.get(mappingName);
+        List<PropertyName> mappingNames = mappings.get(mappingName);
         if (mappingNames == null) {
             return false;
         }
@@ -101,9 +97,9 @@ class ConfigMappingNames {
         return false;
     }
 
-    boolean hasAnyName(final Map<PropertyName, Set<PropertyName>> mappings, final String path,
+    boolean hasAnyName(final Map<PropertyName, List<PropertyName>> mappings, final String path,
             final Iterable<String> names) {
-        Set<PropertyName> mappingNames = mappings.get(name(path));
+        List<PropertyName> mappingNames = mappings.get(name(path));
         if (mappingNames == null || mappingNames.isEmpty()) {
             return false;
         }
