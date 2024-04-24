@@ -553,26 +553,48 @@ public class ConfigMappingDefaultsTest {
     }
 
     @Test
-    void parentDefaults() {
+    void superDefaults() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ExtendsBase.class)
                 .build();
 
         ConfigSource defaults = config.getDefaultValues();
-        assertEquals(2, defaults.getPropertyNames().size());
+        assertEquals(4, defaults.getPropertyNames().size());
         assertEquals("default", defaults.getValue("base.base"));
         assertEquals("default", defaults.getValue("base.my-prop"));
+        assertEquals("default", defaults.getValue("base.nested.value"));
+        assertEquals("override", defaults.getValue("base.override"));
+
+        ExtendsBase mapping = config.getConfigMapping(ExtendsBase.class);
+        assertEquals("default", mapping.base());
+        assertEquals("default", mapping.myProp());
+        assertEquals("default", mapping.nested().value());
+        assertEquals("override", mapping.override());
     }
 
-    public interface Base {
+    interface Base {
         @WithDefault("default")
         String base();
+
+        @WithDefault("default")
+        String override();
+
+        Nested nested();
+
+        interface Nested {
+            @WithDefault("default")
+            String value();
+        }
     }
 
     @ConfigMapping(prefix = "base")
-    public interface ExtendsBase extends Base {
+    interface ExtendsBase extends Base {
         @WithDefault("default")
         String myProp();
+
+        @Override
+        @WithDefault("override")
+        String override();
     }
 
     @Test
