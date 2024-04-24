@@ -30,9 +30,9 @@ class ConfigMappingNames {
                 for (String value : mappingNames.getValue()) {
                     // Give priority to the star key
                     if (value.contains("*")) {
-                        values.remove(new PropertyName(value));
+                        values.remove(name(value));
                     }
-                    values.add(new PropertyName(value));
+                    values.add(name(value));
                 }
                 mappingPropertyNames.get(key).addAll(values);
             }
@@ -75,11 +75,11 @@ class ConfigMappingNames {
         // Same length replace with empty string since we know they already match, or start after the next separator
         PropertyName mappingName;
         if (path.length() == rootPath.length()) {
-            mappingName = new PropertyName("");
+            mappingName = name("");
         } else if (path.charAt(rootPath.length()) == '.') {
-            mappingName = new PropertyName(path.substring(rootPath.length() + 1));
+            mappingName = name(path.substring(rootPath.length() + 1));
         } else {
-            mappingName = new PropertyName(path.substring(rootPath.length()));
+            mappingName = name(path.substring(rootPath.length()));
         }
         Set<PropertyName> mappingNames = mappings.get(mappingName);
         if (mappingNames == null) {
@@ -89,9 +89,10 @@ class ConfigMappingNames {
         for (String name : names) {
             // We can't check for next char separator dot because we may find collection names with square brackets
             if (name.startsWith(path)) {
-                if (mappingNames
-                        .contains(new PropertyName(name.charAt(rootPath.length()) == '.' ? name.substring(rootPath.length() + 1)
-                                : name.substring(rootPath.length())))) {
+                PropertyName propertyName = name.length() > rootPath.length() && name.charAt(rootPath.length()) == '.'
+                        ? name(name.substring(rootPath.length() + 1))
+                        : name(name.substring(rootPath.length()));
+                if (mappingNames.contains(propertyName)) {
                     return true;
                 }
             }

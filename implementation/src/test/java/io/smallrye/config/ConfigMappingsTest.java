@@ -4,6 +4,7 @@ import static io.smallrye.config.ConfigMappings.registerConfigMappings;
 import static io.smallrye.config.ConfigMappings.registerConfigProperties;
 import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -334,5 +335,13 @@ public class ConfigMappingsTest {
         assertTrue(mappedProperties.contains("mapped.value"));
         assertTrue(mappedProperties.contains("mapped.nested.value"));
         assertTrue(mappedProperties.contains("mapped.collection[0].value"));
+
+        assertTrue(ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class), emptySet()).isEmpty());
+    }
+
+    @Test
+    void invalidMappedProperties() {
+        assertTrue(ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class),
+                Set.of("foo.bar", "mapped", "mapped.something", "mapped.collection")).isEmpty());
     }
 }
