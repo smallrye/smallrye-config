@@ -969,4 +969,35 @@ public class ConfigMappingCollectionsTest {
             }
         }
     }
+
+    @Test
+    void ambiguousMapKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "ambiguous.map-key.another-nested.name", "name",
+                        "ambiguous.map-key.another-nested.keys", "values"))
+                .withMapping(AmbiguousMapKeys.class)
+                .build();
+
+        AmbiguousMapKeys mapping = config.getConfigMapping(AmbiguousMapKeys.class);
+        assertEquals("name", mapping.nested().get("map-key").anotherNested().name());
+        assertEquals("values", mapping.nested().get("map-key").anotherNested().names().get("keys"));
+    }
+
+    @ConfigMapping(prefix = "ambiguous")
+    interface AmbiguousMapKeys {
+        @WithParentName
+        Map<String, Nested> nested();
+
+        interface Nested {
+            AnotherNested anotherNested();
+
+            interface AnotherNested {
+                String name();
+
+                @WithParentName
+                Map<String, String> names();
+            }
+        }
+    }
 }
