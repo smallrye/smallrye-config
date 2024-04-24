@@ -11,10 +11,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -116,9 +114,12 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      * @return the array of {@link Property}
      */
     public Property[] getProperties() {
-        Set<Property> properties = getSuperProperties(this);
-        properties.addAll(Arrays.asList(this.properties));
-        return properties.toArray(new Property[0]);
+        // We use a Map to override definitions from super members
+        Map<String, Property> properties = getSuperProperties(this);
+        for (Property property : this.properties) {
+            properties.put(property.getMemberName(), property);
+        }
+        return properties.values().toArray(new Property[0]);
     }
 
     /**
@@ -131,11 +132,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return ConfigMappingInterface.getNames(this);
     }
 
-    private static Set<Property> getSuperProperties(ConfigMappingInterface type) {
-        Set<Property> properties = new HashSet<>();
+    private static Map<String, Property> getSuperProperties(ConfigMappingInterface type) {
+        Map<String, Property> properties = new HashMap<>();
         for (ConfigMappingInterface superType : type.getSuperTypes()) {
-            properties.addAll(getSuperProperties(superType));
-            properties.addAll(Arrays.asList(superType.getProperties()));
+            properties.putAll(getSuperProperties(superType));
+            for (Property property : superType.getProperties()) {
+                properties.put(property.getMemberName(), property);
+            }
         }
         return properties;
     }
