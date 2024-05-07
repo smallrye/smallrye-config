@@ -50,13 +50,16 @@ public abstract class SmallRyeConfigFactory {
         }
 
         public SmallRyeConfig getConfigFor(SmallRyeConfigProviderResolver configProviderResolver, ClassLoader classLoader) {
-            return configProviderResolver.getBuilder().forClassLoader(classLoader)
+            return configProviderResolver.getBuilder()
+                    .forClassLoader(classLoader)
                     .addDiscoveredCustomizers()
-                    .addDefaultSources()
-                    .addDefaultInterceptors()
-                    .addDiscoveredSources()
-                    .addDiscoveredConverters()
                     .addDiscoveredInterceptors()
+                    .addDiscoveredConverters()
+                    .addDiscoveredSecretKeysHandlers()
+                    .addDefaultInterceptors()
+                    .addDefaultSources()
+                    .addDiscoveredSources()
+                    .addDiscoveredValidator()
                     .build();
         }
     }
