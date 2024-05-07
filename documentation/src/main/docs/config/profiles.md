@@ -21,6 +21,12 @@ Any lookup to the `http.port` property name will first search by the active prof
 fallback to `http.port` if no value is present. In this case a lookup to the property `http.port` with the `dev` profile 
 active, yields the value `8181`.
 
+!!! attention
+
+    The profile must be set in one of the primary sources (system properties, environment variables, 
+    `application.properties`, or any other source that does not require configuration) to determine the proper 
+    configuration.
+
 ## Profile aware files
 
 Properties for a specific profile may reside in a `microprofile-config-{profile}.properties` named file. The previous 
