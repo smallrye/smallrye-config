@@ -147,6 +147,10 @@
             </property>
           </properties>
           <threadCount>1</threadCount>
+          <systemPropertyVariables>
+            <smallrye.config.secret-handler.jasypt.password>dummy</smallrye.config.secret-handler.jasypt.password>
+            <smallrye.config.secret-handler.jasypt.algorithm>PBEWithHMACSHA512AndAES_256</smallrye.config.secret-handler.jasypt.algorithm>
+          </systemPropertyVariables>
         </configuration>
         <dependencies>
           <dependency>
