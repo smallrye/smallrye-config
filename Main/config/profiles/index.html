@@ -1086,6 +1086,12 @@ by the profile name and a dot <code>.</code> in the syntax <code>%{profile-name}
 <p>Any lookup to the <code>http.port</code> property name will first search by the active profile name <code>%dev.http.port</code> and then 
 fallback to <code>http.port</code> if no value is present. In this case a lookup to the property <code>http.port</code> with the <code>dev</code> profile 
 active, yields the value <code>8181</code>.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>The profile must be set in one of the primary sources (system properties, environment variables, 
+<code>application.properties</code>, or any other source that does not require configuration) to determine the proper 
+configuration.</p>
+</div>
 <h2 id="profile-aware-files">Profile aware files<a class="headerlink" href="#profile-aware-files" title="Permanent link">#</a></h2>
 <p>Properties for a specific profile may reside in a <code>microprofile-config-{profile}.properties</code> named file. The previous 
 example can be expressed as:</p>
