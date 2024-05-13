@@ -783,10 +783,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 continue;
             }
             if (method.getParameterCount() > 0) {
-                throw new IllegalArgumentException("Configuration methods cannot accept parameters");
+                throw new IllegalArgumentException("Configuration methods cannot accept parameters: " + method);
             }
             if (method.getReturnType() == void.class) {
-                throw new IllegalArgumentException("Void config methods are not allowed");
+                throw new IllegalArgumentException("Void config methods are not allowed: " + method);
             }
             Property p = getPropertyDef(method, method.getAnnotatedReturnType());
             final Property[] array;
