@@ -17,6 +17,7 @@ package io.smallrye.config.common.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -186,6 +187,7 @@ class StringUtilTest {
         assertEquals("test.language.\"de.etr\"", StringUtil.toLowerCaseAndDotted("TEST_LANGUAGE__DE_ETR__"));
         assertEquals("%foo.bar", StringUtil.toLowerCaseAndDotted("_FOO_BAR"));
         assertEquals(".\"foo.bar", StringUtil.toLowerCaseAndDotted("__FOO_BAR"));
+        assertNotNull(StringUtil.toLowerCaseAndDotted("00_PYTHON_2_7"));
     }
 
     @Test
