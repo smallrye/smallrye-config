@@ -130,4 +130,4 @@ jobs:
           java-version: 17
 
       - name: sonar
-        run: mvn sonar:sonar -Dsonar.projectKey=smallrye_smallrye-config -Dsonar.token=${{secrets.SONAR_TOKEN}}
+        run: mvn sonar:sonar -Psonar -Dsonar.projectKey=io.smallrye.config:smallrye-config -Dsonar.token=${{secrets.SONAR_TOKEN}}

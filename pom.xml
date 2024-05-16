@@ -149,22 +149,19 @@
       <id>coverage</id>
       <properties>
         <argLine>@{jacocoArgLine}</argLine>
+      </properties>
+      <modules>
+        <module>coverage</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>sonar</id>
+      <properties>
         <!--suppress UnresolvedMavenProperty -->
         <sonar.coverage.jacoco.xmlReportPaths>
           ${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
       </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-      <modules>
-        <module>coverage</module>
-      </modules>
     </profile>
   </profiles>
 </project>
