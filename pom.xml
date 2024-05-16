@@ -155,6 +155,8 @@
       <id>sonar</id>
       <properties>
         <!--suppress UnresolvedMavenProperty -->
+        <sonar.projectKey>io.smallrye.config:smallrye-config</sonar.projectKey>
+        <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
         <sonar.coverage.jacoco.xmlReportPaths>
           ${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
