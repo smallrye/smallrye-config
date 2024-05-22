@@ -147,6 +147,17 @@
     </profile>
     <profile>
       <id>coverage</id>
+      <properties>
+        <argLine>@{jacocoArgLine}</argLine>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
       <modules>
         <module>coverage</module>
       </modules>
@@ -154,9 +165,9 @@
     <profile>
       <id>sonar</id>
       <properties>
-        <!--suppress UnresolvedMavenProperty -->
         <sonar.projectKey>io.smallrye.config:smallrye-config</sonar.projectKey>
         <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
+        <!--suppress UnresolvedMavenProperty -->
         <sonar.coverage.jacoco.xmlReportPaths>
           ${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
