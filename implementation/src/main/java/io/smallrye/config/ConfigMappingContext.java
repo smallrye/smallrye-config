@@ -148,7 +148,6 @@ public final class ConfigMappingContext {
 
     @SuppressWarnings("unused")
     public void reportProblem(RuntimeException problem) {
-        problem.printStackTrace();
         problems.add(new Problem(problem.toString()));
     }
 

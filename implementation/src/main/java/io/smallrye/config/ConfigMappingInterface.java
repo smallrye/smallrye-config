@@ -167,7 +167,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     public byte[] getClassBytes() {
-        return ConfigMappingGenerator.generate(this);
+        try {
+            return ConfigMappingGenerator.generate(this);
+        } catch (Throwable e) {
+            throw ConfigMessages.msg.couldNotGenerateMapping(e);
+        }
     }
 
     public static abstract class Property {
