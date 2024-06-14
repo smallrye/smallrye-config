@@ -91,7 +91,7 @@ interface FileSystemConfig {
 ```
 
 ```java
-public class FileSystemConfigurableConfigSourceFactory<FileSystemConfig> implements ConfigurableConfigSourceFactory {
+public class FileSystemConfigurableConfigSourceFactory implements ConfigurableConfigSourceFactory<FileSystemConfig> {
     @Override
     public Iterable<ConfigSource> getConfigSources(ConfigSourceContext context, FileSystemConfig config) {
         
