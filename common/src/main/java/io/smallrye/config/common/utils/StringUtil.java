@@ -94,21 +94,37 @@ public class StringUtil {
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name) {
-        return replaceNonAlphanumericByUnderscores(name, new StringBuilder(name.length()));
+        return replaceNonAlphanumericByUnderscores(name, null);
     }
 
-    public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
+    public static String replaceNonAlphanumericByUnderscores(final String name, StringBuilder sb) {
         int length = name.length();
+        int copyIndex = -1;
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
-            if (isAsciiLetterOrDigit(c)) {
-                sb.append(c);
-            } else {
+            if (!isAsciiLetterOrDigit(c)) {
+                if (sb == null) {
+                    sb = new StringBuilder(name.length());
+                }
+                if (copyIndex != -1) {
+                    sb.append(name, copyIndex, i);
+                    copyIndex = -1;
+                }
                 sb.append('_');
                 if (c == '"' && i + 1 == length) {
                     sb.append('_');
                 }
+            } else {
+                if (copyIndex == -1) {
+                    copyIndex = i;
+                }
             }
+        }
+        if (copyIndex != -1) {
+            if (sb == null) {
+                return name;
+            }
+            sb.append(name, copyIndex, length);
         }
         return sb.toString();
     }
