@@ -15,26 +15,28 @@
  */
 package io.smallrye.config.test.provider;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Test that configuration is injected into Instance.
  */
-public class InstanceAloneTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+class InstanceAloneTest {
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "ProviderTest.jar")
                 .addClasses(InstanceAloneTest.class, Email.class, InstanceAlone.class)
@@ -50,7 +52,7 @@ public class InstanceAloneTest extends Arquillian {
     InstanceAlone bean;
 
     @Test
-    public void testProvider() {
+    void provider() {
         Provider<Email> emailProvider = bean.emailInstance;
         assertNotNull(emailProvider);
         Email email = emailProvider.get();

@@ -15,29 +15,30 @@
  */
 package io.smallrye.config.test.provider;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Test that configuration is injected into Provider.
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
-public class ProviderTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+class ProviderTest {
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "ProviderTest.jar")
                 .addClasses(ProviderTest.class, Email.class, ProviderBean.class)
@@ -53,20 +54,20 @@ public class ProviderTest extends Arquillian {
     ProviderBean bean;
 
     @Test
-    public void testDirectInjection() {
+    void directInjection() {
         Email email = bean.email;
-        Assert.assertNotNull(email);
-        assertEquals("example", email.getName());
-        assertEquals("smallrye.io", email.getDomain());
+        assertNotNull(email);
+        assertEquals(email.getName(), "example");
+        assertEquals(email.getDomain(), "smallrye.io");
     }
 
     @Test
-    public void testProvider() {
+    void provider() {
         Provider<Email> emailProvider = bean.emailProvider;
         assertNotNull(emailProvider);
         Email email = emailProvider.get();
         assertNotNull(email);
-        assertEquals("example", email.getName());
-        assertEquals("smallrye.io", email.getDomain());
+        assertEquals(email.getName(), "example");
+        assertEquals(email.getDomain(), "smallrye.io");
     }
 }

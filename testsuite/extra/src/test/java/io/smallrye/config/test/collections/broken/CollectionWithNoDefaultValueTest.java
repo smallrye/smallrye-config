@@ -19,20 +19,22 @@ import jakarta.inject.Inject;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.ShouldThrowException;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.weld.exceptions.DeploymentException;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
-public class CollectionWithNoDefaultValueTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+class CollectionWithNoDefaultValueTest {
     @ShouldThrowException(DeploymentException.class)
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "CollectionWithNoDefaultValueTest.jar")
                 .addClasses(CollectionWithNoDefaultValueTest.class, CollectionWithNoDefaultValueBean.class)
@@ -47,6 +49,6 @@ public class CollectionWithNoDefaultValueTest extends Arquillian {
     CollectionWithNoDefaultValueBean bean;
 
     @Test
-    public void test() {
+    void test() {
     }
 }

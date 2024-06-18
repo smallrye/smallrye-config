@@ -1,21 +1,23 @@
 package io.smallrye.config.test.source;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public class OrdinalSourceTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+class OrdinalSourceTest {
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         return ShrinkWrap.create(WebArchive.class, "ProviderTest.war")
                 .addAsResource(new StringAsset("config_ordinal=1234"),
                         "META-INF/microprofile-config.properties")
@@ -26,10 +28,10 @@ public class OrdinalSourceTest extends Arquillian {
     Config config;
 
     @Test
-    public void testOrdinal() {
+    void ordinal() {
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource.getName().startsWith("PropertiesConfigSource")) {
-                assertEquals(configSource.getOrdinal(), 1234);
+                assertEquals(1234, configSource.getOrdinal());
             }
         }
     }
