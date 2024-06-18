@@ -15,16 +15,17 @@
  */
 package io.smallrye.config.test.converter;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Test that a high-priority converter for {@code Integer} will take precedence to built-in converters
@@ -32,9 +33,10 @@ import org.testng.annotations.Test;
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2020 Red Hat inc.
  */
-public class ConverterTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+class ConverterTest {
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         return ShrinkWrap
                 .create(WebArchive.class, "CollectionWithConfiguredValueTest.war")
                 .addClasses(ConverterTest.class, ConverterBean.class)
@@ -47,12 +49,12 @@ public class ConverterTest extends Arquillian {
     ConverterBean bean;
 
     @Test
-    public void testHighPriorityConverterforInt() {
-        assertEquals(bean.getInt(), 102);
+    void highPriorityConverterforInt() {
+        assertEquals(102, bean.getInt());
     }
 
     @Test
-    public void testHighPriorityConverterforInteger() {
-        assertEquals(bean.getInteger().intValue(), 102);
+    void highPriorityConverterforInteger() {
+        assertEquals(102, bean.getInteger().intValue());
     }
 }

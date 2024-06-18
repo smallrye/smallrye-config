@@ -1,20 +1,22 @@
 package io.smallrye.config.test.location;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.testng.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public class LocationConfigTest extends Arquillian {
+@ExtendWith(ArquillianExtension.class)
+public class LocationConfigTest {
     @Deployment
-    public static WebArchive deploy() {
+    static WebArchive deploy() {
         return ShrinkWrap.create(WebArchive.class, "LocationConfigTest.war")
                 .addAsResource(new StringAsset("smallrye.config.locations=config.properties,config.yml"),
                         "META-INF/microprofile-config.properties")
@@ -28,9 +30,9 @@ public class LocationConfigTest extends Arquillian {
     Config config;
 
     @Test
-    public void testLocationConfig() {
-        assertEquals(config.getValue("smallrye.config.locations", String.class), "config.properties,config.yml");
-        assertEquals(config.getValue("my.prop", String.class), "1234");
-        assertEquals(config.getValue("my.yml", String.class), "1234");
+    void locationConfig() {
+        assertEquals("config.properties,config.yml", config.getValue("smallrye.config.locations", String.class));
+        assertEquals("1234", config.getValue("my.prop", String.class));
+        assertEquals("1234", config.getValue("my.yml", String.class));
     }
 }
