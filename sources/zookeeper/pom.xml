@@ -29,7 +29,7 @@
     <name>SmallRye Config: ConfigSource - ZooKeeper</name>
 
     <properties>
-        <version.curator>5.6.0</version.curator>
+        <version.curator>5.7.0</version.curator>
     </properties>
 
     <dependencies>
