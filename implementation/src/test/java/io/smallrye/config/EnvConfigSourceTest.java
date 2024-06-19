@@ -497,6 +497,26 @@ class EnvConfigSourceTest {
         Map<String, String> aMap();
     }
 
+    @Test
+    void propertyNamesCache() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("mp.messaging.incoming.words-in.topic", "from-properties"))
+                .withSources(new EnvConfigSource(Map.of("MP_MESSAGING_INCOMING_WORDS_IN_TOPIC", "from-env"), 300))
+                .withMapping(PropertyNamesCache.class)
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(2, properties.size());
+        assertTrue(properties.contains("mp.messaging.incoming.words-in.topic"));
+        assertTrue(properties.contains("MP_MESSAGING_INCOMING_WORDS_IN_TOPIC"));
+        assertFalse(properties.contains("mp.messaging.incoming.words.in.topic"));
+    }
+
+    @ConfigMapping
+    interface PropertyNamesCache {
+        Map<String, String> values();
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }

@@ -85,11 +85,11 @@ public class SmallRyeConfig implements Config, Serializable {
         this.configSources = new ConfigSources(builder, this);
         this.converters = buildConverters(builder);
         this.configValidator = builder.getValidator();
-        this.mappings = new ConcurrentHashMap<>(buildMappings(builder));
 
         // Match dotted properties from other sources with Env with the same semantic meaning
-        // This needs to happen after matching dashed names from mappings
+        // This needs to happen before matching dashed names from mappings
         matchPropertiesWithEnv();
+        this.mappings = new ConcurrentHashMap<>(buildMappings(builder));
     }
 
     private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
@@ -159,8 +159,8 @@ public class SmallRyeConfig implements Config, Serializable {
 
         for (ConfigSource configSource : getConfigSources(EnvConfigSource.class)) {
             EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
+            Set<String> envNames = envConfigSource.getPropertyNames();
             for (String dottedProperty : dottedProperties) {
-                Set<String> envNames = envConfigSource.getPropertyNames();
                 if (envConfigSource.hasPropertyName(dottedProperty)) {
                     if (!envNames.contains(dottedProperty)) {
                         // this may be expensive, but it shouldn't happen that often
