@@ -19,6 +19,7 @@ import static io.smallrye.config.Converters.BOOLEAN_CONVERTER;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
@@ -318,8 +319,9 @@ class EnvConfigSourceTest {
     void dottedDashedEnvNames() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(DashedEnvNames.class)
+                .withSources(new EnvConfigSource(emptyMap(), 300))
                 .withSources(new EnvConfigSource(Map.of(
-                        "dashed-env-names.value", "value",
+                        "DASHED_ENV_NAMES_VALUE", "value",
                         "dashed-env-names.nested.dashed-key.another", "value"), 100))
                 .build();
 
@@ -327,6 +329,25 @@ class EnvConfigSourceTest {
 
         assertEquals("value", mapping.value());
         assertEquals("value", mapping.nested().get("dashed-key").another());
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("dashed-env-names.value"));
+        assertTrue(properties.contains("DASHED_ENV_NAMES_VALUE"));
+        assertFalse(properties.contains("dashed.env.names.value"));
+        assertTrue(properties.contains("dashed-env-names.nested.dashed-key.another"));
+
+        config = new SmallRyeConfigBuilder()
+                .withMapping(DashedEnvNames.class)
+                .withSources(new EnvConfigSource(emptyMap(), 300))
+                .withSources(new EnvConfigSource(Map.of(
+                        "%DEV_DASHED_ENV_NAMES_VALUE", "value"), 100))
+                .withProfile("dev")
+                .build();
+
+        properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("dashed-env-names.value"));
+        assertTrue(properties.contains("%DEV_DASHED_ENV_NAMES_VALUE"));
+        assertFalse(properties.contains("dashed.env.names.value"));
     }
 
     @ConfigMapping(prefix = "dashed-env-names")

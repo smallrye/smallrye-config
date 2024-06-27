@@ -2,6 +2,9 @@ package io.smallrye.config;
 
 import static io.smallrye.config.DotEnvConfigSourceProvider.dotEnvSources;
 import static io.smallrye.config.SecuritySupport.getContextClassLoader;
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -107,5 +111,30 @@ class DotEnvConfigSourceProviderTest {
         });
 
         assertThrows(IllegalArgumentException.class, () -> failBuilder.build());
+    }
+
+    @Test
+    void dottedDashedEnvNames(@TempDir Path tempDir) throws Exception {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("_DEV_DASHED_ENV_NAMES_DASHED_NAME", "value");
+        try (FileOutputStream out = new FileOutputStream(tempDir.resolve(".env").toFile())) {
+            envProperties.store(out, null);
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DashedEnvNames.class)
+                .withSources(new EnvConfigSource(emptyMap(), 300))
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .withProfile("dev")
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("dashed-env-names.dashed-name"));
+        assertTrue(properties.contains("_DEV_DASHED_ENV_NAMES_DASHED_NAME"));
+    }
+
+    @ConfigMapping(prefix = "dashed-env-names")
+    interface DashedEnvNames {
+        String dashedName();
     }
 }
