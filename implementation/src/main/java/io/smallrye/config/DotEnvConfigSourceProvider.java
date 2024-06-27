@@ -5,15 +5,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
 import io.smallrye.config.common.utils.ConfigSourceUtil;
-import io.smallrye.config.common.utils.StringUtil;
 
 public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
     private final String location;
@@ -33,11 +30,7 @@ public class DotEnvConfigSourceProvider extends AbstractLocationConfigSourceLoad
 
     @Override
     protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
-        Map<String, String> envProperties = new HashMap<>();
-        for (final Map.Entry<String, String> entry : ConfigSourceUtil.urlToMap(url).entrySet()) {
-            envProperties.put(StringUtil.replaceNonAlphanumericByUnderscores(entry.getKey()), entry.getValue());
-        }
-        return new EnvConfigSource(envProperties, ordinal) {
+        return new EnvConfigSource(ConfigSourceUtil.urlToMap(url), ordinal) {
             @Override
             public String getName() {
                 return super.getName() + "[source=" + url + "]";
