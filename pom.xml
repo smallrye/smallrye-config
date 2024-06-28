@@ -73,7 +73,6 @@
     <module>sources/yaml</module>
     <module>sources/zookeeper</module>
     <module>sources/keystore</module>
-    <module>converters/json</module>
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
     <module>utils/crypto</module>
