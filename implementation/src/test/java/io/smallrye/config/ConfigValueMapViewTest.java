@@ -22,7 +22,7 @@ class ConfigValueMapViewTest {
 
     @Test
     void isEmpty() {
-        assertTrue(new ConfigValueMapView(new HashMap<>()).isEmpty());
+        assertTrue(new ConfigValueConfigSource.ConfigValueMapView(new HashMap<>()).isEmpty());
     }
 
     @Test
@@ -115,12 +115,12 @@ class ConfigValueMapViewTest {
         assertThrows(UnsupportedOperationException.class, properties::clear);
     }
 
-    private ConfigValueMapView sampleMap() {
+    private ConfigValueConfigSource.ConfigValueMapView sampleMap() {
         final Map<String, ConfigValue> configValueMap = new HashMap<>();
         configValueMap.put("my.prop", ConfigValue.builder().withName("my.prop").withValue("1234").build());
         configValueMap.put("my.prop", ConfigValue.builder().withName("my.prop").withValue("1234").build());
         configValueMap.put("my.null.value", ConfigValue.builder().withName("my.null.value").build());
         configValueMap.put("my.null", null);
-        return new ConfigValueMapView(configValueMap);
+        return new ConfigValueConfigSource.ConfigValueMapView(configValueMap);
     }
 }
