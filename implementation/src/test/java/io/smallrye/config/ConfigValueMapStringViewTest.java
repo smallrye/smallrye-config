@@ -21,7 +21,7 @@ class ConfigValueMapStringViewTest {
 
     @Test
     void isEmpty() {
-        assertTrue(new ConfigValueMapStringView(new HashMap<>(), "test", 1).isEmpty());
+        assertTrue(new ConfigValueConfigSource.ConfigValueMapStringView(new HashMap<>(), "test", 1).isEmpty());
     }
 
     @Test
@@ -97,12 +97,12 @@ class ConfigValueMapStringViewTest {
         assertThrows(UnsupportedOperationException.class, () -> values.remove(toConfigValue("my.prop", "1234")));
     }
 
-    private static ConfigValueMapStringView sampleMap() {
+    private static ConfigValueConfigSource.ConfigValueMapStringView sampleMap() {
         final Map<String, String> configValueMap = new HashMap<>();
         configValueMap.put("my.prop", "1234");
         configValueMap.put("my.prop", "1234");
         configValueMap.put("my.null", null);
-        return new ConfigValueMapStringView(configValueMap, "test", 1);
+        return new ConfigValueConfigSource.ConfigValueMapStringView(configValueMap, "test", 1);
     }
 
     private static ConfigValue toConfigValue(String name, String value) {
