@@ -71,13 +71,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Converters -->
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-converter-json</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- Misc -->
     <dependency>
       <groupId>io.smallrye.config</groupId>

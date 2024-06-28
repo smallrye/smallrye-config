@@ -32,7 +32,6 @@ nav:
       - 'KeyStore': config-sources/keystore.md
   - Converters:
       - 'Custom': converters/custom.md
-      - 'JSON': converters/json.md
   - Extensions:
       - 'Interceptors': extensions/interceptors.md
       - 'Fallback': extensions/fallback.md
