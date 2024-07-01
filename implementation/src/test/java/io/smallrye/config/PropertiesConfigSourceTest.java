@@ -10,7 +10,7 @@ import java.util.Map;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
 
-class ConfigValuePropertiesConfigSourceTest {
+class PropertiesConfigSourceTest {
     @Test
     void interceptor() throws Exception {
         SmallRyeConfig config = buildConfig().unwrap(SmallRyeConfig.class);
@@ -24,9 +24,9 @@ class ConfigValuePropertiesConfigSourceTest {
 
     @Test
     void configSourceMap() throws IOException {
-        final ConfigValuePropertiesConfigSource configSource = new ConfigValuePropertiesConfigSource(
-                ConfigValuePropertiesConfigSourceTest.class.getResource("/config-values.properties"));
-        final Map<String, String> properties = configSource.getProperties();
+        PropertiesConfigSource configSource = new PropertiesConfigSource(
+                PropertiesConfigSourceTest.class.getResource("/config-values.properties"));
+        Map<String, String> properties = configSource.getProperties();
 
         assertEquals("abc", properties.get("my.prop"));
         assertEquals("abc", properties.get("my.prop"));
@@ -39,8 +39,8 @@ class ConfigValuePropertiesConfigSourceTest {
     private static Config buildConfig() throws Exception {
         return new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(new ConfigValuePropertiesConfigSource(
-                        ConfigValuePropertiesConfigSourceTest.class.getResource("/config-values.properties")))
+                .withSources(new PropertiesConfigSource(
+                        PropertiesConfigSourceTest.class.getResource("/config-values.properties")))
                 .withInterceptors((ConfigSourceInterceptor) (context, name) -> {
                     ConfigValue configValue = context.proceed(name);
                     // Return the line number instead for asssert

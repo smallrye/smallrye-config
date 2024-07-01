@@ -103,9 +103,9 @@ class ConfigValueMapViewTest {
 
     @Test
     void configSourceMap() throws IOException {
-        final ConfigValuePropertiesConfigSource configSource = new ConfigValuePropertiesConfigSource(
+        PropertiesConfigSource configSource = new PropertiesConfigSource(
                 ConfigValueMapViewTest.class.getResource("/config-values.properties"));
-        final Map<String, String> properties = configSource.getProperties();
+        Map<String, String> properties = configSource.getProperties();
 
         assertEquals("abc", properties.get("my.prop"));
         assertEquals("abc", properties.get("my.prop"));
@@ -116,7 +116,7 @@ class ConfigValueMapViewTest {
     }
 
     private ConfigValueConfigSource.ConfigValueMapView sampleMap() {
-        final Map<String, ConfigValue> configValueMap = new HashMap<>();
+        Map<String, ConfigValue> configValueMap = new HashMap<>();
         configValueMap.put("my.prop", ConfigValue.builder().withName("my.prop").withValue("1234").build());
         configValueMap.put("my.prop", ConfigValue.builder().withName("my.prop").withValue("1234").build());
         configValueMap.put("my.null.value", ConfigValue.builder().withName("my.null.value").build());

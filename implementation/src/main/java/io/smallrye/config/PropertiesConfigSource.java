@@ -13,44 +13,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
-import io.smallrye.config.common.MapBackedConfigSource;
+import io.smallrye.common.classloader.ClassPathUtils;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
-public class PropertiesConfigSource extends MapBackedConfigSource {
+public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
     private static final long serialVersionUID = 1866835565147832432L;
 
     private static final String NAME_PREFIX = "PropertiesConfigSource[source=";
 
-    /**
-     * Construct a new instance
-     *
-     * @param url a property file location
-     * @throws IOException if an error occurred when reading from the input stream
-     */
     public PropertiesConfigSource(URL url) throws IOException {
-        super(NAME_PREFIX + url.toString() + "]", ConfigSourceUtil.urlToMap(url));
+        this(url, DEFAULT_ORDINAL);
     }
 
-    public PropertiesConfigSource(URL url, int ordinal) throws IOException {
-        super(NAME_PREFIX + url.toString() + "]", ConfigSourceUtil.urlToMap(url), ordinal);
+    public PropertiesConfigSource(URL url, int defaultOrdinal) throws IOException {
+        this(url, NAME_PREFIX + url.toString() + "]", defaultOrdinal);
     }
 
-    public PropertiesConfigSource(Properties properties, String source) {
-        super(NAME_PREFIX + source + "]", ConfigSourceUtil.propertiesToMap(properties));
+    public PropertiesConfigSource(URL url, String name, int defaultOrdinal) throws IOException {
+        super(name, urlToConfigValueMap(url, name, defaultOrdinal), defaultOrdinal);
     }
 
-    public PropertiesConfigSource(Map<String, String> properties, String source, int ordinal) {
-        super(NAME_PREFIX + source + "]", properties, ordinal);
+    public PropertiesConfigSource(Map<String, String> properties, String name) {
+        this(properties, name, DEFAULT_ORDINAL);
+    }
+
+    public PropertiesConfigSource(Properties properties, String name) {
+        this(ConfigSourceUtil.propertiesToMap(properties), name, DEFAULT_ORDINAL);
+    }
+
+    public PropertiesConfigSource(Map<String, String> properties, String name, int defaultOrdinal) {
+        super(NAME_PREFIX + name + "]",
+                new ConfigValueMapStringView(properties, name, ConfigSourceUtil.getOrdinalFromMap(properties, defaultOrdinal)),
+                defaultOrdinal);
+    }
+
+    public PropertiesConfigSource(Properties properties, String name, int defaultOrdinal) {
+        this(ConfigSourceUtil.propertiesToMap(properties), name, defaultOrdinal);
+    }
+
+    public static Map<String, ConfigValue> urlToConfigValueMap(URL locationOfProperties, String name, int ordinal)
+            throws IOException {
+        ConfigValueProperties properties = new ConfigValueProperties(name, ordinal);
+        ClassPathUtils.consumeStream(locationOfProperties, inputStream -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8))) {
+                properties.load(reader);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        return properties;
     }
 }

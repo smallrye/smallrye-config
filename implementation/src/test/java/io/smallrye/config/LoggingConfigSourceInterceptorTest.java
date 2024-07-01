@@ -49,7 +49,7 @@ class LoggingConfigSourceInterceptorTest {
                 .addDefaultSources()
                 .addDefaultInterceptors()
                 .withDefaultValue(SMALLRYE_CONFIG_LOG_VALUES, "true")
-                .withSources(new ConfigValuePropertiesConfigSource(
+                .withSources(new PropertiesConfigSource(
                         LoggingConfigSourceInterceptorTest.class.getResource("/config-values.properties")))
                 .withSecretKeys("secret")
                 .build();
@@ -65,7 +65,7 @@ class LoggingConfigSourceInterceptorTest {
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         // my.prop lookup
         assertTrue(logs.stream()
-                .anyMatch(log -> log.contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource")));
+                .anyMatch(log -> log.contains("The config my.prop was loaded from PropertiesConfigSource")));
         assertTrue(logs.stream().anyMatch(log -> log.contains(":1 with the value abc")));
         // not.found lookup
         assertTrue(logs.contains("SRCFG01002: The config not.found was not found"));
@@ -79,7 +79,7 @@ class LoggingConfigSourceInterceptorTest {
                 .addDefaultSources()
                 .addDefaultInterceptors()
                 .withInterceptors(new LoggingConfigSourceInterceptor())
-                .withSources(new ConfigValuePropertiesConfigSource(
+                .withSources(new PropertiesConfigSource(
                         LoggingConfigSourceInterceptorTest.class.getResource("/config-values.properties")))
                 .withSecretKeys("secret")
                 .build();
@@ -95,7 +95,7 @@ class LoggingConfigSourceInterceptorTest {
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         // my.prop lookup
         assertTrue(logs.stream()
-                .anyMatch(log -> log.contains("The config my.prop was loaded from ConfigValuePropertiesConfigSource")));
+                .anyMatch(log -> log.contains("The config my.prop was loaded from PropertiesConfigSource")));
         assertTrue(logs.stream().anyMatch(log -> log.contains(":1 with the value abc")));
         // not.found lookup
         assertTrue(logs.contains("SRCFG01002: The config not.found was not found"));

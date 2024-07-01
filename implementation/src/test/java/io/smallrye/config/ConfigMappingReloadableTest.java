@@ -10,6 +10,8 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.common.MapBackedConfigSource;
+
 class ConfigMappingReloadableTest {
     @Test
     void reloadMapping() {
@@ -19,7 +21,8 @@ class ConfigMappingReloadableTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withMapping(ReloadableMapping.class)
-                .withSources(new PropertiesConfigSource(properties, "", 0))
+                .withSources(new MapBackedConfigSource("Reloadable", properties) {
+                })
                 .build();
 
         ReloadableMapping mapping = config.getConfigMapping(ReloadableMapping.class);
