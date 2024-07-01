@@ -40,8 +40,8 @@ class ConfigSourceOrdinalTest {
         propertiesWithoutPriority.put("another.prop", "5678");
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new ConfigValuePropertiesConfigSource(properties, "test", 0))
-                .withSources(new ConfigValuePropertiesConfigSource(propertiesWithoutPriority, "test", 998))
+                .withSources(new PropertiesConfigSource(properties, "test", 0))
+                .withSources(new PropertiesConfigSource(propertiesWithoutPriority, "test", 998))
                 .build();
 
         assertEquals("1234", config.getConfigValue("my.prop").getValue());

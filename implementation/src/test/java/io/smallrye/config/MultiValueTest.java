@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -21,11 +21,8 @@ class MultiValueTest {
 
     @BeforeEach
     void setUp() {
-        Properties properties = new Properties();
-        properties.put("my.pets", "snake,dog,cat,cat");
-
         config = SmallRyeConfigProviderResolver.instance().getBuilder()
-                .withSources(new PropertiesConfigSource(properties, "my properties"))
+                .withSources(new PropertiesConfigSource(Map.of("my.pets", "snake,dog,cat,cat"), "my properties"))
                 .build()
                 .unwrap(SmallRyeConfig.class);
     }
@@ -53,6 +50,6 @@ class MultiValueTest {
         Set<String> pets = config.getValues("my.pets", String.class, s -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER));
         assertNotNull(pets);
         assertEquals(3, pets.size());
-        assertEquals(Arrays.asList("cat", "dog", "snake"), new ArrayList(pets));
+        assertEquals(Arrays.asList("cat", "dog", "snake"), new ArrayList<>(pets));
     }
 }

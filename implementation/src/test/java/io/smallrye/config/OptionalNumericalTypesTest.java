@@ -5,12 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.Properties;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,7 @@ class OptionalNumericalTypesTest {
 
     @BeforeEach
     void setUp() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("my.int", "123");
         properties.put("my.long", "456");
         properties.put("my.double", "789");
@@ -79,7 +80,7 @@ class OptionalNumericalTypesTest {
 
     @Test
     void optionalDoubleWithExistingProperty() {
-        assertEquals(789.0, config.getValue("my.double", Double.class).doubleValue(), 0.0);
+        assertEquals(789.0, config.getValue("my.double", Double.class), 0.0);
 
         OptionalDouble optionalDouble = config.getValue("my.double", OptionalDouble.class);
         assertTrue(optionalDouble.isPresent());
