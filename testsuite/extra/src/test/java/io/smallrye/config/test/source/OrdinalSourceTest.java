@@ -30,7 +30,7 @@ class OrdinalSourceTest {
     @Test
     void ordinal() {
         for (ConfigSource configSource : config.getConfigSources()) {
-            if (configSource.getName().startsWith("PropertiesConfigSource")) {
+            if (configSource.getName().contains("microprofile-config.properties")) {
                 assertEquals(1234, configSource.getOrdinal());
             }
         }

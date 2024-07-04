@@ -21,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import io.smallrye.config.DefaultValuesConfigSource;
 import io.smallrye.config.EnvConfigSource;
-import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SysPropConfigSource;
 
 @ExtendWith(ArquillianExtension.class)
@@ -45,10 +44,17 @@ class SmallRyeConfigTest {
     void sources() {
         List<ConfigSource> sources = StreamSupport.stream(config.getConfigSources().spliterator(), false).collect(toList());
 
-        assertEquals(4, sources.size());
+        assertEquals(11, sources.size());
         assertTrue(sources.get(0) instanceof SysPropConfigSource);
         assertTrue(sources.get(1) instanceof EnvConfigSource);
-        assertTrue(sources.get(2) instanceof PropertiesConfigSource);
-        assertTrue(sources.get(3) instanceof DefaultValuesConfigSource);
+        assertTrue(sources.get(2).getName().contains(".env"));
+        assertTrue(sources.get(3).getName().contains("config/application.yaml"));
+        assertTrue(sources.get(4).getName().contains("config/application.yml"));
+        assertTrue(sources.get(5).getName().contains("config/application.properties"));
+        assertTrue(sources.get(6).getName().contains("application.yaml"));
+        assertTrue(sources.get(7).getName().contains("application.yml"));
+        assertTrue(sources.get(8).getName().contains("application.properties"));
+        assertTrue(sources.get(9).getName().contains("microprofile-config.properties"));
+        assertTrue(sources.get(10) instanceof DefaultValuesConfigSource);
     }
 }

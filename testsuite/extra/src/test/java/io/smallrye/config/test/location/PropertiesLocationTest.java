@@ -24,10 +24,8 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
-import io.smallrye.config.source.yaml.YamlConfigSource;
 
 public class PropertiesLocationTest {
     @Test
@@ -56,7 +54,7 @@ public class PropertiesLocationTest {
 
             assertEquals("1234", config.getRawValue("my.prop.one"));
             assertEquals("5678", config.getRawValue("my.prop.two"));
-            assertEquals(2, countSources(config, PropertiesConfigSource.class));
+            assertEquals(2, countSources(config, "resources.properties"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -93,7 +91,7 @@ public class PropertiesLocationTest {
 
             assertEquals("1234", config.getRawValue("my.prop.one"));
             assertEquals("5678", config.getRawValue("my.prop.two"));
-            assertEquals(2, countSources(config, YamlConfigSource.class));
+            assertEquals(2, countSources(config, "resources.yml"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -115,7 +113,7 @@ public class PropertiesLocationTest {
             SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.properties");
 
             assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals(1, countSources(config, PropertiesConfigSource.class));
+            assertEquals(1, countSources(config, "resources.properties"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -141,7 +139,7 @@ public class PropertiesLocationTest {
             SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.yml");
 
             assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals(1, countSources(config, YamlConfigSource.class));
+            assertEquals(1, countSources(config, "resources.yml"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -206,9 +204,13 @@ public class PropertiesLocationTest {
             assertEquals("main", config.getRawValue("my.prop.common"));
             // This should be loaded by the first discovered source in the classpath
             assertEquals("1", config.getRawValue("my.prop.jar.common"));
-            assertEquals(4, countSources(config, PropertiesConfigSource.class));
+            assertEquals(3, countSources(config, "microprofile-config.properties"));
+            assertEquals(1, countSources(config, "fallback.properties"));
             assertTrue(stream(config.getConfigSources().spliterator(), false)
-                    .filter(PropertiesConfigSource.class::isInstance)
+                    .filter(configSource -> configSource.getName().contains("microprofile-config.properties"))
+                    .allMatch(configSource -> configSource.getOrdinal() == 100));
+            assertTrue(stream(config.getConfigSources().spliterator(), false)
+                    .filter(configSource -> configSource.getName().contains("fallback.properties"))
                     .allMatch(configSource -> configSource.getOrdinal() == 100));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -384,8 +386,10 @@ public class PropertiesLocationTest {
             assertEquals("common-file", config.getRawValue("my.prop.common"));
             assertEquals("dev-file", config.getRawValue("my.prop.profile"));
 
-            final List<ConfigSource> sources = stream(config.getConfigSources().spliterator(), false)
-                    .filter(PropertiesConfigSource.class::isInstance).collect(toList());
+            List<ConfigSource> sources = stream(config.getConfigSources().spliterator(), false)
+                    .filter(configSource -> configSource.getName().contains("config.properties")
+                            || configSource.getName().contains("config-"))
+                    .collect(toList());
             assertEquals(6, sources.size());
             assertEquals("1", sources.get(0).getValue("order"));
             assertEquals("2", sources.get(1).getValue("order"));
@@ -457,7 +461,7 @@ public class PropertiesLocationTest {
                     .build();
 
             assertEquals("5678", config.getRawValue("my.prop.one"));
-            assertEquals(2, countSources(config, YamlConfigSource.class));
+            assertEquals(2, countSources(config, "resources"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -481,8 +485,9 @@ public class PropertiesLocationTest {
                 .build();
     }
 
-    private static int countSources(SmallRyeConfig config, Class<?> configSource) {
-        return (int) stream(config.getConfigSources().spliterator(), false).filter(configSource::isInstance)
+    private static int countSources(SmallRyeConfig config, String name) {
+        return (int) stream(config.getConfigSources().spliterator(), false)
+                .filter(configSource -> configSource.getName().contains(name))
                 .count();
     }
 }
