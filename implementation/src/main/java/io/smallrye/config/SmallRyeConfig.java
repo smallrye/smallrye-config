@@ -780,8 +780,8 @@ public class SmallRyeConfig implements Config, Serializable {
             List<InterceptorWithPriority> interceptorWithPriorities = buildInterceptors(builder);
 
             // Create the initial chain with initial sources and all interceptors
-            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
-            current = new SmallRyeConfigSourceInterceptorContext(negativeSources, current, config);
+            //SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(negativeSources, current, config);
             for (InterceptorWithPriority interceptorWithPriority : interceptorWithPriorities) {
                 if (interceptorWithPriority.getPriority() < 0) {
                     ConfigSourceInterceptor interceptor = interceptorWithPriority.getInterceptor(current);
