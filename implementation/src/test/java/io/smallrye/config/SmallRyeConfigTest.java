@@ -12,6 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.IntFunction;
@@ -27,6 +33,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.config.common.MapBackedConfigSource;
@@ -529,5 +536,34 @@ class SmallRyeConfigTest {
                 .build();
 
         assertEquals("value", config.getRawValue(""));
+    }
+
+    @Test
+    void systemSources() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addSystemSources()
+                .build();
+
+        assertTrue(config.getConfigSources(SysPropConfigSource.class).iterator().hasNext());
+        assertTrue(config.getConfigSources(EnvConfigSource.class).iterator().hasNext());
+    }
+
+    @Test
+    void propertiesSources(@TempDir Path tempDir) throws Exception {
+        File file = tempDir.resolve("application.properties").toFile();
+        Properties properties = new Properties();
+        properties.setProperty("my.prop", "1234");
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            properties.store(out, null);
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .forClassLoader(new URLClassLoader(new URL[] { tempDir.toUri().toURL() }))
+                .addPropertiesSources()
+                .build();
+
+        assertFalse(config.getConfigSources(SysPropConfigSource.class).iterator().hasNext());
+        assertFalse(config.getConfigSources(EnvConfigSource.class).iterator().hasNext());
+        assertEquals("1234", config.getRawValue("my.prop"));
     }
 }

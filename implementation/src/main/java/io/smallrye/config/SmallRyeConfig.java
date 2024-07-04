@@ -839,6 +839,13 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             if (builder.isAddDefaultSources()) {
                 sourcesToBuild.addAll(builder.getDefaultSources());
+            } else {
+                if (builder.isAddSystemSources()) {
+                    sourcesToBuild.addAll(builder.getSystemSources());
+                }
+                if (builder.isAddPropertiesSources()) {
+                    sourcesToBuild.addAll(builder.getPropertiesSources());
+                }
             }
 
             return sourcesToBuild;
