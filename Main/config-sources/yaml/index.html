@@ -928,9 +928,12 @@
 
 
 <h1 id="yaml-config-source">YAML Config Source<a class="headerlink" href="#yaml-config-source" title="Permanent link">#</a></h1>
-<p>This Config Source allows to use a <code>yaml</code> file to load configuration values. The YAML Config Source loads the 
-configuration from the file <code>META-INF/microprofile-config.yaml</code>. It has a higher ordinal (<code>110</code>) than the 
-<code>microprofile-config.properties</code>.</p>
+<p>This Config Source allows to use a <code>yaml</code> file to load configuration values. The YAML Config Source loads the configuration from the following files:</p>
+<ol>
+<li>(<code>265</code>) <code>application.yaml|yml</code> in <code>config</code> folder, located in the current working directory</li>
+<li>(<code>255</code>) <code>application.yaml|yml</code> in the classpath</li>
+<li>(<code>110</code>) MicroProfile Config configuration file <code>META-INF/microprofile-config.yaml|yml</code> in the classpath</li>
+</ol>
 <p>The following dependency is required in the classpath to use the YAML Config Source:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
