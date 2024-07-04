@@ -1,7 +1,5 @@
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -52,7 +50,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
             }
         }
 
-        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
         return config.getConfigMapping(getBeanClass(), prefix);
     }
 

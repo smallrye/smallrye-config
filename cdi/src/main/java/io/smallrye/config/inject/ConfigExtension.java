@@ -20,7 +20,6 @@ import static io.smallrye.config.ConfigMappings.registerConfigProperties;
 import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
 import static io.smallrye.config.inject.InjectionMessages.formatInjectionPoint;
-import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
 import static java.util.stream.Collectors.toSet;
 
 import java.lang.reflect.ParameterizedType;
@@ -183,7 +182,8 @@ public class ConfigExtension implements Extension {
     }
 
     protected void validate(@Observes AfterDeploymentValidation adv) {
-        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        SmallRyeConfig config = ConfigProvider.getConfig(Thread.currentThread().getContextClassLoader())
+                .unwrap(SmallRyeConfig.class);
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();

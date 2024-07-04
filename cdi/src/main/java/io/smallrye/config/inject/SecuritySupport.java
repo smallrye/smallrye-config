@@ -13,35 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config.inject;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
-import io.smallrye.config._private.ConfigLogging;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
  */
+@Deprecated(forRemoval = true)
 class SecuritySupport {
     private SecuritySupport() {
     }
 
     static ClassLoader getContextClassLoader() {
-        if (System.getSecurityManager() == null) {
-            return Thread.currentThread().getContextClassLoader();
-        } else {
-            return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
-                ClassLoader tccl = null;
-                try {
-                    tccl = Thread.currentThread().getContextClassLoader();
-                } catch (SecurityException ex) {
-                    ConfigLogging.log.failedToRetrieveClassloader(ex);
-                }
-                return tccl;
-            });
-        }
+        return Thread.currentThread().getContextClassLoader();
     }
-
 }

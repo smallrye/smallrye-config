@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.DotEnvConfigSourceProvider.dotEnvSources;
-import static io.smallrye.config.SecuritySupport.getContextClassLoader;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
@@ -29,7 +28,8 @@ class DotEnvConfigSourceProviderTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(),
+                        Thread.currentThread().getContextClassLoader()))
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop"));
@@ -69,7 +69,8 @@ class DotEnvConfigSourceProviderTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withProfile("common,dev")
-                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(),
+                        Thread.currentThread().getContextClassLoader()))
                 .build();
 
         assertEquals("main", config.getRawValue("my.prop.main"));
@@ -91,7 +92,8 @@ class DotEnvConfigSourceProviderTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(),
+                        Thread.currentThread().getContextClassLoader()))
                 .build();
 
         assertEquals("1234", config.getRawValue("my.prop"));
@@ -124,7 +126,8 @@ class DotEnvConfigSourceProviderTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(DashedEnvNames.class)
                 .withSources(new EnvConfigSource(emptyMap(), 300))
-                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
+                .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(),
+                        Thread.currentThread().getContextClassLoader()))
                 .withProfile("dev")
                 .build();
 
