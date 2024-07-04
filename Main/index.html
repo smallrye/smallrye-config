@@ -977,9 +977,9 @@
 
 <h1 id="smallrye-config">SmallRye Config<a class="headerlink" href="#smallrye-config" title="Permanent link">#</a></h1>
 <p><strong>SmallRye Config</strong> is a library that provides a way to configure applications, frameworks and containers. It is used 
-in applications servers like <a href="https://wildfly.org/">WildFly</a> and <a href="https://openliberty.io">Open Liberty</a>, or frameworks 
-like <a href="https://quarkus.io">Quarkus</a>. It can also be used completely standalone in any Java application, which makes it a 
-very flexible library. </p>
+in applications servers like <a href="https://wildfly.org/">WildFly</a>, <a href="https://openliberty.io">Open Liberty</a> and 
+<a href="https://tomee.apache.org">TomEE</a> or frameworks like <a href="https://quarkus.io">Quarkus</a>. It can also be used completely 
+standalone in any Java application, which makes it a very flexible library. </p>
 <p>It follows the <a href="https://github.com/eclipse/microprofile-config/">MicroProfile Config</a> specification to provide 
 the initial config foundations and expands with it own concepts to cover a wide range of use cases observed in the 
 configuration space.   </p>
@@ -1011,6 +1011,14 @@ configuration space.   </p>
 </div>
 <p>And retrieve a <code>SmallRyeConfig</code> instance with:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">().</span><span class="na">unwrap</span><span class="p">(</span><span class="n">SmallRyeConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+</code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The <code>SmallRyeConfig</code> instance will be created and registered to the context class loader if no such configuration 
+is already created and registered. </p>
+</div>
+<p>Or build your own:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SmallRyeConfigBuilder</span><span class="p">().</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
