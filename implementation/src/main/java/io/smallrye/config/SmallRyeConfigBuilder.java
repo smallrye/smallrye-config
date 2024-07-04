@@ -203,8 +203,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     protected List<ConfigSource> getSystemSources() {
         List<ConfigSource> sources = new ArrayList<>();
-        sources.add(new EnvConfigSource());
         sources.add(new SysPropConfigSource());
+        sources.add(new EnvConfigSource());
+        sources.addAll(new DotEnvConfigSourceProvider().getConfigSources(classLoader));
         return sources;
     }
 

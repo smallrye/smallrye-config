@@ -6,9 +6,10 @@ By default, SmallRye Config reads configuration properties from multiple configu
 
 1. (`400`) System properties
 2. (`300`) Environment variables
-3. (`260`) `application.properties` in `config` folder, located in the current working directory
-3. (`250`) `application.properties` in the classpath 
-4. (`100`) MicroProfile Config configuration file `META-INF/microprofile-config.properties` in the classpath
+3. (`295`) `.env` file in the current working directory
+4. (`260`) `application.properties` in `config` folder, located in the current working directory
+5. (`250`) `application.properties` in the classpath 
+6. (`100`) MicroProfile Config configuration file `META-INF/microprofile-config.properties` in the classpath
 
 A configuration source is handled by a `ConfigSource`. A `ConfigSource` provides configuration values from a specific
 place.  
