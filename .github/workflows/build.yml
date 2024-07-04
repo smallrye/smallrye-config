@@ -130,4 +130,5 @@ jobs:
           java-version: 17
 
       - name: sonar
-        run: mvn sonar:sonar -Psonar -Dsonar.token=${{secrets.SONAR_TOKEN}}
+        # tried to use sonar.coverage.exclusions in pom.xml and even in the admin of Sonar, but it seems the only way to make it work its here
+        run: mvn sonar:sonar -Psonar -Dsonar.token=${{secrets.SONAR_TOKEN}} -Dsonar.coverage.exclusions=**/*/ConfigValueConfigSource$ConfigValueProperties*

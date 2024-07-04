@@ -334,6 +334,7 @@ public interface ConfigValueConfigSource extends ConfigSource {
      * This class is mostly a subset copy of {@link java.util.Properties}. This was required to be able to keep track of
      * the line number from which the configuration was loaded.
      */
+    @SuppressWarnings("all")
     final class ConfigValueProperties extends HashMap<String, ConfigValue> {
         private static final long serialVersionUID = 613423366086278005L;
         private final String configSourceName;
