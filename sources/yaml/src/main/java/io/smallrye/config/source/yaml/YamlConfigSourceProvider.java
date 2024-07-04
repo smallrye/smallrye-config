@@ -10,6 +10,7 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 
+@Deprecated(forRemoval = true)
 public class YamlConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
     @Override
     public String[] getFileExtensions() {

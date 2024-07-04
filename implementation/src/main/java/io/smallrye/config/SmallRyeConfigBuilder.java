@@ -23,13 +23,15 @@ import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
-import static io.smallrye.config.PropertiesConfigSourceProvider.classPathSources;
+import static io.smallrye.config.PropertiesConfigSourceLoader.inClassPath;
+import static io.smallrye.config.PropertiesConfigSourceLoader.inFileSystem;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_SECRET_HANDLERS;
 
 import java.lang.reflect.Type;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,8 +63,6 @@ import io.smallrye.config._private.ConfigMessages;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SmallRyeConfigBuilder implements ConfigBuilder {
-    public static final String META_INF_MICROPROFILE_CONFIG_PROPERTIES = "META-INF/microprofile-config.properties";
-
     private final List<SmallRyeConfigBuilderCustomizer> customizers = new ArrayList<>();
     // sources are not sorted by their ordinals
     private final List<ConfigSource> sources = new ArrayList<>();
@@ -78,6 +78,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
     private boolean addDefaultSources = false;
+    private boolean addSystemSources = false;
+    private boolean addPropertiesSources = false;
     private boolean addDefaultInterceptors = false;
     private boolean addDiscoveredSources = false;
     private boolean addDiscoveredConverters = false;
@@ -182,14 +184,38 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    public SmallRyeConfigBuilder addSystemSources() {
+        addSystemSources = true;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder addPropertiesSources() {
+        addPropertiesSources = true;
+        return this;
+    }
+
     protected List<ConfigSource> getDefaultSources() {
         List<ConfigSource> defaultSources = new ArrayList<>();
-
-        defaultSources.add(new EnvConfigSource());
-        defaultSources.add(new SysPropConfigSource());
-        defaultSources.addAll(classPathSources(META_INF_MICROPROFILE_CONFIG_PROPERTIES, classLoader));
-
+        defaultSources.addAll(getSystemSources());
+        defaultSources.addAll(getPropertiesSources());
         return defaultSources;
+    }
+
+    protected List<ConfigSource> getSystemSources() {
+        List<ConfigSource> sources = new ArrayList<>();
+        sources.add(new EnvConfigSource());
+        sources.add(new SysPropConfigSource());
+        return sources;
+    }
+
+    protected List<ConfigSource> getPropertiesSources() {
+        List<ConfigSource> sources = new ArrayList<>();
+        sources.addAll(
+                inFileSystem(Paths.get(System.getProperty("user.dir"), "config", "application.properties").toUri().toString(),
+                        260, classLoader));
+        sources.addAll(inClassPath("application.properties", 250, classLoader));
+        sources.addAll(inClassPath("META-INF/microprofile-config.properties", 100, classLoader));
+        return sources;
     }
 
     public SmallRyeConfigBuilder addDefaultInterceptors() {
@@ -616,6 +642,14 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDefaultSources;
     }
 
+    public boolean isAddSystemSources() {
+        return addSystemSources;
+    }
+
+    public boolean isAddPropertiesSources() {
+        return addPropertiesSources;
+    }
+
     public boolean isAddDefaultInterceptors() {
         return addDefaultInterceptors;
     }
@@ -642,6 +676,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder setAddDefaultSources(final boolean addDefaultSources) {
         this.addDefaultSources = addDefaultSources;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddSystemSources(final boolean addSystemSources) {
+        this.addSystemSources = addSystemSources;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setAddPropertiesSources(final boolean addPropertiesSources) {
+        this.addPropertiesSources = addPropertiesSources;
         return this;
     }
 

@@ -1,1 +1,2 @@
-io.smallrye.config.source.yaml.YamlConfigSourceProvider
+io.smallrye.config.source.yaml.YamlConfigSourceLoader$InClassPath
+io.smallrye.config.source.yaml.YamlConfigSourceLoader$InFileSystem

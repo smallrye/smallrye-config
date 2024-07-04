@@ -27,6 +27,7 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
+@Deprecated(forRemoval = true)
 public class PropertiesConfigSourceProvider extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
     private final List<ConfigSource> configSources = new ArrayList<>();
     private final boolean includeFileSystem;
