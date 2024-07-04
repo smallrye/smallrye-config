@@ -10,9 +10,9 @@ image:https://img.shields.io/maven-central/v/io.smallrye.config/smallrye-config?
 = SmallRye Config
 
 *SmallRye Config* is a library that provides a way to configure applications, frameworks and containers. It is used
-in applications servers like https://wildfly.org/[WildFly] and https://openliberty.io[Open Liberty], or frameworks
-like https://quarkus.io[Quarkus]. It can also be used completely standalone in any Java application, which makes it a
-very flexible library.
+in applications servers like https://wildfly.org/[WildFly], https://openliberty.io[Open Liberty] and
+https://tomee.apache.org[TomEE], or frameworks like https://quarkus.io[Quarkus]. It can also be used completely
+standalone in any Java application, which makes it a very flexible library.
 
 It follows the https://github.com/eclipse/microprofile-config/[MicroProfile Config] specification to provide
 the initial config foundations and expands with it own concepts to cover a wide range of use cases observed in the
