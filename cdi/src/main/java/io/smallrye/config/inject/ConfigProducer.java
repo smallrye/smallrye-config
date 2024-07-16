@@ -15,8 +15,6 @@
  */
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
-
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Supplier;
@@ -42,7 +40,7 @@ import io.smallrye.config.SmallRyeConfig;
 public class ConfigProducer {
     @Produces
     protected SmallRyeConfig getConfig() {
-        return ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        return ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
     }
 
     @Dependent

@@ -75,7 +75,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private ConfigValidator validator = ConfigValidator.EMPTY;
     private final Map<String, String> defaultValues = new HashMap<>();
     private final MappingBuilder mappingsBuilder = new MappingBuilder();
-    private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
     private boolean addDefaultSources = false;
     private boolean addSystemSources = false;

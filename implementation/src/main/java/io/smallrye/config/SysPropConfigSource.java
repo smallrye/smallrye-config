@@ -16,12 +16,9 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
-import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
 
-import java.security.PrivilegedAction;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
@@ -49,11 +46,11 @@ public class SysPropConfigSource extends AbstractConfigSource {
     }
 
     @Override
-    public String getValue(String s) {
-        return doPrivileged((PrivilegedAction<String>) () -> System.getProperty(s));
+    public String getValue(String propertyName) {
+        return System.getProperty(propertyName);
     }
 
     private static Map<String, String> getSystemProperties() {
-        return unmodifiableMap(propertiesToMap(doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
+        return unmodifiableMap(propertiesToMap(System.getProperties()));
     }
 }

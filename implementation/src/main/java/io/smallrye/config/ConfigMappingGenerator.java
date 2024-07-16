@@ -56,8 +56,6 @@ import static org.objectweb.asm.Type.getType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -89,8 +87,7 @@ public class ConfigMappingGenerator {
     private static final Pattern ARRAY_FORMAT_REGEX = Pattern.compile("([<;])L(.*)\\[];");
 
     static {
-        usefulDebugInfo = Boolean.parseBoolean(AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty("io.smallrye.config.mapper.useful-debug-info")));
+        usefulDebugInfo = Boolean.parseBoolean(System.getProperty("io.smallrye.config.mapper.useful-debug-info"));
     }
 
     private static final String I_CLASS = getInternalName(Class.class);

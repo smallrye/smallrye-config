@@ -14,14 +14,9 @@ package io.smallrye.config;
  */
 public abstract class SmallRyeConfigFactory {
     /**
-     * Construct a new instance. Callers will be checked for the {@code getClassLoader}
-     * {@link RuntimePermission}.
+     * Construct a new instance.
      */
     protected SmallRyeConfigFactory() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getClassLoader"));
-        }
     }
 
     /**

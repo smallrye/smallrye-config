@@ -88,7 +88,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     }
 
     protected List<ConfigSource> loadConfigSources(final String[] locations, final int ordinal) {
-        return loadConfigSources(locations, ordinal, SecuritySupport.getContextClassLoader());
+        return loadConfigSources(locations, ordinal, Thread.currentThread().getContextClassLoader());
     }
 
     protected List<ConfigSource> loadConfigSources(final String[] locations, final int ordinal, final ClassLoader classLoader) {
@@ -136,7 +136,7 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     protected List<ConfigSource> tryClassPath(final URI uri, final int ordinal, final ClassLoader classLoader) {
         final List<ConfigSource> configSources = new ArrayList<>();
-        final ClassLoader useClassloader = classLoader != null ? classLoader : SecuritySupport.getContextClassLoader();
+        final ClassLoader useClassloader = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
         try {
             consumeAsPaths(useClassloader, uri.getPath(), new ConfigSourcePathConsumer(ordinal, configSources));
         } catch (IOException e) {

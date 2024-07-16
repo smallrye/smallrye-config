@@ -116,7 +116,7 @@ public final class Converters {
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6,
             newTrimmingConverter(newEmptyValueConverter(value -> {
                 try {
-                    return Class.forName(value, true, SecuritySupport.getContextClassLoader());
+                    return Class.forName(value, true, Thread.currentThread().getContextClassLoader());
                 } catch (ClassNotFoundException e) {
                     throw ConfigMessages.msg.classConverterNotFound(e, value);
                 }

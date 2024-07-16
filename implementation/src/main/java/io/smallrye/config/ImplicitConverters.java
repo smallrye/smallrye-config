@@ -17,6 +17,7 @@ package io.smallrye.config;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -74,9 +75,9 @@ class ImplicitConverters {
 
     private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
         try {
-            final Constructor<? extends T> declaredConstructor = SecuritySupport.getDeclaredConstructor(clazz, paramType);
+            final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
             if (!isAccessible(declaredConstructor)) {
-                SecuritySupport.setAccessible(declaredConstructor, true);
+                ((AccessibleObject) declaredConstructor).setAccessible(true);
             }
             return new ConstructorConverter<>(declaredConstructor);
         } catch (NoSuchMethodException e) {
@@ -96,7 +97,7 @@ class ImplicitConverters {
                 return null;
             }
             if (!isAccessible(method)) {
-                SecuritySupport.setAccessible(method, true);
+                ((AccessibleObject) method).setAccessible(true);
             }
             return new StaticMethodConverter<>(clazz, method);
         } catch (NoSuchMethodException e) {
