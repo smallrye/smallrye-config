@@ -538,6 +538,58 @@ class EnvConfigSourceTest {
         Map<String, String> values();
     }
 
+    @Test
+    void mappingMapsWithEnv() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "services.service.service-discovery.type", "from-properties",
+                        "services.service.service-discovery.address-list", "",
+                        "services.\"quoted\".service-discovery.type", "from-properties",
+                        "services.\"quoted\".service-discovery.address-list", "",
+                        "services.\"dashed-key\".service-discovery.type", "from-properties",
+                        "services.\"dashed-key\".service-discovery.address-list", ""))
+                .withSources(new EnvConfigSource(Map.of(
+                        "SERVICES_SERVICE_SERVICE_DISCOVERY_ADDRESS_LIST", "from-env",
+                        "SERVICES__QUOTED__SERVICE_DISCOVERY_ADDRESS_LIST", "from-env",
+                        "SERVICES__DASHED_KEY__SERVICE_DISCOVERY_ADDRESS_LIST", "from-env"), 300))
+                .withMapping(Services.class)
+                .build();
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("services.service.service-discovery.type"));
+        assertTrue(properties.contains("services.service.service-discovery.address-list"));
+        assertTrue(properties.contains("SERVICES_SERVICE_SERVICE_DISCOVERY_ADDRESS_LIST"));
+        assertTrue(properties.contains("services.\"quoted\".service-discovery.type"));
+        assertTrue(properties.contains("SERVICES__QUOTED__SERVICE_DISCOVERY_ADDRESS_LIST"));
+        assertTrue(properties.contains("services.\"quoted\".service-discovery.address-list"));
+
+        Services mapping = config.getConfigMapping(Services.class);
+        assertEquals("from-properties", mapping.serviceConfiguration().get("service").serviceDiscovery().type());
+        assertEquals("from-env", mapping.serviceConfiguration().get("service").serviceDiscovery().params().get("address-list"));
+        assertEquals("from-properties", mapping.serviceConfiguration().get("quoted").serviceDiscovery().type());
+        assertEquals("from-env", mapping.serviceConfiguration().get("quoted").serviceDiscovery().params().get("address-list"));
+        assertEquals("from-properties", mapping.serviceConfiguration().get("dashed-key").serviceDiscovery().type());
+        assertEquals("from-env",
+                mapping.serviceConfiguration().get("dashed-key").serviceDiscovery().params().get("address-list"));
+    }
+
+    @ConfigMapping(prefix = "services")
+    interface Services {
+        @WithParentName
+        Map<String, ServiceConfiguration> serviceConfiguration();
+
+        interface ServiceConfiguration {
+            ServiceDiscoveryConfiguration serviceDiscovery();
+
+            interface ServiceDiscoveryConfiguration {
+                String type();
+
+                @WithParentName
+                Map<String, String> params();
+            }
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
