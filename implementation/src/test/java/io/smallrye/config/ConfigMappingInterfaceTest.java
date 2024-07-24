@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -2605,5 +2606,35 @@ class ConfigMappingInterfaceTest {
 
         @WithParentName
         Map<String, Map<String, Map<String, String>>> tripleMap();
+    }
+
+    @Test
+    void hiddenMapValue() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withDefaultValue("hidden.key.force", "true")
+                .withSources(new MapBackedConfigSource("", Map.of("hidden.key.value", "value")) {
+                    @Override
+                    public Set<String> getPropertyNames() {
+                        return Collections.emptySet();
+                    }
+                })
+                .withMapping(HiddenMapValue.class)
+                .build();
+
+        HiddenMapValue mapping = config.getConfigMapping(HiddenMapValue.class);
+        assertEquals("value", mapping.map().get("key").value());
+    }
+
+    @ConfigMapping(prefix = "hidden")
+    interface HiddenMapValue {
+        @WithParentName
+        Map<String, Nested> map();
+
+        interface Nested {
+            @WithDefault("false")
+            boolean force();
+
+            String value();
+        }
     }
 }
