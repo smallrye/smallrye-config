@@ -33,7 +33,7 @@ public class InMemoryConfigSource implements ConfigSource {
 
     @Override
     public int getOrdinal() {
-        return 275;
+        return 350;
     }
 
     @Override
