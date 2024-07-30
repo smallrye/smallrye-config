@@ -160,7 +160,6 @@ class YamlConfigSourceTest {
 
         assertTrue(propertyNames.contains("quarkus.http.port"));
         assertTrue(propertyNames.contains("quarkus.http.ssl-port"));
-        assertTrue(propertyNames.contains("quarkus.http.ssl.protocols"));
         assertTrue(propertyNames.contains("quarkus.http.ssl.protocols[0]"));
         assertNotNull(config.getRawValue("quarkus.http.ssl.protocols[0]"));
     }

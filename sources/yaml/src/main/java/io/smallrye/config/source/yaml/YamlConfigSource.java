@@ -1,21 +1,16 @@
 package io.smallrye.config.source.yaml;
 
-import static java.util.Collections.singletonMap;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -36,14 +31,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     private static final String NAME_PREFIX = "YamlConfigSource[source=";
     private static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
-    private static final Yaml DUMPER;
-
-    static {
-        final DumperOptions dumperOptions = new DumperOptions();
-        dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.FLOW);
-        dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
-        DUMPER = new Yaml(dumperOptions);
-    }
 
     public YamlConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
@@ -140,8 +127,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
             } else if (value instanceof Map) {
                 flattenYaml(key, (Map<Object, Object>) value, target, false);
             } else if (value instanceof List) {
-                final List<Object> list = (List<Object>) value;
-                flattenList(key, list, target);
+                List<Object> list = (List<Object>) value;
                 for (int i = 0; i < list.size(); i++) {
                     flattenYaml(key, Collections.singletonMap("[" + i + "]", list.get(i)), target, true);
                 }
@@ -151,40 +137,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
                 }
             }
         });
-    }
-
-    private static void flattenList(String key, List<Object> source, Map<String, String> target) {
-        boolean mixed = false;
-        List<String> flatten = new ArrayList<>();
-        for (Object value : source) {
-            if (value instanceof String || value instanceof Boolean) {
-                flatten.add(value.toString());
-            } else if (value != null) {
-                mixed = true;
-                break;
-            }
-        }
-
-        if (!mixed) {
-            target.put(key, flatten.stream().map(value -> {
-                StringBuilder sb = new StringBuilder();
-                escapeCommas(sb, value, 1);
-                return sb.toString();
-            }).collect(Collectors.joining(",")));
-        }
-    }
-
-    private static void escapeCommas(StringBuilder b, String src, int escapeLevel) {
-        int cp;
-        for (int i = 0; i < src.length(); i += Character.charCount(cp)) {
-            cp = src.codePointAt(i);
-            if (cp == '\\' || cp == ',') {
-                for (int j = 0; j < escapeLevel; j++) {
-                    b.append('\\');
-                }
-            }
-            b.appendCodePoint(cp);
-        }
     }
 
     /**
