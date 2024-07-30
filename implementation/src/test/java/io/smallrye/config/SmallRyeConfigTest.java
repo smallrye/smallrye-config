@@ -5,6 +5,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,6 +106,24 @@ class SmallRyeConfigTest {
 
         assertNotNull(smallRyeConfig);
         assertThrows(IllegalArgumentException.class, () -> config.unwrap(Object.class));
+    }
+
+    @Test
+    void getValueArray() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("array", "one,two,three"))
+                .build();
+
+        String[] strings = config.getValue("array", String[].class);
+        assertEquals(3, strings.length);
+        assertArrayEquals(new String[] { "one", "two", "three" }, strings);
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config("array[0]", "one", "array[1]", "two", "array[2]", "three"))
+                .build();
+        strings = config.getValue("array", String[].class);
+        assertEquals(3, strings.length);
+        assertArrayEquals(new String[] { "one", "two", "three" }, strings);
     }
 
     @Test
