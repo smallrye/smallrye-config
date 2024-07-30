@@ -129,6 +129,19 @@ class SmallRyeConfigTest {
     void getValuesNotIndexed() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config(
+                        "server.environments", "dev,qa"))
+                .build();
+
+        List<String> environments = config.getValues("server.environments", String.class);
+        assertEquals(2, environments.size());
+        assertEquals("dev", environments.get(0));
+        assertEquals("qa", environments.get(1));
+    }
+
+    @Test
+    void getValuesIndexedPriority() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
                         "server.environments", "dev,qa",
                         "server.environments[0]", "dev",
                         "server.environments[1]", "qa",
@@ -136,9 +149,10 @@ class SmallRyeConfigTest {
                 .build();
 
         List<String> environments = config.getValues("server.environments", String.class);
-        assertEquals(2, environments.size());
+        assertEquals(3, environments.size());
         assertEquals("dev", environments.get(0));
         assertEquals("qa", environments.get(1));
+        assertEquals("prod", environments.get(2));
     }
 
     @Test

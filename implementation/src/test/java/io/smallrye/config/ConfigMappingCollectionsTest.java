@@ -1000,4 +1000,35 @@ public class ConfigMappingCollectionsTest {
             }
         }
     }
+
+    @Test
+    void overrideListDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "list.defaults.values[0]", "baz",
+                        "list.defaults.list-nested[0].value", "value"))
+                .withMapping(ListDefaults.class)
+                .build();
+
+        ListDefaults mapping = config.getConfigMapping(ListDefaults.class);
+        assertEquals(1, mapping.values().size());
+        assertEquals("baz", mapping.values().get(0));
+        assertNull(config.getRawValue("list.defaults.values[9]"));
+    }
+
+    @ConfigMapping(prefix = "list.defaults")
+    interface ListDefaults {
+        @WithDefault("foo,bar")
+        List<String> values();
+
+        List<Nested> listNested();
+
+        interface Nested {
+            @WithDefault("value")
+            String value();
+
+            @WithDefault("one,two")
+            List<String> list();
+        }
+    }
 }
