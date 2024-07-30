@@ -55,7 +55,7 @@ class IndexedPropertiesInjectionTest {
         assertEquals(Stream.of(new ConvertedValue("out")).collect(Collectors.toList()), indexedBean.getConverted());
         assertEquals(Stream.of("a", "b", "c").collect(Collectors.toList()), indexedBean.getDefaults());
         assertEquals(Stream.of("e", "f").collect(Collectors.toList()), indexedBean.getOverrideDefaults());
-        assertEquals(Stream.of("a", "b", "c").collect(Collectors.toList()), indexedBean.getComma());
+        assertEquals(Stream.of("a", "b").collect(Collectors.toList()), indexedBean.getComma());
     }
 
     @Test

@@ -102,8 +102,7 @@ public final class ConfigProducerUtil {
 
     private static <T> T convertValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
         List<String> indexedProperties = config.getIndexedProperties(configValue.getName());
-        // If converting a config property which exists (i.e. myProp[1] = aValue) or no indexed properties exist for the config property
-        if (configValue.getRawValue() != null || indexedProperties.isEmpty()) {
+        if (indexedProperties.isEmpty()) {
             return config.convertValue(configValue, resolveConverter(type, config));
         }
 
