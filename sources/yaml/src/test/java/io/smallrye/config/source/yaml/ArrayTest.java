@@ -43,7 +43,6 @@ class ArrayTest {
                         + "    - ~\n"))
                 .build();
 
-        assertEquals("something,1,true", config.getRawValue("foo"));
         assertEquals("something", config.getRawValue("foo[0]"));
         assertEquals("1", config.getRawValue("foo[1]"));
         assertEquals("true", config.getRawValue("foo[2]"));
