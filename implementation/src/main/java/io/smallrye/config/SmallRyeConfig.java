@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -183,9 +184,9 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
         try {
-            return getValue(name, newCollectionConverter(converter, collectionFactory));
-        } catch (NoSuchElementException e) {
             return getIndexedValues(name, converter, collectionFactory);
+        } catch (NoSuchElementException e) {
+            return getValue(name, newCollectionConverter(converter, collectionFactory));
         }
     }
 
@@ -355,8 +356,23 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Override
-    public <T> T getValue(String name, Class<T> aClass) {
-        return getValue(name, requireConverter(aClass));
+    @SuppressWarnings("unchecked")
+    public <T> T getValue(String name, Class<T> propertyType) {
+        if (propertyType.isArray()) {
+            ConfigValue configValue = getConfigValue(name);
+            if (configValue.getValue() != null) {
+                return getValue(name, requireConverter(propertyType));
+            }
+
+            List<?> values = getValues(name, propertyType.getComponentType());
+            Object array = Array.newInstance(propertyType.getComponentType(), values.size());
+            for (int i = 0, valuesSize = values.size(); i < valuesSize; i++) {
+                Array.set(array, i, values.get(i));
+            }
+            return (T) array;
+        }
+
+        return getValue(name, requireConverter(propertyType));
     }
 
     /**

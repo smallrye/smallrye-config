@@ -20,8 +20,8 @@ The indexed property syntax uses the property name and square brackets with an i
 
 A call to `Config#getValues("my.collection", String.class)`, will automatically create and convert a `List<String>` 
 that contains the values `dog`, `cat` and `turtle`. A call to `Config#getValues("my.indexed.collection", String.class)` 
-returns the exact same result. For compatibility reasons, if SmallRye Config finds the same property name in their 
-indexed and unindexed format, the unindexed value has priority.
+returns the exact same result. If SmallRye Config finds the same property name in their indexed and unindexed format, 
+the indexed value has priority.
 
 The indexed property is sorted by its index before being added to the target `Collection`. Any gaps in the indexes do 
 not resolve to the target `Collection`, which means that the `Collection` result will store all values without empty 

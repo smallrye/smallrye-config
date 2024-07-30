@@ -960,6 +960,11 @@ public class ConfigMappingGenerator {
                 .get(mapping.getInterfaceType())
                 .get("").entrySet()) {
             if (entry.getValue().hasDefaultValue()) {
+                // Defaults for collections also come as a simple property with comma separated values, no need for the star name
+                if (entry.getKey().endsWith("[*]")) {
+                    continue;
+                }
+
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitLdcInsn(entry.getKey());
                 mv.visitLdcInsn(entry.getValue().getDefaultValue());
