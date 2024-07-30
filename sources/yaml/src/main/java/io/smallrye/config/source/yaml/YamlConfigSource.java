@@ -8,10 +8,8 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,11 +45,8 @@ public class YamlConfigSource extends MapBackedConfigSource {
         DUMPER = new Yaml(dumperOptions);
     }
 
-    private final Set<String> propertyNames;
-
     public YamlConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
-        this.propertyNames = filterPropertyNames(source);
     }
 
     public YamlConfigSource(URL url) throws IOException {
@@ -75,11 +70,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     public YamlConfigSource(String name, String source, int ordinal) {
         this(name, stringToMap(source), ordinal);
-    }
-
-    @Override
-    public Set<String> getPropertyNames() {
-        return propertyNames;
     }
 
     @SuppressWarnings("unchecked")
@@ -181,12 +171,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
                 escapeCommas(sb, value, 1);
                 return sb.toString();
             }).collect(Collectors.joining(",")));
-        } else {
-            // Mark keys for later removal
-            key = YamlConfigSource.class.getName() + ".filter." + key;
-            // This dumps the entire YAML in a parent property. It was added to support complex mappings, but it is not
-            // needed anymore with the indexed property support. We keep it for compatibility reasons.
-            target.put(key, DUMPER.dump(singletonMap(key.substring(key.lastIndexOf(".") + 1), source)));
         }
     }
 
@@ -201,19 +185,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
             }
             b.appendCodePoint(cp);
         }
-    }
-
-    private static Set<String> filterPropertyNames(Map<String, String> source) {
-        final Set<String> filteredKeys = new HashSet<>();
-        for (final String key : new HashSet<>(source.keySet())) {
-            if (key.startsWith(YamlConfigSource.class.getName() + ".filter.")) {
-                String originalKey = key.substring(55);
-                source.put(originalKey, source.remove(key));
-            } else {
-                filteredKeys.add(key);
-            }
-        }
-        return filteredKeys;
     }
 
     /**

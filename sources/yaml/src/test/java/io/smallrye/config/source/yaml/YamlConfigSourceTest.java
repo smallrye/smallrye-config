@@ -27,34 +27,6 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 
 class YamlConfigSourceTest {
     @Test
-    void flatten() {
-        String yaml = "admin:\n" +
-                "  users:\n" +
-                "    -\n" +
-                "      email: \"joe@gmail.com\"\n" +
-                "      username: \"joe\"\n" +
-                "      password: \"123456\"\n" +
-                "      roles:\n" +
-                "        - \"Moderator\"\n" +
-                "        - \"Admin\"\n" +
-                "    -\n" +
-                "      email: \"jack@gmail.com\"\n" +
-                "      username: \"jack\"\n" +
-                "      password: \"654321\"\n" +
-                "      roles:\n" +
-                "        - \"Moderator\"\n";
-
-        YamlConfigSource source = new YamlConfigSource("yaml", yaml);
-        String value = source.getValue("admin.users");
-        Users users = new UserConverter().convert(value);
-        assertEquals(2, users.getUsers().size());
-        assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
-        assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
-
-        assertEquals("joe@gmail.com", source.getValue("admin.users[0].email"));
-    }
-
-    @Test
     void profiles() {
         String yaml = "---\n" +
                 "foo:\n" +
@@ -147,37 +119,6 @@ class YamlConfigSourceTest {
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
         assertEquals("hello", config.getRawValue("greeting.message"));
         assertEquals("smallrye", config.getRawValue("greeting.name"));
-    }
-
-    @Test
-    void config() {
-        String yaml = "admin:\n" +
-                "  users:\n" +
-                "    -\n" +
-                "      email: \"joe@gmail.com\"\n" +
-                "      username: \"joe\"\n" +
-                "      password: \"123456\"\n" +
-                "      roles:\n" +
-                "        - \"Moderator\"\n" +
-                "        - \"Admin\"\n" +
-                "    -\n" +
-                "      email: \"jack@gmail.com\"\n" +
-                "      username: \"jack\"\n" +
-                "      password: \"654321\"\n" +
-                "      roles:\n" +
-                "        - \"Moderator\"\n";
-
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(new YamlConfigSource("yaml", yaml))
-                .withConverter(Users.class, 100, new UserConverter())
-                .build();
-
-        Users users = config.getValue("admin.users", Users.class);
-        assertEquals(2, users.getUsers().size());
-        assertEquals(users.users.get(0).getEmail(), "joe@gmail.com");
-        assertEquals(users.users.get(0).getRoles(), Stream.of("Moderator", "Admin").collect(toList()));
-
-        assertEquals("joe@gmail.com", config.getRawValue("admin.users[0].email"));
     }
 
     @Test
