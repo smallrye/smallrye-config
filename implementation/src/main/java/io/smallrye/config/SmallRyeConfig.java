@@ -57,6 +57,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
+import io.smallrye.config.SmallRyeConfigSourceInterceptorContext.InterceptorChain;
 import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
@@ -747,10 +748,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.getProfiles();
     }
 
-    ConfigSourceInterceptorContext interceptorChain() {
-        return configSources.interceptorChain;
-    }
-
     private static class ConfigSources implements Serializable {
         private static final long serialVersionUID = 3483018375584151712L;
 
@@ -780,21 +777,23 @@ public class SmallRyeConfig implements Config, Serializable {
             List<InterceptorWithPriority> interceptorWithPriorities = buildInterceptors(builder);
 
             // Create the initial chain with initial sources and all interceptors
-            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
-            current = new SmallRyeConfigSourceInterceptorContext(negativeSources, current, config);
+            InterceptorChain chain = new InterceptorChain();
+            SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
+
+            current = new SmallRyeConfigSourceInterceptorContext(negativeSources, current, chain);
             for (InterceptorWithPriority interceptorWithPriority : interceptorWithPriorities) {
                 if (interceptorWithPriority.getPriority() < 0) {
                     ConfigSourceInterceptor interceptor = interceptorWithPriority.getInterceptor(current);
                     negativeInterceptors.add(interceptor);
-                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
+                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
                 }
             }
-            current = new SmallRyeConfigSourceInterceptorContext(positiveSources, current, config);
+            current = new SmallRyeConfigSourceInterceptorContext(positiveSources, current, chain);
             for (InterceptorWithPriority interceptorWithPriority : interceptorWithPriorities) {
                 if (interceptorWithPriority.getPriority() >= 0) {
                     ConfigSourceInterceptor interceptor = interceptorWithPriority.getInterceptor(current);
                     positiveInterceptors.add(interceptor);
-                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
+                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
                 }
             }
 
@@ -807,16 +806,16 @@ public class SmallRyeConfig implements Config, Serializable {
             // Rebuild the chain with the late sources and new instances of the interceptors
             // The new instance will ensure that we get rid of references to factories and other stuff and keep only
             // the resolved final source or interceptor to use.
-            current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities, true),
-                    current, config);
+                    current, chain);
             for (ConfigSourceInterceptor interceptor : negativeInterceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
+                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
             }
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities, false),
-                    current, config);
+                    current, chain);
             for (ConfigSourceInterceptor interceptor : positiveInterceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, config);
+                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
             }
 
             this.profiles = profiles;
@@ -913,16 +912,17 @@ public class SmallRyeConfig implements Config, Serializable {
             Collections.reverse(currentSources);
 
             // Rebuild the chain with the profiles sources, so profiles values are also available in factories
-            ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, config);
+            InterceptorChain chain = new InterceptorChain();
+            ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
             context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources, true), context,
-                    config);
+                    chain);
             for (ConfigSourceInterceptor interceptor : negativeInterceptors) {
-                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, config);
+                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, chain);
             }
             context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources, false), context,
-                    config);
+                    chain);
             for (ConfigSourceInterceptor interceptor : positiveInterceptors) {
-                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, config);
+                context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, chain);
             }
 
             // Init remaining sources, coming from SmallRyeConfig

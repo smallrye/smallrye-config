@@ -1,18 +1,26 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jakarta.annotation.Priority;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,12 +32,12 @@ class ConfigSourceInterceptorTest {
     void interceptor() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234", "override", "4567"))
+                .withSources(config("my.prop", "1234", "override", "4567"))
                 .withInterceptors(new LoggingConfigSourceInterceptor(),
                         new OverridingConfigSourceInterceptor())
                 .build();
 
-        final String value = config.getValue("my.prop", String.class);
+        String value = config.getValue("my.prop", String.class);
         Assertions.assertEquals("4567", value);
     }
 
@@ -37,12 +45,12 @@ class ConfigSourceInterceptorTest {
     void priority() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1234"))
+                .withSources(config("my.prop", "1234"))
                 .withInterceptors(new LowerPriorityConfigSourceInterceptor(),
                         new HighPriorityConfigSourceInterceptor())
                 .build();
 
-        final String value = config.getValue("my.prop", String.class);
+        String value = config.getValue("my.prop", String.class);
         Assertions.assertEquals("higher", value);
     }
 
@@ -50,11 +58,11 @@ class ConfigSourceInterceptorTest {
     void serviceLoader() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
+                .withSources(config("my.prop.loader", "1234"))
                 .addDiscoveredInterceptors()
                 .build();
 
-        final String value = config.getValue("my.prop.loader", String.class);
+        String value = config.getValue("my.prop.loader", String.class);
         Assertions.assertEquals("loader", value);
     }
 
@@ -62,13 +70,13 @@ class ConfigSourceInterceptorTest {
     void serviceLoaderAndPriorities() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop.loader", "1234"))
+                .withSources(config("my.prop.loader", "1234"))
                 .addDiscoveredInterceptors()
                 .withInterceptors(new LowerPriorityConfigSourceInterceptor(),
                         new HighPriorityConfigSourceInterceptor())
                 .build();
 
-        final String value = config.getValue("my.prop.loader", String.class);
+        String value = config.getValue("my.prop.loader", String.class);
         Assertions.assertEquals("higher", value);
     }
 
@@ -76,7 +84,7 @@ class ConfigSourceInterceptorTest {
     void defaultInterceptors() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1",
+                .withSources(config("my.prop", "1",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
                         SMALLRYE_CONFIG_PROFILE, "prof"))
@@ -90,7 +98,7 @@ class ConfigSourceInterceptorTest {
     void notFailExpansionInactive() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
-                .withSources(KeyValuesConfigSource.config("my.prop", "${expansion}",
+                .withSources(config("my.prop", "${expansion}",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
                         SMALLRYE_CONFIG_PROFILE, "prof"))
@@ -105,7 +113,7 @@ class ConfigSourceInterceptorTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1",
+                .withSources(config("my.prop", "1",
                         "%prof.my.prop", "${%prof.my.prop.profile}",
                         "%prof.my.prop.profile", "2",
                         SMALLRYE_CONFIG_PROFILE, "prof"))
@@ -122,7 +130,7 @@ class ConfigSourceInterceptorTest {
     void replaceNames() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config("my.prop", "1"))
+                .withSources(config("my.prop", "1"))
                 .withInterceptors(new ConfigSourceInterceptor() {
                     @Override
                     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
@@ -148,7 +156,7 @@ class ConfigSourceInterceptorTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(KeyValuesConfigSource.config(
+                .withSources(config(
                         "app.http.port", "8081",
                         "%dev.app.http.port", "8082",
                         "%test.app.http.port", "8083",
@@ -165,15 +173,123 @@ class ConfigSourceInterceptorTest {
         assertEquals(1, interceptorWithPriority.getPriority());
     }
 
+    @Test
+    void restart() {
+        List<Integer> counter = new ArrayList<>();
+        counter.add(0);
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("final", "final"))
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new ConfigSourceInterceptor() {
+                            @Override
+                            public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                                counter.set(0, counter.get(0) + 1);
+                                return context.proceed(name);
+                            }
+                        };
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(DEFAULT_PRIORITY + 100);
+                    }
+                })
+                .withInterceptors(new ConfigSourceInterceptor() {
+                    @Override
+                    public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                        if (name.equals("restart")) {
+                            return context.restart("final");
+                        }
+                        return context.proceed(name);
+                    }
+                })
+                .build();
+
+        assertEquals("final", config.getRawValue("restart"));
+        assertEquals(2, counter.get(0));
+        assertEquals("final", config.getConfigValue("final").getName());
+        assertEquals("final", config.getConfigValue("restart").getName());
+    }
+
+    @Test
+    void restartNotInitialized() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("final", "final"))
+                .withInterceptors(new ConfigSourceInterceptor() {
+                    @Override
+                    public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                        if (name.equals("restart")) {
+                            return context.restart("final");
+                        }
+                        return context.proceed(name);
+                    }
+                })
+                .withSources(new ConfigSourceFactory() {
+                    @Override
+                    public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
+                        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                                .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
+                                .withMapping(Restart.class)
+                                .withMappingIgnore("*")
+                                .build();
+                        return emptyList();
+                    }
+                })
+                .build();
+
+        assertEquals("final", config.getRawValue("restart"));
+    }
+
+    @ConfigMapping
+    interface Restart {
+        Optional<String> restart();
+    }
+
+    @Test
+    void supplier() {
+        Value value = new Value();
+
+        Supplier<Value> first = new Supplier<>() {
+            @Override
+            public Value get() {
+                return value;
+            }
+        };
+
+        Supplier<Value> second = new Supplier<>() {
+            @Override
+            public Value get() {
+                return value;
+            }
+        };
+
+        System.out.println(first.get().value);
+        System.out.println(second.get().value);
+
+        value.value = "something else";
+
+        System.out.println(first.get().value);
+        System.out.println(second.get().value);
+    }
+
+    public static class Value {
+        String value = "value";
+    }
+
     private static class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         private static final Logger LOG = Logger.getLogger("io.smallrye.config");
 
         @Override
         public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-            final ConfigValue configValue = context.proceed(name);
-            final String key = configValue.getName();
-            final String value = configValue.getValue();
-            final String configSource = configValue.getConfigSourceName();
+            ConfigValue configValue = context.proceed(name);
+            String key = configValue.getName();
+            String value = configValue.getValue();
+            String configSource = configValue.getConfigSourceName();
 
             LOG.infov("The key {0} was loaded from {1} with the value {2}", key, configSource, value);
 
