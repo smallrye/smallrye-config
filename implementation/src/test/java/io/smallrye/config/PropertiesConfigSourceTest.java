@@ -36,6 +36,16 @@ class PropertiesConfigSourceTest {
         assertThrows(UnsupportedOperationException.class, properties::clear);
     }
 
+    @Test
+    void names() {
+        PropertiesConfigSource configSource = new PropertiesConfigSource(Map.of("my.prop", "1234"), "name", 100);
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(configSource)
+                .build();
+
+        assertEquals(configSource.getName(), config.getConfigValue("my.prop").getConfigSourceName());
+    }
+
     private static Config buildConfig() throws Exception {
         return new SmallRyeConfigBuilder()
                 .addDefaultSources()

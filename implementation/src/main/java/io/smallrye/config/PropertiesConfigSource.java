@@ -44,7 +44,7 @@ public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
         this(url, NAME_PREFIX + url.toString() + "]", defaultOrdinal);
     }
 
-    public PropertiesConfigSource(URL url, String name, int defaultOrdinal) throws IOException {
+    private PropertiesConfigSource(URL url, String name, int defaultOrdinal) throws IOException {
         super(name, urlToConfigValueMap(url, name, defaultOrdinal), defaultOrdinal);
     }
 
@@ -57,7 +57,11 @@ public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String name, int defaultOrdinal) {
-        super(NAME_PREFIX + name + "]",
+        this(NAME_PREFIX + name + "]", properties, defaultOrdinal);
+    }
+
+    private PropertiesConfigSource(String name, Map<String, String> properties, int defaultOrdinal) {
+        super(name,
                 new ConfigValueMapStringView(properties, name, ConfigSourceUtil.getOrdinalFromMap(properties, defaultOrdinal)),
                 defaultOrdinal);
     }
