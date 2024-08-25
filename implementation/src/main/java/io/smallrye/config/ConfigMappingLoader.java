@@ -127,7 +127,8 @@ public final class ConfigMappingLoader {
     @SuppressWarnings("unchecked")
     public static <T> Class<? extends ConfigMappingObject> getImplementationClass(final Class<T> type) {
         try {
-            Class<?> implementationClass = type.getClassLoader().loadClass(type.getName() + type.getName().hashCode() + "Impl");
+            Class<?> implementationClass = type.getClassLoader()
+                    .loadClass(ConfigMappingInterface.getImplementationClassName(type));
             if (type.isAssignableFrom(implementationClass)) {
                 return (Class<? extends ConfigMappingObject>) implementationClass;
             }
