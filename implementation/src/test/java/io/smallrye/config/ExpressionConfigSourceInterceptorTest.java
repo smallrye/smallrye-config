@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -139,6 +140,8 @@ class ExpressionConfigSourceInterceptorTest {
 
         assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
         assertThrows(Exception.class, () -> config.getValue("my.prop.partial", String.class));
+        assertTrue(config.isPropertyPresent("my.prop"));
+        assertTrue(config.isPropertyPresent("my.prop.partial"));
     }
 
     @Test
