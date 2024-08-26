@@ -47,7 +47,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
         this.interfaceType = interfaceType;
-        this.className = interfaceType.getName() + interfaceType.getName().hashCode() + "Impl";
+        this.className = getImplementationClassName(interfaceType);
         this.superTypes = superTypes;
 
         List<Property> filteredProperties = new ArrayList<>();
@@ -65,6 +65,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         this.properties = filteredProperties.toArray(new Property[0]);
         this.toStringMethod = toStringMethod;
+    }
+
+    static String getImplementationClassName(Class<?> type) {
+        // do not use string concatenation here
+        // make sure the impl name doesn't clash with potential user classes
+        String className = type.getName();
+        StringBuilder implementationClassName = new StringBuilder(className.length() + 8);
+        implementationClassName.append(className).append("$$CMImpl");
+        return implementationClassName.toString();
     }
 
     /**
