@@ -4,14 +4,18 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOCATIONS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -462,6 +466,65 @@ public class PropertiesLocationTest {
 
             assertEquals("5678", config.getRawValue("my.prop.one"));
             assertEquals(2, countSources(config, "resources"));
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
+    @Test
+    void profileFilesInClassloader(@TempDir Path tempDir) throws Exception {
+        Properties mainProperties = new Properties();
+        mainProperties.setProperty("my.prop.main", "main");
+        File mainFile = tempDir.resolve("application.properties").toFile();
+        try (FileOutputStream out = new FileOutputStream(mainFile)) {
+            mainProperties.store(out, null);
+        }
+
+        Properties testProperties = new Properties();
+        testProperties.setProperty("my.prop.test", "test");
+        File testFile = tempDir.resolve("application-test.properties").toFile();
+        try (FileOutputStream out = new FileOutputStream(testFile)) {
+            testProperties.store(out, null);
+        }
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { tempDir.toUri().toURL() }, contextClassLoader) {
+            @Override
+            public URL getResource(final String name) {
+                if (name.endsWith("application-test.properties")) {
+                    return null;
+                }
+                return super.getResource(name);
+            }
+
+            @Override
+            public Enumeration<URL> getResources(final String name) throws IOException {
+                if (name.endsWith("application-test.properties")) {
+                    return Collections.emptyEnumeration();
+                }
+                return super.getResources(name);
+            }
+
+            @Override
+            public Stream<URL> resources(final String name) {
+                if (name.endsWith("application-test.properties")) {
+                    return Stream.empty();
+                }
+                return super.resources(name);
+            }
+        }) {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
+
+            urlClassLoader.getResource("application.properties");
+
+            SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .addDefaultSources()
+                    .addDefaultInterceptors()
+                    .withProfile("test")
+                    .build();
+
+            assertEquals("main", config.getRawValue("my.prop.main"));
+            assertNull(config.getRawValue("my.prop.test"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
