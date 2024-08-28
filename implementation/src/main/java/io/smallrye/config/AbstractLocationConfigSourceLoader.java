@@ -123,7 +123,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         } else if (Files.isDirectory(urlPath)) {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(urlPath, this::validExtension)) {
                 for (Path path : paths) {
-                    addConfigSource(path.toUri(), ordinal, configSources);
+                    configSources.add(loadConfigSource(path.toUri(), ordinal));
                 }
             } catch (IOException e) {
                 throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
@@ -142,7 +142,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         } catch (IllegalArgumentException e) {
-            configSources.addAll(fallbackToUnknownProtocol(uri, ordinal, useClassloader));
+            return fallbackToUnknownProtocol(uri, ordinal, useClassloader);
         }
         return configSources;
     }
@@ -164,7 +164,8 @@ public abstract class AbstractLocationConfigSourceLoader {
             while (resources.hasMoreElements()) {
                 URL resourceUrl = resources.nextElement();
                 if (validExtension(resourceUrl.getFile())) {
-                    ConfigSource mainSource = addConfigSource(resourceUrl, ordinal, configSources);
+                    ConfigSource mainSource = loadConfigSourceInternal(resourceUrl, ordinal);
+                    configSources.add(mainSource);
                     configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
                         List<ConfigSource> profileSources = new ArrayList<>();
                         for (int i = profiles.size() - 1; i >= 0; i--) {
@@ -174,8 +175,8 @@ public abstract class AbstractLocationConfigSourceLoader {
                                 try {
                                     Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
                                     while (profileResources.hasMoreElements()) {
-                                        final URL profileUrl = profileResources.nextElement();
-                                        addProfileConfigSource(profileUrl, mainOrdinal, profileSources);
+                                        profileSources
+                                                .addAll(loadProfileConfigSource(profileResources.nextElement(), mainOrdinal));
                                     }
                                 } catch (IOException e) {
                                     // It is ok to not find the resource here, because it is an optional profile resource.
@@ -195,7 +196,8 @@ public abstract class AbstractLocationConfigSourceLoader {
     protected List<ConfigSource> tryHttpResource(final URI uri, final int ordinal) {
         final List<ConfigSource> configSources = new ArrayList<>();
         if (validExtension(uri.getPath())) {
-            final ConfigSource mainSource = addConfigSource(uri, ordinal, configSources);
+            ConfigSource mainSource = loadConfigSource(uri, ordinal);
+            configSources.add(mainSource);
             configSources.addAll(tryProfiles(uri, mainSource));
         }
         return configSources;
@@ -211,8 +213,8 @@ public abstract class AbstractLocationConfigSourceLoader {
                     int ordinal = mainSource.getOrdinal() + profiles.size() - i;
                     for (String fileExtension : getFileExtensions()) {
                         URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
-                        AbstractLocationConfigSourceLoader.this.addProfileConfigSource(toURL(profileUri), ordinal,
-                                profileSources);
+                        AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
+                        profileSources.addAll(loader.loadProfileConfigSource(profileUri, ordinal));
                     }
                 }
                 return profileSources;
@@ -234,29 +236,32 @@ public abstract class AbstractLocationConfigSourceLoader {
         }
     }
 
-    private ConfigSource addConfigSource(final URI uri, final int ordinal, final List<ConfigSource> configSources) {
-        return addConfigSource(toURL(uri), ordinal, configSources);
-    }
-
-    private ConfigSource addConfigSource(final URL url, final int ordinal, final List<ConfigSource> configSources) {
+    private ConfigSource loadConfigSourceInternal(final URL url, int ordinal) {
         try {
-            ConfigSource configSource = loadConfigSource(url, ordinal);
-            configSources.add(configSource);
-            return configSource;
+            return loadConfigSource(url, ordinal);
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e, url.toString());
         }
     }
 
-    private void addProfileConfigSource(final URL profileToFileName, final int ordinal,
-            final List<ConfigSource> profileSources) {
+    private ConfigSource loadConfigSource(final URI uri, final int ordinal) {
+        URL url = toURL(uri);
+        return loadConfigSourceInternal(url, ordinal);
+    }
+
+    private List<ConfigSource> loadProfileConfigSource(final URL url, final int ordinal) {
         try {
-            profileSources.add(loadConfigSource(profileToFileName, ordinal));
+            return List.of(loadConfigSource(url, ordinal));
         } catch (FileNotFoundException | NoSuchFileException e) {
             // It is ok to not find the resource here, because it is an optional profile resource.
+            return Collections.emptyList();
         } catch (IOException e) {
-            throw ConfigMessages.msg.failedToLoadResource(e, profileToFileName.toString());
+            throw ConfigMessages.msg.failedToLoadResource(e, url.toString());
         }
+    }
+
+    private List<ConfigSource> loadProfileConfigSource(final URI uri, final int ordinal) {
+        return loadProfileConfigSource(toURL(uri), ordinal);
     }
 
     private boolean validExtension(final Path fileName) {
@@ -333,7 +338,8 @@ public abstract class AbstractLocationConfigSourceLoader {
         public void accept(final Path path) {
             final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
-                final ConfigSource mainSource = loader.addConfigSource(path.toUri(), ordinal, configSources);
+                ConfigSource mainSource = loader.loadConfigSource(path.toUri(), ordinal);
+                configSources.add(mainSource);
                 configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
             }
         }
