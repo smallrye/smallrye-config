@@ -138,7 +138,8 @@ public abstract class AbstractLocationConfigSourceLoader {
         final List<ConfigSource> configSources = new ArrayList<>();
         final ClassLoader useClassloader = classLoader != null ? classLoader : SecuritySupport.getContextClassLoader();
         try {
-            consumeAsPaths(useClassloader, uri.getPath(), new ConfigSourcePathConsumer(ordinal, configSources));
+            consumeAsPaths(useClassloader, uri.getPath(),
+                    new ConfigSourceClassPathConsumer(classLoader, uri, ordinal, configSources));
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         } catch (IllegalArgumentException e) {
@@ -198,33 +199,8 @@ public abstract class AbstractLocationConfigSourceLoader {
         if (validExtension(uri.getPath())) {
             ConfigSource mainSource = loadConfigSource(uri, ordinal);
             configSources.add(mainSource);
-            configSources.addAll(tryProfiles(uri, mainSource));
+            configSources.add(profileConfigSourceFactory(uri, mainSource.getOrdinal()));
         }
-        return configSources;
-    }
-
-    protected List<ConfigSource> tryProfiles(final URI uri, final ConfigSource mainSource) {
-        List<ConfigSource> configSources = new ArrayList<>();
-        configSources.add(new ConfigurableConfigSource(new ProfileConfigSourceFactory() {
-            @Override
-            public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
-                List<ConfigSource> profileSources = new ArrayList<>();
-                for (int i = profiles.size() - 1; i >= 0; i--) {
-                    int ordinal = mainSource.getOrdinal() + profiles.size() - i;
-                    for (String fileExtension : getFileExtensions()) {
-                        URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
-                        AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
-                        profileSources.addAll(loader.loadProfileConfigSource(profileUri, ordinal));
-                    }
-                }
-                return profileSources;
-            }
-
-            @Override
-            public OptionalInt getPriority() {
-                return OptionalInt.of(mainSource.getOrdinal());
-            }
-        }));
         return configSources;
     }
 
@@ -325,9 +301,41 @@ public abstract class AbstractLocationConfigSourceLoader {
         }
     }
 
-    private class ConfigSourcePathConsumer implements Consumer<Path> {
-        private final List<ConfigSource> configSources;
+    private ConfigurableConfigSource profileConfigSourceFactory(final URI uri, final int ordinal) {
+        return new ConfigurableConfigSource(new ConfigurableProfileConfigSourceFactory(uri, ordinal));
+    }
+
+    protected final class ConfigurableProfileConfigSourceFactory implements ProfileConfigSourceFactory {
+        private final URI uri;
         private final int ordinal;
+
+        public ConfigurableProfileConfigSourceFactory(final URI uri, final int ordinal) {
+            this.uri = uri;
+            this.ordinal = ordinal;
+        }
+
+        @Override
+        public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
+            List<ConfigSource> profileSources = new ArrayList<>();
+            for (int i = profiles.size() - 1; i >= 0; i--) {
+                int ordinal = this.ordinal + profiles.size() - i;
+                for (String fileExtension : getFileExtensions()) {
+                    URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
+                    profileSources.addAll(loadProfileConfigSource(profileUri, ordinal));
+                }
+            }
+            return profileSources;
+        }
+
+        @Override
+        public OptionalInt getPriority() {
+            return OptionalInt.of(ordinal);
+        }
+    }
+
+    protected final class ConfigSourcePathConsumer implements Consumer<Path> {
+        private final int ordinal;
+        private final List<ConfigSource> configSources;
 
         public ConfigSourcePathConsumer(final int ordinal, final List<ConfigSource> configSources) {
             this.ordinal = ordinal;
@@ -336,12 +344,64 @@ public abstract class AbstractLocationConfigSourceLoader {
 
         @Override
         public void accept(final Path path) {
-            final AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
+            AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
             if (loader.validExtension(path.getFileName().toString())) {
                 ConfigSource mainSource = loader.loadConfigSource(path.toUri(), ordinal);
                 configSources.add(mainSource);
-                configSources.addAll(loader.tryProfiles(path.toUri(), mainSource));
+                configSources.add(profileConfigSourceFactory(path.toUri(), mainSource.getOrdinal()));
             }
+        }
+    }
+
+    protected final class ConfigSourceClassPathConsumer implements Consumer<Path> {
+        private final ClassLoader classLoader;
+        private final URI resource;
+
+        private final int ordinal;
+        private final List<ConfigSource> configSources;
+
+        public ConfigSourceClassPathConsumer(final ClassLoader classLoader, final URI resource, final int ordinal,
+                final List<ConfigSource> configSources) {
+            this.classLoader = classLoader;
+            this.resource = resource;
+            this.ordinal = ordinal;
+            this.configSources = configSources;
+        }
+
+        @Override
+        public void accept(final Path path) {
+            AbstractLocationConfigSourceLoader loader = AbstractLocationConfigSourceLoader.this;
+            if (loader.validExtension(path.getFileName().toString())) {
+                ConfigSource mainSource = loader.loadConfigSource(path.toUri(), ordinal);
+                configSources.add(mainSource);
+                configSources.add(new ConfigurableConfigSource(new ProfileConfigSourceFactory() {
+                    @Override
+                    public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
+                        List<ConfigSource> profileSources = new ArrayList<>();
+                        for (int i = profiles.size() - 1; i >= 0; i--) {
+                            int ordinal = mainSource.getOrdinal() + profiles.size() - i;
+                            for (String fileExtension : getFileExtensions()) {
+                                URI profileResource = addProfileName(resource, profiles.get(i), fileExtension);
+                                URI profileUri = addProfileName(path.toUri(), profiles.get(i), fileExtension);
+                                if ("jar".equals(profileUri.getScheme()) || isInClassloader(profileResource, profileUri)) {
+                                    profileSources.addAll(loader.loadProfileConfigSource(profileUri, ordinal));
+                                }
+                            }
+                        }
+                        return profileSources;
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(mainSource.getOrdinal());
+                    }
+                }));
+            }
+        }
+
+        private boolean isInClassloader(final URI profileResource, final URI profileUri) {
+            return classLoader.resources(profileResource.getPath())
+                    .anyMatch(url -> url.toString().equals(profileUri.toString()));
         }
     }
 }
