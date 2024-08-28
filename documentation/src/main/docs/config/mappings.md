@@ -8,6 +8,21 @@ share the same prefix (or namespace). It supports the following set of features:
 - Configuration Properties Naming Strategies
 - Integration with Bean Validation
 
+## Mapping Rules
+
+A complex object type uses the following rules to map configuration values to their member values:
+
+- A configuration path is built by taking the object type prefix (or namespace) and the mapping member name
+- The member name is converted to its kebab-case format
+- If the member name is represented as a getter, the member name is taken from its property name equivalent, and then
+  converted to its kebab-case format.
+- The configuration value is automatically converted to the member type
+- The configuration path is required to exist with a valid configuration value or the mapping will fail.
+
+!!! info
+
+    Kebab-case - the method name is derived by replacing case changes with a dash to map the configuration property.
+
 A Config Mapping requires an interface with minimal metadata configuration annotated with 
 `io.smallrye.config.ConfigMapping`:
 
@@ -26,8 +41,8 @@ method name with `.` (dot) as the separator.
 
 !!! warning
 
-    If a mapping fails to match a configuration property a `NoSuchElementException` is thrown, unless the mapped 
-    element is an `Optional`.
+    If a mapping fails to match a configuration property the config system throws a `NoSuchElementException`, unless 
+    the mapped element is an `Optional`.
 
 ## Registration
 
@@ -68,12 +83,13 @@ Server server = config.getConfigMapping(Server.class);
 
 !!! info
 
-    Config Mapping instances are cached. They are populated when the `Config` instance is initialized and their values 
-    are not updated on Config Source changes. 
+    Config Mapping instances are cached. They are populated when the `SmallRyeConfig` instance is initialized and 
+    their values are not updated on `ConfigSource` changes. 
 
 For a Config Mapping to be valid, it needs to match every configuration property name contained in the `Config` under 
 the specified prefix set in `@ConfigMapping`. This prevents unknown configuration properties in the `Config`. This 
-behaviour can be disabled with the configuration `smallrye.config.mapping.validate-unknown=false`.
+behaviour can be disabled with the configuration `smallrye.config.mapping.validate-unknown=false`, or by ignoring 
+specified paths with `io.smallrye.config.SmallRyeConfigBuilder.withMappingIgnore`. 
 
 ## Defaults
 
@@ -96,6 +112,10 @@ return the value `bar`.
 ## Nested Groups
 
 A nested mapping provides a way to map sub-groups of configuration properties.
+
+- A nested type contributes with its name (converted to its kebab-case format)
+- The configuration path is built by taking the root object type prefix (or namespace), the nested type name and the 
+member name of the nested type
 
 ```java
 @ConfigMapping(prefix = "server")
@@ -126,6 +146,35 @@ server.log.rotate=false
 
 The method name of a mapping group acts as a sub-prefix in the property name. In this case the matching property to
 `Server.Log#enabled` is `server.log.enabled`.
+
+## Hierarchy
+
+A config mapping can extend another mapping and inherit all its super members:
+
+```java
+public interface Parent {
+    String name();
+}
+
+@ConfigMapping(prefix = "child")
+public interface Child extends Parent {
+    
+}
+```
+
+And override members:
+
+```java
+public interface Parent {
+    String name();
+}
+
+@ConfigMapping(prefix = "child")
+public interface Child extends Parent {
+    @WithName("child-name")
+    String name();
+}
+```
 
 ## Overriding property names
 
@@ -328,7 +377,15 @@ A call to `Converters.foo()` results in the value `bar`.
 
 ## Collections
 
-A config mapping is also able to map the collections types `List` and `Set`:
+A config mapping is also able to map the collections types `List` and `Set`.
+
+- A member with a `Collection` type requires the configuration name to be in its indexed format
+- Each configuration name, plus its index maps the configuration value to the corresponding `Collection` element in the 
+object type
+- The index must be part of the configuration path, by appending the index between square brackets to the`Collection` 
+member
+- The index specified in the configuration name is used to order the element in the `Collection`
+- Missing elements or gaps are removed
 
 ```java
 @ConfigMapping(prefix = "server")
@@ -363,9 +420,18 @@ server.environments[0].apps[1].services=stock,warehouse
 The `List` and `Set` mappings can use [Indexed Properties](indexed-properties.md) to map configuration values in 
 mapping groups.
 
+!!! info
+
+    A `List` mapping is backed by an `ArrayList`, and a `Set` mapping is backed by a `HashSet`.
+
 ## Maps
 
-A config mapping is also able to map a `Map`:
+A config mapping is also able to map a `Map`.
+
+- A member with a `Map` type requires an additional configuration name added to the configuration path of the `Map`
+member to act as a map key
+- The additional configuration name maps a Map entry with the configuration name as the `Map` entry key and 
+the configuration value as the Map entry value
 
 ```java
 @ConfigMapping(prefix = "server")
@@ -398,6 +464,10 @@ server.aliases.\"io.smallrye\"[0].name=smallrye
 The configuration property name needs to specify an additional segment to act as the map key. The `server.form` matches 
 the `Server#form` `Map` and the segments `index`, `login.page` and `error.page` represent the `Map` 
 keys.
+
+!!! info
+
+    A `Map` mapping is backed by an `HashMap`.
 
 For collection types, the key requires the indexed format. The configuration name `server.aliases.localhost[0].name` 
 maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is the `Map` key, `[0]` is the index of the 
@@ -474,10 +544,15 @@ Map<String, Alias> any = server.aliases.get("any");
 Map<String, Alias> any = server.aliases.get("prod");
 ```
 
-## ToString
+## Optionals
 
-If the config mapping contains a `toString` method declaration, the config mapping instance will include a proper 
-implementation of the `toString` method.
+- A mapping can wrap any complex type with an `Optional`
+- `Optional` mappings do not require the configuration path and value to be present
+
+## toString, equals, hashcode
+
+If the config mapping contains method declarations for `toString`, `equals` or `hashcode`, the config mapping instance 
+will include a proper implementation of these methods.
 
 !!! caution
 
@@ -505,4 +580,3 @@ values do not follow the contraints defined in `Server`.
 !!! info
     
     For validation to work, the `smallrye-config-validator` dependency is required in the classpath.
-
