@@ -541,11 +541,36 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Ignores a specified path segment when performing a Config Mapping.
+     * <p>
+     * By default, a Config Mapping must match every configuration path available in the Config system. However, such
+     * conditions may not always be possible, and in that case, the specified path is ignored.
+     * <p>
+     * Examples of paths and ignores:
+     * <ul>
+     * <li><code>foo.bar</code> - ignores the configuration name <code>foo.bar</code></li>
+     * <li><code>foo.*</code> - ignores the single configurations names under <code>foo</code></li>
+     * <li><code>foo.**</code> - ignores all the configurations names under <code>foo</code></li>
+     * </ul>
+     *
+     * @param path the configuration path to ignore
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withValidateUnknown(boolean)
+     */
     public SmallRyeConfigBuilder withMappingIgnore(String path) {
         mappingsBuilder.ignoredPath(path);
         return this;
     }
 
+    /**
+     * Enable or disable the Config Mapping requirement to match every configuration path available in the Config
+     * system. By default, the validation is <b>enabled</b>.
+     *
+     * @param validateUnknown a boolean <code>true</code> to enable the validation, or <code>false</code> to disable it.
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withValidateUnknown(boolean)
+     */
     public SmallRyeConfigBuilder withValidateUnknown(boolean validateUnknown) {
         withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, Boolean.toString(validateUnknown));
         return this;
