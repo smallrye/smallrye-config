@@ -134,7 +134,8 @@ class SmallRyeConfigTest {
                         "server.environments[2]", "prod"))
                 .build();
 
-        List<String> environments = config.getValues("server.environments", String.class);
+        List<String> environments = config.getIndexedValues("server.environments", config.requireConverter(String.class),
+                ArrayList::new);
         assertEquals(3, environments.size());
         assertEquals("dev", environments.get(0));
         assertEquals("dev", config.getValue("server.environments[0]", String.class));
@@ -142,6 +143,9 @@ class SmallRyeConfigTest {
         assertEquals("qa", config.getValue("server.environments[1]", String.class));
         assertEquals("prod", environments.get(2));
         assertEquals("prod", config.getValue("server.environments[2]", String.class));
+
+        assertThrows(NoSuchElementException.class,
+                () -> config.getIndexedValues("not.found", config.requireConverter(String.class), ArrayList::new));
     }
 
     @Test
