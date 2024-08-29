@@ -17,7 +17,9 @@ import jakarta.annotation.Priority;
 @Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -6305289277993917313L;
+
     private final List<String> profiles;
+    private final List<String> prefixProfiles;
 
     public ProfileConfigSourceInterceptor(final String profile) {
         this(profile != null ? convertProfile(profile) : new ArrayList<>());
@@ -27,13 +29,17 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         List<String> reverseProfiles = new ArrayList<>(profiles);
         Collections.reverse(reverseProfiles);
         this.profiles = reverseProfiles;
+        this.prefixProfiles = new ArrayList<>();
+        for (String profile : this.profiles) {
+            this.prefixProfiles.add("%" + profile + ".");
+        }
     }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        if (profiles.size() > 0) {
-            final String normalizeName = activeName(name, profiles);
-            final ConfigValue profileValue = getProfileValue(context, normalizeName);
+        if (!profiles.isEmpty()) {
+            String normalizeName = activeName(name, profiles);
+            ConfigValue profileValue = getProfileValue(context, normalizeName);
             if (profileValue != null) {
                 final ConfigValue originalValue = context.proceed(normalizeName);
                 if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
@@ -47,8 +53,9 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public ConfigValue getProfileValue(final ConfigSourceInterceptorContext context, final String normalizeName) {
-        for (String profile : profiles) {
-            final ConfigValue profileValue = context.proceed("%" + profile + "." + normalizeName);
+        for (int i = 0; i < profiles.size(); i++) {
+            String profile = profiles.get(i);
+            ConfigValue profileValue = context.proceed(prefixProfiles.get(i).concat(normalizeName));
             if (profileValue != null) {
                 return profileValue.withProfile(profile);
             }
