@@ -184,11 +184,11 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
-        try {
-            return getIndexedValues(name, converter, collectionFactory);
-        } catch (NoSuchElementException e) {
-            return getValue(name, newCollectionConverter(converter, collectionFactory));
+        List<String> indexedProperties = getIndexedProperties(name);
+        if (!indexedProperties.isEmpty()) {
+            return getIndexedValues(indexedProperties, converter, collectionFactory);
         }
+        return getValue(name, newCollectionConverter(converter, collectionFactory));
     }
 
     public <T, C extends Collection<T>> C getIndexedValues(String name, Converter<T> converter,
@@ -197,12 +197,15 @@ public class SmallRyeConfig implements Config, Serializable {
         if (indexedProperties.isEmpty()) {
             throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
         }
+        return getIndexedValues(indexedProperties, converter, collectionFactory);
+    }
 
-        final C collection = collectionFactory.apply(indexedProperties.size());
+    private <T, C extends Collection<T>> C getIndexedValues(List<String> indexedProperties, Converter<T> converter,
+            IntFunction<C> collectionFactory) {
+        C collection = collectionFactory.apply(indexedProperties.size());
         for (String indexedProperty : indexedProperties) {
             collection.add(getValue(indexedProperty, converter));
         }
-
         return collection;
     }
 
