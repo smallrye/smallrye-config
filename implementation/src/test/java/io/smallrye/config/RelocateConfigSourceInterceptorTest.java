@@ -6,6 +6,7 @@ import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;
@@ -324,7 +325,7 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("new", mapping.map().get("new"));
         assertEquals("old", mapping.map().get("old"));
 
-        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         Set<String> mappedProperties = mappedProperties(configClassWithPrefix(RelocateMapping.class), properties);
         properties.removeAll(mappedProperties);
         Set<String> relocateProperties = new HashSet<>();
@@ -360,7 +361,7 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", mapping.map().get("key"));
         assertEquals("old", mapping.map().get("old"));
 
-        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         Set<String> mappedProperties = mappedProperties(configClassWithPrefix(FallbackMapping.class), properties);
         properties.removeAll(mappedProperties);
         Set<String> fallbackProperties = new HashSet<>();
@@ -390,6 +391,93 @@ class RelocateConfigSourceInterceptorTest {
         List<String> list();
 
         Map<String, String> map();
+    }
+
+    @Test
+    void multipleSameName() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new RelocateConfigSourceInterceptor(new Function<String, String>() {
+                            @Override
+                            public String apply(final String name) {
+                                return name.replaceFirst("old", "new");
+                            }
+                        });
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Priorities.LIBRARY + 300);
+                    }
+                })
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new FallbackConfigSourceInterceptor(new Function<String, String>() {
+                            @Override
+                            public String apply(final String name) {
+                                if ((name.startsWith("new.") || name.startsWith("old.")) && name.charAt(4) != '"') {
+                                    return "new.\"" + name.substring(4) + "\"";
+                                }
+                                return name;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Priorities.LIBRARY + 605);
+                    }
+                })
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new FallbackConfigSourceInterceptor(new Function<String, String>() {
+                            @Override
+                            public String apply(final String name) {
+                                return name.replaceFirst("new", "old");
+                            }
+                        });
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Priorities.LIBRARY + 600);
+                    }
+                })
+                .withInterceptorFactories(new ConfigSourceInterceptorFactory() {
+                    @Override
+                    public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
+                        return new FallbackConfigSourceInterceptor(new Function<String, String>() {
+                            @Override
+                            public String apply(final String name) {
+                                if (name.startsWith("new.\"") || name.startsWith("old.\"")) {
+                                    return "new." + name.substring(5, name.length() - 1);
+                                }
+                                return name;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public OptionalInt getPriority() {
+                        return OptionalInt.of(Priorities.LIBRARY + 610);
+                    }
+                })
+                .withSources(config("new.one", "one"))
+                .build();
+
+        // Lookup the new namespace
+        Map<String, String> values = config.getValues("new", String.class, String.class);
+        assertEquals("one", values.get("one"));
+
+        // Direct lookups to all keys
+        assertEquals("one", config.getRawValue("new.one"));
+        assertEquals("one", config.getRawValue("old.one"));
+        assertEquals("one", config.getRawValue("new.\"one\""));
+        assertEquals("one", config.getRawValue("old.\"one\""));
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {

@@ -2207,20 +2207,41 @@ class ConfigMappingInterfaceTest {
     @Test
     void mapKeyQuotes() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidateUnknown(false)
                 .withMapping(MapKeyQuotes.class)
                 // TODO - Default Values does not properly sypport quoted keys due to how NameIterator works
-                .withSources(config("map.values.\"key.quoted\"", "1234",
-                        "map.values.key.\"quoted\"", "1234"))
+                .withSources(config(
+                        "map.values.\"key.quoted\"", "1234",
+                        "map.values.key.\"quoted\"", "1234",
+                        "map.nested.quoted.value", "value",
+                        "map.nested.\"quoted\".another", "another"))
+                // Relocates and fallbacks to support mixing quoted keys and unquoted keys
+                .withInterceptors(new FallbackConfigSourceInterceptor(Map.of(
+                        "map.nested.\"quoted\".value", "map.nested.quoted.value",
+                        "map.nested.\"quoted\".another", "map.nested.quoted.another")))
+                .withInterceptors(new RelocateConfigSourceInterceptor(Map.of(
+                        "map.nested.quoted.value", "map.nested.\"quoted\".value",
+                        "map.nested.quoted.another", "map.nested.\"quoted\".another")))
                 .build();
 
         MapKeyQuotes mapping = config.getConfigMapping(MapKeyQuotes.class);
         assertEquals("1234", mapping.values().get("key.quoted"));
         assertEquals("1234", mapping.values().get("key.\"quoted\""));
+        assertEquals("value", mapping.nested().get("quoted").value());
+        assertEquals("another", mapping.nested().get("quoted").another());
     }
 
     @ConfigMapping(prefix = "map")
     interface MapKeyQuotes {
         Map<String, String> values();
+
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+
+            String another();
+        }
     }
 
     @Test
