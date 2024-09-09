@@ -1055,4 +1055,33 @@ class YamlConfigMappingTest {
         @WithDefault("TLSv1.3,TLSv1.2")
         List<String> protocols();
     }
+
+    @Test
+    void nestedMaps() {
+        String yaml = "mapping-service:\n" +
+                "  service1:\n" +
+                "      id-type: \"DNI\"\n" +
+                "      id-number: \"12345\"\n" +
+                "  service2:\n" +
+                "      id-type: \"DNI\"\n" +
+                "      id-number: \"12345\"";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedMaps.class)
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .build();
+
+        NestedMaps mapping = config.getConfigMapping(NestedMaps.class);
+
+        assertEquals("DNI", mapping.services().get("service1").get("id-type"));
+        assertEquals("12345", mapping.services().get("service1").get("id-number"));
+        assertEquals("DNI", mapping.services().get("service2").get("id-type"));
+        assertEquals("12345", mapping.services().get("service2").get("id-number"));
+    }
+
+    @ConfigMapping(prefix = "mapping-service")
+    interface NestedMaps {
+        @WithParentName
+        Map<String, Map<String, String>> services();
+    }
 }
