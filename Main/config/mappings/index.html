@@ -1703,8 +1703,8 @@ the value element on any key lookup:</p>
 <li><code>Optional</code> mappings do not require the configuration path and value to be present</li>
 </ul>
 <h2 id="tostring-equals-hashcode">toString, equals, hashcode<a class="headerlink" href="#tostring-equals-hashcode" title="Permanent link">#</a></h2>
-<p>If the config mapping contains method declarations for <code>toString</code>, <code>equals</code> or <code>hashcode</code>, the config mapping instance 
-will include a proper implementation of these methods.</p>
+<p>If the config mapping contains a <code>toString</code> method declaration, the config mapping instance will include a proper
+implementation of the <code>toString</code> method. The <code>equals</code> and <code>hashcode</code> methods are included automatically.</p>
 <div class="admonition caution">
 <p class="admonition-title">Caution</p>
 <p>Do not include a <code>toString</code> declaration in a config mapping with sensitive information.</p>
