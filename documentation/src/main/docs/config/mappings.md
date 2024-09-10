@@ -551,8 +551,8 @@ Map<String, Alias> any = server.aliases.get("prod");
 
 ## toString, equals, hashcode
 
-If the config mapping contains method declarations for `toString`, `equals` or `hashcode`, the config mapping instance 
-will include a proper implementation of these methods.
+If the config mapping contains a `toString` method declaration, the config mapping instance will include a proper
+implementation of the `toString` method. The `equals` and `hashcode` methods are included automatically.
 
 !!! caution
 
