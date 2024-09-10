@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -32,7 +33,7 @@ import io.smallrye.config._private.ConfigMessages;
 public final class ConfigMappingInterface implements ConfigMappingMetadata {
     static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
-    static final ClassValue<ConfigMappingInterface> cv = new ClassValue<ConfigMappingInterface>() {
+    static final ClassValue<ConfigMappingInterface> cv = new ClassValue<>() {
         protected ConfigMappingInterface computeValue(final Class<?> type) {
             return createConfigurationInterface(type);
         }
@@ -594,6 +595,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     public static final class MapProperty extends Property {
         private final Type keyType;
         private final String keyUnnamed;
+        private final Class<? extends Supplier<Iterable<String>>> keysProvider;
         private final Class<? extends Converter<?>> keyConvertWith;
         private final Property valueProperty;
         private final boolean hasDefault;
@@ -604,6 +606,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 final String propertyName,
                 final Type keyType,
                 final String keyUnnamed,
+                final Class<? extends Supplier<Iterable<String>>> keysProvider,
                 final Class<? extends Converter<?>> keyConvertWith,
                 final Property valueProperty,
                 final boolean hasDefault,
@@ -612,6 +615,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             super(method, propertyName);
             this.keyType = keyType;
             this.keyUnnamed = keyUnnamed;
+            this.keysProvider = keysProvider;
             this.keyConvertWith = keyConvertWith;
             this.valueProperty = valueProperty;
             this.hasDefault = hasDefault;
@@ -632,6 +636,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         public boolean hasKeyUnnamed() {
             return keyUnnamed != null;
+        }
+
+        public Class<? extends Supplier<Iterable<String>>> getKeysProvider() {
+            return Assert.checkNotNullParam("keyProvider", keysProvider);
+        }
+
+        public boolean hasKeyProvider() {
+            return keysProvider != null;
         }
 
         public Class<? extends Converter<?>> getKeyConvertWith() {
@@ -846,9 +858,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 AnnotatedType keyType = typeOfParameter(type, 0);
                 AnnotatedType valueType = typeOfParameter(type, 1);
                 String defaultValue = getDefaultValue(method);
-                return new MapProperty(method, propertyName, keyType.getType(), getUnnamedKey(keyType, method),
-                        getConverter(keyType, method), getPropertyDef(method, valueType),
-                        defaultValue != null || hasDefaults(method), defaultValue);
+                return new MapProperty(method,
+                        propertyName, keyType.getType(),
+                        getUnnamedKey(keyType, method),
+                        getKeysProvider(keyType, method),
+                        getConverter(keyType, method),
+                        getPropertyDef(method, valueType),
+                        defaultValue != null || hasDefaults(method),
+                        defaultValue);
             }
             if (rawType == List.class || rawType == Set.class) {
                 AnnotatedType elementType = typeOfParameter(type, 0);
@@ -936,6 +953,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         WithUnnamedKey annotation = type.getAnnotation(WithUnnamedKey.class);
         if (annotation == null) {
             annotation = method.getAnnotation(WithUnnamedKey.class);
+        }
+        return annotation != null ? annotation.value() : null;
+    }
+
+    private static Class<? extends Supplier<Iterable<String>>> getKeysProvider(final AnnotatedType type, final Method method) {
+        WithKeys annotation = type.getAnnotation(WithKeys.class);
+        if (annotation == null) {
+            annotation = method.getAnnotation(WithKeys.class);
         }
         return annotation != null ? annotation.value() : null;
     }

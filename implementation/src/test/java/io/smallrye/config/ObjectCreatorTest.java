@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -129,14 +130,14 @@ public class ObjectCreatorTest {
             sb.append(ns.apply("unnamed"));
             ConfigMappingContext.ObjectCreator<Map<String, Nested>> unnamed = context.new ObjectCreator<Map<String, Nested>>(
                     sb.toString())
-                    .map(String.class, null, "unnamed")
+                    .map(String.class, null, "unnamed", null)
                     .lazyGroup(Nested.class);
             this.unnamed = unnamed.get();
             sb.setLength(length);
 
             sb.append(ns.apply("list-map"));
             ConfigMappingContext.ObjectCreator<List<Map<String, String>>> listMap = context.new ObjectCreator<List<Map<String, String>>>(
-                    sb.toString()).collection(List.class).values(String.class, null, String.class, null, null);
+                    sb.toString()).collection(List.class).values(String.class, null, String.class, null, emptyList(), null);
             this.listMap = listMap.get();
             sb.setLength(length);
 
@@ -368,7 +369,7 @@ public class ObjectCreatorTest {
 
             ConfigMappingContext.ObjectCreator<Map<String, Nested>> map = context.new ObjectCreator<Map<String, Nested>>(
                     sb.toString())
-                    .map(String.class, null, "")
+                    .map(String.class, null, "", null)
                     .lazyGroup(Nested.class);
             this.map = map.get();
             sb.setLength(length);
@@ -449,14 +450,14 @@ public class ObjectCreatorTest {
             sb.append(ns.apply("defaults"));
             ConfigMappingContext.ObjectCreator<Map<String, String>> defaults = context.new ObjectCreator<Map<String, String>>(
                     sb.toString())
-                    .values(String.class, null, String.class, null, "default");
+                    .values(String.class, null, String.class, null, emptyList(), "default");
             this.defaults = defaults.get();
             sb.setLength(length);
 
             sb.append(ns.apply("defaults-nested"));
             ConfigMappingContext.ObjectCreator<Map<String, Nested>> defaultsNested = context.new ObjectCreator<Map<String, Nested>>(
                     sb.toString())
-                    .map(String.class, null, null, new Supplier<Nested>() {
+                    .map(String.class, null, null, null, new Supplier<Nested>() {
                         @Override
                         public Nested get() {
                             sb.append(".*");

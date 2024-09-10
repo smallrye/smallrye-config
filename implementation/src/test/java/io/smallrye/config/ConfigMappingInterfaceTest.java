@@ -597,13 +597,13 @@ class ConfigMappingInterfaceTest {
         Map<String, Server> groupParentName();
     }
 
-    public interface ComplexSample {
+    interface ComplexSample {
         ServerSub server();
 
         Optional<ServerSub> client();
     }
 
-    public interface Converters {
+    interface Converters {
         @WithConverter(FooBarConverter.class)
         String foo();
 

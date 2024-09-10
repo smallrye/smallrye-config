@@ -61,6 +61,7 @@ import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -94,15 +95,16 @@ public class ConfigMappingGenerator {
     }
 
     private static final String I_CLASS = getInternalName(Class.class);
+    private static final String I_FIELD = getInternalName(Field.class);
     private static final String I_CONFIGURATION_OBJECT = getInternalName(ConfigMappingObject.class);
     private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
+    private static final String I_NAMING_STRATEGY = getInternalName(NamingStrategy.class);
     private static final String I_OBJECT_CREATOR = getInternalName(ConfigMappingContext.ObjectCreator.class);
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
     private static final String I_STRING = getInternalName(String.class);
-    private static final String I_NAMING_STRATEGY = getInternalName(NamingStrategy.class);
-    private static final String I_FIELD = getInternalName(Field.class);
+    private static final String I_ITERABLE = getInternalName(Iterable.class);
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
@@ -519,13 +521,18 @@ public class ConfigMappingGenerator {
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
+                if (mapProperty.hasKeyProvider()) {
+                    generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
+                } else {
+                    ctor.visitInsn(ACONST_NULL);
+                }
                 if (mapProperty.hasDefaultValue() && mapProperty.getDefaultValue() != null) {
                     ctor.visitLdcInsn(mapProperty.getDefaultValue());
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "values", "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                        + ";L" + I_CLASS + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";", false);
+                        + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";", false);
             } else if (valueProperty.isGroup()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
                 if (mapProperty.hasKeyConvertWith()) {
@@ -538,17 +545,28 @@ public class ConfigMappingGenerator {
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
+                if (mapProperty.hasKeyProvider()) {
+                    generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
+                } else {
+                    ctor.visitInsn(ACONST_NULL);
+                }
                 if (mapProperty.hasDefaultValue()) {
                     ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "map",
-                        "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";",
+                        "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_ITERABLE + ";L" + I_CLASS + ";)L"
+                                + I_OBJECT_CREATOR + ";",
                         false);
                 ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "lazyGroup",
-                        "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
+                if (mapProperty.hasKeyProvider()) {
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "group",
+                            "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
+                } else {
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "lazyGroup",
+                            "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
+                }
             } else if (valueProperty.isCollection() && valueProperty.asCollection().getElement().isLeaf()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
                 if (mapProperty.hasKeyConvertWith()) {
@@ -564,13 +582,21 @@ public class ConfigMappingGenerator {
                     ctor.visitInsn(ACONST_NULL);
                 }
                 ctor.visitLdcInsn(getType(mapProperty.getValueProperty().asCollection().getCollectionRawType()));
+                if (mapProperty.hasKeyProvider()) {
+                    generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
+                } else {
+                    ctor.visitInsn(ACONST_NULL);
+                }
                 if (mapProperty.hasDefaultValue()) {
                     ctor.visitLdcInsn(mapProperty.getDefaultValue());
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "values", "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                        + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";", false);
+                ctor.visitMethodInsn(
+                        INVOKEVIRTUAL, I_OBJECT_CREATOR, "values", "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";L"
+                                + I_CLASS + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR
+                                + ";",
+                        false);
             } else {
                 unwrapProperty(ctor, property);
             }
@@ -635,8 +661,14 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
+            if (mapProperty.hasKeyProvider()) {
+                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
+            } else {
+                ctor.visitInsn(ACONST_NULL);
+            }
             ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "map",
-                    "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";", false);
+                    "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_ITERABLE + ";)L" + I_OBJECT_CREATOR + ";",
+                    false);
             generateProperty(ctor, mapProperty.getValueProperty());
         } else if (property.isCollection()) {
             CollectionProperty collectionProperty = property.asCollection();
@@ -647,6 +679,15 @@ public class ConfigMappingGenerator {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static void generateMapKeysProvider(final MethodVisitor ctor,
+            final Class<? extends Supplier<Iterable<String>>> mapKeysProvider) {
+        String provider = getInternalName(mapKeysProvider);
+        ctor.visitTypeInsn(NEW, provider);
+        ctor.visitInsn(DUP);
+        ctor.visitMethodInsn(INVOKESPECIAL, provider, "<init>", "()V", false);
+        ctor.visitMethodInsn(INVOKEVIRTUAL, provider, "get", "()L" + I_ITERABLE + ";", false);
     }
 
     private static void appendPropertyName(final MethodVisitor ctor, final Property property) {

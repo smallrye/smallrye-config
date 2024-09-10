@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMappingCollectionsTest.ServerCollectionsSet.Environment;
@@ -1030,5 +1031,25 @@ public class ConfigMappingCollectionsTest {
             @WithDefault("one,two")
             List<String> list();
         }
+    }
+
+    @Test
+    @Disabled(value = "@WithUnnamedKey not implemented for leaf Maps")
+    void withUnnamedLeaf() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withDefaultValue("unnamed.leaf", "unnamed")
+                .withDefaultValue("unnamed.leaf.one", "one")
+                .withMapping(WithUnnamedLeaf.class)
+                .build();
+
+        WithUnnamedLeaf mapping = config.getConfigMapping(WithUnnamedLeaf.class);
+        assertEquals("unnamed", mapping.leaf().get(null));
+        assertEquals("one", mapping.leaf().get("one"));
+    }
+
+    @ConfigMapping(prefix = "unnamed")
+    interface WithUnnamedLeaf {
+        //@WithUnnamedKey
+        Map<String, String> leaf();
     }
 }
