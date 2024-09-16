@@ -533,9 +533,12 @@ public interface Server {
 server.aliases.prod.name=prod
 ```
 
-A look up to the `aliases` `Map` with the key `localhost`, `any` or any other key, returns a `Alias` instance, where
-`Alias.name` is `localhost`, because that is the default value. A look up to `prod` returns a `Alias` instance, where
+A look-up to the `aliases` `Map` with the key `localhost`, `any` or any other key, returns a `Alias` instance, where
+`Alias.name` is `localhost`, which is the default value. A look-up to `prod` returns a `Alias` instance, where
 `Alias.name` is `prod` because the property is defined in the configuration as `server.aliases.prod.name=prod`.
+
+The `Map` can only iterate and size the defined keys. In this case, the `aliases` `Map` only iterates the `prod` key,
+and the size is `1`.
 
 ```java
 Server server = config.getConfigMapping(Server.class);
