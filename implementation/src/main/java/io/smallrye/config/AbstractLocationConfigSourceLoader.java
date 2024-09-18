@@ -30,7 +30,6 @@ import io.smallrye.config._private.ConfigMessages;
  * This {@link AbstractLocationConfigSourceLoader} loads {@link ConfigSource}s from a list of specific
  * locations.
  * <p>
- *
  * The locations comprise a list of valid {@link URI}s which are loaded in order. The following URI schemes are
  * supported:
  *
@@ -42,9 +41,13 @@ import io.smallrye.config._private.ConfigMessages;
  * </ol>
  * <p>
  *
- * If a profile is active, the profile resource is only loaded if the unprofiled resource is available in the same
- * location. This is to keep a consistent loading order and match with the unprofiled resource. Profiles are not
- * taken into account if the location is a directory.
+ * If a profile is active, the profile resource is only loaded if the unprofiled resource is available in the exact
+ * location. This is to keep a consistent loading order and match the unprofiled resource when looking for resources
+ * in the classpath. The order is usually not guaranteed when querying a {@link ClassLoader} for multiple resources.
+ * The implementation queries the {@link ClassLoader} for the profiled resources by requiring the unprofiled resource
+ * first. It pairs them with unprofiled resources to ensure a consistent order and override behavior.
+ * <p>
+ * Profiles are not taken into account if the location is a directory.
  */
 public abstract class AbstractLocationConfigSourceLoader {
     private static final Converter<URI> URI_CONVERTER = new URIConverter();
