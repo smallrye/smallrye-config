@@ -3,6 +3,8 @@ package io.smallrye.config;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -12,6 +14,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.ConfigMappingContext.MapWithDefault;
 
 public class ObjectCreatorTest {
     @Test
@@ -600,5 +604,22 @@ public class ObjectCreatorTest {
     @ConfigMapping(prefix = "base")
     public interface ExtendsBase extends Base {
 
+    }
+
+    @SuppressWarnings({
+            "MismatchedQueryAndUpdateOfCollection",
+            "RedundantOperationOnEmptyContainer"
+    })
+    @Test
+    void mapWithDefault() {
+        MapWithDefault<String, String> map = new MapWithDefault<>("default");
+        assertTrue(map.isEmpty());
+        assertFalse(map.entrySet().iterator().hasNext());
+
+        assertEquals("default", map.get("default"));
+        assertEquals("default", map.get("one"));
+        assertEquals("default", map.get("two"));
+
+        assertNull(map.getOrDefault("default", null));
     }
 }
