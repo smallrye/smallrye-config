@@ -185,10 +185,11 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> C getValues(String name, Converter<T> converter, IntFunction<C> collectionFactory) {
         List<String> indexedProperties = getIndexedProperties(name);
-        if (!indexedProperties.isEmpty()) {
-            return getIndexedValues(indexedProperties, converter, collectionFactory);
+        if (indexedProperties.isEmpty()) {
+            // Try legacy / MP comma separated values
+            return getValue(name, newCollectionConverter(converter, collectionFactory));
         }
-        return getValue(name, newCollectionConverter(converter, collectionFactory));
+        return getIndexedValues(indexedProperties, converter, collectionFactory);
     }
 
     public <T, C extends Collection<T>> C getIndexedValues(String name, Converter<T> converter,
@@ -283,21 +284,14 @@ public class SmallRyeConfig implements Config, Serializable {
             Converter<K> keyConverter,
             Converter<V> valueConverter,
             IntFunction<Map<K, V>> mapFactory) {
-        try {
-            return getValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
-        } catch (NoSuchElementException e) {
-            Map<String, String> mapKeys = getMapKeys(name);
-            if (mapKeys.isEmpty()) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
-            }
 
-            Map<K, V> map = mapFactory.apply(mapKeys.size());
-            for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
-                map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
-                        keyConverter), getValue(entry.getValue(), valueConverter));
-            }
-            return map;
+        Map<String, String> keys = getMapKeys(name);
+        if (keys.isEmpty()) {
+            // Try legacy MapConverter
+            return getValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
         }
+
+        return getMapValues(keys, keyConverter, valueConverter, mapFactory);
     }
 
     public <K, V, C extends Collection<V>> Map<K, C> getValues(
@@ -314,49 +308,77 @@ public class SmallRyeConfig implements Config, Serializable {
             Converter<V> valueConverter,
             IntFunction<Map<K, C>> mapFactory,
             IntFunction<C> collectionFactory) {
-        try {
+
+        Map<String, String> keys = getMapIndexedKeys(name);
+        if (keys.isEmpty()) {
+            // Try legacy MapConverter
             return getValue(name,
                     newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
-        } catch (NoSuchElementException e) {
-            Map<String, String> mapCollectionKeys = getMapIndexedKeys(name);
-            if (mapCollectionKeys.isEmpty()) {
-                throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
-            }
-
-            Map<K, C> map = mapFactory.apply(mapCollectionKeys.size());
-            for (Map.Entry<String, String> entry : mapCollectionKeys.entrySet()) {
-                map.put(convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
-                        keyConverter), getValues(entry.getValue(), valueConverter, collectionFactory));
-            }
-            return map;
         }
+
+        return getMapIndexedValues(keys, keyConverter, valueConverter, mapFactory, collectionFactory);
     }
 
     public Map<String, String> getMapKeys(final String name) {
-        Map<String, String> mapKeys = new HashMap<>();
+        Map<String, String> keys = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
             if (propertyName.length() > name.length() + 1
                     && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
                     && propertyName.startsWith(name)) {
                 String key = unquoted(propertyName, name.isEmpty() ? 0 : name.length() + 1);
-                mapKeys.put(key, propertyName);
+                keys.put(key, propertyName);
             }
         }
-        return mapKeys;
+        return keys;
+    }
+
+    <K, V> Map<K, V> getMapValues(
+            final Map<String, String> keys,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, V>> mapFactory) {
+
+        Map<K, V> map = mapFactory.apply(keys.size());
+        for (Map.Entry<String, String> entry : keys.entrySet()) {
+            // Use ConfigValue when converting the key to have proper error messages with the key name
+            K key = convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
+                    keyConverter);
+            V value = getValue(entry.getValue(), valueConverter);
+            map.put(key, value);
+        }
+        return map;
     }
 
     public Map<String, String> getMapIndexedKeys(final String name) {
-        Map<String, String> mapKeys = new HashMap<>();
+        Map<String, String> keys = new HashMap<>();
         for (String propertyName : getPropertyNames()) {
             if (propertyName.length() > name.length() + 1
                     && (name.isEmpty() || propertyName.charAt(name.length()) == '.')
                     && propertyName.startsWith(name)) {
                 String unindexedName = unindexed(propertyName);
                 String key = unquoted(unindexedName, name.isEmpty() ? 0 : name.length() + 1);
-                mapKeys.put(key, unindexedName);
+                keys.put(key, unindexedName);
             }
         }
-        return mapKeys;
+        return keys;
+    }
+
+    <K, V, C extends Collection<V>> Map<K, C> getMapIndexedValues(
+            final Map<String, String> keys,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, C>> mapFactory,
+            final IntFunction<C> collectionFactory) {
+
+        Map<K, C> map = mapFactory.apply(keys.size());
+        for (Map.Entry<String, String> entry : keys.entrySet()) {
+            // Use ConfigValue when converting the key to have proper error messages with the key name
+            K key = convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
+                    keyConverter);
+            C value = getValues(entry.getValue(), valueConverter, collectionFactory);
+            map.put(key, value);
+        }
+        return map;
     }
 
     @Override
@@ -549,12 +571,13 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter,
             IntFunction<Map<K, V>> mapFactory) {
-        Map<String, String> mapKeys = getMapKeys(name);
-        if (!mapKeys.isEmpty()) {
-            return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory));
+        Map<String, String> keys = getMapKeys(name);
+        if (keys.isEmpty()) {
+            // Try legacy MapConverter
+            return getOptionalValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
         }
 
-        return getOptionalValue(name, newMapConverter(keyConverter, valueConverter, mapFactory));
+        return Optional.of(getMapValues(keys, keyConverter, valueConverter, mapFactory));
     }
 
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
@@ -572,17 +595,15 @@ public class SmallRyeConfig implements Config, Serializable {
             Converter<V> valueConverter,
             IntFunction<Map<K, C>> mapFactory,
             IntFunction<C> collectionFactory) {
-        Optional<Map<K, C>> optionalValue = getOptionalValue(name,
-                newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
-        if (optionalValue.isPresent()) {
-            return optionalValue;
+
+        Map<String, String> keys = getMapIndexedKeys(name);
+        if (keys.isEmpty()) {
+            // Try legacy MapConverter
+            return getOptionalValue(name,
+                    newMapConverter(keyConverter, newCollectionConverter(valueConverter, collectionFactory), mapFactory));
         }
 
-        Map<String, String> mapKeys = getMapIndexedKeys(name);
-        if (mapKeys.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(getValues(name, keyConverter, valueConverter, mapFactory, collectionFactory));
+        return Optional.of(getMapIndexedValues(keys, keyConverter, valueConverter, mapFactory, collectionFactory));
     }
 
     Map<Class<?>, Map<String, ConfigMappingObject>> getMappings() {

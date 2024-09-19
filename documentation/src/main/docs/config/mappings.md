@@ -469,6 +469,13 @@ keys.
 
     A `Map` mapping is backed by an `HashMap`.
 
+When populating a `Map`, `SmallRyeConfig` requires the configuration names listed in 
+`SmallRyeConfig#getPropertyNames` to find the `Map` keys. If a `ConfigSource` does not support 
+`getPropertyNames` (empty), the names must be provided by another `ConfigSource` that can do so. After retrieving the 
+map keys, `SmallRyeConfig` performs the lookup of the values with the regular `ConfigSource` ordinal ordering. Even if 
+a `ConfigSource` does not provide `getPropertyNames` it can provide the value by having the name listed in another 
+capable `ConfigSource`.
+
 For collection types, the key requires the indexed format. The configuration name `server.aliases.localhost[0].name` 
 maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is the `Map` key, `[0]` is the index of the 
 `List<Alias>` collection where the `Alias` element will be stored, containing the name `prod`.
@@ -510,6 +517,44 @@ Map<String, Alias> localhost = server.aliases.get("localhost");
 !!! warning
 
      If the unnamed key (in this case `localhost`) is explicitly set in a property name, the mapping will throw an error.
+
+### `@WithKeys`
+
+The `io.smallrye.config.WithKeys` annotation allows to define which `Map` keys must be loaded by 
+the configuration: 
+
+```java
+@ConfigMapping(prefix = "server")
+public interface Server {
+    @WithKeys(KeysProvider.class)
+    Map<String, Alias> aliases();
+    
+    interface Alias {
+        String name();
+    }
+
+    class KeysProvider implements Supplier<Iterable<String>> {
+        @Override
+        public Iterable<String> get() {
+            return List.of("dev", "test", "prod");
+        }
+    }
+}
+```
+
+In this case, `SmallRyeConfig` will look for the map keys `dev`, `test` and `prod` instead of discovering the keys 
+with `SmallRyeConfig#getPropertyNames`:
+
+```properties
+servers.alias.dev.name=dev
+servers.alias.test.name=test
+servers.alias.prod.name=prod
+```
+
+The provided list will effectively substitute the lookup in `SmallRyeConfig#getPropertyNames`, thus enabling a
+`ConfigSource` that does not list its properties, to contribute configuration to the `Map`.  Each key must exist in 
+the final configuration (relative to the `Map` path segment), or the mapping will fail with a 
+`ConfigValidationException`.
 
 ### `@WithDefaults`
 

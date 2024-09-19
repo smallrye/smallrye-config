@@ -1,21 +1,19 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingInterface.getNames;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
-import static java.util.Collections.EMPTY_MAP;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -134,7 +132,7 @@ public final class ConfigMappingContext {
 
     public String applyRootPath(final String rootPath) {
         this.rootPath = rootPath;
-        return rootPath;
+        return this.rootPath;
     }
 
     public StringBuilder applyNameBuilder(final String rootPath) {
@@ -235,7 +233,7 @@ public final class ConfigMappingContext {
     /**
      * Finds and returns all indexes from a dotted Environment property name, related to its matched mapped
      * property name that must be replaced with a dash. This allows to set single environment variables as
-     * <code>FOO_BAR_BAZ</code> and match them to mappeds properties like <code>foo.*.baz</code>,
+     * <code>FOO_BAR_BAZ</code> and match them to mapped properties like <code>foo.*.baz</code>,
      * <code>foo-bar.baz</code> or any other combinations find in mappings, without the need of additional metadata.
      *
      * @param mappedProperty the mapping property name.
@@ -418,20 +416,22 @@ public final class ConfigMappingContext {
         public <K> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith) {
-            return map(keyRawType, keyConvertWith, null);
+            return map(keyRawType, keyConvertWith, null, Collections.emptyList());
         }
 
         public <K> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
-                final String unnamedKey) {
-            return map(keyRawType, keyConvertWith, unnamedKey, (Class<?>) null);
+                final String unnamedKey,
+                final Iterable<String> keys) {
+            return map(keyRawType, keyConvertWith, unnamedKey, keys, (Class<?>) null);
         }
 
         public <K, V> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
+                final Iterable<String> keys,
                 final Class<V> defaultClass) {
 
             Supplier<V> supplier = null;
@@ -448,13 +448,14 @@ public final class ConfigMappingContext {
                 };
             }
 
-            return map(keyRawType, keyConvertWith, unnamedKey, supplier);
+            return map(keyRawType, keyConvertWith, unnamedKey, keys, supplier);
         }
 
         public <K, V> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
+                final Iterable<String> keys,
                 final Supplier<V> defaultValue) {
             Converter<K> keyConverter = keyConvertWith == null ? config.requireConverter(keyRawType)
                     : getConverterInstance(keyConvertWith);
@@ -471,41 +472,56 @@ public final class ConfigMappingContext {
                                 public void accept(Function<String, Object> get) {
                                     V value = (V) get.apply(path);
                                     if (value != null) {
-                                        map.put(unnamedKey.equals("") ? null : keyConverter.convert(unnamedKey), value);
+                                        map.put(unnamedKey.isEmpty() ? null : keyConverter.convert(unnamedKey), value);
                                     }
                                 }
                             });
                         }
 
+                        // single map key with the path plus the map key
+                        // the key is used in the resulting Map and the value in the nested creators to append nested elements paths
                         Map<String, String> mapKeys = new HashMap<>();
+                        // single map key with all property names that share the same key
                         Map<String, List<String>> mapProperties = new HashMap<>();
-                        for (String propertyName : config.getPropertyNames()) {
-                            if (propertyName.length() > path.length() + 1 // only consider properties bigger than the map path
-                                    && (path.isEmpty() || propertyName.charAt(path.length()) == '.') // next char must be a dot (for the key)
-                                    && propertyName.startsWith(path)) { // the property must start with the map path
 
-                                // Start at the map root path
-                                NameIterator mapProperty = !path.isEmpty()
-                                        ? new NameIterator(unindexed(propertyName), path.length())
-                                        : new NameIterator(unindexed(propertyName));
-                                // Move to the next key
-                                mapProperty.next();
+                        if (keys != null) {
+                            for (String key : keys) {
+                                if (key.isEmpty()) {
+                                    mapKeys.put(key, path);
+                                } else {
+                                    mapKeys.put(key, path + "." + quoted(key));
+                                }
+                            }
+                        }
+                        if (mapKeys.isEmpty()) {
+                            for (String propertyName : config.getPropertyNames()) {
+                                if (propertyName.length() > path.length() + 1 // only consider properties bigger than the map path
+                                        && (path.isEmpty() || propertyName.charAt(path.length()) == '.') // next char must be a dot (for the key)
+                                        && propertyName.startsWith(path)) { // the property must start with the map path
 
-                                String mapKey = unindexed(mapProperty.getPreviousSegment());
-                                mapKeys.computeIfAbsent(mapKey, new Function<String, String>() {
-                                    @Override
-                                    public String apply(final String s) {
-                                        return unindexed(propertyName.substring(0, mapProperty.getPosition()));
-                                    }
-                                });
+                                    // Start at the map root path
+                                    NameIterator mapProperty = !path.isEmpty()
+                                            ? new NameIterator(unindexed(propertyName), path.length())
+                                            : new NameIterator(unindexed(propertyName));
+                                    // Move to the next key
+                                    mapProperty.next();
 
-                                mapProperties.computeIfAbsent(mapKey, new Function<String, List<String>>() {
-                                    @Override
-                                    public List<String> apply(final String s) {
-                                        return new ArrayList<>();
-                                    }
-                                });
-                                mapProperties.get(mapKey).add(propertyName);
+                                    String mapKey = unindexed(mapProperty.getPreviousSegment());
+                                    mapKeys.computeIfAbsent(mapKey, new Function<String, String>() {
+                                        @Override
+                                        public String apply(final String s) {
+                                            return unindexed(propertyName.substring(0, mapProperty.getPosition()));
+                                        }
+                                    });
+
+                                    mapProperties.computeIfAbsent(mapKey, new Function<String, List<String>>() {
+                                        @Override
+                                        public List<String> apply(final String s) {
+                                            return new ArrayList<>();
+                                        }
+                                    });
+                                    mapProperties.get(mapKey).add(propertyName);
+                                }
                             }
                         }
 
@@ -513,8 +529,10 @@ public final class ConfigMappingContext {
                             nestedCreators.add(new Consumer<>() {
                                 @Override
                                 public void accept(Function<String, Object> get) {
-                                    // The properties may have been used ih the unnamed key, which cause clashes, so we skip them
-                                    if (unnamedKey != null) {
+                                    // When we use the unnamed key empty and nested elements, we don't know if
+                                    // properties reference a nested element name or a named key. Since unnamed key
+                                    // creator runs first, we know which property names were used and skip those.
+                                    if (unnamedKey != null && !unnamedKey.isEmpty() && !mapProperties.isEmpty()) {
                                         boolean allUsed = true;
                                         for (String mapProperty : mapProperties.get(mapKey.getKey())) {
                                             if (!usedProperties.contains(mapProperty)) {
@@ -733,38 +751,45 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<K>> keyConvertWith,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
+                final Iterable<String> keys,
                 final String defaultValue) {
             for (Consumer<Function<String, Object>> creator : creators) {
                 Function<String, Object> values = new Function<>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(config.getMapKeys(propertyName).values());
                         Converter<K> keyConverter = getConverter(keyRawType, keyConvertWith);
                         Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
 
-                        if (defaultValue == null) {
-                            // TODO - We should use getValues here, but this makes the Map to be required. This is a breaking change
-                            try {
-                                return config.getOptionalValues(propertyName, keyConverter, valueConverter, HashMap::new)
-                                        .orElse(EMPTY_MAP);
-                            } catch (NoSuchElementException e) { // Can be thrown by MapConverter, but mappings shouldn't use inline map values
-                                return EMPTY_MAP;
+                        Map<String, String> mapKeys = new HashMap<>();
+                        if (keys != null) {
+                            for (String key : keys) {
+                                mapKeys.put(key, propertyName + "." + quoted(key));
                             }
-                        } else {
-                            IntFunction<Map<K, V>> mapFactory = new IntFunction<>() {
+                        }
+                        if (mapKeys.isEmpty()) {
+                            mapKeys = config.getMapKeys(propertyName);
+                        }
+
+                        IntFunction<Map<K, V>> mapFactory;
+                        if (defaultValue != null) {
+                            mapFactory = new IntFunction<>() {
                                 @Override
                                 public Map<K, V> apply(final int value) {
                                     return new MapWithDefault<>(valueConverter.convert(defaultValue));
                                 }
                             };
-                            try {
-                                return config.getOptionalValues(propertyName, keyConverter, valueConverter, mapFactory)
-                                        .orElse(mapFactory.apply(0));
-                            } catch (NoSuchElementException e) { // Can be thrown by MapConverter, but mappings shouldn't use inline map values
-                                return mapFactory.apply(0);
-                            }
+                        } else {
+                            mapFactory = new IntFunction<Map<K, V>>() {
+                                @Override
+                                public Map<K, V> apply(final int size) {
+                                    return new HashMap<>(size);
+                                }
+                            };
                         }
+
+                        usedProperties.add(propertyName);
+                        usedProperties.addAll(mapKeys.values());
+                        return config.getMapValues(mapKeys, keyConverter, valueConverter, mapFactory);
                     }
                 };
                 creator.accept(values);
@@ -778,24 +803,29 @@ public final class ConfigMappingContext {
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Class<C> collectionRawType,
+                final Iterable<String> keys,
                 final String defaultValue) {
             for (Consumer<Function<String, Object>> creator : creators) {
                 Function<String, Object> values = new Function<>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(config.getMapKeys(propertyName).values());
                         Converter<K> keyConverter = getConverter(keyRawType, keyConvertWith);
                         Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
 
-                        IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
+                        Map<String, String> mapKeys = new HashMap<>();
+                        if (keys != null) {
+                            for (String key : keys) {
+                                mapKeys.put(key, propertyName + "." + quoted(key));
+                            }
+                        }
+                        if (mapKeys.isEmpty()) {
+                            mapKeys = config.getMapIndexedKeys(propertyName);
+                        }
 
-                        if (defaultValue == null) {
-                            // TODO - We should use getValues here, but this makes the Map to be required. This is a breaking change
-                            return config.getOptionalValues(propertyName, keyConverter, valueConverter, HashMap::new,
-                                    collectionFactory).orElse(new HashMap<>());
-                        } else {
-                            IntFunction<Map<K, C>> mapFactory = new IntFunction<>() {
+                        IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
+                        IntFunction<Map<K, C>> mapFactory;
+                        if (defaultValue != null) {
+                            mapFactory = new IntFunction<>() {
                                 @Override
                                 public Map<K, C> apply(final int value) {
                                     return new MapWithDefault<>(
@@ -803,10 +833,20 @@ public final class ConfigMappingContext {
                                                     .convert(defaultValue));
                                 }
                             };
-
-                            return config.getOptionalValues(propertyName, keyConverter, valueConverter, mapFactory,
-                                    collectionFactory).orElse(mapFactory.apply(0));
+                        } else {
+                            mapFactory = new IntFunction<Map<K, C>>() {
+                                @Override
+                                public Map<K, C> apply(final int size) {
+                                    return new HashMap<>(size);
+                                }
+                            };
                         }
+
+                        usedProperties.add(propertyName);
+                        usedProperties.addAll(mapKeys.values());
+                        // map keys can be indexed or unindexed, so we need to find which ones exist to mark them as used
+                        usedProperties.addAll(config.getMapKeys(propertyName).values());
+                        return config.getMapIndexedValues(mapKeys, keyConverter, valueConverter, mapFactory, collectionFactory);
                     }
                 };
                 creator.accept(values);
@@ -836,6 +876,12 @@ public final class ConfigMappingContext {
             }
 
             throw new IllegalArgumentException();
+        }
+
+        private String quoted(final String key) {
+            NameIterator keyIterator = new NameIterator(key);
+            keyIterator.next();
+            return keyIterator.hasNext() ? "\"" + key + "\"" : key;
         }
     }
 
