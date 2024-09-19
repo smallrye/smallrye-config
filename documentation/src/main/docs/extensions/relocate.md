@@ -10,7 +10,6 @@ resolves to the old name if no value is found under the new relocation name.
 ```java
 package org.acme.config;
 
-import java.util.function.Function;
 import io.smallrye.config.RelocateConfigSourceInterceptor;
 
 public class MicroProfileConfigRelocateInterceptor extends RelocateConfigSourceInterceptor {
