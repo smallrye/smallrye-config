@@ -14,7 +14,7 @@ import java.util.function.Function;
 import io.smallrye.config.RelocateConfigSourceInterceptor;
 
 public class MicroProfileConfigRelocateInterceptor extends RelocateConfigSourceInterceptor {
-    public MicroProfileConfigRelocateInterceptor(final Function<String, String> mapping) {
+    public MicroProfileConfigRelocateInterceptor() {
         super(name -> name.startsWith("mp.config") ?
                       name.replaceAll("mp\\.config", "smallrye.config") :
                       name);
