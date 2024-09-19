@@ -10,7 +10,6 @@ configuration name is not found and resolved to the fallback name.
 ```java
 package org.acme.config;
 
-import java.util.function.Function;
 import io.smallrye.config.FallbackConfigSourceInterceptor;
 
 public class MicroProfileConfigFallbackInterceptor extends FallbackConfigSourceInterceptor {
