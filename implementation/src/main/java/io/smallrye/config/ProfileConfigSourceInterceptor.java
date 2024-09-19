@@ -7,10 +7,8 @@ import static io.smallrye.config.Converters.newTrimmingConverter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.annotation.Priority;
 
@@ -66,12 +64,19 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-        final Set<String> names = new HashSet<>();
-        final Iterator<String> namesIterator = context.iterateNames();
-        while (namesIterator.hasNext()) {
-            names.add(activeName(namesIterator.next(), profiles));
-        }
-        return names.iterator();
+        return new Iterator<>() {
+            final Iterator<String> iterator = context.iterateNames();
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public String next() {
+                return activeName(iterator.next(), profiles);
+            }
+        };
     }
 
     public List<String> getProfiles() {

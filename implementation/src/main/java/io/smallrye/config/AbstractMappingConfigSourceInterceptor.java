@@ -1,9 +1,7 @@
 package io.smallrye.config;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSourceInterceptor {
@@ -26,17 +24,30 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
 
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-        final Set<String> names = new HashSet<>();
-        final Iterator<String> namesIterator = context.iterateNames();
-        while (namesIterator.hasNext()) {
-            final String name = namesIterator.next();
-            names.add(name);
-            final String mappedName = mapping.apply(name);
-            if (mappedName != null) {
-                names.add(mappedName);
+        return new Iterator<>() {
+            final Iterator<String> iterator = context.iterateNames();
+            String mappedName = null;
+
+            @Override
+            public boolean hasNext() {
+                return mappedName != null || iterator.hasNext();
             }
-        }
-        return names.iterator();
+
+            @Override
+            public String next() {
+                if (mappedName != null) {
+                    String mappedName = this.mappedName;
+                    this.mappedName = null;
+                    return mappedName;
+                }
+                String name = iterator.next();
+                String mappedName = mapping.apply(name);
+                if (!name.equals(mappedName)) {
+                    this.mappedName = mappedName;
+                }
+                return name;
+            }
+        };
     }
 
     protected Function<String, String> getMapping() {

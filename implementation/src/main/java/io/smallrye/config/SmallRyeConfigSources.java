@@ -1,8 +1,9 @@
 package io.smallrye.config;
 
+import static java.util.Collections.emptyIterator;
+
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,16 +44,36 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
 
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-        final Set<String> names = new HashSet<>();
-        for (final ConfigValueConfigSource configSource : configSources) {
-            final Set<String> propertyNames = configSource.getPropertyNames();
-            if (propertyNames != null) {
-                names.addAll(propertyNames);
+        return new Iterator<>() {
+            final Iterator<ConfigValueConfigSource> configSourceIterator = configSources.iterator();
+            Iterator<String> propertiesIterator = context.iterateNames();
+
+            @Override
+            public boolean hasNext() {
+                if (propertiesIterator.hasNext()) {
+                    return true;
+                } else {
+                    propertiesIterator = nextConfigSource();
+                    if (propertiesIterator.hasNext()) {
+                        return true;
+                    } else if (configSourceIterator.hasNext()) {
+                        return hasNext();
+                    } else {
+                        return false;
+                    }
+                }
             }
-        }
-        Iterator<String> iter = context.iterateNames();
-        iter.forEachRemaining(names::add);
-        return names.iterator();
+
+            @Override
+            public String next() {
+                return propertiesIterator.next();
+            }
+
+            private Iterator<String> nextConfigSource() {
+                return configSourceIterator.hasNext() ? configSourceIterator.next().getPropertyNames().iterator()
+                        : emptyIterator();
+            }
+        };
     }
 
     boolean negative() {
