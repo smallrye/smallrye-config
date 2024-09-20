@@ -280,7 +280,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         }
     }
 
-    static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = new Comparator<ConfigValue>() {
+    public static final Comparator<ConfigValue> CONFIG_SOURCE_COMPARATOR = new Comparator<ConfigValue>() {
         @Override
         public int compare(ConfigValue original, ConfigValue candidate) {
             int result = Integer.compare(original.configSourceOrdinal, candidate.configSourceOrdinal);
