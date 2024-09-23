@@ -58,7 +58,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
-import io.smallrye.config.SmallRyeConfigSourceInterceptorContext.InterceptorChain;
 import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
@@ -772,7 +771,7 @@ public class SmallRyeConfig implements Config, Serializable {
             final Converter<?> conv = getConverterOrNull(asType.getComponentType());
             return conv == null ? null : Converters.newArrayConverter(conv, asType);
         }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> ImplicitConverters.getConverter((Class<?>) clazz));
+        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> Converters.Implicit.getConverter((Class<?>) clazz));
     }
 
     @Override
@@ -817,7 +816,7 @@ public class SmallRyeConfig implements Config, Serializable {
             List<InterceptorWithPriority> interceptorWithPriorities = buildInterceptors(builder);
 
             // Create the initial chain with initial sources and all interceptors
-            InterceptorChain chain = new InterceptorChain();
+            SmallRyeConfigSourceInterceptorContext.InterceptorChain chain = new SmallRyeConfigSourceInterceptorContext.InterceptorChain();
             SmallRyeConfigSourceInterceptorContext current = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
 
             current = new SmallRyeConfigSourceInterceptorContext(negativeSources, current, chain);
@@ -952,7 +951,7 @@ public class SmallRyeConfig implements Config, Serializable {
             Collections.reverse(currentSources);
 
             // Rebuild the chain with the profiles sources, so profiles values are also available in factories
-            InterceptorChain chain = new InterceptorChain();
+            SmallRyeConfigSourceInterceptorContext.InterceptorChain chain = new SmallRyeConfigSourceInterceptorContext.InterceptorChain();
             ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
             context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources, true), context,
                     chain);
@@ -1129,6 +1128,81 @@ public class SmallRyeConfig implements Config, Serializable {
         @Override
         public Iterator<String> iterateNames() {
             return context.iterateNames();
+        }
+    }
+
+    private static class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorContext {
+        private static final long serialVersionUID = 6654406739008729337L;
+
+        private final ConfigSourceInterceptor interceptor;
+        private final ConfigSourceInterceptorContext next;
+        private final InterceptorChain chain;
+
+        private static final ThreadLocal<RecursionCount> rcHolder = ThreadLocal.withInitial(RecursionCount::new);
+
+        SmallRyeConfigSourceInterceptorContext(
+                final ConfigSourceInterceptor interceptor,
+                final ConfigSourceInterceptorContext next,
+                final InterceptorChain chain) {
+            this.interceptor = interceptor;
+            this.next = next;
+            this.chain = chain.setChain(this);
+        }
+
+        @Override
+        public ConfigValue proceed(final String name) {
+            return interceptor.getValue(next, name);
+        }
+
+        @Override
+        public ConfigValue restart(final String name) {
+            RecursionCount rc = rcHolder.get();
+            rc.increment();
+            try {
+                return chain.get().proceed(name);
+            } finally {
+                if (rc.decrement()) {
+                    // avoid leaking if the thread is cached
+                    rcHolder.remove();
+                }
+            }
+        }
+
+        @Override
+        public Iterator<String> iterateNames() {
+            return interceptor.iterateNames(next);
+        }
+
+        static class InterceptorChain implements Supplier<ConfigSourceInterceptorContext>, Serializable {
+            private static final long serialVersionUID = 7387475787257736307L;
+
+            private ConfigSourceInterceptorContext chain;
+
+            @Override
+            public ConfigSourceInterceptorContext get() {
+                return chain;
+            }
+
+            public InterceptorChain setChain(final ConfigSourceInterceptorContext chain) {
+                this.chain = chain;
+                return this;
+            }
+        }
+
+        static final class RecursionCount {
+            int count;
+
+            void increment() {
+                int old = count;
+                if (old == 20) {
+                    throw new IllegalStateException("Too many recursive interceptor actions");
+                }
+                count = old + 1;
+            }
+
+            boolean decrement() {
+                return --count == 0;
+            }
         }
     }
 

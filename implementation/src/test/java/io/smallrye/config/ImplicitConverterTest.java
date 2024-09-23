@@ -17,7 +17,7 @@ import java.time.LocalDate;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.ImplicitConverters.HyphenateEnumConverter;
+import io.smallrye.config.Converters.Implicit.HyphenateEnumConverter;
 
 class ImplicitConverterTest {
     @Test
@@ -46,7 +46,7 @@ class ImplicitConverterTest {
 
     @Test
     void serializationOfConstructorConverter() {
-        Converter<File> converter = ImplicitConverters.getConverter(File.class);
+        Converter<File> converter = Converters.Implicit.getConverter(File.class);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(byteArrayOutputStream)) {
