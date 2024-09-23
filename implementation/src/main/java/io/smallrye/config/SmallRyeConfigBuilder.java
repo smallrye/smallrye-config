@@ -770,7 +770,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             Assert.checkNotNullParam("path", prefix);
             Class<?> mappingClass = getConfigMappingClass(type);
             // It is an MP ConfigProperties, so ignore unmapped properties
-            if (ConfigMappingClass.getConfigurationClass(type) != null) {
+            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(type) != null) {
                 ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
             }
             mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);

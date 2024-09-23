@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.common.classloader.ClassDefiner;
+import io.smallrye.common.constraint.Assert;
 import io.smallrye.config._private.ConfigMessages;
 
 public final class ConfigMappingLoader {
@@ -181,7 +183,7 @@ public final class ConfigMappingLoader {
     /**
      * Do not remove this method or inline it. It is keep separate on purpose, so it is easier to substitute it with
      * the GraalVM API for native image compilation.
-     *
+     * <p>
      * We cannot keep dynamic references to LOOKUP, so this method may be replaced. This is not a problem, since for
      * native image we can generate the mapping class bytes in the binary so we don't need to dynamically load them.
      */
@@ -202,6 +204,70 @@ public final class ConfigMappingLoader {
 
         public Class<? extends ConfigMappingObject> getImplementationClass() {
             return implementationClass;
+        }
+    }
+
+    /**
+     * Implementation of {@link ConfigMappingMetadata} for MicroProfile {@link ConfigProperties}.
+     */
+    static final class ConfigMappingClass implements ConfigMappingMetadata {
+        private static final ClassValue<ConfigMappingClass> cv = new ClassValue<>() {
+            @Override
+            protected ConfigMappingClass computeValue(final Class<?> classType) {
+                return createConfigurationClass(classType);
+            }
+        };
+
+        static ConfigMappingClass getConfigurationClass(Class<?> classType) {
+            Assert.checkNotNullParam("classType", classType);
+            return cv.get(classType);
+        }
+
+        private static ConfigMappingClass createConfigurationClass(final Class<?> classType) {
+            if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
+                    Modifier.isAbstract(classType.getModifiers()) ||
+                    classType.isEnum()) {
+                return null;
+            }
+
+            return new ConfigMappingClass(classType);
+        }
+
+        private static String generateInterfaceName(final Class<?> classType) {
+            if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
+                    Modifier.isAbstract(classType.getModifiers()) ||
+                    classType.isEnum()) {
+                throw new IllegalArgumentException();
+            }
+
+            return classType.getPackage().getName() +
+                    "." +
+                    classType.getSimpleName() +
+                    classType.getName().hashCode() +
+                    "I";
+        }
+
+        private final Class<?> classType;
+        private final String interfaceName;
+
+        public ConfigMappingClass(final Class<?> classType) {
+            this.classType = classType;
+            this.interfaceName = generateInterfaceName(classType);
+        }
+
+        @Override
+        public Class<?> getInterfaceType() {
+            return classType;
+        }
+
+        @Override
+        public String getClassName() {
+            return interfaceName;
+        }
+
+        @Override
+        public byte[] getClassBytes() {
+            return ConfigMappingGenerator.generate(classType, interfaceName);
         }
     }
 }
