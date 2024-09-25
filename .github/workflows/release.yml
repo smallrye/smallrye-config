@@ -2,84 +2,86 @@ name: SmallRye Release
 
 on:
   pull_request:
-    types: [closed]
+    types: [ closed ]
     paths:
       - '.github/project.yml'
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    name: release
-    if: ${{github.event.pull_request.merged == true}}
-    env:
-      GITHUB_TOKEN: ${{secrets.RELEASE_TOKEN}}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  prepare-release:
+    name: Prepare Release
+    if: ${{ github.event.pull_request.merged == true}}
+    uses: smallrye/.github/.github/workflows/prepare-release.yml@main
+    secrets: inherit
+
+  perform-release:
+    name: Perform Release
+    needs: prepare-release
+    uses: smallrye/.github/.github/workflows/perform-release.yml@main
+    secrets: inherit
+    with:
+      version: ${{needs.prepare-release.outputs.release-version}}
+
+  docs-release:
+    runs-on: ubuntu-latest
+    needs: prepare-release
     steps:
-      - uses: radcortez/project-metadata-action@main
-        name: retrieve project metadata
-        id: metadata
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        name: Create GitHub App Token
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          metadata-file-path: '.github/project.yml'
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v4
         with:
-          token: ${{secrets.RELEASE_TOKEN}}
+          token: ${{steps.app-token.outputs.token}}
 
-      - uses: actions/setup-java@v4
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git author
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+
+      - uses: actions/checkout@v4
         with:
-          distribution: 'temurin'
-          java-version: 11
-          server-id: 'oss.sonatype'
-          server-username: 'MAVEN_DEPLOY_USERNAME'
-          server-password: 'MAVEN_DEPLOY_TOKEN'
-          gpg-private-key: ${{secrets.MAVEN_GPG_PRIVATE_KEY}}
-          gpg-passphrase: 'MAVEN_GPG_PASSPHRASE'
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: 'maven'
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      - name: maven release ${{steps.metadata.outputs.current-version}}
-        env:
-          MAVEN_DEPLOY_USERNAME: ${{secrets.MAVEN_DEPLOY_USERNAME}}
-          MAVEN_DEPLOY_TOKEN: ${{secrets.MAVEN_DEPLOY_TOKEN}}
-          MAVEN_GPG_PASSPHRASE: ${{secrets.MAVEN_GPG_PASSPHRASE}}
+      - name: docs release ${{needs.prepare-release.outputs.release-version}}
         run: |
-          java -version
-          git config --global user.name "SmallRye CI"
-          git config --global user.email "smallrye@googlegroups.com"
-          git checkout -b release
-          mvn -B release:prepare -Prelease,coverage -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
-          git checkout ${{github.base_ref}}
-          git rebase release
-          mvn -B release:perform -Prelease
-          git push
-          git push --tags
-
-      - name: docs release ${{steps.metadata.outputs.current-version}}
-        run: |
-          git checkout -b ${{steps.metadata.outputs.current-version}} ${{steps.metadata.outputs.current-version}}
           cd documentation
           mvn package
           VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
           pipx install pipenv
           pipenv install
           git fetch origin gh-pages --depth=1
-          git config --global user.name "SmallRye CI"
-          git config --global user.email "smallrye@googlegroups.com"
           pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${VERSION}" Latest
 
-      - uses: radcortez/milestone-release-action@main
-        name: milestone release
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          milestone-title: ${{steps.metadata.outputs.current-version}}
-          milestone-next: ${{steps.metadata.outputs.next-version}}
-
+  tck-release:
+    runs-on: ubuntu-latest
+    needs: prepare-release
+    steps:
       - name: generate tck report
         run: |
-          cd target/checkout
           mvn surefire-report:report
           mv testsuite/tck/target/tck-results.html $GITHUB_WORKSPACE
 
@@ -87,7 +89,8 @@ jobs:
         name: upload tck asset to release
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          tag: ${{steps.metadata.outputs.current-version}}
+          tag: ${{needs.prepare-release.outputs.release-version}}
           allow_override: true
           gzip: false
           files: tck-results.html
+
