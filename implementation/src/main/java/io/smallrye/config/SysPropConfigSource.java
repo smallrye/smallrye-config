@@ -49,8 +49,17 @@ public class SysPropConfigSource extends AbstractConfigSource {
     }
 
     @Override
-    public String getValue(String s) {
-        return doPrivileged((PrivilegedAction<String>) () -> System.getProperty(s));
+    public String getValue(String propertyName) {
+        if (System.getSecurityManager() == null) {
+            return System.getProperty(propertyName);
+        } else {
+            return doPrivileged(new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return System.getProperty(propertyName);
+                }
+            });
+        }
     }
 
     private static Map<String, String> getSystemProperties() {
