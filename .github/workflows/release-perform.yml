@@ -32,11 +32,11 @@ jobs:
     uses: ./.github/workflows/publish-docs.yml
     secrets: inherit
     with:
-      version: ${{env.RELEASE_VERSION}}
+      version: ${{github.event.inputs.tag || github.ref_name}}
 
   publish-tck:
     name: Publish TCK Report
     uses: ./.github/workflows/publish-tck.yml
     secrets: inherit
     with:
-      version: ${{env.RELEASE_VERSION}}
+      version: ${{github.event.inputs.tag || github.ref_name}}
