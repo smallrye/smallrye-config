@@ -537,7 +537,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
-        mappingsBuilder.mapping(klass, prefix);
+        mappingsBuilder.mapping(klass, prefix, this);
         return this;
     }
 
@@ -765,7 +765,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
         private final List<String> ignoredPaths = new ArrayList<>();
 
-        MappingBuilder mapping(Class<?> type, String prefix) {
+        MappingBuilder mapping(Class<?> type, String prefix, final SmallRyeConfigBuilder configBuilder) {
             Assert.checkNotNullParam("type", type);
             Assert.checkNotNullParam("path", prefix);
             Class<?> mappingClass = getConfigMappingClass(type);
@@ -774,11 +774,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
             }
             mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
-            // Load the mapping defaults, to make the defaults available to all config sources
 
+            // Load the mapping defaults, to make the defaults available to all config sources
             for (Map.Entry<String, String> defaultEntry : ConfigMappingLoader.configMappingDefaults(mappingClass).entrySet()) {
                 // Do not override builder defaults with mapping defaults
                 defaultValues.putIfAbsent(prefix(prefix, defaultEntry.getKey()), defaultEntry.getValue());
+            }
+            // Load secret names
+            for (String secret : ConfigMappingLoader.configMappingSecrets(mappingClass)) {
+                configBuilder.withSecretKeys(prefix(prefix, secret));
             }
             return this;
         }

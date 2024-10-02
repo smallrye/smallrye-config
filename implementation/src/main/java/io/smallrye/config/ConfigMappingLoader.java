@@ -102,6 +102,25 @@ public final class ConfigMappingLoader {
         }
     }
 
+    static <T> Set<String> configMappingSecrets(final Class<T> interfaceType) {
+        try {
+            Method getSecrets = CACHE.get(interfaceType).getImplementationClass().getDeclaredMethod("getSecrets");
+            return (Set<String>) getSecrets.invoke(null);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error e2) {
+                throw e2;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
+            }
+        }
+    }
+
     static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
         ConfigMappingObject instance;
         try {
