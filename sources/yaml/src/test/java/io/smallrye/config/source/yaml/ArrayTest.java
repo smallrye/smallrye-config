@@ -1,5 +1,7 @@
 package io.smallrye.config.source.yaml;
 
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -48,6 +50,7 @@ class ArrayTest {
         assertEquals("1", config.getConfigValue("foo[1]").getValue());
         assertEquals("true", config.getConfigValue("foo[2]").getValue());
         assertNull(config.getConfigValue("foo[3]").getValue());
-        assertFalse(((Set<String>) config.getPropertyNames()).contains("foo[3]"));
+        Set<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertFalse(names.contains("foo[3]"));
     }
 }

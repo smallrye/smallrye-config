@@ -272,6 +272,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return false;
         }
 
+        public boolean isSecret() {
+            return false;
+        }
+
         public boolean isDefaultMethod() {
             return false;
         }
@@ -489,6 +493,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         @Override
+        public boolean isSecret() {
+            return asLeaf().isSecret();
+        }
+
+        @Override
         public boolean hasDefaultValue() {
             return isLeaf() && nestedProperty.asLeaf().hasDefaultValue();
         }
@@ -539,6 +548,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         private final Class<? extends Converter<?>> convertWith;
         private final Class<?> rawType;
         private final String defaultValue;
+        private final boolean secret;
 
         LeafProperty(final Method method, final String propertyName, final Type valueType,
                 final Class<? extends Converter<?>> convertWith, final String defaultValue) {
@@ -547,6 +557,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             this.convertWith = convertWith;
             this.rawType = rawTypeOf(valueType);
             this.defaultValue = defaultValue;
+            this.secret = Secret.class.isAssignableFrom(rawType);
         }
 
         public Type getValueType() {
@@ -570,7 +581,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public Class<?> getValueRawType() {
+            if (secret && valueType instanceof ParameterizedType parameterizedType) {
+                if (parameterizedType.getActualTypeArguments().length == 1) {
+                    return rawTypeOf(parameterizedType.getActualTypeArguments()[0]);
+                }
+            }
             return rawType;
+        }
+
+        public boolean isSecret() {
+            return secret;
         }
 
         @Override
@@ -761,6 +781,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
         // No reason to use a JDK interface to generate a config class? Primarily to fix the java.nio.file.Path case.
         if (interfaceType.getName().startsWith("java")) {
+            return null;
+        }
+
+        if (Secret.class.isAssignableFrom(interfaceType)) {
             return null;
         }
 
@@ -1133,7 +1157,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             getProperties(groupProperty, groupNamingStrategy, groupPath, properties);
             getProperties(groupProperty, groupNamingStrategy, groupPath, properties, groupProperties);
         } else if (property.isMap()) {
-            ConfigMappingInterface.MapProperty mapProperty = property.asMap();
+            MapProperty mapProperty = property.asMap();
             if (mapProperty.getValueProperty().isLeaf()) {
                 groupProperties.put(path.map(property, namingStrategy).get(), property);
                 if (mapProperty.hasKeyUnnamed()) {

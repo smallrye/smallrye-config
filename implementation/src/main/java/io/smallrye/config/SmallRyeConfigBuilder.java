@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
@@ -70,7 +69,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<ConfigSourceProvider> sourceProviders = new ArrayList<>();
     private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
     private final List<String> profiles = new ArrayList<>();
-    private final Set<String> secretKeys = new HashSet<>();
+    private final Set<PropertyName> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
@@ -519,7 +518,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withSecretKeys(String... keys) {
-        secretKeys.addAll(Stream.of(keys).collect(Collectors.toSet()));
+        secretKeys.addAll(Stream.of(keys).map(PropertyName::name).collect(Collectors.toSet()));
         return this;
     }
 
@@ -655,6 +654,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public Map<String, String> getDefaultValues() {
         return defaultValues;
+    }
+
+    public Set<PropertyName> getSecretKeys() {
+        return secretKeys;
     }
 
     public MappingBuilder getMappingsBuilder() {
@@ -825,6 +828,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                     }
                 }
             });
+
+            configClass.getSecrets().forEach(secret -> secretKeys.add(PropertyName.name(secret)));
 
             // It is an MP ConfigProperties, so ignore unmapped properties
             if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(configClass.getType()) != null) {

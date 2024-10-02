@@ -1936,7 +1936,7 @@ public class SmallRyeConfig implements Config, Serializable {
             this.sources = configSources;
             this.defaultValues = defaultValues;
             this.interceptorChain = current;
-            this.propertyNames = new PropertyNames(current);
+            this.propertyNames = new PropertyNames(current, builder.getSecretKeys());
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
@@ -2117,22 +2117,26 @@ public class SmallRyeConfig implements Config, Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final SmallRyeConfigSourceInterceptorContext interceptorChain;
+            private final Set<PropertyName> secretKeys;
 
             private final Set<String> names = new HashSet<>();
+            private final Set<String> secretNames = new HashSet<>();
             private final Map<String, Map<Integer, String>> indexed = new HashMap<>();
 
-            public PropertyNames(final SmallRyeConfigSourceInterceptorContext interceptorChain) {
+            public PropertyNames(final SmallRyeConfigSourceInterceptorContext interceptorChain,
+                    final Set<PropertyName> secretKeys) {
                 this.interceptorChain = interceptorChain;
+                this.secretKeys = secretKeys;
             }
 
             Iterable<String> get() {
-                if (names.isEmpty()) {
+                if (names.isEmpty() && secretNames.isEmpty()) {
                     return latest();
                 }
-                return names;
+                return new Names();
             }
 
-            public Map<String, Map<Integer, String>> indexed() {
+            Map<String, Map<Integer, String>> indexed() {
                 // ensure populated
                 get();
                 return indexed;
@@ -2140,10 +2144,15 @@ public class SmallRyeConfig implements Config, Serializable {
 
             Iterable<String> latest() {
                 names.clear();
+                secretNames.clear();
                 Iterator<String> namesIterator = interceptorChain.iterateNames();
                 while (namesIterator.hasNext()) {
                     String name = namesIterator.next();
-                    names.add(name);
+                    if (secretKeys.contains(PropertyName.unprofiled(name))) {
+                        secretNames.add(name);
+                    } else {
+                        names.add(name);
+                    }
 
                     for (int i = 0; i < name.length(); i++) {
                         if (name.charAt(i) == '[') {
@@ -2170,7 +2179,45 @@ public class SmallRyeConfig implements Config, Serializable {
                     }
                 }
                 names.remove(ConfigSource.CONFIG_ORDINAL);
-                return Collections.unmodifiableSet(names);
+                return new Names();
+            }
+
+            private class Names implements Iterable<String> {
+                private final Iterator<Set<String>> names;
+
+                public Names() {
+                    if (SecretKeys.isLocked()) {
+                        this.names = List.of(PropertyNames.this.names).iterator();
+                    } else {
+                        this.names = List.of(PropertyNames.this.names, PropertyNames.this.secretNames).iterator();
+                    }
+                }
+
+                @Override
+                public Iterator<String> iterator() {
+                    return new Iterator<>() {
+                        Iterator<String> current = names.next().iterator();
+
+                        @Override
+                        public boolean hasNext() {
+                            if (current.hasNext()) {
+                                return true;
+                            } else {
+                                if (names.hasNext()) {
+                                    current = names.next().iterator();
+                                    return current.hasNext();
+                                } else {
+                                    return false;
+                                }
+                            }
+                        }
+
+                        @Override
+                        public String next() {
+                            return current.next();
+                        }
+                    };
+                }
             }
         }
     }

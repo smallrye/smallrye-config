@@ -67,6 +67,7 @@ import io.smallrye.config.common.utils.StringUtil;
  */
 public final class Converters {
     private Converters() {
+        throw new UnsupportedOperationException();
     }
 
     static final Converter<ConfigValue> CONFIG_VALUE_CONVERTER = new ConfigValueConverter();
@@ -396,6 +397,17 @@ public final class Converters {
      */
     public static Converter<OptionalDouble> newOptionalDoubleConverter(Converter<Double> delegateConverter) {
         return new OptionalDoubleConverter(delegateConverter);
+    }
+
+    /**
+     * Get a converter with wraps another converter's result into a {@code Secret}.
+     *
+     * @param delegateConverter the delegate converter (must not be {@code null})
+     * @param <T> the secret type
+     * @return the new converter (not {@code null})
+     */
+    public static <T> Converter<Secret<T>> newSecretConverter(Converter<T> delegateConverter) {
+        return new SecretConverter<>(delegateConverter);
     }
 
     /**
@@ -938,6 +950,26 @@ public final class Converters {
                 final Double converted = getDelegate().convert(value);
                 return converted == null ? OptionalDouble.empty() : OptionalDouble.of(converted);
             }
+        }
+    }
+
+    static final class SecretConverter<T> implements Converter<Secret<T>> {
+        @Serial
+        private static final long serialVersionUID = -4624156385855243648L;
+        private final Converter<T> delegate;
+
+        public SecretConverter(final Converter<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Secret<T> convert(final String value) throws IllegalArgumentException, NullPointerException {
+            return new Secret<T>() {
+                @Override
+                public T get() {
+                    return delegate.convert(value);
+                }
+            };
         }
     }
 
