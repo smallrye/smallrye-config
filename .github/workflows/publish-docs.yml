@@ -8,6 +8,9 @@ on:
         description: Tag version to perform release
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   publish-docs:
     name: Publish Docs
@@ -17,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         name: checkout ${{inputs.version}}
         with:
-          ref: ${{env.version}}
+          ref: ${{inputs.version}}
 
       - name: git author
         run: |
@@ -28,12 +31,18 @@ jobs:
         with:
           python-version: '3.9'
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 11
+
       - name: docs release ${{inputs.version}}
         run: |
           cd documentation
           mvn package
-          PROJECT_VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
           pipx install pipenv
           pipenv install
           git fetch origin gh-pages --depth=1
           pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${PROJECT_VERSION}" Latest
+        env:
+          PROJECT_VERSION: ${{inputs.version}}

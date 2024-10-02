@@ -13,7 +13,8 @@ on:
 permissions:
   attestations: write
   id-token: write
-  contents: read
+  # Needed for the publish-* workflows
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
