@@ -1,0 +1,39 @@
+name: Publish Docs
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        description: Tag version to perform release
+        type: string
+
+jobs:
+  publish-docs:
+    name: Publish Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        name: checkout ${{inputs.version}}
+        with:
+          ref: ${{env.version}}
+
+      - name: git author
+        run: |
+          git config --global user.name "SmallRye CI"
+          git config --global user.email "smallrye@googlegroups.com"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: docs release ${{inputs.version}}
+        run: |
+          cd documentation
+          mvn package
+          PROJECT_VERSION=${1:-"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"}
+          pipx install pipenv
+          pipenv install
+          git fetch origin gh-pages --depth=1
+          pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${PROJECT_VERSION}" Latest
