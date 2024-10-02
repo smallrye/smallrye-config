@@ -61,8 +61,10 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -74,7 +76,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -1063,11 +1064,14 @@ public class ConfigMappingGenerator {
         Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping).get(mapping.getInterfaceType())
                 .get("");
 
-        FieldVisitor fieldVisitor = classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES",
-                "Ljava/util/Map;", "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
-        fieldVisitor.visitEnd();
+        classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES", "Ljava/util/Map;",
+                "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null).visitEnd();
+        classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "SECRETS", "Ljava/util/Set;",
+                "Ljava/util/Set<Ljava/lang/String;>;", null).visitEnd();
 
         MethodVisitor clinit = classVisitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+
+        // PROPERTIES
         clinit.visitTypeInsn(NEW, "java/util/HashMap");
         clinit.visitInsn(DUP);
         if (properties.size() < 3) {
@@ -1078,6 +1082,43 @@ public class ConfigMappingGenerator {
         clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "(I)V", false);
         clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
 
+        // SECRETS
+        Map<String, Property> secrets = new HashMap<>();
+        for (Map.Entry<String, Property> entry : properties.entrySet()) {
+            if (entry.getValue().isLeaf()) {
+                LeafProperty property = entry.getValue().asLeaf();
+                if (property.isSecret()) {
+                    secrets.put(entry.getKey(), property);
+                    continue;
+                }
+            }
+
+            if (entry.getValue().isMap()) {
+                if (entry.getValue().asMap().getValueProperty().isLeaf()) {
+                    LeafProperty property = entry.getValue().asMap().getValueProperty().asLeaf();
+                    if (property.isSecret()) {
+                        secrets.put(entry.getKey(), property);
+                    }
+                }
+            }
+        }
+
+        if (secrets.isEmpty()) {
+            clinit.visitMethodInsn(INVOKESTATIC, "java/util/Collections", "emptySet", "()Ljava/util/Set;", false);
+        } else if (secrets.size() < 3) {
+            clinit.visitTypeInsn(NEW, "java/util/HashSet");
+            clinit.visitInsn(DUP);
+            clinit.visitIntInsn(BIPUSH, secrets.size() + 1);
+            clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V", false);
+        } else {
+            clinit.visitTypeInsn(NEW, "java/util/HashSet");
+            clinit.visitInsn(DUP);
+            clinit.visitIntInsn(SIPUSH, (int) ((float) secrets.size() / 0.75f + 1.0f));
+            clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V", false);
+        }
+        clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
+
+        // PROPERTIES
         for (Map.Entry<String, Property> entry : properties.entrySet()) {
             clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
             clinit.visitLdcInsn(entry.getKey());
@@ -1096,13 +1137,30 @@ public class ConfigMappingGenerator {
             clinit.visitInsn(POP);
         }
 
+        // SECRETS
+        for (Entry<String, Property> entry : secrets.entrySet()) {
+            clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
+            clinit.visitLdcInsn(entry.getKey());
+            clinit.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
+            clinit.visitInsn(POP);
+        }
+
         clinit.visitInsn(RETURN);
         clinit.visitMaxs(0, 0);
         clinit.visitEnd();
 
-        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getProperties", "()Ljava/util/Map;",
+        MethodVisitor mv;
+        mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getProperties", "()Ljava/util/Map;",
                 "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
         mv.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getSecrets", "()Ljava/util/Set;",
+                "()Ljava/util/Set<Ljava/lang/String;>;",
+                null);
+        mv.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();

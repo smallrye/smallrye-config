@@ -16,6 +16,7 @@
 
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappings.prefix;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
@@ -45,6 +46,7 @@ import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -823,6 +825,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                     if (value != null) {
                         defaultValues.putIfAbsent(propertyName, value);
                     }
+                }
+            });
+
+            configClass.getSecrets().forEach(new Consumer<String>() {
+                @Override
+                public void accept(String secret) {
+                    secretKeys.add(secret);
                 }
             });
 
