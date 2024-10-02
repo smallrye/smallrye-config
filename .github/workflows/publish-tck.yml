@@ -8,10 +8,6 @@ on:
         description: Tag version to perform release
         type: string
 
-permissions:
-  contents: write
-  actions: write
-
 jobs:
   publish-tck:
     name: Publish TCK
