@@ -19,19 +19,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  RELEASE_VERSION: ${{github.event.inputs.tag || github.ref_name}}
-
 jobs:
   perform-release:
     name: Perform Release
     uses: smallrye/.github/.github/workflows/perform-release.yml@main
     secrets: inherit
     with:
-      version: ${{env.RELEASE_VERSION}}
+      version: ${{github.event.inputs.tag || github.ref_name}}
 
   publish-docs:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{github.event.inputs.tag || github.ref_name}}    
     steps:
       - uses: actions/create-github-app-token@v1
         id: app-token
@@ -71,6 +70,8 @@ jobs:
 
   publish-tck:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{github.event.inputs.tag || github.ref_name}}    
     steps:
       - uses: actions/checkout@v4
         with:
