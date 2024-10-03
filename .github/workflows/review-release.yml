@@ -1,4 +1,4 @@
-name: SmallRye Pre Release
+name: SmallRye Review Release
 
 on:
   pull_request:
