@@ -8,7 +8,7 @@ class KotlinDefaulltFunctionTest {
     @Test
     fun kotlinDefaultMethod() {
         val config = SmallRyeConfigBuilder()
-                .withMapping(KotlinDefaultFunction::class.java, "server")
+                .withMapping(KotlinDefaultFunction::class.java)
                 .withDefaultValue("server.host", "localhost")
                 .build()
 

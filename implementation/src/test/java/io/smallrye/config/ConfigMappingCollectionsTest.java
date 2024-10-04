@@ -30,7 +30,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsSimple() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionSimple.class, "server")
+                .withMapping(ServerCollectionSimple.class)
                 .withSources(config("server.environments[0]", "dev",
                         "server.environments[1]", "qa",
                         "server.environments[2]", "prod"))
@@ -71,7 +71,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollections() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollections.class, "server")
+                .withMapping(ServerCollections.class)
                 .withSources(config(
                         "server.environments[0].name", "dev",
                         "server.environments[0].apps[0].name", "rest",
@@ -124,7 +124,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsWithName() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionName.class, "server")
+                .withMapping(ServerCollectionName.class)
                 .withSources(config("server.envs[0].name", "dev",
                         "server.envs[0].apps[0].name", "rest",
                         "server.envs[0].apps[1].name", "batch",
@@ -169,7 +169,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsWithDefaults() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionsDefaults.class, "server")
+                .withMapping(ServerCollectionsDefaults.class)
                 .withSources(config("server[0].name", "dev"))
                 .build();
 
@@ -219,7 +219,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsOptionals() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionsOptionals.class, "server")
+                .withMapping(ServerCollectionsOptionals.class)
                 .withSources(config(
                         "server.env[0].name", "dev",
                         "server.env[1].name", "prod",
@@ -287,7 +287,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsConverters() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionsConverters.class, "server")
+                .withMapping(ServerCollectionsConverters.class)
                 .withSources(config("server.envs[0].hosts[0]", "localhost",
                         "server.envs[0].hosts[1]", "127.0.0.1"))
                 .build();
@@ -322,7 +322,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsSet() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionsSet.class, "server")
+                .withMapping(ServerCollectionsSet.class)
                 .withSources(config(
                         "server.environments[0].name", "dev",
                         "server.environments[0].apps[0].name", "rest",
@@ -375,7 +375,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingOptionalGroupWithCollection() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerOptionalGroup.class, "server")
+                .withMapping(ServerOptionalGroup.class)
                 .withSources(config(
                         "server.environment.services[0]", "rest",
                         "server.environment.services[1]", "batch",
@@ -389,7 +389,7 @@ public class ConfigMappingCollectionsTest {
         assertEquals("a", server.environment().get().apps().get(0).name());
 
         config = new SmallRyeConfigBuilder()
-                .withMapping(ServerOptionalGroup.class, "server")
+                .withMapping(ServerOptionalGroup.class)
                 .withSources(config(
                         "server.environment.services", "rest,batch",
                         "server.environment.apps[0].name", "a"))
@@ -417,7 +417,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingSingleCollection() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerSingleCollection.class, "server")
+                .withMapping(ServerSingleCollection.class)
                 .withSources(config(
                         "server[0].host", "localhost",
                         "server[0].port", "8080",
@@ -436,7 +436,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionProfile() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerSingleCollection.class, "server")
+                .withMapping(ServerSingleCollection.class)
                 .withSources(config(
                         "server[0].host", "localhost",
                         "server[0].port", "8080",
@@ -476,7 +476,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mappingCollectionsMap() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerCollectionMap.class, "servers")
+                .withMapping(ServerCollectionMap.class)
                 .withSources(config(
                         "servers[0].localhost", "localhost",
                         "servers[1].konoha", "konoha",
@@ -659,7 +659,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void mapIndexedAndPlain() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(MapIndexedAndPlain.class, "map")
+                .withMapping(MapIndexedAndPlain.class)
                 .withSources(config(
                         "map.one[0]", "one", "map.one[1]", "1",
                         "map.two", "two,2"))
@@ -675,7 +675,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void simpleMap() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(SimpleMap.class, "map")
+                .withMapping(SimpleMap.class)
                 .withSources(config("map.one", "value"))
                 .withSources(config("map.key-converter.key", "value"))
                 .withSources(config("map.value-converter.one", "something"))
@@ -829,7 +829,7 @@ public class ConfigMappingCollectionsTest {
     @Test
     void simpleMapList() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(SimpleMapList.class, "map")
+                .withMapping(SimpleMapList.class)
                 .withSources(config("map.one[0]", "value"))
                 .withSources(config("map.key-converter.key[0]", "value"))
                 .withSources(config("map.value-converter.one[0]", "something"))

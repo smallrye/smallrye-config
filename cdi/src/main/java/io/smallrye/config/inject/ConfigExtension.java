@@ -17,7 +17,6 @@ package io.smallrye.config.inject;
 
 import static io.smallrye.config.ConfigMappings.registerConfigMappings;
 import static io.smallrye.config.ConfigMappings.registerConfigProperties;
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
 import static io.smallrye.config.inject.InjectionMessages.formatInjectionPoint;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
@@ -57,7 +56,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.ConfigMappings.ConfigClassWithPrefix;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.SmallRyeConfig;
 
@@ -69,13 +68,13 @@ import io.smallrye.config.SmallRyeConfig;
 public class ConfigExtension implements Extension {
     private final Set<InjectionPoint> configPropertyInjectionPoints = new HashSet<>();
     /** ConfigProperties for SmallRye Config */
-    private final Set<ConfigClassWithPrefix> configProperties = new HashSet<>();
+    private final Set<ConfigClass> configProperties = new HashSet<>();
     /** ConfigProperties for CDI */
-    private final Set<ConfigClassWithPrefix> configPropertiesBeans = new HashSet<>();
+    private final Set<ConfigClass> configPropertiesBeans = new HashSet<>();
     /** ConfigMappings for SmallRye Config */
-    private final Set<ConfigClassWithPrefix> configMappings = new HashSet<>();
+    private final Set<ConfigClass> configMappings = new HashSet<>();
     /** ConfigMappings for CDI */
-    private final Set<ConfigClassWithPrefix> configMappingBeans = new HashSet<>();
+    private final Set<ConfigClass> configMappingBeans = new HashSet<>();
 
     public ConfigExtension() {
     }
@@ -95,20 +94,16 @@ public class ConfigExtension implements Extension {
     protected void processConfigProperties(
             @Observes @WithAnnotations(ConfigProperties.class) ProcessAnnotatedType<?> processAnnotatedType) {
         // Even if we filter in the CDI event, beans containing injection points of ConfigProperties are also fired.
-        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigProperties.class)) {
+        AnnotatedType<?> annotatedType = processAnnotatedType.getAnnotatedType();
+        if (annotatedType.isAnnotationPresent(ConfigProperties.class)) {
             // We are going to veto, because it may be a managed bean, and we will use a configurator bean
             processAnnotatedType.veto();
 
             // Each config class is both in SmallRyeConfig and managed by a configurator bean.
             // CDI requires more beans for injection points due to binding prefix.
-            ConfigClassWithPrefix properties = configClassWithPrefix(processAnnotatedType.getAnnotatedType().getJavaClass(),
-                    processAnnotatedType.getAnnotatedType().getAnnotation(ConfigProperties.class).prefix());
-            // Unconfigured is represented as an empty String in SmallRye Config
-            if (!properties.getPrefix().equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
-                configProperties.add(properties);
-            } else {
-                configProperties.add(ConfigClassWithPrefix.configClassWithPrefix(properties.getKlass(), ""));
-            }
+            ConfigClass properties = ConfigClass.configClass(annotatedType.getJavaClass(),
+                    annotatedType.getAnnotation(ConfigProperties.class).prefix());
+            configProperties.add(properties);
             configPropertiesBeans.add(properties);
         }
     }
@@ -116,27 +111,28 @@ public class ConfigExtension implements Extension {
     protected void processConfigMappings(
             @Observes @WithAnnotations(ConfigMapping.class) ProcessAnnotatedType<?> processAnnotatedType) {
         // Even if we filter in the CDI event, beans containing injection points of ConfigMapping are also fired.
-        if (processAnnotatedType.getAnnotatedType().isAnnotationPresent(ConfigMapping.class)) {
+        AnnotatedType<?> annotatedType = processAnnotatedType.getAnnotatedType();
+        if (annotatedType.isAnnotationPresent(ConfigMapping.class)) {
             // We are going to veto, because it may be a managed bean, and we will use a configurator bean
             processAnnotatedType.veto();
 
             // Each config class is both in SmallRyeConfig and managed by a configurator bean.
             // CDI requires a single configurator bean per class due to non-binding prefix.
-            ConfigClassWithPrefix mapping = configClassWithPrefix(processAnnotatedType.getAnnotatedType().getJavaClass(),
-                    processAnnotatedType.getAnnotatedType().getAnnotation(ConfigMapping.class).prefix());
+            ConfigClass mapping = ConfigClass.configClass(annotatedType.getJavaClass());
             configMappings.add(mapping);
             configMappingBeans.add(mapping);
         }
     }
 
     protected void processConfigInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
-        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
-            configPropertyInjectionPoints.add(pip.getInjectionPoint());
+        InjectionPoint injectionPoint = pip.getInjectionPoint();
+        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
+            configPropertyInjectionPoints.add(injectionPoint);
         }
 
-        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigProperties.class)) {
-            ConfigClassWithPrefix properties = configClassWithPrefix((Class<?>) pip.getInjectionPoint().getType(),
-                    pip.getInjectionPoint().getAnnotated().getAnnotation(ConfigProperties.class).prefix());
+        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigProperties.class)) {
+            ConfigClass properties = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
+                    injectionPoint.getAnnotated().getAnnotation(ConfigProperties.class).prefix());
 
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!properties.getPrefix().equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
@@ -147,9 +143,9 @@ public class ConfigExtension implements Extension {
         }
 
         // Add to SmallRyeConfig config classes with a different prefix by injection point
-        if (pip.getInjectionPoint().getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
-            ConfigClassWithPrefix mapping = configClassWithPrefix((Class<?>) pip.getInjectionPoint().getType(),
-                    pip.getInjectionPoint().getAnnotated().getAnnotation(ConfigMapping.class).prefix());
+        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
+            ConfigClass mapping = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
+                    injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class).prefix());
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!mapping.getPrefix().isEmpty()) {
                 configMappings.add(mapping);

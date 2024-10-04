@@ -57,6 +57,7 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -533,9 +534,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withMapping(Class<?> klass) {
-        return withMapping(klass, ConfigMappings.getPrefix(klass));
+        return withMapping(ConfigClass.configClass(klass));
     }
 
+    public SmallRyeConfigBuilder withMapping(ConfigClass configClass) {
+        mappingsBuilder.mapping(configClass);
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link SmallRyeConfigBuilder#withMapping(ConfigClass)} instead.
+     */
+    @Deprecated(forRemoval = true)
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
         mappingsBuilder.mapping(klass, prefix);
         return this;
@@ -761,11 +771,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return new SmallRyeConfig(this);
     }
 
-    final class MappingBuilder {
+    public final class MappingBuilder {
         private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
         private final List<String> ignoredPaths = new ArrayList<>();
 
-        MappingBuilder mapping(Class<?> type, String prefix) {
+        public void mapping(ConfigClass configClass) {
+            mapping(configClass.getKlass(), configClass.getPrefix());
+        }
+
+        public void mapping(Class<?> type, String prefix) {
             Assert.checkNotNullParam("type", type);
             Assert.checkNotNullParam("path", prefix);
             Class<?> mappingClass = getConfigMappingClass(type);
@@ -780,20 +794,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 // Do not override builder defaults with mapping defaults
                 defaultValues.putIfAbsent(prefix(prefix, defaultEntry.getKey()), defaultEntry.getValue());
             }
-            return this;
         }
 
-        MappingBuilder ignoredPath(String ignoredPath) {
+        public void ignoredPath(String ignoredPath) {
             Assert.checkNotNullParam("ignoredPath", ignoredPath);
             ignoredPaths.add(ignoredPath);
-            return this;
         }
 
-        Map<Class<?>, Set<String>> getMappings() {
+        public Map<Class<?>, Set<String>> getMappings() {
             return mappings;
         }
 
-        List<String> getIgnoredPaths() {
+        public List<String> getIgnoredPaths() {
             return ignoredPaths;
         }
     }

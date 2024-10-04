@@ -1,7 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappings.mappedProperties;
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonMap;
@@ -215,7 +215,7 @@ class RelocateConfigSourceInterceptorTest {
                         hierarchyCandidates.add("child." + name.substring(7));
                     }
                 }
-                names.addAll(mappedProperties(configClassWithPrefix(Child.class), hierarchyCandidates));
+                names.addAll(mappedProperties(configClass(Child.class), hierarchyCandidates));
                 return names.iterator();
             }
         };
@@ -326,7 +326,7 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", mapping.map().get("old"));
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        Set<String> mappedProperties = mappedProperties(configClassWithPrefix(RelocateMapping.class), properties);
+        Set<String> mappedProperties = mappedProperties(configClass(RelocateMapping.class), properties);
         properties.removeAll(mappedProperties);
         Set<String> relocateProperties = new HashSet<>();
         for (String property : properties) {
@@ -362,7 +362,7 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", mapping.map().get("old"));
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        Set<String> mappedProperties = mappedProperties(configClassWithPrefix(FallbackMapping.class), properties);
+        Set<String> mappedProperties = mappedProperties(configClass(FallbackMapping.class), properties);
         properties.removeAll(mappedProperties);
         Set<String> fallbackProperties = new HashSet<>();
         for (String property : properties) {

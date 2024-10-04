@@ -1,12 +1,14 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 
 import io.smallrye.config.ConfigMappingInterface.Property;
 
@@ -19,7 +21,7 @@ public final class ConfigMappings {
      * Registers additional {@link ConfigMapping} annotated classes with a {@link SmallRyeConfig} instance.
      * <p>
      * The recommended method of registering {@link ConfigMapping} is with a
-     * {@link SmallRyeConfigBuilder#withMapping(Class, String)}. In certain cases, this is not possible (ex. a CDI
+     * {@link SmallRyeConfigBuilder#withMapping(Class)}. In certain cases, this is not possible (ex. a CDI
      * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
      *
      * @param config the {@link SmallRyeConfig} instance
@@ -27,7 +29,7 @@ public final class ConfigMappings {
      * @throws ConfigValidationException if a {@link ConfigMapping} cannot be registed with the
      *         {@link SmallRyeConfig} instance
      */
-    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
+    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClass> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
             mapConfiguration(config, new SmallRyeConfigBuilder(), configClasses);
@@ -38,7 +40,7 @@ public final class ConfigMappings {
      * Registers additional <code>ConfigProperties</code> annotated classes with a {@link SmallRyeConfig} instance.
      * <p>
      * The recommended method of registering <code>ConfigProperties</code> is with a
-     * {@link SmallRyeConfigBuilder#withMapping(Class, String)}. In certain cases, this is not possible (ex. a CDI
+     * {@link SmallRyeConfigBuilder#withMapping(Class)}. In certain cases, this is not possible (ex. a CDI
      * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
      *
      * @param config the {@link SmallRyeConfig} instance
@@ -46,7 +48,7 @@ public final class ConfigMappings {
      * @throws ConfigValidationException if a <code>ConfigProperties</code> cannot be registed with the
      *         {@link SmallRyeConfig} instance
      */
-    public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClassWithPrefix> configClasses)
+    public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClass> configClasses)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
             mapConfiguration(config, new SmallRyeConfigBuilder().withValidateUnknown(false), configClasses);
@@ -61,7 +63,7 @@ public final class ConfigMappings {
      * @see ConfigMappingInterface#getProperties(ConfigMappingInterface)
      * @return a <code>Map</code> with all mapping class {@link Property}.
      */
-    public static Map<String, Property> getProperties(final ConfigClassWithPrefix configClass) {
+    public static Map<String, Property> getProperties(final ConfigClass configClass) {
         Map<String, Property> properties = new HashMap<>();
         // Because the properties key names do not include the path prefix we need to add it
         for (Map.Entry<String, Property> entry : ConfigMappingInterface
@@ -74,7 +76,7 @@ public final class ConfigMappings {
     }
 
     @Deprecated
-    public static Set<String> mappedProperties(final ConfigClassWithPrefix configClass, final Set<String> properties) {
+    public static Set<String> mappedProperties(final ConfigClass configClass, final Set<String> properties) {
         ConfigMappingNames names = new ConfigMappingNames(
                 ConfigMappingLoader.getConfigMapping(configClass.getKlass()).getNames());
         Set<String> mappedNames = new HashSet<>();
@@ -90,10 +92,10 @@ public final class ConfigMappings {
     private static void mapConfiguration(
             final SmallRyeConfig config,
             final SmallRyeConfigBuilder configBuilder,
-            final Set<ConfigClassWithPrefix> configClasses)
+            final Set<ConfigClass> configClasses)
             throws ConfigValidationException {
-        for (ConfigClassWithPrefix configClass : configClasses) {
-            configBuilder.withMapping(configClass.getKlass(), configClass.getPrefix());
+        for (ConfigClass configClass : configClasses) {
+            configBuilder.withMapping(configClass);
         }
         config.getDefaultValues().addDefaults(configBuilder.getDefaultValues());
         config.getMappings().putAll(config.buildMappings(configBuilder));
@@ -111,20 +113,14 @@ public final class ConfigMappings {
         }
     }
 
-    static String getPrefix(Class<?> type) {
-        final ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
-        return configMapping != null ? configMapping.prefix() : "";
-    }
-
     /**
-     * A representation of a {@link ConfigMapping} or <code>@ConfigProperties</code> with a <code>Class</code> and the
-     * prefix.
+     * A representation of a {@link ConfigMapping} or <code>@ConfigProperties</code>.
      */
-    public static final class ConfigClassWithPrefix {
+    public static final class ConfigClass {
         private final Class<?> klass;
         private final String prefix;
 
-        public ConfigClassWithPrefix(final Class<?> klass, final String prefix) {
+        public ConfigClass(final Class<?> klass, final String prefix) {
             this.klass = klass;
             this.prefix = prefix;
         }
@@ -145,7 +141,7 @@ public final class ConfigMappings {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final ConfigClassWithPrefix that = (ConfigClassWithPrefix) o;
+            final ConfigClass that = (ConfigClass) o;
             return klass.equals(that.klass) && prefix.equals(that.prefix);
         }
 
@@ -154,12 +150,23 @@ public final class ConfigMappings {
             return Objects.hash(klass, prefix);
         }
 
-        public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass, final String prefix) {
-            return new ConfigClassWithPrefix(klass, prefix);
+        public static ConfigClass configClass(final Class<?> klass, final String prefix) {
+            return new ConfigClass(klass, prefix);
         }
 
-        public static ConfigClassWithPrefix configClassWithPrefix(final Class<?> klass) {
-            return configClassWithPrefix(klass, ConfigMappings.getPrefix(klass));
+        public static ConfigClass configClass(final Class<?> klass) {
+            if (klass.isInterface()) {
+                ConfigMapping configMapping = klass.getAnnotation(ConfigMapping.class);
+                String prefix = configMapping != null ? configMapping.prefix() : "";
+                return configClass(klass, prefix);
+            } else {
+                ConfigProperties configProperties = klass.getAnnotation(ConfigProperties.class);
+                String prefix = configProperties != null ? configProperties.prefix() : "";
+                if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
+                    prefix = "";
+                }
+                return configClass(klass, prefix);
+            }
         }
     }
 }

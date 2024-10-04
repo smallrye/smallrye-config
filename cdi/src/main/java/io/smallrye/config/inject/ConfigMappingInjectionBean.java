@@ -17,21 +17,21 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.ConfigMappings.ConfigClassWithPrefix;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfig;
 
 public class ConfigMappingInjectionBean<T> implements Bean<T> {
     private final BeanManager bm;
-    private final ConfigClassWithPrefix configClassWithPrefix;
+    private final ConfigClass configClass;
 
-    public ConfigMappingInjectionBean(final ConfigClassWithPrefix configClassWithPrefix, final BeanManager bm) {
+    public ConfigMappingInjectionBean(final ConfigClass configClass, final BeanManager bm) {
         this.bm = bm;
-        this.configClassWithPrefix = configClassWithPrefix;
+        this.configClass = configClass;
     }
 
     @Override
     public Class<T> getBeanClass() {
-        return (Class<T>) configClassWithPrefix.getKlass();
+        return (Class<T>) configClass.getKlass();
     }
 
     @Override
@@ -44,7 +44,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
         InjectionPoint injectionPoint = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(),
                 creationalContext);
 
-        String prefix = configClassWithPrefix.getPrefix();
+        String prefix = configClass.getPrefix();
         if (injectionPoint != null && injectionPoint.getAnnotated() != null) {
             ConfigMapping configMapping = injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class);
             if (configMapping != null) {
@@ -63,7 +63,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public Set<Type> getTypes() {
-        return Collections.singleton(configClassWithPrefix.getKlass());
+        return Collections.singleton(configClass.getKlass());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName() + "_" + configClassWithPrefix.getKlass().getName();
+        return this.getClass().getSimpleName() + "_" + configClass.getKlass().getName();
     }
 
     @Override

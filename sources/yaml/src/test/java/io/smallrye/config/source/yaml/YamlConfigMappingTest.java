@@ -88,7 +88,7 @@ class YamlConfigMappingTest {
                 "        password: 'Test!1234'\n";
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(Proxies.class, "proxies")
+                .withMapping(Proxies.class)
                 .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
@@ -251,7 +251,7 @@ class YamlConfigMappingTest {
                 "}";
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(Proxies.class, "proxies")
+                .withMapping(Proxies.class)
                 .withSources(new YamlConfigSource("json", json))
                 .build();
 
@@ -477,7 +477,7 @@ class YamlConfigMappingTest {
                 "      qux: 3";
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(MapConfig.class, "app")
+                .withMapping(MapConfig.class)
                 .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
@@ -516,7 +516,7 @@ class YamlConfigMappingTest {
                 "        anotherkeybad: anothervaluebad";
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(Parent.class, "parent")
+                .withMapping(Parent.class)
                 .withSources(new YamlConfigSource("yaml", yaml))
                 .build();
 
@@ -734,7 +734,7 @@ class YamlConfigMappingTest {
         assertEquals("2", yamlConfigSource.getValue("eventStaff.coordinators.tim.contactInfo.phones.cell"));
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(EventStaff.class, "eventStaff")
+                .withMapping(EventStaff.class)
                 .withSources(yamlConfigSource)
                 .build();
 

@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.AsyncHttpClientBuildTimeConfig.AsyncClientType.NETTY;
 import static io.smallrye.config.ConfigMappingDefaultsTest.S3BuildTimeConfig.SyncHttpClientBuildTimeConfig.SyncClientType.URL;
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -122,7 +123,7 @@ public class ConfigMappingDefaultsTest {
                 .withSources(config(
                         "list-nested[0].value", "value",
                         "parent.list-nested[0].value", "value"))
-                .withMapping(Defaults.class, "")
+                .withMapping(configClass(Defaults.class, ""))
                 .build();
 
         Defaults mapping = config.getConfigMapping(Defaults.class, "");

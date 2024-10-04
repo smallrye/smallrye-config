@@ -2,7 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappings.registerConfigMappings;
 import static io.smallrye.config.ConfigMappings.registerConfigProperties;
-import static io.smallrye.config.ConfigMappings.ConfigClassWithPrefix.configClassWithPrefix;
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -35,7 +35,7 @@ public class ConfigMappingsTest {
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
-        registerConfigMappings(config, singleton(configClassWithPrefix(Server.class, "server")));
+        registerConfigMappings(config, singleton(configClass(Server.class, "server")));
         Server server = config.getConfigMapping(Server.class);
 
         assertEquals("localhost", server.host());
@@ -63,7 +63,7 @@ public class ConfigMappingsTest {
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
-        registerConfigProperties(config, singleton(configClassWithPrefix(ServerClass.class, "server")));
+        registerConfigProperties(config, singleton(configClass(ServerClass.class, "server")));
         ServerClass server = config.getConfigMapping(ServerClass.class);
 
         assertEquals("localhost", server.host);
@@ -97,10 +97,10 @@ public class ConfigMappingsTest {
                 .build();
 
         assertThrows(ConfigValidationException.class,
-                () -> registerConfigMappings(config, singleton(configClassWithPrefix(Server.class, "server"))),
+                () -> registerConfigMappings(config, singleton(configClass(Server.class, "server"))),
                 "server.unmapped does not map to any root");
 
-        registerConfigProperties(config, singleton(configClassWithPrefix(ServerClass.class, "server")));
+        registerConfigProperties(config, singleton(configClass(ServerClass.class, "server")));
         ServerClass server = config.getConfigMapping(ServerClass.class);
 
         assertEquals("localhost", server.host);
@@ -111,7 +111,7 @@ public class ConfigMappingsTest {
     void validateWithBuilderOrConfig() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
-                .withMapping(ServerClass.class, "server")
+                .withMapping(ServerClass.class)
                 .withConverter(Version.class, 100, new VersionConverter())
                 .withValidateUnknown(true)
                 .withDefaultValue(SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, "false")
@@ -127,7 +127,7 @@ public class ConfigMappingsTest {
     void validateDisableOnConfigProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
-                .withMapping(ServerClass.class, "server")
+                .withMapping(ServerClass.class)
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
@@ -141,23 +141,23 @@ public class ConfigMappingsTest {
     void validateAnnotations() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config, singleton(configClassWithPrefix(ServerMappingClass.class, "server"))));
+                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class, "server"))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
         exception = assertThrows(IllegalStateException.class,
-                () -> new SmallRyeConfigBuilder().withMapping(ServerMappingClass.class, "server").build());
+                () -> new SmallRyeConfigBuilder().withMapping(ServerMappingClass.class).build());
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
         exception = assertThrows(IllegalStateException.class,
                 () -> registerConfigMappings(config,
-                        singleton(configClassWithPrefix(ServerPropertiesInterface.class, "server"))));
+                        singleton(configClass(ServerPropertiesInterface.class, "server"))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
 
         exception = assertThrows(IllegalStateException.class,
-                () -> new SmallRyeConfigBuilder().withMapping(ServerPropertiesInterface.class, "server").build());
+                () -> new SmallRyeConfigBuilder().withMapping(ServerPropertiesInterface.class).build());
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
     }
@@ -319,7 +319,7 @@ public class ConfigMappingsTest {
 
     @Test
     void properties() {
-        ConfigMappings.ConfigClassWithPrefix configClass = configClassWithPrefix(MappedProperties.class);
+        ConfigMappings.ConfigClass configClass = configClass(MappedProperties.class);
         Map<String, Property> properties = ConfigMappings.getProperties(configClass);
         assertEquals(3, properties.size());
         assertTrue(properties.containsKey("mapped.nested.value"));
@@ -329,19 +329,19 @@ public class ConfigMappingsTest {
 
     @Test
     void mappedProperties() {
-        Set<String> mappedProperties = ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class),
+        Set<String> mappedProperties = ConfigMappings.mappedProperties(configClass(MappedProperties.class),
                 Set.of("mapped.value", "mapped.nested.value", "mapped.collection[0].value", "mapped.unknown"));
         assertEquals(3, mappedProperties.size());
         assertTrue(mappedProperties.contains("mapped.value"));
         assertTrue(mappedProperties.contains("mapped.nested.value"));
         assertTrue(mappedProperties.contains("mapped.collection[0].value"));
 
-        assertTrue(ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class), emptySet()).isEmpty());
+        assertTrue(ConfigMappings.mappedProperties(configClass(MappedProperties.class), emptySet()).isEmpty());
     }
 
     @Test
     void invalidMappedProperties() {
-        assertTrue(ConfigMappings.mappedProperties(configClassWithPrefix(MappedProperties.class),
+        assertTrue(ConfigMappings.mappedProperties(configClass(MappedProperties.class),
                 Set.of("foo.bar", "mapped", "mapped.something", "mapped.collection")).isEmpty());
     }
 }

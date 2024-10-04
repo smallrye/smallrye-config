@@ -10,7 +10,7 @@ class KotlinMappingGetter {
     @Test
     fun mappingGetterNames() {
         val config = SmallRyeConfigBuilder()
-            .withMapping(GraphOption::class.java, "graph")
+            .withMapping(GraphOption::class.java)
             .withDefaultValue("graph.get-tenant", "tenant")
             .withDefaultValue("graph.get-client-id", "id")
             .withDefaultValue("graph.get-client-secret", "secret")
