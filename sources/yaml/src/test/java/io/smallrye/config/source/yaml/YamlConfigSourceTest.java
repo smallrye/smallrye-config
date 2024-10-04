@@ -265,7 +265,7 @@ class YamlConfigSourceTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource("yaml", yaml))
-                .withMapping(UsersMapping.class, "admin")
+                .withMapping(UsersMapping.class)
                 .build();
 
         UsersMapping usersMapping = config.getConfigMapping(UsersMapping.class);
@@ -295,7 +295,7 @@ class YamlConfigSourceTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource("yaml", yaml))
-                .withMapping(Application.class, "application")
+                .withMapping(Application.class)
                 .build();
 
         Application application = config.getConfigMapping(Application.class);
@@ -334,7 +334,7 @@ class YamlConfigSourceTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource("yaml", yaml))
-                .withMapping(Server.class, "server")
+                .withMapping(Server.class)
                 .withProfile("base")
                 .build();
 
@@ -350,7 +350,7 @@ class YamlConfigSourceTest {
 
         config = new SmallRyeConfigBuilder()
                 .withSources(new YamlConfigSource("yaml", yaml))
-                .withMapping(Server.class, "server")
+                .withMapping(Server.class)
                 .withProfile("empty")
                 .build();
 

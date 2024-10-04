@@ -15,21 +15,21 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
-import io.smallrye.config.ConfigMappings.ConfigClassWithPrefix;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfig;
 
 public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
-    private final ConfigClassWithPrefix configClassWithPrefix;
+    private final ConfigClass configClass;
     private final Set<Annotation> qualifiers;
 
-    ConfigPropertiesInjectionBean(final ConfigClassWithPrefix configClassWithPrefix) {
-        this.configClassWithPrefix = configClassWithPrefix;
-        this.qualifiers = Collections.singleton(ConfigProperties.Literal.of(configClassWithPrefix.getPrefix()));
+    ConfigPropertiesInjectionBean(final ConfigClass configClass) {
+        this.configClass = configClass;
+        this.qualifiers = Collections.singleton(ConfigProperties.Literal.of(configClass.getPrefix()));
     }
 
     @Override
     public Class<T> getBeanClass() {
-        return (Class<T>) configClassWithPrefix.getKlass();
+        return (Class<T>) configClass.getKlass();
     }
 
     @Override
@@ -39,9 +39,9 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public T create(final CreationalContext<T> creationalContext) {
-        String prefix = configClassWithPrefix.getPrefix();
+        String prefix = configClass.getPrefix();
         if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
-            prefix = configClassWithPrefix.getKlass().getAnnotation(ConfigProperties.class).prefix();
+            prefix = configClass.getKlass().getAnnotation(ConfigProperties.class).prefix();
             if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
                 prefix = "";
             }
@@ -58,7 +58,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public Set<Type> getTypes() {
-        return Collections.singleton(configClassWithPrefix.getKlass());
+        return Collections.singleton(configClass.getKlass());
     }
 
     @Override
@@ -73,8 +73,8 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName() + "_" + configClassWithPrefix.getKlass().getName() + "_"
-                + configClassWithPrefix.getPrefix();
+        return this.getClass().getSimpleName() + "_" + configClass.getKlass().getName() + "_"
+                + configClass.getPrefix();
     }
 
     @Override

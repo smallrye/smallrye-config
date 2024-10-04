@@ -28,7 +28,10 @@ import io.smallrye.config.common.utils.StringUtil;
  *
  * This annotation is also used in CDI aware environments to scan and register Config Mappings. Otherwise, Config
  * Mapping interfaces require registration via
- * {@link SmallRyeConfigBuilder#withMapping(java.lang.Class, java.lang.String)}.
+ * {@link SmallRyeConfigBuilder#withMapping(java.lang.Class)}.
+ *
+ * @see SmallRyeConfigBuilder#withMapping(java.lang.Class)
+ * @see SmallRyeConfigBuilder#withMapping(ConfigMappings.ConfigClass)
  */
 @Documented
 @Target({ FIELD, PARAMETER, TYPE })
@@ -69,7 +72,7 @@ public @interface ConfigMapping {
 
         private final Function<String, String> function;
 
-        private NamingStrategy(Function<String, String> function) {
+        NamingStrategy(Function<String, String> function) {
             this.function = function;
         }
 

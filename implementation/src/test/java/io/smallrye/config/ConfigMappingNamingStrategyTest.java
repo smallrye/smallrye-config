@@ -19,8 +19,8 @@ public class ConfigMappingNamingStrategyTest {
     @Test
     void namingStrategy() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerVerbatimNamingStrategy.class, "server")
-                .withMapping(ServerSnakeNamingStrategy.class, "server")
+                .withMapping(ServerVerbatimNamingStrategy.class)
+                .withMapping(ServerSnakeNamingStrategy.class)
                 .withSources(config("server.theHost", "localhost", "server.thePort", "8080", "server.log.enabled", "true"))
                 .withSources(config("server.the_host", "127.0.0.1", "server.the_port", "80", "server.log.enabled", "true"))
                 .build();
@@ -67,9 +67,9 @@ public class ConfigMappingNamingStrategyTest {
     @Test
     void composedNamingStrategy() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ServerComposedSnakeNaming.class, "server")
-                .withMapping(ServerComposedVerbatimNaming.class, "server")
-                .withMapping(ServerComposedKebabNaming.class, "server")
+                .withMapping(ServerComposedSnakeNaming.class)
+                .withMapping(ServerComposedVerbatimNaming.class)
+                .withMapping(ServerComposedKebabNaming.class)
                 .withSources(config("server.the_host", "localhost", "server.the_port", "8080"))
                 .withSources(config("server.the_log.is_enabled", "true", "server.the_log.log_appenders[0].log_name", "log"))
                 .withSources(config("server.theHost", "localhost", "server.thePort", "8080"))
@@ -147,8 +147,8 @@ public class ConfigMappingNamingStrategyTest {
     @Test
     void interfaceAndClass() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ConfigMappingNamingKebab.class, "server")
-                .withMapping(ConfigPropertiesNamingVerbatim.class, "server")
+                .withMapping(ConfigMappingNamingKebab.class)
+                .withMapping(ConfigPropertiesNamingVerbatim.class)
                 .withSources(config("server.theHost", "localhost"))
                 .withSources(config("server.the-host", "localhost", "server.form.login-page", "login"))
                 .build();
@@ -213,7 +213,7 @@ public class ConfigMappingNamingStrategyTest {
     @Test
     void namingStrategyVerbatimOptionalGroup() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(NamingStrategyVerbatimOptionalGroup.class, "bugs")
+                .withMapping(NamingStrategyVerbatimOptionalGroup.class)
                 .withSources(config("bugs.KEY1.hereVerbatimWorks", "true",
                         "bugs.KEY1.properties.feed", "100103",
                         "bugs.KEY1.properties.customerId", "36936471",

@@ -70,7 +70,7 @@ class HoconConfigSourceTest {
     void list() throws Exception {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(new HoconConfigSource(HoconConfigSource.class.getResource("/list.conf")))
-                .withMapping(Countries.class, "countries")
+                .withMapping(Countries.class)
                 .build();
 
         Countries mapping = config.getConfigMapping(Countries.class);

@@ -98,7 +98,7 @@ public class ValidateConfigTest {
                         "server.info.admins.root[1].username", "admin",
                         "server.info.firewall.accepted[0]", "127.0.0.1",
                         "server.info.firewall.accepted[1]", "8.8.8"))
-                .withMapping(Server.class, "server")
+                .withMapping(Server.class)
                 .build();
 
         ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
@@ -139,7 +139,7 @@ public class ValidateConfigTest {
                 .withSources(config(
                         "server.the_host", "localhost",
                         "server.the_port", "8080"))
-                .withMapping(ServerNamingStrategy.class, "server")
+                .withMapping(ServerNamingStrategy.class)
                 .build();
 
         ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
@@ -156,11 +156,11 @@ public class ValidateConfigTest {
     void validateConfigProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
-                .withMapping(Client.class, "client")
+                .withMapping(Client.class)
                 .build();
 
         ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(Client.class, "client"));
+                () -> config.getConfigMapping(Client.class));
         assertEquals(1, validationException.getProblemCount());
         List<String> validations = new ArrayList<>();
         validations.add(validationException.getProblem(0).getMessage());
@@ -174,7 +174,7 @@ public class ValidateConfigTest {
                 .withSources(config(
                         "server.host", "localhost",
                         "server.port", "80"))
-                .withMapping(ServerParent.class, "server")
+                .withMapping(ServerParent.class)
                 .build();
 
         ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
