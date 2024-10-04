@@ -196,6 +196,7 @@ public class ConfigMappingGenerator {
         generateToString(visitor, mapping);
         generateNames(visitor, mapping);
         generateDefaults(visitor, mapping);
+        generateSecrets(visitor, mapping);
 
         return writer.toByteArray();
     }
@@ -1012,6 +1013,48 @@ public class ConfigMappingGenerator {
                 mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
                         "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
                 mv.visitInsn(POP);
+            }
+        }
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void generateSecrets(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
+        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getSecrets", "()Ljava/util/Map;",
+                "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;",
+                null);
+
+        mv.visitTypeInsn(NEW, "java/util/HashSet");
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "()V", false);
+        mv.visitVarInsn(ASTORE, 0);
+
+        for (Map.Entry<String, Property> entry : ConfigMappingInterface.getProperties(mapping)
+                .get(mapping.getInterfaceType())
+                .get("").entrySet()) {
+            if (entry.getValue().isLeaf()) {
+                LeafProperty property = entry.getValue().asLeaf();
+                if (property.isSecret()) {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitLdcInsn(entry.getKey());
+                    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
+                    mv.visitInsn(POP);
+                }
+            }
+
+            if (entry.getValue().isMap()) {
+                if (entry.getValue().asMap().getValueProperty().isLeaf()) {
+                    LeafProperty property = entry.getValue().asMap().getValueProperty().asLeaf();
+                    if (property.isSecret()) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitLdcInsn(entry.getKey());
+                        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
+                        mv.visitInsn(POP);
+                    }
+                }
             }
         }
 

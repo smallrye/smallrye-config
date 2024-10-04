@@ -129,6 +129,8 @@ public class SmallRyeConfig implements Config, Serializable {
                 return new ConfigMappingContext(SmallRyeConfig.this, mappingsBuilder.getMappings());
             }
         });
+        // We clear the properties because they may contain secrets
+        this.configSources.getPropertyNames().clear();
 
         if (getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(true)) {
             context.reportUnknown(mappingsBuilder.getIgnoredPaths());
@@ -1058,6 +1060,10 @@ public class SmallRyeConfig implements Config, Serializable {
                 }
                 names.remove(ConfigSource.CONFIG_ORDINAL);
                 return Collections.unmodifiableSet(names);
+            }
+
+            void clear() {
+                names.clear();
             }
         }
     }

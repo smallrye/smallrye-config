@@ -581,6 +581,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return rawType;
         }
 
+        public boolean isSecret() {
+            return Secret.class.isAssignableFrom(rawType);
+        }
+
         @Override
         public boolean isLeaf() {
             return true;
@@ -769,6 +773,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
         // No reason to use a JDK interface to generate a config class? Primarily to fix the java.nio.file.Path case.
         if (interfaceType.getName().startsWith("java")) {
+            return null;
+        }
+
+        // TODO - What should we do with this? We want to avoid having to use @WithConverter all the time, but the mapping metadata does not know which converters are available.
+        if (Secret.class.isAssignableFrom(interfaceType)) {
             return null;
         }
 

@@ -32,7 +32,7 @@ public class PropertyName {
             return true;
         }
 
-        if (name.equals("*") && (other.equals("") || other.equals("\"\""))) {
+        if (name.equals("*") && (other.isEmpty() || other.equals("\"\""))) {
             return false;
         }
 
