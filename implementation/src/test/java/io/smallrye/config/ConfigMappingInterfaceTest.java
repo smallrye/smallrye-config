@@ -2659,4 +2659,20 @@ class ConfigMappingInterfaceTest {
             String value();
         }
     }
+
+    @Test
+    void ignoreUnknownAnnotation() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("ignore.value", "value", "ignore.unknown", "unknown"))
+                .withMapping(IgnoreUnknownAnnotation.class)
+                .build();
+
+        IgnoreUnknownAnnotation mapping = config.getConfigMapping(IgnoreUnknownAnnotation.class);
+        assertEquals("value", mapping.value());
+    }
+
+    @ConfigMapping(prefix = "ignore", validateUnknown = false)
+    interface IgnoreUnknownAnnotation {
+        String value();
+    }
 }

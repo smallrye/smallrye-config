@@ -101,8 +101,7 @@ public class ConfigExtension implements Extension {
 
             // Each config class is both in SmallRyeConfig and managed by a configurator bean.
             // CDI requires more beans for injection points due to binding prefix.
-            ConfigClass properties = ConfigClass.configClass(annotatedType.getJavaClass(),
-                    annotatedType.getAnnotation(ConfigProperties.class).prefix());
+            ConfigClass properties = ConfigClass.configClass(annotatedType.getJavaClass());
             configProperties.add(properties);
             configPropertiesBeans.add(properties);
         }
@@ -132,7 +131,7 @@ public class ConfigExtension implements Extension {
 
         if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigProperties.class)) {
             ConfigClass properties = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
-                    injectionPoint.getAnnotated().getAnnotation(ConfigProperties.class).prefix());
+                    injectionPoint.getAnnotated().getAnnotation(ConfigProperties.class).prefix(), false);
 
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!properties.getPrefix().equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
@@ -145,7 +144,7 @@ public class ConfigExtension implements Extension {
         // Add to SmallRyeConfig config classes with a different prefix by injection point
         if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
             ConfigClass mapping = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
-                    injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class).prefix());
+                    injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class).prefix(), true);
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!mapping.getPrefix().isEmpty()) {
                 configMappings.add(mapping);

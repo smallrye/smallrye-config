@@ -26,6 +26,9 @@ import io.smallrye.config.common.utils.StringUtil;
  * }
  * </pre>
  *
+ * A Config Mapping must match every configuration path available in the Config system. If a property name
+ * <code>server.name</code> exists, then it must be mapped with a method <code>String name()</code>.
+ * <p>
  * This annotation is also used in CDI aware environments to scan and register Config Mappings. Otherwise, Config
  * Mapping interfaces require registration via
  * {@link SmallRyeConfigBuilder#withMapping(java.lang.Class)}.
@@ -51,6 +54,14 @@ public @interface ConfigMapping {
      * @return the config mapping naming strategy.
      */
     NamingStrategy namingStrategy() default NamingStrategy.KEBAB_CASE;
+
+    /**
+     * Enable or disable the Config Mapping requirement to match every configuration path available in the Config
+     * system. By default, the validation is <b>enabled</b>.
+     *
+     * @return a boolean <code>true</code> to enable the validation, or <code>false</code> to disable it.
+     */
+    boolean validateUnknown() default true;
 
     enum NamingStrategy {
         /**

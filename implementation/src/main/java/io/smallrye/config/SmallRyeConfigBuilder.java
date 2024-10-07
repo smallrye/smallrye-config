@@ -776,7 +776,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final List<String> ignoredPaths = new ArrayList<>();
 
         public void mapping(ConfigClass configClass) {
+            Assert.checkNotNullParam("configClass", configClass);
             mapping(configClass.getKlass(), configClass.getPrefix());
+            if (!configClass.isValidateUnknown()) {
+                ignoredPath(configClass.getPrefix() + ".**");
+            }
         }
 
         public void mapping(Class<?> type, String prefix) {

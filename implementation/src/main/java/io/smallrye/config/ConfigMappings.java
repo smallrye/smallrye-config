@@ -119,10 +119,12 @@ public final class ConfigMappings {
     public static final class ConfigClass {
         private final Class<?> klass;
         private final String prefix;
+        private final boolean validateUnknown;
 
-        public ConfigClass(final Class<?> klass, final String prefix) {
+        public ConfigClass(final Class<?> klass, final String prefix, final boolean validateUnknown) {
             this.klass = klass;
             this.prefix = prefix;
+            this.validateUnknown = validateUnknown;
         }
 
         public Class<?> getKlass() {
@@ -131,6 +133,10 @@ public final class ConfigMappings {
 
         public String getPrefix() {
             return prefix;
+        }
+
+        public boolean isValidateUnknown() {
+            return validateUnknown;
         }
 
         @Override
@@ -151,21 +157,26 @@ public final class ConfigMappings {
         }
 
         public static ConfigClass configClass(final Class<?> klass, final String prefix) {
-            return new ConfigClass(klass, prefix);
+            return new ConfigClass(klass, prefix, true);
+        }
+
+        public static ConfigClass configClass(final Class<?> klass, final String prefix, final boolean validateUnknown) {
+            return new ConfigClass(klass, prefix, validateUnknown);
         }
 
         public static ConfigClass configClass(final Class<?> klass) {
             if (klass.isInterface()) {
                 ConfigMapping configMapping = klass.getAnnotation(ConfigMapping.class);
                 String prefix = configMapping != null ? configMapping.prefix() : "";
-                return configClass(klass, prefix);
+                boolean validateUnknown = configMapping == null || configMapping.validateUnknown();
+                return configClass(klass, prefix, validateUnknown);
             } else {
                 ConfigProperties configProperties = klass.getAnnotation(ConfigProperties.class);
                 String prefix = configProperties != null ? configProperties.prefix() : "";
                 if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
                     prefix = "";
                 }
-                return configClass(klass, prefix);
+                return configClass(klass, prefix, false);
             }
         }
     }
