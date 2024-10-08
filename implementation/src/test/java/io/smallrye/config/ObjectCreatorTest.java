@@ -340,7 +340,6 @@ public class ObjectCreatorTest {
         ConfigMappingContext context = new ConfigMappingContext(config,
                 ConfigMappingLoader.getConfigMapping(UnnamedKeys.class).getNames(), new HashMap<>());
         context.applyRootPath("unnamed");
-        context.getNameBuilder().append("unnamed");
 
         UnnamedKeys mapping = new UnnamedKeysImpl(context);
         assertEquals("unnamed", mapping.map().get(null).value());
@@ -400,7 +399,6 @@ public class ObjectCreatorTest {
         ConfigMappingContext context = new ConfigMappingContext(config,
                 ConfigMappingLoader.getConfigMapping(MapDefaults.class).getNames(), new HashMap<>());
         context.applyRootPath("map");
-        context.getNameBuilder().append("map.");
         MapDefaults mapping = new MapDefaultsImpl(context);
 
         assertEquals("value", mapping.defaults().get("one"));
@@ -451,6 +449,7 @@ public class ObjectCreatorTest {
             int length = sb.length();
             ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
 
+            sb.append(".");
             sb.append(ns.apply("defaults"));
             ConfigMappingContext.ObjectCreator<Map<String, String>> defaults = context.new ObjectCreator<Map<String, String>>(
                     sb.toString())
@@ -458,6 +457,7 @@ public class ObjectCreatorTest {
             this.defaults = defaults.get();
             sb.setLength(length);
 
+            sb.append(".");
             sb.append(ns.apply("defaults-nested"));
             ConfigMappingContext.ObjectCreator<Map<String, Nested>> defaultsNested = context.new ObjectCreator<Map<String, Nested>>(
                     sb.toString())
@@ -474,6 +474,7 @@ public class ObjectCreatorTest {
             this.defaultsNested = defaultsNested.get();
             sb.setLength(length);
 
+            sb.append(".");
             sb.append(ns.apply("defaults-list"));
             ConfigMappingContext.ObjectCreator<Map<String, List<Nested>>> defaultsList = context.new ObjectCreator<Map<String, List<Nested>>>(
                     sb.toString())
@@ -509,7 +510,7 @@ public class ObjectCreatorTest {
 
         ConfigMappingContext context = new ConfigMappingContext(config,
                 ConfigMappingLoader.getConfigMapping(Naming.class).getNames(), new HashMap<>());
-        context.getNameBuilder().append("naming.");
+        context.applyRootPath("naming");
         Naming naming = new NamingImpl(context);
 
         assertEquals("value", naming.nestedValue().value());
@@ -534,6 +535,7 @@ public class ObjectCreatorTest {
             StringBuilder sb = context.getNameBuilder();
             int length = sb.length();
 
+            sb.append(".");
             sb.append(ns.apply("nestedValue"));
             ConfigMappingContext.ObjectCreator<Nested> nestedValue = context.new ObjectCreator<Nested>(sb.toString())
                     .group(Nested.class);

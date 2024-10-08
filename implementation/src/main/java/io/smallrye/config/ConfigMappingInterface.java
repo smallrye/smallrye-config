@@ -60,12 +60,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 toStringMethod = (ToStringMethod) property;
             }
         }
-        if (toStringMethod == null) {
-            toStringMethod = ToStringMethod.NONE;
-        }
-
         this.properties = filteredProperties.toArray(new Property[0]);
-        this.toStringMethod = toStringMethod;
+        this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
     }
 
     static String getImplementationClassName(Class<?> type) {
@@ -153,7 +149,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return properties;
     }
 
-    public boolean hasNamingStrategy() {
+    ToStringMethod getToStringMethod() {
+        return toStringMethod;
+    }
+
+    public boolean hasConfigMapping() {
         return interfaceType.getAnnotation(ConfigMapping.class) != null;
     }
 
@@ -162,8 +162,9 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return configMapping != null ? configMapping.namingStrategy() : NamingStrategy.KEBAB_CASE;
     }
 
-    ToStringMethod getToStringMethod() {
-        return toStringMethod;
+    public boolean isBeanStyleGetters() {
+        ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
+        return configMapping != null && configMapping.beanStyleGetters();
     }
 
     String getClassInternalName() {
