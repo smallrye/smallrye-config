@@ -61,6 +61,7 @@ import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -110,7 +111,7 @@ public class ConfigMappingGenerator {
     private static final int V_MAPPING_CONTEXT = 1;
     private static final int V_STRING_BUILDER = 2;
     private static final int V_LENGTH = 3;
-    private static final int V_NAMING_STRATEGY = 4;
+    private static final int V_NAMING_FUNCTION = 4;
 
     /**
      * Generates the backing implementation of an interface annotated with the {@link ConfigMapping} annotation.
@@ -164,19 +165,25 @@ public class ConfigMappingGenerator {
         ctor.visitLabel(ctorLenStart);
         ctor.visitVarInsn(ISTORE, V_LENGTH);
 
-        Label ctorNsStart = new Label();
-        ctor.visitLabel(ctorNsStart);
-        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+        Label ctorNfStart = new Label();
+        ctor.visitLabel(ctorNfStart);
 
-        if (mapping.hasNamingStrategy()) {
+        if (mapping.hasConfigMapping()) {
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
             ctor.visitFieldInsn(GETSTATIC, I_NAMING_STRATEGY, mapping.getNamingStrategy().name(),
                     "L" + I_NAMING_STRATEGY + ";");
-        } else {
-            ctor.visitInsn(ACONST_NULL);
+            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyNamingStrategy", "(L" + I_NAMING_STRATEGY + ";)V",
+                    false);
+
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(mapping.isBeanStyleGetters() ? ICONST_1 : ICONST_0);
+            ctor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyBeanStyleGetters", "(Ljava/lang/Boolean;)V", false);
         }
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyNamingStrategy",
-                "(L" + I_NAMING_STRATEGY + ";)L" + I_NAMING_STRATEGY + ";", false);
-        ctor.visitVarInsn(ASTORE, V_NAMING_STRATEGY);
+
+        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "propertyName", "()Ljava/util/function/Function;", false);
+        ctor.visitVarInsn(ASTORE, V_NAMING_FUNCTION);
 
         addProperties(visitor, ctor, new HashSet<>(), mapping, mapping.getClassInternalName());
 
@@ -185,8 +192,7 @@ public class ConfigMappingGenerator {
         ctor.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, ctorStart, ctorEnd, V_MAPPING_CONTEXT);
         ctor.visitLocalVariable("sb", 'L' + I_STRING_BUILDER + ';', null, ctorSbStart, ctorEnd, V_STRING_BUILDER);
         ctor.visitLocalVariable("len", "I", null, ctorLenStart, ctorEnd, V_LENGTH);
-        ctor.visitLocalVariable("ns", "Lio/smallrye/config/ConfigMapping$NamingStrategy;", null, ctorNsStart, ctorEnd,
-                V_NAMING_STRATEGY);
+        ctor.visitLocalVariable("nf", "Ljava/util/function/Function;", null, ctorNfStart, ctorEnd, V_NAMING_FUNCTION);
         ctor.visitEnd();
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
@@ -711,9 +717,11 @@ public class ConfigMappingGenerator {
         if (property.hasPropertyName()) {
             ctor.visitLdcInsn(property.getPropertyName());
         } else {
-            ctor.visitVarInsn(ALOAD, V_NAMING_STRATEGY);
+            ctor.visitVarInsn(ALOAD, V_NAMING_FUNCTION);
             ctor.visitLdcInsn(property.getPropertyName());
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_NAMING_STRATEGY, "apply", "(L" + I_STRING + ";)L" + I_STRING + ";", false);
+            ctor.visitMethodInsn(INVOKEINTERFACE, getInternalName(Function.class), "apply",
+                    "(L" + I_OBJECT + ";)L" + I_OBJECT + ";", true);
+            ctor.visitTypeInsn(CHECKCAST, "java/lang/String");
         }
 
         ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ';',

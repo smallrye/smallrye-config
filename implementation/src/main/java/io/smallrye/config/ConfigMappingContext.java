@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.configMappingNames;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
@@ -38,8 +39,9 @@ public final class ConfigMappingContext {
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
-    private NamingStrategy namingStrategy;
-    private String rootPath;
+    private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
+    private boolean beanStyleGetters = false;
+    private String rootPath = null;
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
@@ -51,8 +53,7 @@ public final class ConfigMappingContext {
                 // All mapping names must be loaded first because of split mappings
                 Map<String, Map<String, Set<String>>> names = new HashMap<>();
                 for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
-                    for (Map.Entry<String, Map<String, Set<String>>> entry : ConfigMappingLoader
-                            .configMappingNames(mapping.getKey()).entrySet()) {
+                    for (Map.Entry<String, Map<String, Set<String>>> entry : configMappingNames(mapping.getKey()).entrySet()) {
                         names.putIfAbsent(entry.getKey(), new HashMap<>());
                         names.get(entry.getKey()).putAll(entry.getValue());
                     }
@@ -73,9 +74,7 @@ public final class ConfigMappingContext {
         for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
             Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
             for (String rootPath : mapping.getValue()) {
-                applyNamingStrategy(null);
                 applyRootPath(rootPath);
-                applyNameBuilder(rootPath);
                 mappingObjects.put(rootPath, (ConfigMappingObject) constructRoot(mapping.getKey()));
             }
             this.roots.put(mapping.getKey(), mappingObjects);
@@ -88,8 +87,10 @@ public final class ConfigMappingContext {
 
     public <T> T constructGroup(Class<T> interfaceType) {
         NamingStrategy namingStrategy = this.namingStrategy;
+        boolean beanStyleGetters = this.beanStyleGetters;
         T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
-        this.namingStrategy = applyNamingStrategy(namingStrategy);
+        applyNamingStrategy(namingStrategy);
+        applyBeanStyleGetters(beanStyleGetters);
         return mappingObject;
     }
 
@@ -121,23 +122,37 @@ public final class ConfigMappingContext {
         });
     }
 
-    public NamingStrategy applyNamingStrategy(final NamingStrategy namingStrategy) {
+    public void applyNamingStrategy(final NamingStrategy namingStrategy) {
         if (namingStrategy != null) {
             this.namingStrategy = namingStrategy;
-        } else if (this.namingStrategy == null) {
-            this.namingStrategy = NamingStrategy.KEBAB_CASE;
         }
-        return this.namingStrategy;
     }
 
-    public String applyRootPath(final String rootPath) {
+    public void applyBeanStyleGetters(final Boolean beanStyleGetters) {
+        if (beanStyleGetters != null) {
+            this.beanStyleGetters = beanStyleGetters;
+        }
+    }
+
+    public void applyRootPath(final String rootPath) {
         this.rootPath = rootPath;
-        return this.rootPath;
+        this.nameBuilder.replace(0, nameBuilder.length(), rootPath);
     }
 
-    public StringBuilder applyNameBuilder(final String rootPath) {
-        this.nameBuilder.replace(0, nameBuilder.length(), rootPath);
-        return this.nameBuilder;
+    private static final Function<String, String> BEAN_STYLE_GETTERS = new Function<String, String>() {
+        @Override
+        public String apply(final String name) {
+            if (name.startsWith("get") && name.length() > 3) {
+                return Character.toLowerCase(name.charAt(3)) + name.substring(4);
+            } else if (name.startsWith("is") && name.length() > 2) {
+                return Character.toLowerCase(name.charAt(2)) + name.substring(3);
+            }
+            return name;
+        }
+    };
+
+    public Function<String, String> propertyName() {
+        return beanStyleGetters ? BEAN_STYLE_GETTERS.andThen(namingStrategy) : namingStrategy;
     }
 
     public StringBuilder getNameBuilder() {

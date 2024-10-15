@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ConfigMappingNamingStrategyTest {
@@ -281,6 +282,69 @@ public class ConfigMappingNamingStrategyTest {
         interface VerbatimDefaults {
             @WithDefault("value")
             String verbatimDefault();
+        }
+    }
+
+    @Test
+    @Disabled
+    void beanStyleGetters() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "get.name", "value",
+                        "get.boolean", "true",
+                        "get.get", "value",
+                        "get.is", "true",
+                        "get.x", "value",
+                        "get.nested.name", "value",
+                        "get.nested.reset.get-name", "value",
+                        "get.nested.reset.get-reset-again.name", "value"))
+                .withMapping(BeanStyleGetters.class)
+                .build();
+
+        BeanStyleGetters mapping = config.getConfigMapping(BeanStyleGetters.class);
+        assertEquals("value", mapping.getName());
+        assertTrue(mapping.isBoolean());
+        assertEquals("value", mapping.get());
+        assertTrue(mapping.is());
+        assertEquals("value", mapping.getX());
+        assertEquals("value", mapping.isX());
+        assertEquals("value", mapping.getNested().getName());
+        assertEquals("value", mapping.getNested().getReset().getName());
+        assertEquals("value", mapping.getNested().getReset().getResetAgain().getName());
+    }
+
+    @ConfigMapping(prefix = "get", beanStyleGetters = true)
+    interface BeanStyleGetters {
+        String getName();
+
+        boolean isBoolean();
+
+        String get();
+
+        boolean is();
+
+        String getX();
+
+        String isX();
+
+        Nested getNested();
+
+        interface Nested {
+            String getName();
+
+            Reset getReset();
+
+            @ConfigMapping
+            interface Reset {
+                String getName();
+
+                ResetAgain getResetAgain();
+
+                @ConfigMapping(beanStyleGetters = true)
+                interface ResetAgain {
+                    String getName();
+                }
+            }
         }
     }
 }

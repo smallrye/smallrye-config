@@ -52,7 +52,21 @@ public @interface ConfigMapping {
      */
     NamingStrategy namingStrategy() default NamingStrategy.KEBAB_CASE;
 
-    enum NamingStrategy {
+    /**
+     * Match config mapping method names and configuration properties using bean-style getter names. This removes the
+     * prefixes <code>get</code> or <code>is</code> and decapitalizes the next character. By default, bean-style getter
+     * matching is <code>disabled</code>.
+     * <p>
+     * Config mapping declarations should prefer to use simple names that match one-to-one with their configuration
+     * names. Bean-style getter matching allows multiple method names to match the same configuration name. For
+     * instance, <code>getFoo</code> and <code>isFoo</code> both match <code>foo</code>, which may not be intended.
+     *
+     * @return a boolean <code>true</code> to enable bean style getter names matching, or <code>false</code> to disable
+     *         it.
+     */
+    boolean beanStyleGetters() default false;
+
+    enum NamingStrategy implements Function<String, String> {
         /**
          * The method name is used as is to map the configuration property.
          */
