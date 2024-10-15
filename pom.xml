@@ -77,9 +77,7 @@
     <module>utils/cdi-provider</module>
     <module>utils/crypto</module>
     <module>utils/jasypt</module>
-    <module>testsuite</module>
     <module>documentation</module>
-    <module>examples</module>
   </modules>
 
   <dependencyManagement>
@@ -133,6 +131,19 @@
   </dependencyManagement>
 
   <profiles>
+    <profile>
+      <id>unpublished</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>testsuite</module>
+        <module>examples</module>
+      </modules>
+    </profile>
     <profile>
       <id>release</id>
       <activation>
