@@ -318,7 +318,7 @@ public final class ConfigMappingContext {
             if (!ignoredProperties.hasRootValue(name)) {
                 ConfigValue configValue = config.getConfigValue(name);
                 // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                if (configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
+                if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
                     continue;
                 }
                 problems.add(new Problem(
