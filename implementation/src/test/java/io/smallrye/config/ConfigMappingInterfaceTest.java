@@ -2659,4 +2659,28 @@ class ConfigMappingInterfaceTest {
             String value();
         }
     }
+
+    @Test
+    void optionalMapValue() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("map.map.key", "value", "map.map.empty", ""))
+                .withMapping(OptionalMapValue.class)
+                .build();
+
+        OptionalMapValue mapping = config.getConfigMapping(OptionalMapValue.class);
+        assertTrue(mapping.map().get("key").value().isPresent());
+        assertEquals("value", mapping.map().get("key").value().get());
+        assertTrue(mapping.map().containsKey("empty"));
+        assertFalse(mapping.map().get("empty").value().isPresent());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface OptionalMapValue {
+        Map<String, Value> map();
+
+        interface Value {
+            @WithParentName
+            Optional<String> value();
+        }
+    }
 }
