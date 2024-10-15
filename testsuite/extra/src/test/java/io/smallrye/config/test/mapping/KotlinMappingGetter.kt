@@ -14,6 +14,7 @@ class KotlinMappingGetter {
             .withDefaultValue("graph.get-tenant", "tenant")
             .withDefaultValue("graph.get-client-id", "id")
             .withDefaultValue("graph.get-client-secret", "secret")
+            .withDefaultValue("graph.get-a-boolean", "secret")
             .build()
 
         val mapping = config.getConfigMapping(GraphOption::class.java)
@@ -30,5 +31,6 @@ class KotlinMappingGetter {
         val tenant: String
         val clientId: String
         val clientSecret: String
+        val aBoolean: Boolean
     }
 }
