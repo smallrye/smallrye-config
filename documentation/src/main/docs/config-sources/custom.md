@@ -150,11 +150,6 @@ The [PropertiesConfigSource](https://github.com/smallrye/smallrye-config/blob/ma
 creates a `ConfigSource` from Java `Properties`, `Map<String, String>` objects or a `.properties` file (referenced by
 its URL).
 
-## Config Value Properties
-
-The [ConfigValuePropertiesConfigSource](https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/ConfigValuePropertiesConfigSource.java) a `ConfigSource` from Java `Properties`, `Map<String, String>` objects or 
-a `.properties` file (referenced by its URL) with support for `io.smallrye.config.ConfigValue`.
-
 ## `.env`
 
 The [DotEnvConfigSourceProvider](https://github.com/smallrye/smallrye-config/blob/main/implementation/src/main/java/io/smallrye/config/DotEnvConfigSourceProvider.java) create a `ConfigSource` from a `.env` file.
