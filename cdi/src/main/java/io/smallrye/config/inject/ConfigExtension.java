@@ -99,10 +99,15 @@ public class ConfigExtension implements Extension {
             // We are going to veto, because it may be a managed bean, and we will use a configurator bean
             processAnnotatedType.veto();
 
+            // Unconfigured is represented as an empty String in SmallRye Config
+            String prefix = annotatedType.getAnnotation(ConfigProperties.class).prefix();
+            if (ConfigProperties.UNCONFIGURED_PREFIX.equals(prefix)) {
+                prefix = "";
+            }
+
             // Each config class is both in SmallRyeConfig and managed by a configurator bean.
             // CDI requires more beans for injection points due to binding prefix.
-            ConfigClass properties = ConfigClass.configClass(annotatedType.getJavaClass(),
-                    annotatedType.getAnnotation(ConfigProperties.class).prefix());
+            ConfigClass properties = ConfigClass.configClass(annotatedType.getJavaClass(), prefix);
             configProperties.add(properties);
             configPropertiesBeans.add(properties);
         }

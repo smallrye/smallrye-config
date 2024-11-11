@@ -57,8 +57,6 @@
           <!-- Require updates to MP TCK -->
           <excludes>
             <exclude>org.eclipse.microprofile.config.tck.ConverterTest</exclude>
-            <exclude>org.eclipse.microprofile.config.tck.ConfigPropertiesTest</exclude>
-            <exclude>org.eclipse.microprofile.config.tck.broken.ConfigPropertiesMissingPropertyInjectionTest</exclude>
           </excludes>
         </configuration>
         <executions>
