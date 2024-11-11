@@ -67,11 +67,19 @@ public final class Converters {
 
     static final Converter<ConfigValue> CONFIG_VALUE_CONVERTER = new ConfigValueConverter();
 
-    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
+    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(
+            new Converter<String>() {
+                @Override
+                public String convert(final String value) throws IllegalArgumentException, NullPointerException {
+                    return value;
+                }
+            }));
 
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
-            value -> Boolean.valueOf(
-                    "TRUE".equalsIgnoreCase(value)
+            new Converter<Boolean>() {
+                @Override
+                public Boolean convert(final String value) throws IllegalArgumentException, NullPointerException {
+                    return "TRUE".equalsIgnoreCase(value)
                             || "1".equalsIgnoreCase(value)
                             || "YES".equalsIgnoreCase(value)
                             || "Y".equalsIgnoreCase(value)
@@ -80,50 +88,72 @@ public final class Converters {
                             || "J".equalsIgnoreCase(value)
                             || "SI".equalsIgnoreCase(value)
                             || "SIM".equalsIgnoreCase(value)
-                            || "OUI".equalsIgnoreCase(value)))));
+                            || "OUI".equalsIgnoreCase(value);
+                }
+            })));
 
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Double.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.doubleExpected(value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Double>() {
+                @Override
+                public Double convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return Double.valueOf(value);
+                    } catch (NumberFormatException nfe) {
+                        throw ConfigMessages.msg.doubleExpected(value);
+                    }
                 }
             })));
 
     static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Float.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.floatExpected(value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Float>() {
+                @Override
+                public Float convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return Float.valueOf(value);
+                    } catch (NumberFormatException nfe) {
+                        throw ConfigMessages.msg.floatExpected(value);
+                    }
                 }
             })));
 
     static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Long.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.longExpected(value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Long>() {
+                @Override
+                public Long convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return Long.valueOf(value);
+                    } catch (NumberFormatException nfe) {
+                        throw ConfigMessages.msg.longExpected(value);
+                    }
                 }
             })));
 
     static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Integer.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.integerExpected(value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Integer>() {
+                @Override
+                public Integer convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return Integer.valueOf(value);
+                    } catch (NumberFormatException nfe) {
+                        throw ConfigMessages.msg.integerExpected(value);
+                    }
                 }
             })));
 
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Class.forName(value, true, SecuritySupport.getContextClassLoader());
-                } catch (ClassNotFoundException e) {
-                    throw ConfigMessages.msg.classConverterNotFound(e, value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Class<?>>() {
+                @Override
+                public Class<?> convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return Class.forName(value, true, SecuritySupport.getContextClassLoader());
+                    } catch (ClassNotFoundException e) {
+                        throw ConfigMessages.msg.classConverterNotFound(e, value);
+                    }
                 }
             })));
 
@@ -137,55 +167,98 @@ public final class Converters {
             newOptionalDoubleConverter(DOUBLE_CONVERTER));
 
     static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return InetAddress.getByName(value);
-                } catch (UnknownHostException e) {
-                    throw ConfigMessages.msg.unknownHost(e, value);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<InetAddress>() {
+                @Override
+                public InetAddress convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return InetAddress.getByName(value);
+                    } catch (UnknownHostException e) {
+                        throw ConfigMessages.msg.unknownHost(e, value);
+                    }
                 }
             })));
 
-    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, newEmptyValueConverter(value -> {
-        if (value.length() == 1) {
-            return value.charAt(0);
-        }
-        throw ConfigMessages.msg.failedCharacterConversion(value);
-    }));
+    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, newEmptyValueConverter(
+            new Converter<Character>() {
+                @Override
+                public Character convert(final String value)
+                        throws IllegalArgumentException, NullPointerException {
+                    if (value.length() == 1) {
+                        return value.charAt(0);
+                    }
+                    throw ConfigMessages.msg.failedCharacterConversion(value);
+                }
+            }));
 
     static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
-            newTrimmingConverter(newEmptyValueConverter(Short::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Short>() {
+                @Override
+                public Short convert(final String s) throws IllegalArgumentException, NullPointerException {
+                    return Short.valueOf(s);
+                }
+            })));
 
     static final Converter<Byte> BYTE_CONVERTER = BuiltInConverter.of(13,
-            newTrimmingConverter(newEmptyValueConverter(Byte::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Byte>() {
+                @Override
+                public Byte convert(final String s) throws IllegalArgumentException, NullPointerException {
+                    return Byte.valueOf(s);
+                }
+            })));
 
     static final Converter<UUID> UUID_CONVERTER = BuiltInConverter.of(14,
-            newTrimmingConverter(newEmptyValueConverter((s) -> {
-                try {
-                    return UUID.fromString(s);
-                } catch (IllegalArgumentException e) {
-                    throw ConfigMessages.msg.malformedUUID(e, s);
+            newTrimmingConverter(newEmptyValueConverter(new Converter<UUID>() {
+                @Override
+                public UUID convert(final String s) throws IllegalArgumentException, NullPointerException {
+                    try {
+                        return UUID.fromString(s);
+                    } catch (IllegalArgumentException e) {
+                        throw ConfigMessages.msg.malformedUUID(e, s);
+                    }
                 }
             })));
 
     static final Converter<Currency> CURRENCY_CONVERTER = BuiltInConverter.of(15,
-            newTrimmingConverter(newEmptyValueConverter((s) -> Currency.getInstance(s))));
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Currency>() {
+                @Override
+                public Currency convert(final String s)
+                        throws IllegalArgumentException, NullPointerException {
+                    return Currency.getInstance(s);
+                }
+            })));
 
     static final Converter<BitSet> BITSET_CONVERTER = BuiltInConverter.of(16,
-            newTrimmingConverter(newTrimmingConverter((s) -> {
-                int len = s.length();
-                byte[] data = new byte[len / 2];
-                for (int i = 0; i < len; i += 2) {
-                    data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                            + Character.digit(s.charAt(i + 1), 16));
+            newTrimmingConverter(newTrimmingConverter(new Converter<BitSet>() {
+                @Override
+                public BitSet convert(final String s) throws IllegalArgumentException, NullPointerException {
+                    int len = s.length();
+                    byte[] data = new byte[len / 2];
+                    for (int i = 0; i < len; i += 2) {
+                        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                + Character.digit(s.charAt(i + 1), 16));
+                    }
+                    return BitSet.valueOf(data);
                 }
-                return BitSet.valueOf(data);
             })));
 
     static final Converter<Pattern> PATTERN_CONVERTER = BuiltInConverter.of(17,
-            newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
+            newTrimmingConverter(newEmptyValueConverter(new Converter<Pattern>() {
+                @Override
+                public Pattern convert(final String regex)
+                        throws IllegalArgumentException, NullPointerException {
+                    return Pattern.compile(regex);
+                }
+            })));
 
     static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18,
-            newEmptyValueConverter(Path::of));
+            newEmptyValueConverter(new Converter<Path>() {
+                @Override
+                public Path convert(final String first)
+                        throws IllegalArgumentException, NullPointerException {
+                    return Path.of(first);
+                }
+            }));
 
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
