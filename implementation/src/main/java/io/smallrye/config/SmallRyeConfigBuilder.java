@@ -17,7 +17,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
-import static io.smallrye.config.ConfigMappings.prefix;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
@@ -775,6 +774,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
         private final List<String> ignoredPaths = new ArrayList<>();
 
+        private final StringBuilder sb = new StringBuilder();
+
         public void mapping(ConfigClass configClass) {
             mapping(configClass.getKlass(), configClass.getPrefix());
         }
@@ -790,9 +791,23 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
             // Load the mapping defaults, to make the defaults available to all config sources
 
+            sb.setLength(0);
+            sb.append(prefix);
             for (Map.Entry<String, String> defaultEntry : ConfigMappingLoader.configMappingDefaults(mappingClass).entrySet()) {
                 // Do not override builder defaults with mapping defaults
-                defaultValues.putIfAbsent(prefix(prefix, defaultEntry.getKey()), defaultEntry.getValue());
+                String path = defaultEntry.getKey();
+                String name;
+                if (prefix.isEmpty()) {
+                    name = path;
+                } else if (path.isEmpty()) {
+                    name = prefix;
+                } else if (path.charAt(0) == '[') {
+                    name = sb.append(path).toString();
+                } else {
+                    name = sb.append(".").append(path).toString();
+                }
+                sb.setLength(prefix.length());
+                defaultValues.putIfAbsent(name, defaultEntry.getValue());
             }
         }
 
