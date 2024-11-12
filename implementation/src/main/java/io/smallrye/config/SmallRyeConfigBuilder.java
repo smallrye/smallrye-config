@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -541,10 +542,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    /**
-     * @deprecated Use {@link SmallRyeConfigBuilder#withMapping(ConfigClass)} instead.
-     */
-    @Deprecated(forRemoval = true)
     public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
         mappingsBuilder.mapping(klass, prefix);
         return this;
@@ -777,6 +774,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final StringBuilder sb = new StringBuilder();
 
         public void mapping(ConfigClass configClass) {
+            validateAnnotations(configClass.getKlass());
             mapping(configClass.getKlass(), configClass.getPrefix());
         }
 
@@ -822,6 +820,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         public List<String> getIgnoredPaths() {
             return ignoredPaths;
+        }
+
+        private void validateAnnotations(Class<?> type) {
+            if (!type.isInterface() && type.isAnnotationPresent(ConfigMapping.class)) {
+                throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(type);
+            }
+
+            if (type.isInterface() && type.isAnnotationPresent(ConfigProperties.class)) {
+                throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(type);
+            }
         }
     }
 
