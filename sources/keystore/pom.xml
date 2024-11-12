@@ -10,7 +10,7 @@
 
     <artifactId>smallrye-config-source-keystore</artifactId>
 
-    <name>SmallRye: MicroProfile Config Source - KeyStore</name>
+    <name>SmallRye Config: ConfigSource - KeyStore</name>
 
     <dependencies>
         <dependency>
