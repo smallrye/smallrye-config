@@ -53,8 +53,6 @@ public final class ConfigMappingLoader {
     }
 
     static Class<?> getConfigMappingClass(final Class<?> type) {
-        validateAnnotations(type);
-
         ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass == null) {
             return type;
@@ -167,16 +165,6 @@ public final class ConfigMappingLoader {
             } catch (ClassNotFoundException e) {
                 return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
             }
-        }
-    }
-
-    static void validateAnnotations(Class<?> type) {
-        if (!type.isInterface() && type.isAnnotationPresent(ConfigMapping.class)) {
-            throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(type);
-        }
-
-        if (type.isInterface() && type.isAnnotationPresent(ConfigProperties.class)) {
-            throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(type);
         }
     }
 
