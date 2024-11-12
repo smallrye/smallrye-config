@@ -11,7 +11,7 @@
   <artifactId>smallrye-config-coverage</artifactId>
   <packaging>pom</packaging>
 
-  <name>SmallRye: Config Coverage</name>
+  <name>SmallRye Config: Coverage</name>
 
   <dependencies>
     <dependency>

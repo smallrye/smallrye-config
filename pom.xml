@@ -152,6 +152,7 @@
         </property>
       </activation>
       <modules>
+        <module>coverage</module>
         <module>release</module>
       </modules>
     </profile>
