@@ -771,7 +771,12 @@ public class SmallRyeConfig implements Config, Serializable {
             final Converter<?> conv = getConverterOrNull(asType.getComponentType());
             return conv == null ? null : Converters.newArrayConverter(conv, asType);
         }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> Converters.Implicit.getConverter((Class<?>) clazz));
+        return (Converter<T>) converters.computeIfAbsent(asType, new Function<Type, Converter<?>>() {
+            @Override
+            public Converter<?> apply(final Type clazz) {
+                return Converters.Implicit.getConverter((Class<?>) clazz);
+            }
+        });
     }
 
     @Override
