@@ -1,5 +1,7 @@
 package io.smallrye.config._private;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -9,7 +11,7 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 public interface ConfigLogging extends BasicLogger {
-    ConfigLogging log = Logger.getMessageLogger(ConfigLogging.class, "io.smallrye.config");
+    ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class, "io.smallrye.config");
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1000, value = "Unable to get context classloader instance")
