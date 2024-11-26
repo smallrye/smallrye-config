@@ -1,5 +1,7 @@
 package io.smallrye.config.source.zookeeper;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -9,7 +11,8 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 interface ZooKeepperLogging extends BasicLogger {
-    ZooKeepperLogging log = Logger.getMessageLogger(ZooKeepperLogging.class, ZooKeepperLogging.class.getPackage().getName());
+    ZooKeepperLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ZooKeepperLogging.class,
+            ZooKeepperLogging.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 4500, value = "Failed to retrieve property names from ZooKeeperConfigSource")
