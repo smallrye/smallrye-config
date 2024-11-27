@@ -1,5 +1,6 @@
 package io.smallrye.config.inject;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -21,7 +22,7 @@ import org.jboss.logging.annotations.Pos;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface InjectionMessages {
-    InjectionMessages msg = Messages.getBundle(InjectionMessages.class);
+    InjectionMessages msg = Messages.getBundle(MethodHandles.lookup(), InjectionMessages.class);
 
     @Message(id = 2000, value = "Failed to Inject @ConfigProperty for key %s into %s since the config property could not be found in any config source")
     ConfigException noConfigValue(@Param @Pos(1) String configPropertyName, @Pos(2) String location);

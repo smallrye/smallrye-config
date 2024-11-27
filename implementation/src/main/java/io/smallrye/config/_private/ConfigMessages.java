@@ -1,6 +1,7 @@
 package io.smallrye.config._private;
 
 import java.io.InvalidObjectException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
@@ -13,7 +14,7 @@ import org.jboss.logging.annotations.MessageBundle;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface ConfigMessages {
-    ConfigMessages msg = Messages.getBundle(ConfigMessages.class);
+    ConfigMessages msg = Messages.getBundle(MethodHandles.lookup(), ConfigMessages.class);
 
     @Message(id = 0, value = "The file %s was not found")
     IllegalStateException fileNotFound(String fileName);
