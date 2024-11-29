@@ -26,7 +26,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>mapping</artifactId>
-  <version>3.10.2</version>
+  <version>3.10.3-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: Config Mapping</name>
 
@@ -70,8 +70,4 @@
       <artifactId>weld-junit5</artifactId>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>3.10.2</tag>
-  </scm>
 </project>
