@@ -41,9 +41,7 @@ class BasicTest {
 
         ConfigSource src = new YamlConfigSource("Yaml", yaml);
 
-        assertEquals("cat", src.getValue("foo.bar[0]"));
-        assertEquals("dog", src.getValue("foo.bar[1]"));
-        assertEquals("chicken", src.getValue("foo.bar[2]"));
+        assertEquals("cat,dog,chicken", src.getValue("foo.bar"));
     }
 
     @Test
