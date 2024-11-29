@@ -15,7 +15,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -36,14 +35,6 @@ public class YamlConfigSource extends MapBackedConfigSource {
 
     private static final String NAME_PREFIX = "YamlConfigSource[source=";
     private static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
-    private static final Yaml DUMPER;
-
-    static {
-        final DumperOptions dumperOptions = new DumperOptions();
-        dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.FLOW);
-        dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.FOLDED);
-        DUMPER = new Yaml(dumperOptions);
-    }
 
     public YamlConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
@@ -153,6 +144,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
         });
     }
 
+    // Do not remove this, because Quarkus old ConfigRoots still rely on comma separated values calling Config#getValue and not Config#getValues.
     private static void flattenList(String key, List<Object> source, Map<String, String> target) {
         boolean mixed = false;
         List<String> flatten = new ArrayList<>();
