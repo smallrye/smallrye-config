@@ -140,6 +140,7 @@
         </property>
       </activation>
       <modules>
+        <module>coverage</module>
         <module>testsuite</module>
         <module>examples</module>
       </modules>
@@ -152,7 +153,6 @@
         </property>
       </activation>
       <modules>
-        <module>coverage</module>
         <module>release</module>
       </modules>
     </profile>
