@@ -304,61 +304,51 @@ public final class ConfigMappingContext {
         return dashesPosition;
     }
 
-    void reportUnknown(final List<String> ignoredPaths) {
-        KeyMap<Boolean> ignoredProperties = new KeyMap<>();
+    void reportUnknown(final Set<String> ignoredPaths) {
+        Set<PropertyName> ignoredNames = new HashSet<>();
+        Set<String> ignoredPrefixes = new HashSet<>();
         for (String ignoredPath : ignoredPaths) {
-            KeyMap<Boolean> found;
             if (ignoredPath.endsWith(".**")) {
-                found = ignoredProperties.findOrAdd(ignoredPath.substring(0, ignoredPath.length() - 3));
-                found.putRootValue(Boolean.TRUE);
-                ignoreRecursively(found);
+                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 3));
             } else {
-                if (!ignoredProperties.hasRootValue(ignoredPath)) {
-                    found = ignoredProperties.findOrAdd(ignoredPath);
-                    found.putRootValue(Boolean.TRUE);
-                }
+                ignoredNames.add(new PropertyName(ignoredPath));
             }
         }
 
-        Set<String> roots = new HashSet<>();
+        Set<String> prefixes = new HashSet<>();
         for (Map<String, ConfigMappingObject> value : this.roots.values()) {
-            roots.addAll(value.keySet());
+            prefixes.addAll(value.keySet());
+        }
+        if (prefixes.contains("")) {
+            prefixes.clear();
         }
 
-        for (String name : filterPropertiesInRoots(config.getPropertyNames(), roots)) {
-            if (usedProperties.contains(name)) {
+        propertyNames: for (String propertyName : config.getPropertyNames()) {
+            if (usedProperties.contains(propertyName)) {
                 continue;
             }
 
-            if (!ignoredProperties.hasRootValue(name)) {
-                ConfigValue configValue = config.getConfigValue(name);
-                // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
-                    continue;
+            if (ignoredNames.contains(new PropertyName(propertyName))) {
+                continue;
+            }
+
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (propertyName.startsWith(ignoredPrefix)) {
+                    continue propertyNames;
                 }
-                problems.add(new Problem(
-                        ConfigMessages.msg.propertyDoesNotMapToAnyRoot(name, configValue.getLocation())));
             }
-        }
-    }
 
-    private static void ignoreRecursively(KeyMap<Boolean> root) {
-        if (root.getRootValue() == null) {
-            root.putRootValue(Boolean.TRUE);
-        }
-
-        if (root.getAny() == null) {
-            //noinspection CollectionAddedToSelf
-            root.putAny(root);
-        } else {
-            var any = root.getAny();
-            if (root != any) {
-                ignoreRecursively(any);
+            for (String prefix : prefixes) {
+                if (isPropertyInRoot(propertyName, prefix)) {
+                    ConfigValue configValue = config.getConfigValue(propertyName);
+                    // TODO - https://github.com/quarkusio/quarkus/issues/38479
+                    if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
+                        continue;
+                    }
+                    problems.add(new Problem(
+                            ConfigMessages.msg.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation())));
+                }
             }
-        }
-
-        for (var value : root.values()) {
-            ignoreRecursively(value);
         }
     }
 
