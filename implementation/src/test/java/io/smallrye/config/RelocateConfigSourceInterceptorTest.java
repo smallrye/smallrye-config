@@ -1,7 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappings.mappedProperties;
-import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonMap;
@@ -15,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -201,22 +198,22 @@ class RelocateConfigSourceInterceptorTest {
             if (name.startsWith("child.")) {
                 return "parent." + name.substring(6);
             }
+            if (name.startsWith("parent.")) {
+                return "child." + name.substring(7);
+            }
+            return name;
+        });
+
+        // To rewrite the fallback names to the main name. Required for fallbacks to work properly with Maps keys
+        RelocateConfigSourceInterceptor relocateConfigSourceInterceptor = new RelocateConfigSourceInterceptor(name -> {
+            if (name.startsWith("parent.")) {
+                return "child." + name.substring(7);
+            }
             return name;
         }) {
             @Override
-            public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-                Set<String> names = new HashSet<>();
-                Set<String> hierarchyCandidates = new HashSet<>();
-                Iterator<String> namesIterator = context.iterateNames();
-                while (namesIterator.hasNext()) {
-                    String name = namesIterator.next();
-                    names.add(name);
-                    if (name.startsWith("parent.")) {
-                        hierarchyCandidates.add("child." + name.substring(7));
-                    }
-                }
-                names.addAll(mappedProperties(configClass(Child.class), hierarchyCandidates));
-                return names.iterator();
+            public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
+                return context.proceed(name);
             }
         };
 
@@ -227,8 +224,11 @@ class RelocateConfigSourceInterceptorTest {
                         "parent.labels.parent", "parent",
                         "parent.nested.parent.value", "parent-nested"))
                 .withInterceptors(fallbackConfigSourceInterceptor)
+                .withInterceptors(relocateConfigSourceInterceptor)
                 .withMapping(Parent.class)
                 .withMapping(Child.class)
+                .withMappingIgnore("parent.**")
+                .withMappingIgnore("child.**")
                 .build();
 
         Parent parent = config.getConfigMapping(Parent.class);
@@ -248,8 +248,11 @@ class RelocateConfigSourceInterceptorTest {
                         "parent.labels.parent", "parent", "child.labels.child", "child",
                         "parent.nested.parent.value", "parent-nested", "child.nested.child.value", "child-nested"))
                 .withInterceptors(fallbackConfigSourceInterceptor)
+                .withInterceptors(relocateConfigSourceInterceptor)
                 .withMapping(Parent.class)
                 .withMapping(Child.class)
+                .withMappingIgnore("parent.**")
+                .withMappingIgnore("child.**")
                 .build();
 
         parent = config.getConfigMapping(Parent.class);
@@ -257,11 +260,11 @@ class RelocateConfigSourceInterceptorTest {
 
         assertEquals("parent", parent.value().orElse(null));
         assertEquals("child", child.value().orElse(null));
-        assertEquals(1, parent.labels().size());
+        assertEquals(2, parent.labels().size());
         assertEquals("parent", parent.labels().get("parent"));
         assertEquals(2, child.labels().size());
         assertEquals("child", child.labels().get("child"));
-        assertEquals(1, parent.nested().size());
+        assertEquals(2, parent.nested().size());
         assertEquals("parent-nested", parent.nested().get("parent").value());
         assertEquals(2, child.nested().size());
         assertEquals("child-nested", child.nested().get("child").value());
@@ -326,7 +329,14 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", mapping.map().get("old"));
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        Set<String> mappedProperties = mappedProperties(configClass(RelocateMapping.class), properties);
+        ConfigMappingNames names = new ConfigMappingNames(
+                ConfigMappingLoader.getConfigMapping(RelocateMapping.class).getNames());
+        Set<String> mappedProperties = new HashSet<>();
+        for (String property : properties) {
+            if (names.hasAnyName(RelocateMapping.class.getName(), "reloc.old", "reloc.old", Set.of(property))) {
+                mappedProperties.add(property);
+            }
+        }
         properties.removeAll(mappedProperties);
         Set<String> relocateProperties = new HashSet<>();
         for (String property : properties) {
@@ -362,7 +372,14 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("old", mapping.map().get("old"));
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        Set<String> mappedProperties = mappedProperties(configClass(FallbackMapping.class), properties);
+        ConfigMappingNames names = new ConfigMappingNames(
+                ConfigMappingLoader.getConfigMapping(FallbackMapping.class).getNames());
+        Set<String> mappedProperties = new HashSet<>();
+        for (String property : properties) {
+            if (names.hasAnyName(FallbackMapping.class.getName(), "fall.new", "fall.new", Set.of(property))) {
+                mappedProperties.add(property);
+            }
+        }
         properties.removeAll(mappedProperties);
         Set<String> fallbackProperties = new HashSet<>();
         for (String property : properties) {

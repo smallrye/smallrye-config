@@ -3,7 +3,6 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -73,20 +72,6 @@ public final class ConfigMappings {
             properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
         }
         return properties;
-    }
-
-    @Deprecated
-    public static Set<String> mappedProperties(final ConfigClass configClass, final Set<String> properties) {
-        ConfigMappingNames names = new ConfigMappingNames(
-                ConfigMappingLoader.getConfigMapping(configClass.getKlass()).getNames());
-        Set<String> mappedNames = new HashSet<>();
-        for (String property : properties) {
-            if (names.hasAnyName(configClass.getKlass().getName(), configClass.getPrefix(), configClass.getPrefix(),
-                    Set.of(property))) {
-                mappedNames.add(property);
-            }
-        }
-        return mappedNames;
     }
 
     private static void mapConfiguration(

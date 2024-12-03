@@ -4,7 +4,6 @@ import static io.smallrye.config.ConfigMappings.registerConfigMappings;
 import static io.smallrye.config.ConfigMappings.registerConfigProperties;
 import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -325,23 +323,5 @@ public class ConfigMappingsTest {
         assertTrue(properties.containsKey("mapped.nested.value"));
         assertTrue(properties.containsKey("mapped.value"));
         assertTrue(properties.containsKey("mapped.collection[*].value"));
-    }
-
-    @Test
-    void mappedProperties() {
-        Set<String> mappedProperties = ConfigMappings.mappedProperties(configClass(MappedProperties.class),
-                Set.of("mapped.value", "mapped.nested.value", "mapped.collection[0].value", "mapped.unknown"));
-        assertEquals(3, mappedProperties.size());
-        assertTrue(mappedProperties.contains("mapped.value"));
-        assertTrue(mappedProperties.contains("mapped.nested.value"));
-        assertTrue(mappedProperties.contains("mapped.collection[0].value"));
-
-        assertTrue(ConfigMappings.mappedProperties(configClass(MappedProperties.class), emptySet()).isEmpty());
-    }
-
-    @Test
-    void invalidMappedProperties() {
-        assertTrue(ConfigMappings.mappedProperties(configClass(MappedProperties.class),
-                Set.of("foo.bar", "mapped", "mapped.something", "mapped.collection")).isEmpty());
     }
 }
