@@ -769,7 +769,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public final class MappingBuilder {
         private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
-        private final List<String> ignoredPaths = new ArrayList<>();
+        private final Set<String> ignoredPaths = new HashSet<>();
 
         private final StringBuilder sb = new StringBuilder();
 
@@ -818,7 +818,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             return mappings;
         }
 
-        public List<String> getIgnoredPaths() {
+        public Set<String> getIgnoredPaths() {
             return ignoredPaths;
         }
 
