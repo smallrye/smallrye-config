@@ -100,11 +100,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return lineNumber != -1 ? configSourceName + ":" + lineNumber : configSourceName;
     }
 
-    boolean hasProblems() {
+    public boolean hasProblems() {
         return problems != null && !problems.isEmpty();
     }
 
-    List<Problem> getProblems() {
+    public List<Problem> getProblems() {
         return hasProblems() ? unmodifiableList(problems) : emptyList();
     }
 
