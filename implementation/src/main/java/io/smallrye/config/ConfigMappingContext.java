@@ -8,6 +8,7 @@ import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ import io.smallrye.config.common.utils.StringUtil;
 public final class ConfigMappingContext {
     private final SmallRyeConfig config;
     private final ConfigMappingNames names;
-    private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
+    private final Map<Class<?>, Map<String, Object>> mappings = new IdentityHashMap<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
     private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
@@ -46,13 +47,13 @@ public final class ConfigMappingContext {
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
 
-    public ConfigMappingContext(final SmallRyeConfig config, final Map<Class<?>, Set<String>> roots) {
+    public ConfigMappingContext(final SmallRyeConfig config, final Map<Class<?>, Set<String>> mappings) {
         this(config, new Supplier<Map<String, Map<String, Set<String>>>>() {
             @Override
             public Map<String, Map<String, Set<String>>> get() {
                 // All mapping names must be loaded first because of split mappings
                 Map<String, Map<String, Set<String>>> names = new HashMap<>();
-                for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
+                for (Map.Entry<Class<?>, Set<String>> mapping : mappings.entrySet()) {
                     for (Map.Entry<String, Map<String, Set<String>>> entry : configMappingNames(mapping.getKey()).entrySet()) {
                         names.putIfAbsent(entry.getKey(), new HashMap<>());
                         names.get(entry.getKey()).putAll(entry.getValue());
@@ -60,29 +61,46 @@ public final class ConfigMappingContext {
                 }
                 return names;
             }
-        }.get(), roots);
+        }.get(), mappings);
     }
 
     ConfigMappingContext(
             final SmallRyeConfig config,
             final Map<String, Map<String, Set<String>>> names,
-            final Map<Class<?>, Set<String>> roots) {
+            final Map<Class<?>, Set<String>> mappings) {
 
         this.config = config;
         this.names = new ConfigMappingNames(names);
-        matchPropertiesWithEnv(roots);
-        for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
-            Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
+        matchPropertiesWithEnv(mappings);
+        for (Map.Entry<Class<?>, Set<String>> mapping : mappings.entrySet()) {
+            Map<String, Object> mappingObjects = new HashMap<>();
+            Class<?> mappingType = mapping.getKey();
             for (String rootPath : mapping.getValue()) {
                 applyRootPath(rootPath);
-                mappingObjects.put(rootPath, (ConfigMappingObject) constructRoot(mapping.getKey()));
+                mappingObjects.put(rootPath, constructRoot(mappingType));
             }
-            this.roots.put(mapping.getKey(), mappingObjects);
+            this.mappings.put(mappingType, mappingObjects);
         }
     }
 
+    @SuppressWarnings("unchecked")
     <T> T constructRoot(Class<T> interfaceType) {
-        return constructGroup(interfaceType);
+        int problemsCount = problems.size();
+        Object mappingObject = constructGroup(interfaceType);
+        if (problemsCount != problems.size()) {
+            return (T) mappingObject;
+        }
+        try {
+            if (mappingObject instanceof ConfigMappingClassMapper) {
+                mappingObject = ((ConfigMappingClassMapper) mappingObject).map();
+                config.getConfigValidator().validateMapping(mappingObject.getClass(), rootPath, mappingObject);
+            } else {
+                config.getConfigValidator().validateMapping(interfaceType, rootPath, mappingObject);
+            }
+        } catch (ConfigValidationException e) {
+            problems.addAll(Arrays.asList(e.getProblems()));
+        }
+        return (T) mappingObject;
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
@@ -168,8 +186,8 @@ public final class ConfigMappingContext {
         return problems;
     }
 
-    Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
-        return roots;
+    Map<Class<?>, Map<String, Object>> getMappings() {
+        return mappings;
     }
 
     private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> roots) {
@@ -316,7 +334,7 @@ public final class ConfigMappingContext {
         }
 
         Set<String> prefixes = new HashSet<>();
-        for (Map<String, ConfigMappingObject> value : this.roots.values()) {
+        for (Map<String, Object> value : this.mappings.values()) {
             prefixes.addAll(value.keySet());
         }
         if (prefixes.contains("")) {
