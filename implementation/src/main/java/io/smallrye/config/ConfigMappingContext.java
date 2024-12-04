@@ -2,12 +2,12 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
-import static io.smallrye.config.PropertyName.name;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import io.smallrye.config.common.utils.StringUtil;
  */
 public final class ConfigMappingContext {
     private final SmallRyeConfig config;
-    private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
+    private final Map<Class<?>, Map<String, Object>> mappings = new IdentityHashMap<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
     private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
@@ -52,17 +52,33 @@ public final class ConfigMappingContext {
 
         matchPropertiesWithEnv(mappings);
         for (Map.Entry<Class<?>, Set<String>> mapping : mappings.entrySet()) {
-            Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
-            for (String rootPath : mapping.getValue()) {
-                applyRootPath(rootPath);
-                mappingObjects.put(rootPath, (ConfigMappingObject) constructRoot(mapping.getKey()));
+            Map<String, Object> mappingObjects = new HashMap<>();
+            for (String prefix : mapping.getValue()) {
+                applyPrefix(prefix);
+                mappingObjects.put(prefix, constructMapping(mapping.getKey(), prefix));
             }
-            this.roots.put(mapping.getKey(), mappingObjects);
+            this.mappings.put(mapping.getKey(), mappingObjects);
         }
     }
 
-    <T> T constructRoot(Class<T> interfaceType) {
-        return constructGroup(interfaceType);
+    @SuppressWarnings("unchecked")
+    <T> T constructMapping(Class<T> interfaceType, String prefix) {
+        int problemsCount = problems.size();
+        Object mappingObject = constructGroup(interfaceType);
+        if (problemsCount != problems.size()) {
+            return (T) mappingObject;
+        }
+        try {
+            if (mappingObject instanceof ConfigMappingClassMapper) {
+                mappingObject = ((ConfigMappingClassMapper) mappingObject).map();
+                config.getConfigValidator().validateMapping(mappingObject.getClass(), prefix, mappingObject);
+            } else {
+                config.getConfigValidator().validateMapping(interfaceType, prefix, mappingObject);
+            }
+        } catch (ConfigValidationException e) {
+            problems.addAll(Arrays.asList(e.getProblems()));
+        }
+        return (T) mappingObject;
     }
 
     public <T> T constructGroup(Class<T> interfaceType) {
@@ -102,6 +118,10 @@ public final class ConfigMappingContext {
         });
     }
 
+    public void applyPrefix(final String prefix) {
+        this.nameBuilder.replace(0, nameBuilder.length(), prefix);
+    }
+
     public void applyNamingStrategy(final NamingStrategy namingStrategy) {
         if (namingStrategy != null) {
             this.namingStrategy = namingStrategy;
@@ -112,10 +132,6 @@ public final class ConfigMappingContext {
         if (beanStyleGetters != null) {
             this.beanStyleGetters = beanStyleGetters;
         }
-    }
-
-    public void applyRootPath(final String rootPath) {
-        this.nameBuilder.replace(0, nameBuilder.length(), rootPath);
     }
 
     private static final Function<String, String> BEAN_STYLE_GETTERS = new Function<String, String>() {
@@ -147,8 +163,8 @@ public final class ConfigMappingContext {
         return problems;
     }
 
-    Map<Class<?>, Map<String, ConfigMappingObject>> getRootsMap() {
-        return roots;
+    Map<Class<?>, Map<String, Object>> getMappings() {
+        return mappings;
     }
 
     // TODO - We shouldn't be mutating the EnvSource.
@@ -277,7 +293,7 @@ public final class ConfigMappingContext {
         }
 
         Set<String> prefixes = new HashSet<>();
-        for (Map<String, ConfigMappingObject> value : this.roots.values()) {
+        for (Map<String, Object> value : this.mappings.values()) {
             prefixes.addAll(value.keySet());
         }
         if (prefixes.contains("")) {

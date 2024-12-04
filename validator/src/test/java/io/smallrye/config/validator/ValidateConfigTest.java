@@ -67,7 +67,7 @@ public class ValidateConfigTest {
 
     @Test
     void validateConfigMapping() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
                 .withSources(config(
                         "server.host", "localhost",
@@ -98,11 +98,9 @@ public class ValidateConfigTest {
                         "server.info.admins.root[1].username", "admin",
                         "server.info.firewall.accepted[0]", "127.0.0.1",
                         "server.info.firewall.accepted[1]", "8.8.8"))
-                .withMapping(Server.class)
-                .build();
+                .withMapping(Server.class);
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(Server.class, "server"));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         List<String> validations = new ArrayList<>();
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
@@ -134,16 +132,14 @@ public class ValidateConfigTest {
 
     @Test
     void validateNamingStrategy() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
                 .withSources(config(
                         "server.the_host", "localhost",
                         "server.the_port", "8080"))
-                .withMapping(ServerNamingStrategy.class)
-                .build();
+                .withMapping(ServerNamingStrategy.class);
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(ServerNamingStrategy.class, "server"));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         List<String> validations = new ArrayList<>();
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
@@ -154,13 +150,11 @@ public class ValidateConfigTest {
 
     @Test
     void validateConfigProperties() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
-                .withMapping(Client.class)
-                .build();
+                .withMapping(Client.class);
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(Client.class));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         assertEquals(1, validationException.getProblemCount());
         List<String> validations = new ArrayList<>();
         validations.add(validationException.getProblem(0).getMessage());
@@ -169,16 +163,14 @@ public class ValidateConfigTest {
 
     @Test
     void validateParent() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
                 .withSources(config(
                         "server.host", "localhost",
                         "server.port", "80"))
-                .withMapping(ServerParent.class)
-                .build();
+                .withMapping(ServerParent.class);
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(ServerParent.class, "server"));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         assertEquals("server.port must be greater than or equal to 8000", validationException.getProblem(0).getMessage());
     }
 
@@ -359,14 +351,12 @@ public class ValidateConfigTest {
 
     @Test
     void hierarchy() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
                 .withMapping(Child.class)
-                .withSources(config("validator.child.number", "1"))
-                .build();
+                .withSources(config("validator.child.number", "1"));
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(Child.class));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         List<String> validations = new ArrayList<>();
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
@@ -387,13 +377,11 @@ public class ValidateConfigTest {
 
     @Test
     void nestedMethodValidation() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
                 .withValidator(new BeanValidationConfigValidatorImpl())
-                .withMapping(MethodValidation.class)
-                .build();
+                .withMapping(MethodValidation.class);
 
-        ConfigValidationException validationException = assertThrows(ConfigValidationException.class,
-                () -> config.getConfigMapping(MethodValidation.class));
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
         List<String> validations = new ArrayList<>();
         for (int i = 0; i < validationException.getProblemCount(); i++) {
             validations.add(validationException.getProblem(i).getMessage());
