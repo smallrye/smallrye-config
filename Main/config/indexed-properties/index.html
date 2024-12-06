@@ -943,8 +943,9 @@ type. Since the indexed element is part of the property name, it can also map co
 <p>The indexed property syntax uses the property name and square brackets with an index in between.</p>
 <p>A call to <code>Config#getValues("my.collection", String.class)</code>, will automatically create and convert a <code>List&lt;String&gt;</code> 
 that contains the values <code>dog</code>, <code>cat</code> and <code>turtle</code>. A call to <code>Config#getValues("my.indexed.collection", String.class)</code> 
-returns the exact same result. If SmallRye Config finds the same property name in their indexed and unindexed format, 
-the indexed value has priority.</p>
+returns the exact same result. The indexed property format is prioritized when both styles are found in the same 
+configuration source. When available in multiple sources, the higher ordinal source wins, like any other configuration 
+lookup.</p>
 <p>The indexed property is sorted by its index before being added to the target <code>Collection</code>. Any gaps in the indexes do 
 not resolve to the target <code>Collection</code>, which means that the <code>Collection</code> result will store all values without empty 
 elements.</p>
