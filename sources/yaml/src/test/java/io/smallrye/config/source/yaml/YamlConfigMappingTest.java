@@ -1,5 +1,6 @@
 package io.smallrye.config.source.yaml;
 
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,11 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithConverter;
@@ -1083,5 +1087,34 @@ class YamlConfigMappingTest {
     interface NestedMaps {
         @WithParentName
         Map<String, Map<String, String>> services();
+    }
+
+    @Test
+    void overrideIndexedWithHigher() {
+        String yaml = "override:\n" +
+                "  values:\n" +
+                "    - one\n" +
+                "    - two\n";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(OverrideIndexedWithHigher.class)
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .withSources(new PropertiesConfigSource(Map.of("override.values", "three,four"), "", 1000))
+                .build();
+
+        Set<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("override.values[0]"));
+        assertTrue(properties.contains("override.values[1]"));
+        assertTrue(properties.contains("override.values"));
+
+        OverrideIndexedWithHigher mapping = config.getConfigMapping(OverrideIndexedWithHigher.class);
+        assertEquals(2, mapping.values().size());
+        assertTrue(mapping.values().contains("three"));
+        assertTrue(mapping.values().contains("four"));
+    }
+
+    @ConfigMapping(prefix = "override")
+    interface OverrideIndexedWithHigher {
+        List<String> values();
     }
 }

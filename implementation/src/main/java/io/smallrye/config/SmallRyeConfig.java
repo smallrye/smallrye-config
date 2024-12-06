@@ -188,7 +188,25 @@ public class SmallRyeConfig implements Config, Serializable {
             // Try legacy / MP comma separated values
             return getValue(name, newCollectionConverter(converter, collectionFactory));
         }
-        return getIndexedValues(indexedProperties, converter, collectionFactory);
+
+        // Check ordinality of indexed
+        int indexedOrdinality = Integer.MIN_VALUE;
+        C collection = collectionFactory.apply(indexedProperties.size());
+        for (String indexedProperty : indexedProperties) {
+            ConfigValue indexed = getConfigValue(indexedProperty);
+            if (indexed.getConfigSourceOrdinal() >= indexedOrdinality) {
+                indexedOrdinality = indexed.getConfigSourceOrdinal();
+            }
+            collection.add(convertValue(indexed, converter));
+        }
+
+        // Use indexed if comma separated empty or higher in ordinality
+        ConfigValue commaSeparated = getConfigValue(name);
+        if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+            return collection;
+        } else {
+            return getValue(name, newCollectionConverter(converter, collectionFactory));
+        }
     }
 
     public <T, C extends Collection<T>> C getIndexedValues(String name, Converter<T> converter,
@@ -384,19 +402,32 @@ public class SmallRyeConfig implements Config, Serializable {
     @SuppressWarnings("unchecked")
     public <T> T getValue(String name, Class<T> propertyType) {
         if (propertyType.isArray()) {
-            ConfigValue configValue = getConfigValue(name);
-            if (configValue.getValue() != null) {
+            List<String> indexedProperties = getIndexedProperties(name);
+            if (indexedProperties.isEmpty()) {
+                // Try legacy / MP comma separated values
                 return getValue(name, requireConverter(propertyType));
             }
 
-            List<?> values = getValues(name, propertyType.getComponentType());
-            Object array = Array.newInstance(propertyType.getComponentType(), values.size());
-            for (int i = 0, valuesSize = values.size(); i < valuesSize; i++) {
-                Array.set(array, i, values.get(i));
+            // Check ordinality of indexed
+            int indexedOrdinality = Integer.MIN_VALUE;
+            Object array = Array.newInstance(propertyType.getComponentType(), indexedProperties.size());
+            for (int i = 0; i < indexedProperties.size(); i++) {
+                final String indexedProperty = indexedProperties.get(i);
+                ConfigValue indexed = getConfigValue(indexedProperty);
+                if (indexed.getConfigSourceOrdinal() >= indexedOrdinality) {
+                    indexedOrdinality = indexed.getConfigSourceOrdinal();
+                }
+                Array.set(array, i, convertValue(indexed, requireConverter(propertyType.getComponentType())));
             }
-            return (T) array;
-        }
 
+            // Use indexed if comma separated empty or higher in ordinality
+            ConfigValue commaSeparated = getConfigValue(name);
+            if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+                return (T) array;
+            } else {
+                return convertValue(commaSeparated, requireConverter(propertyType));
+            }
+        }
         return getValue(name, requireConverter(propertyType));
     }
 
@@ -502,8 +533,36 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     @Override
-    public <T> Optional<T> getOptionalValue(String name, Class<T> aClass) {
-        return getValue(name, getOptionalConverter(aClass));
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> getOptionalValue(String name, Class<T> propertyType) {
+        if (propertyType.isArray()) {
+            List<String> indexedProperties = getIndexedProperties(name);
+            if (indexedProperties.isEmpty()) {
+                // Try legacy / MP comma separated values
+                return getValue(name, getOptionalConverter(propertyType));
+            }
+
+            // Check ordinality of indexed
+            int indexedOrdinality = Integer.MIN_VALUE;
+            Object array = Array.newInstance(propertyType.getComponentType(), indexedProperties.size());
+            for (int i = 0; i < indexedProperties.size(); i++) {
+                final String indexedProperty = indexedProperties.get(i);
+                ConfigValue indexed = getConfigValue(indexedProperty);
+                if (indexed.getConfigSourceOrdinal() >= indexedOrdinality) {
+                    indexedOrdinality = indexed.getConfigSourceOrdinal();
+                }
+                Array.set(array, i, convertValue(indexed, requireConverter(propertyType.getComponentType())));
+            }
+
+            // Use indexed if comma separated empty or higher in ordinality
+            ConfigValue commaSeparated = getConfigValue(name);
+            if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+                return (Optional<T>) Optional.of(array);
+            } else {
+                return getValue(name, getOptionalConverter(propertyType));
+            }
+        }
+        return getValue(name, getOptionalConverter(propertyType));
     }
 
     public <T> Optional<T> getOptionalValue(String name, Converter<T> converter) {
@@ -521,11 +580,29 @@ public class SmallRyeConfig implements Config, Serializable {
 
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(String name, Converter<T> converter,
             IntFunction<C> collectionFactory) {
-        Optional<C> optionalValue = getOptionalValue(name, newCollectionConverter(converter, collectionFactory));
-        if (optionalValue.isPresent()) {
-            return optionalValue;
+        List<String> indexedProperties = getIndexedProperties(name);
+        if (indexedProperties.isEmpty()) {
+            // Try legacy / MP comma separated values
+            return getOptionalValue(name, newCollectionConverter(converter, collectionFactory));
+        }
+
+        // Check ordinality of indexed
+        int indexedOrdinality = Integer.MIN_VALUE;
+        C collection = collectionFactory.apply(indexedProperties.size());
+        for (String indexedProperty : indexedProperties) {
+            ConfigValue indexed = getConfigValue(indexedProperty);
+            if (indexed.getValue() != null && indexed.getConfigSourceOrdinal() >= indexedOrdinality) {
+                indexedOrdinality = indexed.getConfigSourceOrdinal();
+            }
+            convertValue(indexed, newOptionalConverter(converter)).ifPresent(collection::add);
+        }
+
+        // Use indexed if comma separated empty or higher in ordinality
+        ConfigValue commaSeparated = getConfigValue(name);
+        if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+            return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
         } else {
-            return getIndexedOptionalValues(name, converter, collectionFactory);
+            return getOptionalValue(name, newCollectionConverter(converter, collectionFactory));
         }
     }
 
@@ -536,17 +613,13 @@ public class SmallRyeConfig implements Config, Serializable {
             return Optional.empty();
         }
 
-        final C collection = collectionFactory.apply(indexedProperties.size());
+        C collection = collectionFactory.apply(indexedProperties.size());
         for (String indexedProperty : indexedProperties) {
-            final Optional<T> optionalValue = getOptionalValue(indexedProperty, converter);
+            Optional<T> optionalValue = getOptionalValue(indexedProperty, converter);
             optionalValue.ifPresent(collection::add);
         }
 
-        if (!collection.isEmpty()) {
-            return Optional.of(collection);
-        }
-
-        return Optional.empty();
+        return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
     }
 
     /**
@@ -839,7 +912,7 @@ public class SmallRyeConfig implements Config, Serializable {
             // Init all late sources
             List<String> profiles = getProfiles(positiveInterceptors);
             List<ConfigSourceWithPriority> sourcesWithPriorities = mapLateSources(sources, negativeInterceptors,
-                    positiveInterceptors, current, profiles, builder, config);
+                    positiveInterceptors, current, profiles, builder);
             List<ConfigSource> configSources = getSources(sourcesWithPriorities);
 
             // Rebuild the chain with the late sources and new instances of the interceptors
@@ -929,8 +1002,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 final List<ConfigSourceInterceptor> positiveInterceptors,
                 final ConfigSourceInterceptorContext current,
                 final List<String> profiles,
-                final SmallRyeConfigBuilder builder,
-                final SmallRyeConfig config) {
+                final SmallRyeConfigBuilder builder) {
 
             ConfigSourceWithPriority.resetLoadPriority();
             List<ConfigSourceWithPriority> currentSources = new ArrayList<>();

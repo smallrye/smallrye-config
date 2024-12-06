@@ -8,6 +8,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 import org.eclipse.microprofile.config.Config;
@@ -212,11 +214,7 @@ class SmallRyeConfigTest {
     @Test
     void getOptionalValuesNotIndexed() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config(
-                        "server.environments", "dev,qa",
-                        "server.environments[0]", "dev",
-                        "server.environments[1]", "qa",
-                        "server.environments[2]", "prod"))
+                .withSources(config("server.environments", "dev,qa"))
                 .build();
 
         Optional<List<String>> environments = config.getOptionalValues("server.environments", String.class);
@@ -232,12 +230,18 @@ class SmallRyeConfigTest {
                 .withSources(config("server.environments", ""))
                 .build();
 
+        assertFalse(
+                config.getIndexedOptionalValues("server.environments", config.requireConverter(String.class), ArrayList::new)
+                        .isPresent());
         assertFalse(config.getOptionalValues("server.environments", String.class).isPresent());
 
         SmallRyeConfig configIndexed = new SmallRyeConfigBuilder()
                 .withSources(config("server.environments[0]", ""))
                 .build();
 
+        assertFalse(configIndexed
+                .getIndexedOptionalValues("server.environments", config.requireConverter(String.class), ArrayList::new)
+                .isPresent());
         assertFalse(configIndexed.getOptionalValues("server.environments", String.class).isPresent());
     }
 
@@ -415,7 +419,7 @@ class SmallRyeConfigTest {
 
         Converter<String> stringConverter = config.requireConverter(String.class);
         Map<String, String> treeMap = config.getValues("my.prop", stringConverter, stringConverter, t -> new TreeMap<>());
-        assertTrue(treeMap instanceof TreeMap);
+        assertInstanceOf(TreeMap.class, treeMap);
 
         Optional<Map<String, String>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class);
         assertTrue(optionalMap.isPresent());
@@ -428,7 +432,7 @@ class SmallRyeConfigTest {
         Optional<Map<String, String>> optionalTreeMap = config.getOptionalValues("my.prop", stringConverter, stringConverter,
                 t -> new TreeMap<>());
         assertTrue(optionalTreeMap.isPresent());
-        assertTrue(optionalTreeMap.get() instanceof TreeMap);
+        assertInstanceOf(TreeMap.class, optionalTreeMap.get());
 
         assertTrue(config.getOptionalValues("my.optional", String.class, String.class).isEmpty());
     }
@@ -477,7 +481,7 @@ class SmallRyeConfigTest {
         Converter<String> stringConverter = config.requireConverter(String.class);
         Map<String, List<String>> treeMap = config.getValues("my.prop", stringConverter, stringConverter, t -> new TreeMap<>(),
                 ArrayList::new);
-        assertTrue(treeMap instanceof TreeMap);
+        assertInstanceOf(TreeMap.class, treeMap);
 
         Optional<Map<String, List<String>>> optionalMap = config.getOptionalValues("my.prop", String.class, String.class,
                 ArrayList::new);
@@ -493,7 +497,7 @@ class SmallRyeConfigTest {
         Optional<Map<String, List<String>>> optionalTreeMap = config.getOptionalValues("my.prop", stringConverter,
                 stringConverter, t -> new TreeMap<>(), ArrayList::new);
         assertTrue(optionalTreeMap.isPresent());
-        assertTrue(optionalTreeMap.get() instanceof TreeMap);
+        assertInstanceOf(TreeMap.class, optionalTreeMap.get());
 
         assertTrue(config.getOptionalValues("my.optional", String.class, String.class, ArrayList::new).isEmpty());
     }
@@ -602,5 +606,103 @@ class SmallRyeConfigTest {
         assertFalse(config.getConfigSources(SysPropConfigSource.class).iterator().hasNext());
         assertFalse(config.getConfigSources(EnvConfigSource.class).iterator().hasNext());
         assertEquals("1234", config.getRawValue("my.prop"));
+    }
+
+    @Test
+    void overrideIndexed() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("list[0]", "one", "list[1]", "two"))
+                .build();
+
+        String[] listArray = config.getValue("list", String[].class);
+        assertEquals(2, listArray.length);
+        assertEquals("one", listArray[0]);
+        assertEquals("two", listArray[1]);
+        List<String> listList = config.getValues("list", String.class);
+        assertEquals(2, listList.size());
+        assertEquals("one", listList.get(0));
+        assertEquals("two", listList.get(1));
+        Optional<String[]> listOptionalArray = config.getOptionalValue("list", String[].class);
+        assertTrue(listOptionalArray.isPresent());
+        listOptionalArray.ifPresent(list -> {
+            assertEquals(2, list.length);
+            assertEquals("one", list[0]);
+            assertEquals("two", list[1]);
+        });
+        Optional<List<String>> listOptionalList = config.getOptionalValues("list", String.class);
+        assertTrue(listOptionalList.isPresent());
+        listOptionalList.ifPresent(new Consumer<List<String>>() {
+            @Override
+            public void accept(final List<String> list) {
+                assertEquals(2, list.size());
+                assertEquals("one", list.get(0));
+                assertEquals("two", list.get(1));
+            }
+        });
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config("list[0]", "one", "list[1]", "two"))
+                .withSources(new PropertiesConfigSource(Map.of("list", "three,four"), "", 1000))
+                .build();
+
+        listArray = config.getValue("list", String[].class);
+        assertEquals(2, listArray.length);
+        assertEquals("three", listArray[0]);
+        assertEquals("four", listArray[1]);
+        listList = config.getValues("list", String.class);
+        assertEquals(2, listList.size());
+        assertEquals("three", listList.get(0));
+        assertEquals("four", listList.get(1));
+        listOptionalArray = config.getOptionalValue("list", String[].class);
+        assertTrue(listOptionalArray.isPresent());
+        listOptionalArray.ifPresent(list -> {
+            assertEquals(2, list.length);
+            assertEquals("three", list[0]);
+            assertEquals("four", list[1]);
+        });
+        listOptionalList = config.getOptionalValues("list", String.class);
+        assertTrue(listOptionalList.isPresent());
+        listOptionalList.ifPresent(new Consumer<List<String>>() {
+            @Override
+            public void accept(final List<String> list) {
+                assertEquals(2, list.size());
+                assertEquals("three", list.get(0));
+                assertEquals("four", list.get(1));
+            }
+        });
+    }
+
+    @Test
+    void overrideCommaSeparated() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("list", "one,two"))
+                .withSources(new PropertiesConfigSource(Map.of("list[0]", "three", "list[1]", "four"), "", 1000))
+                .build();
+
+        String[] listArray = config.getValue("list", String[].class);
+        assertEquals(2, listArray.length);
+        assertEquals("three", listArray[0]);
+        assertEquals("four", listArray[1]);
+        List<String> listList = config.getValues("list", String.class);
+        assertEquals(2, listList.size());
+        assertEquals("three", listList.get(0));
+        assertEquals("four", listList.get(1));
+        Optional<String[]> listOptionalArray = config.getOptionalValue("list", String[].class);
+        assertTrue(listOptionalArray.isPresent());
+        listOptionalArray.ifPresent(list -> {
+            assertEquals(2, list.length);
+            assertEquals("three", list[0]);
+            assertEquals("four", list[1]);
+        });
+        Optional<List<String>> listOptionalList = config.getOptionalValues("list", String.class);
+        assertTrue(listOptionalList.isPresent());
+        listOptionalList.ifPresent(new Consumer<List<String>>() {
+            @Override
+            public void accept(final List<String> list) {
+                assertEquals(2, list.size());
+                assertEquals("three", list.get(0));
+                assertEquals("four", list.get(1));
+            }
+        });
     }
 }
