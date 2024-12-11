@@ -590,6 +590,86 @@ class EnvConfigSourceTest {
         }
     }
 
+    @Test
+    void mappingMapsWithEnvMultiplePrefixes() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of(
+                        "PREFIX_COMPOSED_SERVICE_SERVICE_DISCOVERY_ADDRESS", "from-env"), 300))
+                .withMapping(SimplePrefix.class)
+                .withMapping(ComposedPrefix.class)
+                .build();
+
+        ComposedPrefix mapping = config.getConfigMapping(ComposedPrefix.class);
+        assertEquals("from-env", mapping.serviceConfiguration().get("service").serviceDiscovery().params().get("address"));
+    }
+
+    @ConfigMapping(prefix = "prefix")
+    interface SimplePrefix {
+        Optional<String> value();
+    }
+
+    @ConfigMapping(prefix = "prefix.composed")
+    interface ComposedPrefix {
+        @WithParentName
+        Map<String, ServiceConfiguration> serviceConfiguration();
+
+        interface ServiceConfiguration {
+            ServiceDiscoveryConfiguration serviceDiscovery();
+
+            interface ServiceDiscoveryConfiguration {
+                @WithParentName
+                Map<String, String> params();
+            }
+        }
+    }
+
+    @Test
+    void mappingsMapsWithEnvSplit() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of(
+                        "SERVICES_SERVICE_SERVICE_DISCOVERY_ADDRESS", "from-env",
+                        "SERVICES_SERVICE_ANOTHER_DISCOVERY_ADDRESS", "from-env"), 300))
+                .withMapping(ServicesOne.class)
+                .withMapping(ServicesTwo.class)
+                .build();
+
+        ServicesOne servicesOne = config.getConfigMapping(ServicesOne.class);
+        ServicesTwo servicesTwo = config.getConfigMapping(ServicesTwo.class);
+
+        assertEquals("from-env", servicesOne.serviceConfiguration().get("service").serviceDiscovery().params().get("address"));
+        assertEquals("from-env", servicesTwo.serviceConfiguration().get("service").anotherDiscovery().params().get("address"));
+    }
+
+    @ConfigMapping(prefix = "services")
+    interface ServicesOne {
+        @WithParentName
+        Map<String, ServiceConfiguration> serviceConfiguration();
+
+        interface ServiceConfiguration {
+            ServiceDiscoveryConfiguration serviceDiscovery();
+
+            interface ServiceDiscoveryConfiguration {
+                @WithParentName
+                Map<String, String> params();
+            }
+        }
+    }
+
+    @ConfigMapping(prefix = "services")
+    interface ServicesTwo {
+        @WithParentName
+        Map<String, ServiceConfiguration> serviceConfiguration();
+
+        interface ServiceConfiguration {
+            ServiceDiscoveryConfiguration anotherDiscovery();
+
+            interface ServiceDiscoveryConfiguration {
+                @WithParentName
+                Map<String, String> params();
+            }
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
