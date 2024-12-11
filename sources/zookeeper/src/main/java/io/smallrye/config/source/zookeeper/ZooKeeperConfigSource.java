@@ -20,13 +20,13 @@ import io.smallrye.config.common.AbstractConfigSource;
 public class ZooKeeperConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 3127679154588598693L;
 
+    public static final String NAME = "ZooKeeperConfigSource";
+    public static final int ORDINAL = 150;
+
     //Property the URL of the Zookeeper instance will be read from
     static final String ZOOKEEPER_URL_KEY = "io.smallrye.configsource.zookeeper.url";
     //Property of the Application Id. This will be the root znode for an application's properties
     static final String APPLICATION_ID_KEY = "io.smallrye.configsource.zookeeper.applicationId";
-
-    //Name of this ConfigSource
-    private static final String ZOOKEEPER_CONFIG_SOURCE_NAME = "io.smallrye.configsource.zookeeper";
 
     //Apache Curator framework used to access Zookeeper
     private final CuratorFramework curator;
@@ -34,7 +34,7 @@ public class ZooKeeperConfigSource extends AbstractConfigSource {
     private final String applicationId;
 
     public ZooKeeperConfigSource(final String zookeeperUrl, final String applicationId) {
-        super(ZOOKEEPER_CONFIG_SOURCE_NAME, 150);
+        super(NAME, ORDINAL);
 
         //Only create the ZK Client if the properties exist.
         if (zookeeperUrl != null && applicationId != null) {

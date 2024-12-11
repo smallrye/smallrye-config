@@ -14,7 +14,6 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -33,8 +32,8 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class YamlConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -418186029484956531L;
 
-    private static final String NAME_PREFIX = "YamlConfigSource[source=";
-    private static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 10;
+    public static final String NAME = "YamlConfigSource[source=%s]";
+    public static final int ORDINAL = DEFAULT_ORDINAL + 10;
 
     public YamlConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
@@ -45,7 +44,7 @@ public class YamlConfigSource extends MapBackedConfigSource {
     }
 
     public YamlConfigSource(URL url, int ordinal) throws IOException {
-        this(NAME_PREFIX + url.toString() + "]",
+        this(String.format(NAME, url.toString()),
                 ClassPathUtils.readStream(url, (Function<InputStream, Map<String, String>>) inputStream -> {
                     try {
                         return streamToMap(inputStream);

@@ -1,6 +1,7 @@
 package io.smallrye.config.source.keystore;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.eclipse.microprofile.config.spi.ConfigSource.DEFAULT_ORDINAL;
 
 import java.io.IOException;
 import java.net.URL;
@@ -33,6 +34,9 @@ import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.source.keystore.KeyStoreConfig.KeyStore.Alias;
 
 public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
+    public static final String NAME = "KeyStoreConfigSource[source=%s]";
+    public static final int ORDINAL = DEFAULT_ORDINAL;
+
     @Override
     public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
         KeyStoreConfig keyStoreConfig = getKeyStoreConfig(context);
@@ -107,7 +111,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
 
             @Override
             public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context) {
-                return loadConfigSources(keyStore.path(), 100);
+                return loadConfigSources(keyStore.path(), ORDINAL);
             }
 
         }.getConfigSources(context);
@@ -195,7 +199,7 @@ public class KeyStoreConfigSourceFactory implements ConfigSourceFactory {
 
         @Override
         public String getName() {
-            return "KeyStoreConfigSource[source=" + url.toString() + "]";
+            return String.format(NAME, url.toString());
         }
     }
 }

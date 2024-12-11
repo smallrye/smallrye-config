@@ -32,10 +32,12 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
  */
 public class SysPropConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = 9167738611308785403L;
-    private static final int DEFAULT_ORDINAL = 400;
+
+    public static final String NAME = "SysPropConfigSource";
+    public static final int ORDINAL = 400;
 
     public SysPropConfigSource() {
-        super("SysPropConfigSource", ConfigSourceUtil.getOrdinalFromMap(getSystemProperties(), DEFAULT_ORDINAL));
+        super(NAME, ConfigSourceUtil.getOrdinalFromMap(getSystemProperties(), ORDINAL));
     }
 
     @Override

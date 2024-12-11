@@ -9,12 +9,14 @@ import io.smallrye.config.common.AbstractConfigSource;
 public final class DefaultValuesConfigSource extends AbstractConfigSource {
     private static final long serialVersionUID = -6386021034957868328L;
 
-    private final Map<String, String> properties;
+    public static final String NAME = "DefaultValuesConfigSource";
+    public static final int ORDINAL = Integer.MIN_VALUE;
 
+    private final Map<String, String> properties;
     private final Map<PropertyName, String> wildcards;
 
     public DefaultValuesConfigSource(final Map<String, String> properties) {
-        this(properties, "DefaultValuesConfigSource", Integer.MIN_VALUE);
+        this(properties, NAME, ORDINAL);
     }
 
     public DefaultValuesConfigSource(final Map<String, String> properties, final String name, final int ordinal) {
