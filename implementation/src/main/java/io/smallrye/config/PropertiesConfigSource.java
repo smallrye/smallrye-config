@@ -34,14 +34,15 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
 public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
     private static final long serialVersionUID = 1866835565147832432L;
 
-    private static final String NAME_PREFIX = "PropertiesConfigSource[source=";
+    public static final String NAME = "PropertiesConfigSource[source=%s]";
+    public static final int ORDINAL = DEFAULT_ORDINAL;
 
     public PropertiesConfigSource(URL url) throws IOException {
         this(url, DEFAULT_ORDINAL);
     }
 
     public PropertiesConfigSource(URL url, int defaultOrdinal) throws IOException {
-        this(url, NAME_PREFIX + url.toString() + "]", defaultOrdinal);
+        this(url, String.format(NAME, url.toString()), defaultOrdinal);
     }
 
     private PropertiesConfigSource(URL url, String name, int defaultOrdinal) throws IOException {
@@ -57,7 +58,7 @@ public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
     }
 
     public PropertiesConfigSource(Map<String, String> properties, String name, int defaultOrdinal) {
-        this(NAME_PREFIX + name + "]", properties, defaultOrdinal);
+        this(String.format(NAME, name), properties, defaultOrdinal);
     }
 
     private PropertiesConfigSource(String name, Map<String, String> properties, int defaultOrdinal) {

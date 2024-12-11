@@ -58,14 +58,17 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class FileSystemConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = 654034634846856045L;
 
+    public static final String NAME = "FileSystemConfigSource[dir=%s]";
+    public static final int ORDINAL = DEFAULT_ORDINAL;
+
     private static final Pattern PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
 
     public FileSystemConfigSource(File dir) {
-        this(dir, DEFAULT_ORDINAL);
+        this(dir, ORDINAL);
     }
 
     public FileSystemConfigSource(String dir) {
-        this(new File(dir), DEFAULT_ORDINAL);
+        this(new File(dir), ORDINAL);
     }
 
     /**
@@ -75,7 +78,7 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
      * @param ordinal the ordinal value
      */
     public FileSystemConfigSource(File dir, int ordinal) {
-        super("FileSystemConfigSource[dir=" + dir.getAbsolutePath() + "]", scan(dir), ordinal);
+        super(String.format(NAME, dir.getAbsolutePath()), scan(dir), ordinal);
     }
 
     private static Map<String, String> scan(File directory) {

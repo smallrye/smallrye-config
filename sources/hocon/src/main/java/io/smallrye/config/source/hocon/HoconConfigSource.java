@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
@@ -24,7 +22,8 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class HoconConfigSource extends MapBackedConfigSource {
     private static final long serialVersionUID = -458821383311704657L;
 
-    static final int ORDINAL = ConfigSource.DEFAULT_ORDINAL + 5;
+    public static final String NAME = "HoconConfigSource[source=%s]";
+    public static final int ORDINAL = DEFAULT_ORDINAL + 5;
 
     public HoconConfigSource(String name, Map<String, String> source, int ordinal) {
         super(name, source, ordinal, false);
@@ -35,7 +34,7 @@ public class HoconConfigSource extends MapBackedConfigSource {
     }
 
     public HoconConfigSource(URL url, int ordinal) throws IOException {
-        this("HoconConfigSource[source=" + url.toString() + "]", ClassPathUtils.readStream(url, inputStream -> {
+        this(String.format(NAME, url.toString()), ClassPathUtils.readStream(url, inputStream -> {
             try {
                 return streamToMap(inputStream);
             } catch (IOException e) {
