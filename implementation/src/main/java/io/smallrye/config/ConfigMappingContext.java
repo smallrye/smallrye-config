@@ -10,6 +10,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -70,7 +71,11 @@ public final class ConfigMappingContext {
 
         this.config = config;
         this.names = new ConfigMappingNames(names);
-        matchPropertiesWithEnv(roots);
+        Set<String> mappingsPrefixes = new HashSet<>();
+        for (Set<String> mappingPrefixes : roots.values()) {
+            mappingsPrefixes.addAll(mappingPrefixes);
+        }
+        matchPropertiesWithEnv(mappingsPrefixes);
         for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
             Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
             for (String rootPath : mapping.getValue()) {
@@ -172,19 +177,36 @@ public final class ConfigMappingContext {
         return roots;
     }
 
-    private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> roots) {
+    private void matchPropertiesWithEnv(final Set<String> mappingsPrefixes) {
         // TODO - We shouldn't be mutating the EnvSource.
         // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
 
-        Set<String> rootPaths = new HashSet<>();
-        for (Set<String> paths : roots.values()) {
-            rootPaths.addAll(paths);
-        }
-        boolean all = rootPaths.contains("");
+        List<String> prefixes = new ArrayList<>(mappingsPrefixes);
+        // Sort by number of segments to match the most specific ones first
+        prefixes.sort(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                int segmentsO1 = 0;
+                for (int i = 0; i < o1.length(); i++) {
+                    if (o1.charAt(i) == '.') {
+                        segmentsO1++;
+                    }
+                }
+
+                int segmentsO2 = 0;
+                for (int i = 0; i < o2.length(); i++) {
+                    if (o2.charAt(i) == '.') {
+                        segmentsO2++;
+                    }
+                }
+                return Integer.compare(segmentsO2, segmentsO1);
+            }
+        });
+        boolean all = prefixes.contains("");
         StringBuilder sb = new StringBuilder();
 
         for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
-            if (roots.isEmpty()) {
+            if (prefixes.isEmpty()) {
                 break;
             }
 
@@ -201,7 +223,7 @@ public final class ConfigMappingContext {
 
                 String matchedRoot = null;
                 if (!all) {
-                    for (String rootPath : rootPaths) {
+                    for (String rootPath : prefixes) {
                         if (StringUtil.isInPath(rootPath, activeEnvProperty)) {
                             matchedRoot = rootPath;
                             break;
