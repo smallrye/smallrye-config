@@ -28,7 +28,7 @@
   <name>SmallRye Config: MicroProfile Config TCK</name>
 
   <properties>
-    <dependency.version.openwebbeans>4.0.2</dependency.version.openwebbeans>
+    <dependency.version.openwebbeans>4.0.3</dependency.version.openwebbeans>
   </properties>
 
   <build>
