@@ -79,4 +79,17 @@ class ConfigValuePropertiesTest {
         assertEquals(2, map.get("key2").getLineNumber());
         assertEquals(6, map.get("key3").getLineNumber());
     }
+
+    @Test
+    void logDuplicateKeys() throws Exception {
+        ConfigValueProperties map = new ConfigValueProperties("config", 1);
+        String config = "key=value\n" +
+                "key2=value\n" +
+                "key2=value2\n";
+        map.load(new StringReader(config));
+
+        // property expected with the last value found
+        assertEquals("value2", map.get("key2").getValue());
+    }
+
 }
