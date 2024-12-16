@@ -3,6 +3,7 @@ package io.smallrye.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.invoke.MethodHandles;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -14,7 +15,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.jboss.logging.Logger;
 
+import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -340,6 +343,9 @@ public interface ConfigValueConfigSource extends ConfigSource {
         private final String configSourceName;
         private final int configSourceOrdinal;
 
+        private static ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class,
+                "io.smallrye.config");
+
         public ConfigValueProperties(final String configSourceName, final int configSourceOrdinal) {
             this.configSourceName = configSourceName;
             this.configSourceOrdinal = configSourceOrdinal;
@@ -401,7 +407,7 @@ public interface ConfigValueConfigSource extends ConfigSource {
                 }
                 String key = loadConvert(lr.lineBuf, 0, keyLen, convtBuf);
                 String value = loadConvert(lr.lineBuf, valueStart, limit - valueStart, convtBuf);
-                put(key, ConfigValue.builder()
+                ConfigValue oldConfigValue = put(key, ConfigValue.builder()
                         .withName(key)
                         .withValue(value)
                         .withRawValue(value)
@@ -409,6 +415,10 @@ public interface ConfigValueConfigSource extends ConfigSource {
                         .withConfigSourceOrdinal(configSourceOrdinal)
                         .withLineNumber(lr.lineNumber)
                         .build());
+                if (oldConfigValue != null) {
+                    log.warnv("duplicate keys found for : {0}, source name : {1}", oldConfigValue.getName(),
+                            oldConfigValue.getConfigSourceName());
+                }
             }
         }
 
