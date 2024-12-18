@@ -45,7 +45,9 @@ import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.SIPUSH;
 import static org.objectweb.asm.Opcodes.SWAP;
 import static org.objectweb.asm.Opcodes.V1_8;
 import static org.objectweb.asm.Type.getDescriptor;
@@ -70,6 +72,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -197,11 +200,10 @@ public class ConfigMappingGenerator {
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
 
+        generateProperties(visitor, mapping);
         generateEquals(visitor, mapping);
         generateHashCode(visitor, mapping);
         generateToString(visitor, mapping);
-        generateNames(visitor, mapping);
-        generateDefaults(visitor, mapping);
 
         return writer.toByteArray();
     }
@@ -949,81 +951,50 @@ public class ConfigMappingGenerator {
         hc.visitEnd();
     }
 
-    private static void generateNames(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
-        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getNames", "()Ljava/util/Map;",
-                "()Ljava/util/Map<Ljava/lang/String;Ljava/util/Map<Ljava/lang/String;Ljava/util/Set<Ljava/lang/String;>;>;>;",
-                null);
+    private static void generateProperties(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
+        Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping).get(mapping.getInterfaceType())
+                .get("");
 
-        mv.visitTypeInsn(NEW, "java/util/HashMap");
-        mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
-        mv.visitVarInsn(ASTORE, 0);
+        FieldVisitor fieldVisitor = classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES",
+                "Ljava/util/Map;", "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
+        fieldVisitor.visitEnd();
 
-        for (Map.Entry<String, Map<String, Set<String>>> mappings : mapping.getNames().entrySet()) {
-            mv.visitTypeInsn(NEW, "java/util/HashMap");
-            mv.visitInsn(DUP);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
-            mv.visitVarInsn(ASTORE, 1);
-            for (Map.Entry<String, Set<String>> paths : mappings.getValue().entrySet()) {
-                mv.visitTypeInsn(NEW, "java/util/HashSet");
-                mv.visitInsn(DUP);
-                mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "()V", false);
-                mv.visitVarInsn(ASTORE, 2);
-                for (String name : paths.getValue()) {
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitLdcInsn(name);
-                    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
-                    mv.visitInsn(POP);
-                }
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitLdcInsn(paths.getKey());
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
-                        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
-                mv.visitInsn(POP);
-            }
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitLdcInsn(mappings.getKey());
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
-                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
-            mv.visitInsn(POP);
+        MethodVisitor clinit = classVisitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        clinit.visitTypeInsn(NEW, "java/util/HashMap");
+        clinit.visitInsn(DUP);
+        if (properties.size() < 3) {
+            clinit.visitIntInsn(BIPUSH, properties.size() + 1);
+        } else {
+            clinit.visitIntInsn(SIPUSH, (int) ((float) properties.size() / 0.75f + 1.0f));
         }
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-    }
+        clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "(I)V", false);
+        clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
 
-    private static void generateDefaults(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
-        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getDefaults", "()Ljava/util/Map;",
-                "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;",
-                null);
-
-        mv.visitTypeInsn(NEW, "java/util/HashMap");
-        mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
-        mv.visitVarInsn(ASTORE, 0);
-
-        for (Map.Entry<String, Property> entry : ConfigMappingInterface.getProperties(mapping)
-                .get(mapping.getInterfaceType())
-                .get("").entrySet()) {
+        for (Map.Entry<String, Property> entry : properties.entrySet()) {
+            clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
+            clinit.visitLdcInsn(entry.getKey());
             if (entry.getValue().hasDefaultValue()) {
                 // Defaults for collections also come as a simple property with comma separated values, no need for the star name
                 if (entry.getKey().endsWith("[*]")) {
-                    continue;
+                    clinit.visitInsn(ACONST_NULL);
+                } else {
+                    clinit.visitLdcInsn(entry.getValue().getDefaultValue());
                 }
-
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitLdcInsn(entry.getKey());
-                mv.visitLdcInsn(entry.getValue().getDefaultValue());
-                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
-                        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
-                mv.visitInsn(POP);
+            } else {
+                clinit.visitInsn(ACONST_NULL);
             }
+            clinit.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
+                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
+            clinit.visitInsn(POP);
         }
 
-        mv.visitVarInsn(ALOAD, 0);
+        clinit.visitInsn(RETURN);
+        clinit.visitMaxs(0, 0);
+        clinit.visitEnd();
+
+        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getProperties", "()Ljava/util/Map;",
+                "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
+        mv.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();

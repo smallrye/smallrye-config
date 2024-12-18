@@ -1,8 +1,8 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.configMappingNames;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
+import static io.smallrye.config.PropertyName.name;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
 import java.lang.reflect.InvocationTargetException;
@@ -10,7 +10,6 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -36,47 +35,23 @@ import io.smallrye.config.common.utils.StringUtil;
  */
 public final class ConfigMappingContext {
     private final SmallRyeConfig config;
-    private final ConfigMappingNames names;
     private final Map<Class<?>, Map<String, ConfigMappingObject>> roots = new IdentityHashMap<>();
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
     private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
     private boolean beanStyleGetters = false;
-    private String rootPath = null;
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
 
-    public ConfigMappingContext(final SmallRyeConfig config, final Map<Class<?>, Set<String>> roots) {
-        this(config, new Supplier<Map<String, Map<String, Set<String>>>>() {
-            @Override
-            public Map<String, Map<String, Set<String>>> get() {
-                // All mapping names must be loaded first because of split mappings
-                Map<String, Map<String, Set<String>>> names = new HashMap<>();
-                for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
-                    for (Map.Entry<String, Map<String, Set<String>>> entry : configMappingNames(mapping.getKey()).entrySet()) {
-                        names.putIfAbsent(entry.getKey(), new HashMap<>());
-                        names.get(entry.getKey()).putAll(entry.getValue());
-                    }
-                }
-                return names;
-            }
-        }.get(), roots);
-    }
-
-    ConfigMappingContext(
+    public ConfigMappingContext(
             final SmallRyeConfig config,
-            final Map<String, Map<String, Set<String>>> names,
-            final Map<Class<?>, Set<String>> roots) {
+            final Map<Class<?>, Set<String>> mappings) {
 
         this.config = config;
-        this.names = new ConfigMappingNames(names);
-        Set<String> mappingsPrefixes = new HashSet<>();
-        for (Set<String> mappingPrefixes : roots.values()) {
-            mappingsPrefixes.addAll(mappingPrefixes);
-        }
-        matchPropertiesWithEnv(mappingsPrefixes);
-        for (Map.Entry<Class<?>, Set<String>> mapping : roots.entrySet()) {
+
+        matchPropertiesWithEnv(mappings);
+        for (Map.Entry<Class<?>, Set<String>> mapping : mappings.entrySet()) {
             Map<String, ConfigMappingObject> mappingObjects = new HashMap<>();
             for (String rootPath : mapping.getValue()) {
                 applyRootPath(rootPath);
@@ -140,7 +115,6 @@ public final class ConfigMappingContext {
     }
 
     public void applyRootPath(final String rootPath) {
-        this.rootPath = rootPath;
         this.nameBuilder.replace(0, nameBuilder.length(), rootPath);
     }
 
@@ -177,42 +151,20 @@ public final class ConfigMappingContext {
         return roots;
     }
 
-    private void matchPropertiesWithEnv(final Set<String> mappingsPrefixes) {
-        // TODO - We shouldn't be mutating the EnvSource.
-        // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
-
-        List<String> prefixes = new ArrayList<>(mappingsPrefixes);
-        // Sort by number of segments to match the most specific ones first
-        prefixes.sort(new Comparator<String>() {
-            @Override
-            public int compare(final String o1, final String o2) {
-                int segmentsO1 = 0;
-                for (int i = 0; i < o1.length(); i++) {
-                    if (o1.charAt(i) == '.') {
-                        segmentsO1++;
-                    }
-                }
-
-                int segmentsO2 = 0;
-                for (int i = 0; i < o2.length(); i++) {
-                    if (o2.charAt(i) == '.') {
-                        segmentsO2++;
-                    }
-                }
-                return Integer.compare(segmentsO2, segmentsO1);
+    // TODO - We shouldn't be mutating the EnvSource.
+    // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
+    private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> mappings) {
+        Map<String, List<Class<?>>> prefixes = new HashMap<>();
+        for (Map.Entry<Class<?>, Set<String>> entry : mappings.entrySet()) {
+            for (String prefix : entry.getValue()) {
+                prefixes.computeIfAbsent(prefix, k -> new ArrayList<>()).add(entry.getKey());
             }
-        });
-        boolean all = prefixes.contains("");
+        }
+
         StringBuilder sb = new StringBuilder();
-
         for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
-            if (prefixes.isEmpty()) {
-                break;
-            }
-
             EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
-            Set<String> mutableEnvProperties = envConfigSource.getPropertyNames();
-            List<String> envProperties = new ArrayList<>(mutableEnvProperties);
+            List<String> envProperties = new ArrayList<>(envConfigSource.getPropertyNames());
             for (String envProperty : envProperties) {
                 String activeEnvProperty;
                 if (envProperty.charAt(0) == '%') {
@@ -221,45 +173,34 @@ public final class ConfigMappingContext {
                     activeEnvProperty = envProperty;
                 }
 
-                String matchedRoot = null;
-                if (!all) {
-                    for (String rootPath : prefixes) {
-                        if (StringUtil.isInPath(rootPath, activeEnvProperty)) {
-                            matchedRoot = rootPath;
-                            break;
-                        }
-                    }
-                    if (matchedRoot == null) {
-                        continue;
-                    }
-                } else {
-                    matchedRoot = "";
-                }
-
-                for (Map<PropertyName, List<PropertyName>> mappingsNames : names.getNames().values()) {
-                    List<PropertyName> propertyNames = mappingsNames.get(new PropertyName(""));
-                    if (propertyNames == null) {
-                        continue;
-                    }
-
-                    for (PropertyName mappedName : propertyNames) {
-                        String name = matchedRoot.isEmpty() ? mappedName.getName() : matchedRoot + "." + mappedName.getName();
-                        // Try to match Env with Root mapped property and generate the expected format
-                        List<Integer> indexOfDashes = indexOfDashes(name, activeEnvProperty);
-                        if (indexOfDashes != null) {
-                            sb.append(activeEnvProperty);
-                            for (Integer dash : indexOfDashes) {
-                                sb.setCharAt(dash, '-');
+                outer: for (String prefix : prefixes.keySet()) {
+                    if (StringUtil.isInPath(prefix, activeEnvProperty)) {
+                        String mappedEnvProperty = prefix.isEmpty() ? activeEnvProperty
+                                : activeEnvProperty.substring(prefix.length() + 1);
+                        for (Class<?> mapping : prefixes.get(prefix)) {
+                            for (String mappedProperty : ConfigMappingLoader.configMappingProperties(mapping).keySet()) {
+                                List<Integer> prefixDashes = indexOfDashes(prefix,
+                                        activeEnvProperty.substring(0, prefix.length()));
+                                List<Integer> nameDashes = indexOfDashes(mappedProperty, mappedEnvProperty);
+                                if (prefixDashes != null && nameDashes != null) {
+                                    sb.append(activeEnvProperty);
+                                    for (Integer dash : prefixDashes) {
+                                        sb.setCharAt(dash, '-');
+                                    }
+                                    for (Integer dash : nameDashes) {
+                                        sb.setCharAt(prefix.length() + 1 + dash, '-');
+                                    }
+                                    String expectedEnvProperty = sb.toString();
+                                    if (!activeEnvProperty.equals(expectedEnvProperty)) {
+                                        envConfigSource.getPropertyNames().add(sb.toString());
+                                        envConfigSource.getPropertyNames().remove(envProperty);
+                                        // TODO - https://github.com/quarkusio/quarkus/issues/38479
+                                        //ignoredPaths.add(activeEnvProperty);
+                                    }
+                                    sb.setLength(0);
+                                    break outer;
+                                }
                             }
-                            String expectedEnvProperty = sb.toString();
-                            if (!activeEnvProperty.equals(expectedEnvProperty)) {
-                                envConfigSource.getPropertyNames().add(sb.toString());
-                                envConfigSource.getPropertyNames().remove(envProperty);
-                                // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                                //ignoredPaths.add(activeEnvProperty);
-                            }
-                            sb.setLength(0);
-                            break;
                         }
                     }
                 }
@@ -275,14 +216,15 @@ public final class ConfigMappingContext {
      *
      * @param mappedProperty the mapping property name.
      * @param envProperty a generated dotted property from the {@link EnvConfigSource}.
-     * @return a List of indexes from the env property name to replace with a dash.
+     * @return a List of indexes from the env property name to replace with a dash, or <code>null</code> if the
+     *         properties do not match.
      */
     private static List<Integer> indexOfDashes(final String mappedProperty, final String envProperty) {
         if (mappedProperty.length() > envProperty.length()) {
             return null;
         }
 
-        List<Integer> dashesPosition = null;
+        List<Integer> dashesPosition = new ArrayList<>();
         int matchPosition = envProperty.length() - 1;
         for (int i = mappedProperty.length() - 1; i >= 0; i--) {
             if (matchPosition == -1) {
@@ -296,9 +238,6 @@ public final class ConfigMappingContext {
                     return null;
                 }
                 if (c == '-') {
-                    if (dashesPosition == null) {
-                        dashesPosition = new ArrayList<>();
-                    }
                     dashesPosition.add(matchPosition);
                 }
                 matchPosition--;
@@ -372,37 +311,6 @@ public final class ConfigMappingContext {
                 }
             }
         }
-    }
-
-    /**
-     * Filters the full list of properties names in Config to only the property names that can match any of the
-     * prefixes (namespaces) registered in mappings.
-     *
-     * @param properties the available property names in Config.
-     * @param roots the registered mapping roots.
-     *
-     * @return the property names that match to at least one root.
-     */
-    private static Iterable<String> filterPropertiesInRoots(final Iterable<String> properties, final Set<String> roots) {
-        if (roots.isEmpty()) {
-            return properties;
-        }
-
-        // Will match everything, so no point in filtering
-        if (roots.contains("")) {
-            return properties;
-        }
-
-        List<String> matchedProperties = new ArrayList<>();
-        for (String property : properties) {
-            for (String root : roots) {
-                if (isPropertyInRoot(property, root)) {
-                    matchedProperties.add(property);
-                    break;
-                }
-            }
-        }
-        return matchedProperties;
     }
 
     private static boolean isPropertyInRoot(final String property, final String root) {
@@ -889,8 +797,41 @@ public final class ConfigMappingContext {
             return convertWith == null ? config.requireConverter(rawType) : getConverterInstance(convertWith);
         }
 
+        /**
+         * Matches that at least one runtime configuration name is in relative path of a mapping class. This is
+         * required to trigger the construction of lazy mapping objects like <code>Optional</code> or <code>Map</code>.
+         *
+         * @param groupType the class of the mapping
+         * @param path the relative path to the mapping
+         * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
+         */
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
-            return ConfigMappingContext.this.names.hasAnyName(groupType.getName(), rootPath, path, config.getPropertyNames());
+            List<String> candidates = new ArrayList<>();
+            for (String name : config.getPropertyNames()) {
+                if (name.startsWith(path)) {
+                    String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
+                            ? name.substring(path.length() + 1)
+                            : name.substring(path.length());
+                    if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
+                        candidates.add(candidate);
+                    } else {
+                        candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
+                    }
+                }
+            }
+
+            if (!candidates.isEmpty()) {
+                Map<String, String> properties = ConfigMappingLoader.configMappingProperties(groupType);
+                for (String mappedProperty : properties.keySet()) {
+                    for (String candidate : candidates) {
+                        if (PropertyName.equals(candidate, mappedProperty)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         private IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {

@@ -46,8 +46,7 @@ public class ObjectCreatorTest {
                         "optional-list-group[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config,
-                ConfigMappingLoader.getConfigMapping(ObjectCreator.class).getNames(), new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
         ObjectCreator mapping = new ObjectCreatorImpl(context);
 
         assertEquals(2, mapping.unnamed().size());
@@ -274,8 +273,7 @@ public class ObjectCreatorTest {
                         "optional.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config,
-                ConfigMappingLoader.getConfigMapping(OptionalGroup.class).getNames(), new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
         OptionalGroup mapping = new OptionalGroupImpl(context);
 
         assertTrue(mapping.optional().isPresent());
@@ -337,8 +335,7 @@ public class ObjectCreatorTest {
                         "unnamed.key.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config,
-                ConfigMappingLoader.getConfigMapping(UnnamedKeys.class).getNames(), new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
         context.applyRootPath("unnamed");
 
         UnnamedKeys mapping = new UnnamedKeysImpl(context);
@@ -396,8 +393,7 @@ public class ObjectCreatorTest {
                         "map.defaults-list.one[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config,
-                ConfigMappingLoader.getConfigMapping(MapDefaults.class).getNames(), new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
         context.applyRootPath("map");
         MapDefaults mapping = new MapDefaultsImpl(context);
 
@@ -508,8 +504,7 @@ public class ObjectCreatorTest {
                         "naming.nested_value.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config,
-                ConfigMappingLoader.getConfigMapping(Naming.class).getNames(), new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
         context.applyRootPath("naming");
         Naming naming = new NamingImpl(context);
 

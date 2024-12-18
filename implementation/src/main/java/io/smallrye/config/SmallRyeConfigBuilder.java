@@ -781,19 +781,21 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         public void mapping(Class<?> type, String prefix) {
             Assert.checkNotNullParam("type", type);
             Assert.checkNotNullParam("path", prefix);
-            Class<?> mappingClass = getConfigMappingClass(type);
-            // It is an MP ConfigProperties, so ignore unmapped properties
-            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(type) != null) {
-                ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
-            }
-            mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
-            // Load the mapping defaults, to make the defaults available to all config sources
 
+            Class<?> mappingClass = getConfigMappingClass(type);
+            mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
+
+            // Load the mapping defaults, to make the defaults available to all config sources
+            Map<String, String> properties = ConfigMappingLoader.configMappingProperties(mappingClass);
             sb.setLength(0);
             sb.append(prefix);
-            for (Map.Entry<String, String> defaultEntry : ConfigMappingLoader.configMappingDefaults(mappingClass).entrySet()) {
+            for (Map.Entry<String, String> property : properties.entrySet()) {
+                if (property.getValue() == null) {
+                    continue;
+                }
+
                 // Do not override builder defaults with mapping defaults
-                String path = defaultEntry.getKey();
+                String path = property.getKey();
                 String name;
                 if (prefix.isEmpty()) {
                     name = path;
@@ -805,7 +807,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                     name = sb.append(".").append(path).toString();
                 }
                 sb.setLength(prefix.length());
-                defaultValues.putIfAbsent(name, defaultEntry.getValue());
+                defaultValues.putIfAbsent(name, property.getValue());
+            }
+
+            // It is an MP ConfigProperties, so ignore unmapped properties
+            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(type) != null) {
+                ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
             }
         }
 
