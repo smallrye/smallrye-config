@@ -40,4 +40,9 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.DEBUG)
     @Message(id = 1006, value = "Loaded ConfigSource %s with ordinal %d")
     void loadedConfigSource(String name, int ordinal);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1007, value = "Duplicate value found for name : %s, config source name : %s, (old value : %s)")
+    void duplicateValue(String key, String sourceName, String oldValue);
+
 }

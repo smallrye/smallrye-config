@@ -416,8 +416,7 @@ public interface ConfigValueConfigSource extends ConfigSource {
                         .withLineNumber(lr.lineNumber)
                         .build());
                 if (oldConfigValue != null) {
-                    log.warnv("duplicate keys found for : {0}, source name : {1}", oldConfigValue.getName(),
-                            oldConfigValue.getConfigSourceName());
+                    ConfigLogging.log.duplicateValue( oldConfigValue.getName(), oldConfigValue.getConfigSourceName(), oldConfigValue.getValue() );
                 }
             }
         }
