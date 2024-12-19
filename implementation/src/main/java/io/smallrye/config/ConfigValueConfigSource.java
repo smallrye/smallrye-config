@@ -416,7 +416,8 @@ public interface ConfigValueConfigSource extends ConfigSource {
                         .withLineNumber(lr.lineNumber)
                         .build());
                 if (oldConfigValue != null) {
-                    ConfigLogging.log.duplicateValue( oldConfigValue.getName(), oldConfigValue.getConfigSourceName(), oldConfigValue.getValue() );
+                    ConfigLogging.log.duplicateValue(oldConfigValue.getName(), oldConfigValue.getConfigSourceName(),
+                            oldConfigValue.getValue());
                 }
             }
         }
