@@ -81,7 +81,7 @@ class ConfigValuePropertiesTest {
     }
 
     @Test
-    void logDuplicateKeys() throws Exception {
+    void logDuplicateValue() throws Exception {
         ConfigValueProperties map = new ConfigValueProperties("config", 1);
         String config = "key=value\n" +
                 "key2=value\n" +
