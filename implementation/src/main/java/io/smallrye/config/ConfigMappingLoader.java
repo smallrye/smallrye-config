@@ -1,15 +1,15 @@
 package io.smallrye.config;
 
+import static java.lang.invoke.MethodType.methodType;
+
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -62,10 +62,11 @@ public final class ConfigMappingLoader {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> Map<String, Map<String, Set<String>>> configMappingNames(final Class<T> interfaceType) {
+    static <T> Map<String, String> configMappingProperties(final Class<T> interfaceType) {
         try {
-            Method getNames = CACHE.get(interfaceType).getImplementationClass().getDeclaredMethod("getNames");
-            return (Map<String, Map<String, Set<String>>>) getNames.invoke(null);
+            MethodHandle getDefaults = LOOKUP.findStatic(CACHE.get(interfaceType).getImplementationClass(), "getProperties",
+                    methodType(Map.class));
+            return (Map<String, String>) getDefaults.invoke();
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
@@ -73,55 +74,40 @@ public final class ConfigMappingLoader {
         } catch (InvocationTargetException e) {
             try {
                 throw e.getCause();
-            } catch (RuntimeException | Error e2) {
-                throw e2;
+            } catch (RuntimeException | Error r) {
+                throw r;
             } catch (Throwable t) {
                 throw new UndeclaredThrowableException(t);
             }
-        }
-    }
-
-    static <T> Map<String, String> configMappingDefaults(final Class<T> interfaceType) {
-        try {
-            Method getDefaults = CACHE.get(interfaceType).getImplementationClass().getDeclaredMethod("getDefaults");
-            return (Map<String, String>) getDefaults.invoke(null);
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error e2) {
-                throw e2;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new UndeclaredThrowableException(t);
         }
     }
 
     static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
-        ConfigMappingObject instance;
         try {
-            Constructor<? extends ConfigMappingObject> constructor = CACHE.get(interfaceType).getImplementationClass()
-                    .getDeclaredConstructor(ConfigMappingContext.class);
-            instance = constructor.newInstance(configMappingContext);
+            MethodHandle constructor = LOOKUP.findConstructor(CACHE.get(interfaceType).getImplementationClass(),
+                    methodType(void.class, ConfigMappingContext.class));
+            return interfaceType.cast(constructor.invoke(configMappingContext));
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
-        } catch (InstantiationException e) {
-            throw new InstantiationError(e.getMessage());
         } catch (IllegalAccessException e) {
             throw new IllegalAccessError(e.getMessage());
         } catch (InvocationTargetException e) {
             try {
                 throw e.getCause();
-            } catch (RuntimeException | Error e2) {
-                throw e2;
+            } catch (RuntimeException | Error r) {
+                throw r;
             } catch (Throwable t) {
                 throw new UndeclaredThrowableException(t);
             }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new UndeclaredThrowableException(t);
         }
-        return interfaceType.cast(instance);
     }
 
     @SuppressWarnings("unchecked")

@@ -4,7 +4,6 @@ import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -327,25 +325,6 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("new", mapping.map().get("key"));
         assertEquals("new", mapping.map().get("new"));
         assertEquals("old", mapping.map().get("old"));
-
-        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        ConfigMappingNames names = new ConfigMappingNames(
-                ConfigMappingLoader.getConfigMapping(RelocateMapping.class).getNames());
-        Set<String> mappedProperties = new HashSet<>();
-        for (String property : properties) {
-            if (names.hasAnyName(RelocateMapping.class.getName(), "reloc.old", "reloc.old", Set.of(property))) {
-                mappedProperties.add(property);
-            }
-        }
-        properties.removeAll(mappedProperties);
-        Set<String> relocateProperties = new HashSet<>();
-        for (String property : properties) {
-            if (mappedProperties.contains(property)) {
-                ConfigValue configValue = config.getConfigValue(property);
-                relocateProperties.add(configValue.getName());
-            }
-        }
-        properties.removeAll(relocateProperties);
     }
 
     @Test
@@ -370,26 +349,6 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals(2, mapping.map().size());
         assertEquals("old", mapping.map().get("key"));
         assertEquals("old", mapping.map().get("old"));
-
-        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
-        ConfigMappingNames names = new ConfigMappingNames(
-                ConfigMappingLoader.getConfigMapping(FallbackMapping.class).getNames());
-        Set<String> mappedProperties = new HashSet<>();
-        for (String property : properties) {
-            if (names.hasAnyName(FallbackMapping.class.getName(), "fall.new", "fall.new", Set.of(property))) {
-                mappedProperties.add(property);
-            }
-        }
-        properties.removeAll(mappedProperties);
-        Set<String> fallbackProperties = new HashSet<>();
-        for (String property : properties) {
-            ConfigValue configValue = config.getConfigValue(property);
-            if (mappedProperties.contains(configValue.getName())) {
-                fallbackProperties.add(property);
-            }
-        }
-        properties.removeAll(fallbackProperties);
-        assertTrue(properties.isEmpty());
     }
 
     @ConfigMapping(prefix = "reloc.old")
