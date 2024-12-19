@@ -336,7 +336,7 @@ public class ObjectCreatorTest {
                 .build();
 
         ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
-        context.applyRootPath("unnamed");
+        context.applyPrefix("unnamed");
 
         UnnamedKeys mapping = new UnnamedKeysImpl(context);
         assertEquals("unnamed", mapping.map().get(null).value());
@@ -394,7 +394,7 @@ public class ObjectCreatorTest {
                 .build();
 
         ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
-        context.applyRootPath("map");
+        context.applyPrefix("map");
         MapDefaults mapping = new MapDefaultsImpl(context);
 
         assertEquals("value", mapping.defaults().get("one"));
@@ -505,7 +505,7 @@ public class ObjectCreatorTest {
                 .build();
 
         ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
-        context.applyRootPath("naming");
+        context.applyPrefix("naming");
         Naming naming = new NamingImpl(context);
 
         assertEquals("value", naming.nestedValue().value());

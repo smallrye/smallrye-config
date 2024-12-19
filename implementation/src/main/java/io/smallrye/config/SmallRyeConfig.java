@@ -80,10 +80,10 @@ public class SmallRyeConfig implements Config, Serializable {
     private final Map<Type, Converter<Optional<?>>> optionalConverters = new ConcurrentHashMap<>();
 
     private final ConfigValidator configValidator;
-    private final Map<Class<?>, Map<String, ConfigMappingObject>> mappings;
+    private final Map<Class<?>, Map<String, Object>> mappings;
 
     SmallRyeConfig(SmallRyeConfigBuilder builder) {
-        this.configSources = new ConfigSources(builder, this);
+        this.configSources = new ConfigSources(builder);
         this.converters = buildConverters(builder);
         this.configValidator = builder.getValidator();
 
@@ -115,7 +115,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return converters;
     }
 
-    Map<Class<?>, Map<String, ConfigMappingObject>> buildMappings(final SmallRyeConfigBuilder builder)
+    Map<Class<?>, Map<String, Object>> buildMappings(final SmallRyeConfigBuilder builder)
             throws ConfigValidationException {
         SmallRyeConfigBuilder.MappingBuilder mappingsBuilder = builder.getMappingsBuilder();
         if (mappingsBuilder.getMappings().isEmpty()) {
@@ -139,7 +139,7 @@ public class SmallRyeConfig implements Config, Serializable {
             throw new ConfigValidationException(problems.toArray(ConfigValidationException.Problem.NO_PROBLEMS));
         }
 
-        return context.getRootsMap();
+        return context.getMappings();
     }
 
     private void matchPropertiesWithEnv() {
@@ -678,7 +678,11 @@ public class SmallRyeConfig implements Config, Serializable {
         return Optional.of(getMapIndexedValues(keys, keyConverter, valueConverter, mapFactory, collectionFactory));
     }
 
-    Map<Class<?>, Map<String, ConfigMappingObject>> getMappings() {
+    ConfigValidator getConfigValidator() {
+        return configValidator;
+    }
+
+    Map<Class<?>, Map<String, Object>> getMappings() {
         return mappings;
     }
 
@@ -699,24 +703,17 @@ public class SmallRyeConfig implements Config, Serializable {
             return getConfigMapping(type);
         }
 
-        Map<String, ConfigMappingObject> mappingsForType = mappings.get(getConfigMappingClass(type));
+        Map<String, Object> mappingsForType = mappings.get(getConfigMappingClass(type));
         if (mappingsForType == null) {
             throw ConfigMessages.msg.mappingNotFound(type.getName());
         }
 
-        ConfigMappingObject configMappingObject = mappingsForType.get(prefix);
+        Object configMappingObject = mappingsForType.get(prefix);
         if (configMappingObject == null) {
             throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
         }
 
-        Object value = configMappingObject;
-        if (configMappingObject instanceof ConfigMappingClassMapper) {
-            value = ((ConfigMappingClassMapper) configMappingObject).map();
-        }
-
-        configValidator.validateMapping(type, prefix, value);
-
-        return type.cast(value);
+        return type.cast(configMappingObject);
     }
 
     /**
@@ -874,7 +871,7 @@ public class SmallRyeConfig implements Config, Serializable {
          * that this constructor must be used when the Config object is being initialized, because interceptors also
          * require initialization.
          */
-        ConfigSources(final SmallRyeConfigBuilder builder, final SmallRyeConfig config) {
+        ConfigSources(final SmallRyeConfigBuilder builder) {
             // Add all sources except for ConfigurableConfigSource types. These are initialized later
             List<ConfigSource> sources = buildSources(builder);
             // Add the default values sources separately, so we can keep a reference to it and add mappings defaults

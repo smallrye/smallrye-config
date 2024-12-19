@@ -36,6 +36,10 @@ public class ConfigValidationException extends RuntimeException {
         return b.toString();
     }
 
+    Problem[] getProblems() {
+        return problems;
+    }
+
     public int getProblemCount() {
         return problems.length;
     }
