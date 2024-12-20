@@ -760,9 +760,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             }
         }
 
-        customizers.stream()
-                .sorted(Comparator.comparingInt(SmallRyeConfigBuilderCustomizer::priority))
-                .forEach(customizer -> customizer.configBuilder(SmallRyeConfigBuilder.this));
+        customizers.sort(new Comparator<>() {
+            @Override
+            public int compare(SmallRyeConfigBuilderCustomizer o1, SmallRyeConfigBuilderCustomizer o2) {
+                return o1.priority() - o2.priority();
+            }
+        });
+        for (SmallRyeConfigBuilderCustomizer customizer : customizers) {
+            customizer.configBuilder(this);
+        }
 
         return new SmallRyeConfig(this);
     }
