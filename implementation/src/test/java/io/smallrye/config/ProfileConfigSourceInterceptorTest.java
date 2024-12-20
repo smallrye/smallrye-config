@@ -542,6 +542,12 @@ class ProfileConfigSourceInterceptorTest {
         assertIterableEquals(List.of("kubernetes", "prod", "cluster"), config.getProfiles());
     }
 
+    @Test
+    void profilesLongerThanPropDoNotOverflowString() {
+        String name = ProfileConfigSourceInterceptor.activeName("%a,b.c.d", List.of("test-with-native-agent"));
+        assertEquals("%a,b.c.d", name);
+    }
+
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
