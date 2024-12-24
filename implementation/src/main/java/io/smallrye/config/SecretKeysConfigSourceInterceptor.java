@@ -28,7 +28,7 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
 
     @Override
     public Iterator<String> iterateNames(final ConfigSourceInterceptorContext context) {
-        if (SecretKeys.isLocked()) {
+        if (!secrets.isEmpty() && SecretKeys.isLocked()) {
             Set<String> names = new HashSet<>();
             Iterator<String> namesIterator = context.iterateNames();
             while (namesIterator.hasNext()) {
