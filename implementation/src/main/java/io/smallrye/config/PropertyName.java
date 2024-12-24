@@ -4,9 +4,11 @@ import static io.smallrye.config.common.utils.StringUtil.isNumeric;
 
 public class PropertyName {
     private final String name;
+    private final int hashCode;
 
     public PropertyName(final String name) {
         this.name = name;
+        this.hashCode = buildHashCode();
     }
 
     public String getName() {
@@ -97,6 +99,10 @@ public class PropertyName {
 
     @Override
     public int hashCode() {
+        return hashCode;
+    }
+
+    private int buildHashCode() {
         int h = 0;
         int length = name.length();
         boolean quotesOpen = false;
