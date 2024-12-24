@@ -9,12 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.IntFunction;
 
 import jakarta.annotation.Priority;
+
+import org.eclipse.microprofile.config.spi.Converter;
 
 @Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     private static final long serialVersionUID = -6305289277993917313L;
+
+    private static final Converter<ArrayList<String>> PROFILES_CONVERTER = newCollectionConverter(
+            newTrimmingConverter(STRING_CONVERTER), new ArrayListFactory());
 
     private final List<String> profiles;
     private final List<String> prefixProfiles;
@@ -134,7 +140,15 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     }
 
     public static List<String> convertProfile(final String profile) {
-        List<String> profiles = newCollectionConverter(newTrimmingConverter(STRING_CONVERTER), ArrayList::new).convert(profile);
+        List<String> profiles = PROFILES_CONVERTER.convert(profile);
         return profiles != null ? profiles : Collections.emptyList();
+    }
+
+    private static class ArrayListFactory implements IntFunction<ArrayList<String>> {
+
+        @Override
+        public ArrayList<String> apply(int value) {
+            return new ArrayList<String>(value);
+        }
     }
 }
