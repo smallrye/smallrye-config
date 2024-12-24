@@ -88,9 +88,10 @@ public final class ConfigMappingLoader {
 
     static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
         try {
-            MethodHandle constructor = LOOKUP.findConstructor(CACHE.get(interfaceType).getImplementationClass(),
+            Class<? extends ConfigMappingObject> implClass = CACHE.get(interfaceType).getImplementationClass();
+            MethodHandle constructor = LOOKUP.findConstructor(implClass,
                     methodType(void.class, ConfigMappingContext.class));
-            return interfaceType.cast(constructor.invoke(configMappingContext));
+            return (T) constructor.asType(constructor.type().changeReturnType(Object.class)).invokeExact(configMappingContext);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
