@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
+import java.io.File;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -29,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -187,6 +188,11 @@ public final class Converters {
     static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18,
             newEmptyValueConverter(Path::of));
 
+    static final Converter<File> FILE_CONVERTER = BuiltInConverter.of(19, newEmptyValueConverter(File::new));
+
+    static final Converter<URI> URI_CONVERTER = BuiltInConverter.of(20,
+            newTrimmingConverter(newEmptyValueConverter(URI::create)));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
@@ -226,6 +232,9 @@ public final class Converters {
         ALL_CONVERTERS.put(Pattern.class, PATTERN_CONVERTER);
 
         ALL_CONVERTERS.put(Path.class, PATH_CONVERTER);
+        ALL_CONVERTERS.put(File.class, FILE_CONVERTER);
+
+        ALL_CONVERTERS.put(URI.class, URI_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
