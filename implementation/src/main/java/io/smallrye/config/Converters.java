@@ -1078,6 +1078,14 @@ public final class Converters {
                 return new HyphenateEnumConverter(clazz);
             }
 
+            // some shortcuts for common used classes
+            if ("java.io.File".equals(clazz.getName())) {
+                return getConverterFromConstructor(clazz, String.class);
+            }
+            if ("java.net.URI".equals(clazz.getName())) {
+                return getConverterFromConstructor(clazz, String.class);
+            }
+
             // implicit converters required by the specification
             Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
             if (converter == null) {
