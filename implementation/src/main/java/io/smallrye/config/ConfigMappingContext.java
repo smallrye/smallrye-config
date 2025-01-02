@@ -350,6 +350,24 @@ public final class ConfigMappingContext {
         return false;
     }
 
+    public <T> T getLeafValue(final String path,
+            final Class<T> valueRawType,
+            final Class<? extends Converter<T>> valueConvertWith) {
+        usedProperties.add(path);
+        Converter<T> valueConverter = valueConvertWith == null ? config.requireConverter(valueRawType)
+                : getConverterInstance(valueConvertWith);
+        return config.getValue(path, valueConverter);
+    }
+
+    public <T> Optional<T> getLeafOptionalValue(final String path,
+            final Class<T> valueRawType,
+            final Class<? extends Converter<T>> valueConvertWith) {
+        usedProperties.add(path);
+        Converter<T> valueConverter = valueConvertWith == null ? config.requireConverter(valueRawType)
+                : getConverterInstance(valueConvertWith);
+        return config.getOptionalValue(path, valueConverter);
+    }
+
     @SuppressWarnings("unchecked")
     public class ObjectCreator<T> {
         private T root;

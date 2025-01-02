@@ -62,6 +62,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -109,6 +110,7 @@ public class ConfigMappingGenerator {
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
     private static final String I_STRING = getInternalName(String.class);
     private static final String I_ITERABLE = getInternalName(Iterable.class);
+    private static final String I_OPTIONAL = getInternalName(Optional.class);
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
@@ -435,21 +437,49 @@ public class ConfigMappingGenerator {
             ctor.visitTryCatchBlock(_try, _catch, _catch, I_RUNTIME_EXCEPTION);
 
             appendPropertyName(ctor, property);
-            ctor.visitVarInsn(ALOAD, V_THIS);
-            ctor.visitTypeInsn(NEW, I_OBJECT_CREATOR);
-            ctor.visitInsn(DUP);
-            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
-            ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>", "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";)V",
-                    false);
+            if (property.isLeaf() || property.isPrimitive()) {
+                // try
+                ctor.visitLabel(_try);
+                ctor.visitVarInsn(ALOAD, V_THIS);
+                ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
 
-            // try
-            ctor.visitLabel(_try);
+                Class<?> rawType = property.isLeaf() ? property.asLeaf().getValueRawType()
+                        : property.asPrimitive().getBoxType();
+                ctor.visitLdcInsn(Type.getType(rawType));
+                if (property.hasConvertWith() || property.isLeaf() && property.asLeaf().hasConvertWith()) {
+                    ctor.visitLdcInsn(getType(
+                            property.isLeaf() ? property.asLeaf().getConvertWith() : property.asPrimitive().getConvertWith()));
+                } else {
+                    ctor.visitInsn(ACONST_NULL);
+                }
+                if (property.isOptional()) {
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getLeafOptionalValue",
+                            "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";", false);
+                } else {
+                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getLeafValue",
+                            "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT + ";", false);
+                }
+            } else {
+                ctor.visitVarInsn(ALOAD, V_THIS);
+                ctor.visitTypeInsn(NEW, I_OBJECT_CREATOR);
+                ctor.visitInsn(DUP);
+                ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+                ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
+                ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>",
+                        "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";)V",
+                        false);
 
-            generateProperty(ctor, property);
+                // try
+                ctor.visitLabel(_try);
 
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+                generateComplexProperty(ctor, property);
+
+                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+            }
+
             if (property.isPrimitive()) {
                 PrimitiveProperty primitive = property.asPrimitive();
                 ctor.visitTypeInsn(CHECKCAST, getInternalName(primitive.getBoxType()));
@@ -491,7 +521,7 @@ public class ConfigMappingGenerator {
         }
     }
 
-    private static void generateProperty(final MethodVisitor ctor, final Property property) {
+    private static void generateComplexProperty(final MethodVisitor ctor, final Property property) {
         if (property.isLeaf() || property.isPrimitive() || property.isLeaf() && property.isOptional()) {
             Class<?> rawType = property.isLeaf() ? property.asLeaf().getValueRawType() : property.asPrimitive().getBoxType();
             ctor.visitLdcInsn(Type.getType(rawType));
@@ -645,7 +675,7 @@ public class ConfigMappingGenerator {
                     ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
                     ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "optionalCollection",
                             "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
-                    generateProperty(ctor, collectionProperty.getElement());
+                    generateComplexProperty(ctor, collectionProperty.getElement());
                 }
             } else {
                 throw new UnsupportedOperationException();
@@ -677,13 +707,13 @@ public class ConfigMappingGenerator {
             ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "map",
                     "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_ITERABLE + ";)L" + I_OBJECT_CREATOR + ";",
                     false);
-            generateProperty(ctor, mapProperty.getValueProperty());
+            generateComplexProperty(ctor, mapProperty.getValueProperty());
         } else if (property.isCollection()) {
             CollectionProperty collectionProperty = property.asCollection();
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
             ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "collection", "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";",
                     false);
-            generateProperty(ctor, collectionProperty.getElement());
+            generateComplexProperty(ctor, collectionProperty.getElement());
         } else {
             throw new UnsupportedOperationException();
         }
