@@ -107,7 +107,11 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
                 int toOffset = 1;
                 while (nextSplit != -1) {
                     for (String profile : profiles) {
-                        char expectedEnd = name.charAt(toOffset + profile.length());
+                        int end = toOffset + profile.length();
+                        if (end >= name.length()) {
+                            continue;
+                        }
+                        char expectedEnd = name.charAt(end);
                         if ((expectedEnd == '.' || expectedEnd == ',') &&
                                 name.regionMatches(toOffset, profile, 0, profile.length())) {
                             return name.substring(profilesEnd + 1);
