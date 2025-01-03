@@ -19,11 +19,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import io.smallrye.common.classloader.ClassPathUtils;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
@@ -74,11 +76,14 @@ public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
     public static Map<String, ConfigValue> urlToConfigValueMap(URL locationOfProperties, String name, int ordinal)
             throws IOException {
         ConfigValueProperties properties = new ConfigValueProperties(name, ordinal);
-        ClassPathUtils.consumeStream(locationOfProperties, inputStream -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8))) {
-                properties.load(reader);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+        ClassPathUtils.consumeStream(locationOfProperties, new Consumer<>() {
+            @Override
+            public void accept(InputStream inputStream) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8))) {
+                    properties.load(reader);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
         });
         return properties;
