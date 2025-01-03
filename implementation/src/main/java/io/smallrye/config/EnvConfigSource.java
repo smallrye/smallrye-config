@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import io.smallrye.config.common.AbstractConfigSource;
 
@@ -78,14 +79,16 @@ public class EnvConfigSource extends AbstractConfigSource {
     @Override
     public Map<String, String> getProperties() {
         Map<String, String> properties = new HashMap<>();
-        for (Map.Entry<EnvName, EnvEntry> entry : envVars.getEnv().entrySet()) {
-            EnvEntry entryValue = entry.getValue();
-            if (entryValue.getEntries() != null) {
-                properties.putAll(entryValue.getEntries());
-            } else {
-                properties.put(entryValue.getName(), entryValue.getValue());
+        envVars.getEnv().forEach(new BiConsumer<>() {
+            @Override
+            public void accept(EnvName key, EnvEntry entryValue) {
+                if (entryValue.getEntries() != null) {
+                    properties.putAll(entryValue.getEntries());
+                } else {
+                    properties.put(entryValue.getName(), entryValue.getValue());
+                }
             }
-        }
+        });
         return properties;
     }
 
@@ -149,17 +152,20 @@ public class EnvConfigSource extends AbstractConfigSource {
         public EnvVars(final Map<String, String> properties) {
             this.env = new HashMap<>(properties.size());
             this.names = new HashSet<>(properties.size() * 2);
-            for (Map.Entry<String, String> entry : properties.entrySet()) {
-                EnvName envName = new EnvName(entry.getKey());
-                EnvEntry envEntry = env.get(envName);
-                if (envEntry == null) {
-                    env.put(envName, new EnvEntry(entry.getKey(), entry.getValue()));
-                } else {
-                    envEntry.add(entry.getKey(), entry.getValue());
+            properties.forEach(new BiConsumer<>() {
+                @Override
+                public void accept(String key, String value) {
+                    EnvName envName = new EnvName(key);
+                    EnvEntry envEntry = env.get(envName);
+                    if (envEntry == null) {
+                        env.put(envName, new EnvEntry(key, value));
+                    } else {
+                        envEntry.add(key, value);
+                    }
+                    EnvVars.this.names.add(key);
+                    EnvVars.this.names.add(toLowerCaseAndDotted(key));
                 }
-                this.names.add(entry.getKey());
-                this.names.add(toLowerCaseAndDotted(entry.getKey()));
-            }
+            });
         }
 
         public String get(final String propertyName) {
