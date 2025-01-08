@@ -3,12 +3,13 @@ package io.smallrye.config;
 import static io.smallrye.config.PropertyName.name;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 class PropertyNameTest {
     @Test
-    void mappingNameEquals() {
+    void propertyNameEquals() {
         assertEquals(name(new String("foo")), name(new String("foo")));
         assertEquals(name(new String("foo.bar")), name(new String("foo.bar")));
         assertEquals(name("foo.*"), name("foo.bar"));
@@ -56,5 +57,11 @@ class PropertyNameTest {
 
         assertNotEquals(name("*"), name(""));
         assertNotEquals(name(""), name("*"));
+    }
+
+    @Test
+    void propertyNameEqualsRegions() {
+        assertTrue(PropertyName.equals("foo.bar", 4, 3, "bar", 0, 3));
+        assertTrue(PropertyName.equals("foo.\"bar\".baz", 4, 5, "*", 0, 1));
     }
 }

@@ -2,6 +2,19 @@ package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
 
+/**
+ * A configuration name.
+ * <p>
+ * While a configuration name is represented as a <code>String</code>, the equality rules are different, due to the
+ * use of star (<code>*</code>), to match a segment in the name. A segment is a part of the configuration name
+ * separated by a dot (<code>.</code>). For example:
+ * <ul>
+ * <li><code>foo.bar</code> matches <code>foo.*</code></li>
+ * <li><code>foo.bar.baz</code> matches <code>foo.*.baz</code></li>
+ * <li><code>foo."bar.baz"</code> matches <code>foo.*</code></li>
+ * <li><code>foo.bar[0]</code> matches <code>foo.bar[*]</code></li>
+ * </ul>
+ */
 public class PropertyName {
     private final String name;
     private final int hashCode;
@@ -27,12 +40,40 @@ public class PropertyName {
         return equals(this.name, that.name) || equals(that.name, this.name);
     }
 
-    static boolean equals(final String name, final String other) {
-        return equalsInternal(name, other) || equalsInternal(other, name);
+    /**
+     * Compares both arguments using {@link PropertyName} equals semantics.
+     *
+     * @param name a String with a configuration name.
+     * @param other a String with another configuration name.
+     * @return <code>true</code> if both arguments match the {@link PropertyName} semantics, <code>false</code>
+     *         otherwise.
+     */
+    public static boolean equals(final String name, final String other) {
+        return equalsInternal(name, 0, name.length(), other, 0, other.length())
+                || equalsInternal(other, 0, other.length(), name, 0, name.length());
+    }
+
+    /**
+     * Compares both arguments using {@link PropertyName} equals semantics for the specified regions.
+     *
+     * @param name a String with a configuration name.
+     * @param offset the starting offset of the subregion in the String name.
+     * @param len the number of characters to compare in the String name.
+     * @param other a String with another configuration name.
+     * @param ooffset the starting offset of the subregion in the String other.
+     * @param olen the number of characters to compare in the String other.
+     * @return <code>true</code> if both arguments match the {@link PropertyName} semantics, <code>false</code>
+     *         otherwise.
+     */
+    public static boolean equals(final String name, final int offset, final int len, final String other, final int ooffset,
+            final int olen) {
+        return equalsInternal(name, offset, len, other, ooffset, olen)
+                || equalsInternal(other, ooffset, olen, name, offset, len);
     }
 
     @SuppressWarnings("squid:S4973")
-    private static boolean equalsInternal(final String name, final String other) {
+    private static boolean equalsInternal(final String name, final int offset, final int len, final String other,
+            final int ooffset, final int olen) {
         //noinspection StringEquality
         if (name == other) {
             return true;
@@ -45,8 +86,8 @@ public class PropertyName {
         char n;
         char o;
 
-        int matchPosition = name.length() - 1;
-        for (int i = other.length() - 1; i >= 0; i--) {
+        int matchPosition = offset + len - 1;
+        for (int i = ooffset + olen - 1; i >= ooffset; i--) {
             if (matchPosition == -1) {
                 return false;
             }
@@ -94,7 +135,7 @@ public class PropertyName {
             }
             matchPosition--;
         }
-        return matchPosition <= 0;
+        return matchPosition <= offset;
     }
 
     @Override
