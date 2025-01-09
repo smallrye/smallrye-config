@@ -900,8 +900,12 @@ public class ConfigMappingCollectionsTest {
                 .withSources(config(
                         "nested.key-converter.1[0].two", "one[0]-two"))
                 .withSources(config(
-                        "nested.mixed.one[0].one[0].one", "one[0].one[0].one",
-                        "nested.mixed.one[0].one[0].two", "one[0].one[0].two"))
+                        "nested.map-map-list.one.two[0]", "one.two[0]"))
+                .withSources(config(
+                        "nested.map-optional-list.one[0]", "one[0]"))
+                .withSources(config(
+                        "nested.map-list-map-list-map.one[0].one[0].one", "one[0].one[0].one",
+                        "nested.map-list-map-list-map.one[0].one[0].two", "one[0].one[0].two"))
                 .withMapping(NestedMapsLists.class)
                 .build();
 
@@ -915,8 +919,13 @@ public class ConfigMappingCollectionsTest {
 
         assertEquals("one[0]-two", mapping.keyConverter().get("one").get(0).get("two"));
 
-        assertEquals("one[0].one[0].one", mapping.mixed().get("one").get(0).get("one").get(0).get("one"));
-        assertEquals("one[0].one[0].two", mapping.mixed().get("one").get(0).get("one").get(0).get("two"));
+        assertEquals("one.two[0]", mapping.mapMapList().get("one").get("two").get(0));
+
+        assertTrue(mapping.mapOptionalList().get("one").isPresent());
+        assertEquals("one[0]", mapping.mapOptionalList().get("one").get().get(0));
+
+        assertEquals("one[0].one[0].one", mapping.mapListMapListMap().get("one").get(0).get("one").get(0).get("one"));
+        assertEquals("one[0].one[0].two", mapping.mapListMapListMap().get("one").get(0).get("one").get(0).get("two"));
     }
 
     @ConfigMapping(prefix = "nested")
@@ -927,7 +936,11 @@ public class ConfigMappingCollectionsTest {
 
         Map<@WithConverter(KeyConverter.class) String, List<Map<String, String>>> keyConverter();
 
-        Map<String, List<Map<String, List<Map<String, String>>>>> mixed();
+        Map<String, Map<String, List<String>>> mapMapList();
+
+        Map<String, Optional<List<String>>> mapOptionalList();
+
+        Map<String, List<Map<String, List<Map<String, String>>>>> mapListMapListMap();
 
         class KeyConverter implements Converter<String> {
             @Override
