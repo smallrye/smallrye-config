@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [11, 17, 21]
+        java: [17, 21]
     name: build with jdk ${{matrix.java}}
 
     steps:
@@ -51,7 +51,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        java: [11, 17, 21]
+        java: [17, 21]
     name: build with jdk ${{matrix.java}} windows
 
     steps:
@@ -82,7 +82,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
 
@@ -117,18 +117,12 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
 
       - name: build with docs and coverage
-        run: mvn verify -Pcoverage javadoc:javadoc
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 17
-
-      - name: sonar
-        # tried to use sonar.coverage.exclusions in pom.xml and even in the admin of Sonar, but it seems the only way to make it work its here
-        run: mvn sonar:sonar -Psonar -Dsonar.token=${{secrets.SONAR_TOKEN}} -Dsonar.coverage.exclusions=**/*/ConfigValueConfigSource$ConfigValueProperties*
+        run: | 
+          mvn verify -Pcoverage javadoc:javadoc
+          # tried to use sonar.coverage.exclusions in pom.xml and even in the admin of Sonar, but it seems the only way to make it work its here
+          mvn sonar:sonar -Psonar -Dsonar.token=${{secrets.SONAR_TOKEN}} -Dsonar.coverage.exclusions=**/*/ConfigValueConfigSource$ConfigValueProperties*
