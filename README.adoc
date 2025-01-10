@@ -1,8 +1,8 @@
 :microprofile-config: https://github.com/eclipse/microprofile-config/
-:ci: https://github.com/smallrye/smallrye-config/actions?query=workflow%3A%22SmallRye+Build%22
+:ci: https://github.com/smallrye/smallrye-config/actions/workflows/build.yml?query=branch%3Amain
 :sonar: https://sonarcloud.io/dashboard?id=io.smallrye.config%3Asmallrye-config
 
-image:https://github.com/smallrye/smallrye-config/workflows/SmallRye%20Build/badge.svg?branch=main[link={ci}]
+image:https://github.com/smallrye/smallrye-config/actions/workflows/build.yml/badge.svg?branch=main[link={ci}]
 image:https://sonarcloud.io/api/project_badges/measure?project=io.smallrye.config%3Asmallrye-config&metric=alert_status["Quality Gate Status", link={sonar}]
 image:https://img.shields.io/github/license/smallrye/smallrye-config.svg["License", link="http://www.apache.org/licenses/LICENSE-2.0"]
 image:https://img.shields.io/maven-central/v/io.smallrye.config/smallrye-config?color=green["Maven", link="https://search.maven.org/search?q=g:io.smallrye.config%20AND%20a:smallrye-config"]
