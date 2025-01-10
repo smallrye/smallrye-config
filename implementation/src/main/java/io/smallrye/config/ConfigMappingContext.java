@@ -167,6 +167,54 @@ public final class ConfigMappingContext {
         return mappings;
     }
 
+    void reportUnknown(final Set<String> ignoredPaths) {
+        Set<PropertyName> ignoredNames = new HashSet<>();
+        Set<String> ignoredPrefixes = new HashSet<>();
+        for (String ignoredPath : ignoredPaths) {
+            if (ignoredPath.endsWith(".**")) {
+                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 3));
+            } else {
+                ignoredNames.add(new PropertyName(ignoredPath));
+            }
+        }
+
+        Set<String> prefixes = new HashSet<>();
+        for (Map<String, Object> value : this.mappings.values()) {
+            prefixes.addAll(value.keySet());
+        }
+        if (prefixes.contains("")) {
+            prefixes.clear();
+        }
+
+        propertyNames: for (String propertyName : config.getPropertyNames()) {
+            if (usedProperties.contains(propertyName)) {
+                continue;
+            }
+
+            if (ignoredNames.contains(new PropertyName(propertyName))) {
+                continue;
+            }
+
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (propertyName.startsWith(ignoredPrefix)) {
+                    continue propertyNames;
+                }
+            }
+
+            for (String prefix : prefixes) {
+                if (isPropertyInRoot(propertyName, prefix)) {
+                    ConfigValue configValue = config.getConfigValue(propertyName);
+                    // TODO - https://github.com/quarkusio/quarkus/issues/38479
+                    if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
+                        continue;
+                    }
+                    problems.add(new Problem(
+                            ConfigMessages.msg.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation())));
+                }
+            }
+        }
+    }
+
     // TODO - We shouldn't be mutating the EnvSource.
     // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
     private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> mappings) {
@@ -279,54 +327,6 @@ public final class ConfigMappingContext {
             }
         }
         return dashesPosition;
-    }
-
-    void reportUnknown(final Set<String> ignoredPaths) {
-        Set<PropertyName> ignoredNames = new HashSet<>();
-        Set<String> ignoredPrefixes = new HashSet<>();
-        for (String ignoredPath : ignoredPaths) {
-            if (ignoredPath.endsWith(".**")) {
-                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 3));
-            } else {
-                ignoredNames.add(new PropertyName(ignoredPath));
-            }
-        }
-
-        Set<String> prefixes = new HashSet<>();
-        for (Map<String, Object> value : this.mappings.values()) {
-            prefixes.addAll(value.keySet());
-        }
-        if (prefixes.contains("")) {
-            prefixes.clear();
-        }
-
-        propertyNames: for (String propertyName : config.getPropertyNames()) {
-            if (usedProperties.contains(propertyName)) {
-                continue;
-            }
-
-            if (ignoredNames.contains(new PropertyName(propertyName))) {
-                continue;
-            }
-
-            for (String ignoredPrefix : ignoredPrefixes) {
-                if (propertyName.startsWith(ignoredPrefix)) {
-                    continue propertyNames;
-                }
-            }
-
-            for (String prefix : prefixes) {
-                if (isPropertyInRoot(propertyName, prefix)) {
-                    ConfigValue configValue = config.getConfigValue(propertyName);
-                    // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                    if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
-                        continue;
-                    }
-                    problems.add(new Problem(
-                            ConfigMessages.msg.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation())));
-                }
-            }
-        }
     }
 
     private static boolean isPropertyInRoot(final String property, final String root) {
@@ -626,20 +626,38 @@ public final class ConfigMappingContext {
             return this;
         }
 
+        public static <V> V value(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith) {
+            context.usedProperties.add(propertyName);
+            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            return context.config.getValue(propertyName, valueConverter);
+        }
+
         public ObjectCreator<T> value(
                 final Class<T> valueRawType,
                 final Class<? extends Converter<T>> valueConvertWith) {
             for (Consumer<Function<String, Object>> creator : creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
-                    public T apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        Converter<T> valueConverter = getConverter(valueRawType, valueConvertWith);
-                        return config.getValue(propertyName, valueConverter);
+                    public Object apply(final String propertyName) {
+                        return value(ConfigMappingContext.this, propertyName, valueRawType, valueConvertWith);
                     }
                 });
             }
             return this;
+        }
+
+        public static <V> Optional<V> optionalValue(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith) {
+            context.usedProperties.add(propertyName);
+            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            return context.config.getOptionalValue(propertyName, valueConverter);
         }
 
         public <V> ObjectCreator<T> optionalValue(
@@ -649,13 +667,24 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Optional<V> apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
-                        return config.getOptionalValue(propertyName, valueConverter);
+                        return optionalValue(ConfigMappingContext.this, propertyName, valueRawType, valueConvertWith);
                     }
                 });
             }
             return this;
+        }
+
+        public static <V, C extends Collection<V>> C values(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> itemRawType,
+                final Class<? extends Converter<V>> itemConvertWith,
+                final Class<C> collectionRawType) {
+            context.usedProperties.add(propertyName);
+            context.usedProperties.addAll(context.config.getIndexedProperties(propertyName));
+            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
+            return context.config.getValues(propertyName, itemConverter, collectionFactory);
         }
 
         public <V, C extends Collection<V>> ObjectCreator<T> values(
@@ -665,17 +694,25 @@ public final class ConfigMappingContext {
             for (Consumer<Function<String, Object>> creator : creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
-                    public T apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(config.getIndexedProperties(propertyName));
-                        Converter<V> itemConverter = itemConvertWith == null ? config.requireConverter(itemRawType)
-                                : getConverterInstance(itemConvertWith);
-                        IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
-                        return (T) config.getValues(propertyName, itemConverter, collectionFactory);
+                    public Object apply(final String propertyName) {
+                        return values(ConfigMappingContext.this, propertyName, itemRawType, itemConvertWith, collectionRawType);
                     }
                 });
             }
             return this;
+        }
+
+        public static <V, C extends Collection<V>> Optional<C> optionalValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> itemRawType,
+                final Class<? extends Converter<V>> itemConvertWith,
+                final Class<C> collectionRawType) {
+            context.usedProperties.add(propertyName);
+            context.usedProperties.addAll(context.config.getIndexedProperties(propertyName));
+            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
+            return context.config.getOptionalValues(propertyName, itemConverter, collectionFactory);
         }
 
         public <V, C extends Collection<V>> ObjectCreator<T> optionalValues(
@@ -685,16 +722,58 @@ public final class ConfigMappingContext {
             for (Consumer<Function<String, Object>> creator : creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
-                    public T apply(final String propertyName) {
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(config.getIndexedProperties(propertyName));
-                        Converter<V> itemConverter = getConverter(itemRawType, itemConvertWith);
-                        IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
-                        return (T) config.getOptionalValues(propertyName, itemConverter, collectionFactory);
+                    public Object apply(final String propertyName) {
+                        return optionalValues(ConfigMappingContext.this, propertyName, itemRawType, itemConvertWith,
+                                collectionRawType);
                     }
                 });
             }
             return this;
+        }
+
+        public static <K, V> Map<K, V> values(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<K> keyRawType,
+                final Class<? extends Converter<K>> keyConvertWith,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith,
+                final Iterable<String> keys,
+                final String defaultValue) {
+
+            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
+            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+
+            Map<String, String> mapKeys = new HashMap<>();
+            if (keys != null) {
+                for (String key : keys) {
+                    mapKeys.put(key, propertyName + "." + quoted(key));
+                }
+            }
+            if (mapKeys.isEmpty()) {
+                mapKeys = context.config.getMapKeys(propertyName);
+            }
+
+            IntFunction<Map<K, V>> mapFactory;
+            if (defaultValue != null) {
+                mapFactory = new IntFunction<>() {
+                    @Override
+                    public Map<K, V> apply(final int value) {
+                        return new MapWithDefault<>(valueConverter.convert(defaultValue));
+                    }
+                };
+            } else {
+                mapFactory = new IntFunction<Map<K, V>>() {
+                    @Override
+                    public Map<K, V> apply(final int size) {
+                        return new HashMap<>(size);
+                    }
+                };
+            }
+
+            context.usedProperties.add(propertyName);
+            context.usedProperties.addAll(mapKeys.values());
+            return context.config.getMapValues(mapKeys, keyConverter, valueConverter, mapFactory);
         }
 
         public <K, V> ObjectCreator<T> values(
@@ -705,47 +784,66 @@ public final class ConfigMappingContext {
                 final Iterable<String> keys,
                 final String defaultValue) {
             for (Consumer<Function<String, Object>> creator : creators) {
-                Function<String, Object> values = new Function<>() {
+                creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        Converter<K> keyConverter = getConverter(keyRawType, keyConvertWith);
-                        Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
-
-                        Map<String, String> mapKeys = new HashMap<>();
-                        if (keys != null) {
-                            for (String key : keys) {
-                                mapKeys.put(key, propertyName + "." + quoted(key));
-                            }
-                        }
-                        if (mapKeys.isEmpty()) {
-                            mapKeys = config.getMapKeys(propertyName);
-                        }
-
-                        IntFunction<Map<K, V>> mapFactory;
-                        if (defaultValue != null) {
-                            mapFactory = new IntFunction<>() {
-                                @Override
-                                public Map<K, V> apply(final int value) {
-                                    return new MapWithDefault<>(valueConverter.convert(defaultValue));
-                                }
-                            };
-                        } else {
-                            mapFactory = new IntFunction<Map<K, V>>() {
-                                @Override
-                                public Map<K, V> apply(final int size) {
-                                    return new HashMap<>(size);
-                                }
-                            };
-                        }
-
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(mapKeys.values());
-                        return config.getMapValues(mapKeys, keyConverter, valueConverter, mapFactory);
+                        return values(ConfigMappingContext.this, propertyName, keyRawType, keyConvertWith, valueRawType,
+                                valueConvertWith, keys, defaultValue);
                     }
-                };
-                creator.accept(values);
+                });
             }
             return this;
+        }
+
+        public static <K, V, C extends Collection<V>> Map<K, C> values(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<K> keyRawType,
+                final Class<? extends Converter<K>> keyConvertWith,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith,
+                final Class<C> collectionRawType,
+                final Iterable<String> keys,
+                final String defaultValue) {
+
+            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
+            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+
+            Map<String, String> mapKeys = new HashMap<>();
+            if (keys != null) {
+                for (String key : keys) {
+                    mapKeys.put(key, propertyName + "." + quoted(key));
+                }
+            }
+            if (mapKeys.isEmpty()) {
+                mapKeys = context.config.getMapIndexedKeys(propertyName);
+            }
+
+            IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
+            IntFunction<Map<K, C>> mapFactory;
+            if (defaultValue != null) {
+                mapFactory = new IntFunction<>() {
+                    @Override
+                    public Map<K, C> apply(final int value) {
+                        return new MapWithDefault<>(
+                                Converters.newCollectionConverter(valueConverter, collectionFactory)
+                                        .convert(defaultValue));
+                    }
+                };
+            } else {
+                mapFactory = new IntFunction<Map<K, C>>() {
+                    @Override
+                    public Map<K, C> apply(final int size) {
+                        return new HashMap<>(size);
+                    }
+                };
+            }
+
+            context.usedProperties.add(propertyName);
+            context.usedProperties.addAll(mapKeys.values());
+            // map keys can be indexed or unindexed, so we need to find which ones exist to mark them as used
+            context.usedProperties.addAll(context.config.getMapKeys(propertyName).values());
+            return context.config.getMapIndexedValues(mapKeys, keyConverter, valueConverter, mapFactory, collectionFactory);
         }
 
         public <K, V, C extends Collection<V>> ObjectCreator<T> values(
@@ -757,60 +855,19 @@ public final class ConfigMappingContext {
                 final Iterable<String> keys,
                 final String defaultValue) {
             for (Consumer<Function<String, Object>> creator : creators) {
-                Function<String, Object> values = new Function<>() {
+                creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        Converter<K> keyConverter = getConverter(keyRawType, keyConvertWith);
-                        Converter<V> valueConverter = getConverter(valueRawType, valueConvertWith);
-
-                        Map<String, String> mapKeys = new HashMap<>();
-                        if (keys != null) {
-                            for (String key : keys) {
-                                mapKeys.put(key, propertyName + "." + quoted(key));
-                            }
-                        }
-                        if (mapKeys.isEmpty()) {
-                            mapKeys = config.getMapIndexedKeys(propertyName);
-                        }
-
-                        IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
-                        IntFunction<Map<K, C>> mapFactory;
-                        if (defaultValue != null) {
-                            mapFactory = new IntFunction<>() {
-                                @Override
-                                public Map<K, C> apply(final int value) {
-                                    return new MapWithDefault<>(
-                                            Converters.newCollectionConverter(valueConverter, collectionFactory)
-                                                    .convert(defaultValue));
-                                }
-                            };
-                        } else {
-                            mapFactory = new IntFunction<Map<K, C>>() {
-                                @Override
-                                public Map<K, C> apply(final int size) {
-                                    return new HashMap<>(size);
-                                }
-                            };
-                        }
-
-                        usedProperties.add(propertyName);
-                        usedProperties.addAll(mapKeys.values());
-                        // map keys can be indexed or unindexed, so we need to find which ones exist to mark them as used
-                        usedProperties.addAll(config.getMapKeys(propertyName).values());
-                        return config.getMapIndexedValues(mapKeys, keyConverter, valueConverter, mapFactory, collectionFactory);
+                        return values(ConfigMappingContext.this, propertyName, keyRawType, keyConvertWith, valueRawType,
+                                valueConvertWith, collectionRawType, keys, defaultValue);
                     }
-                };
-                creator.accept(values);
+                });
             }
             return this;
         }
 
         public T get() {
             return root;
-        }
-
-        private <V> Converter<V> getConverter(final Class<V> rawType, final Class<? extends Converter<V>> convertWith) {
-            return convertWith == null ? config.requireConverter(rawType) : getConverterInstance(convertWith);
         }
 
         /**
@@ -850,7 +907,12 @@ public final class ConfigMappingContext {
             return false;
         }
 
-        private IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
+        private static <V> Converter<V> getConverter(final ConfigMappingContext context, final Class<V> rawType,
+                final Class<? extends Converter<V>> convertWith) {
+            return convertWith == null ? context.config.requireConverter(rawType) : context.getConverterInstance(convertWith);
+        }
+
+        private static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
             if (type == List.class) {
                 return ArrayList::new;
             }
@@ -862,7 +924,7 @@ public final class ConfigMappingContext {
             throw new IllegalArgumentException();
         }
 
-        private String quoted(final String key) {
+        private static String quoted(final String key) {
             NameIterator keyIterator = new NameIterator(key);
             keyIterator.next();
             return keyIterator.hasNext() ? "\"" + key + "\"" : key;

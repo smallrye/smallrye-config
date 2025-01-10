@@ -175,9 +175,7 @@ public class ObjectCreatorTest {
             sb.setLength(length);
 
             sb.append(ns.apply("value"));
-            ConfigMappingContext.ObjectCreator<String> value = context.new ObjectCreator<String>(sb.toString())
-                    .value(String.class, null);
-            this.value = value.get();
+            this.value = ConfigMappingContext.ObjectCreator.value(context, sb.toString(), String.class, null);
             sb.setLength(length);
 
             sb.append(ns.apply("optional-value"));
