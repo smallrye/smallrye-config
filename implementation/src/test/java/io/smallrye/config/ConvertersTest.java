@@ -17,6 +17,8 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
@@ -387,6 +389,26 @@ class ConvertersTest {
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalInt.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalLong.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, OptionalDouble.class));
+    }
+
+    @Test
+    void file() {
+        SmallRyeConfig config = buildConfig("file", "/test", "file.leading.space", " test");
+        assertEquals(new File("/test"), config.getValue("file", File.class));
+        assertEquals(new File(" test"), config.getValue("file.leading.space", File.class));
+        Converter<File> fileConverter = config.getConverterOrNull(File.class);
+        assertNotNull(fileConverter);
+        assertTrue(fileConverter.getClass().getName().contains("BuiltInConverter"));
+    }
+
+    @Test
+    void uri() {
+        SmallRyeConfig config = buildConfig("uri", "http://localhost", "uri.leading.space", " http://localhost");
+        assertEquals(URI.create("http://localhost"), config.getValue("uri", URI.class));
+        assertEquals(URI.create("http://localhost"), config.getValue("uri.leading.space", URI.class));
+        Converter<URI> uriConverter = config.getConverterOrNull(URI.class);
+        assertNotNull(uriConverter);
+        assertTrue(uriConverter.getClass().getName().contains("BuiltInConverter"));
     }
 
     @SafeVarargs
