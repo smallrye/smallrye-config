@@ -763,7 +763,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         customizers.sort(new Comparator<>() {
             @Override
             public int compare(SmallRyeConfigBuilderCustomizer o1, SmallRyeConfigBuilderCustomizer o2) {
-                return o1.priority() - o2.priority();
+                return Integer.compare(o1.priority(), o2.priority());
             }
         });
         for (SmallRyeConfigBuilderCustomizer customizer : customizers) {
