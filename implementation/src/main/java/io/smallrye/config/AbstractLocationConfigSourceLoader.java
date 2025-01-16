@@ -264,7 +264,13 @@ public abstract class AbstractLocationConfigSourceLoader {
 
     private static URI addProfileName(final URI uri, final String profile, final String fileExtension) {
         if ("jar".equals(uri.getScheme())) {
-            return URI.create("jar:" + addProfileName(URI.create(uri.getRawSchemeSpecificPart()), profile, fileExtension));
+            URI rec = addProfileName(URI.create(uri.getRawSchemeSpecificPart()), profile, fileExtension);
+            String recString = rec.toString();
+            String finalString = new StringBuilder("jar:".length() + recString.length())
+                    .append("jar:")
+                    .append(recString)
+                    .toString();
+            return URI.create(finalString);
         }
 
         final String fileName = uri.getPath();
@@ -273,9 +279,20 @@ public abstract class AbstractLocationConfigSourceLoader {
         final int dot = fileName.lastIndexOf(".");
         final String fileNameProfile;
         if (dot != -1 && dot != 0 && fileName.charAt(dot - 1) != '/') {
-            fileNameProfile = fileName.substring(0, dot) + "-" + profile + "." + fileExtension;
+            String substring = fileName.substring(0, dot);
+            fileNameProfile = new StringBuilder(substring.length() + 1 + profile.length() + 1 + fileExtension.length())
+                    .append(substring)
+                    .append("-")
+                    .append(profile)
+                    .append(".")
+                    .append(fileExtension)
+                    .toString();
         } else {
-            fileNameProfile = fileName + "-" + profile;
+            fileNameProfile = new StringBuilder(fileName.length() + 1 + profile.length())
+                    .append(fileName)
+                    .append("-")
+                    .append(profile)
+                    .toString();
         }
 
         try {

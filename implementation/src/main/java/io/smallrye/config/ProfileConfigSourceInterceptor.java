@@ -35,7 +35,10 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
         this.profiles = reverseProfiles;
         this.prefixProfiles = new ArrayList<>();
         for (String profile : this.profiles) {
-            this.prefixProfiles.add("%" + profile + ".");
+            this.prefixProfiles.add(new StringBuilder(1 + profile.length() + 1)
+                    .append("%")
+                    .append(profile)
+                    .append(".").toString());
         }
     }
 
