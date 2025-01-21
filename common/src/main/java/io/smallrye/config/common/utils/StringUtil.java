@@ -54,6 +54,13 @@ public class StringUtil {
         return (char) (((int) NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c & 0xFF]) & 0xFF);
     }
 
+    private static byte rawReplacementOf(char c) {
+        if (c > 255) {
+            return '_';
+        }
+        return NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c & 0xFF];
+    }
+
     private static final String[] NO_STRINGS = new String[0];
 
     private static final Pattern ITEM_PATTERN = Pattern.compile("(,+)|([^\\\\,]+)|\\\\(.)");
@@ -118,7 +125,21 @@ public class StringUtil {
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name) {
-        return replaceNonAlphanumericByUnderscores(name, new StringBuilder(name.length()));
+        // size it accounting for worst case scenario
+        byte[] usAsciiResult = new byte[name.length() + 1];
+        int length = name.length();
+        // bogus value
+        char c = 0;
+        for (int i = 0; i < length; i++) {
+            c = name.charAt(i);
+            usAsciiResult[i] = rawReplacementOf(c);
+        }
+        if (c == '"') {
+            usAsciiResult[length] = '_';
+            return new String(usAsciiResult, 0, 0, usAsciiResult.length);
+        } else {
+            return new String(usAsciiResult, 0, 0, usAsciiResult.length - 1);
+        }
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
@@ -133,6 +154,49 @@ public class StringUtil {
             sb.append('_');
         }
         return sb.toString();
+    }
+
+    public static final class ResizableByteArray {
+
+        private byte[] array;
+
+        public ResizableByteArray(int initialSize) {
+            this.array = new byte[initialSize];
+        }
+
+        public void set(int index, byte value) {
+            array[index] = value;
+        }
+
+        public void ensureCapacity(int capacity) {
+            if (array.length < capacity) {
+                byte[] newArray = new byte[capacity];
+                System.arraycopy(array, 0, newArray, 0, array.length);
+                array = newArray;
+            }
+        }
+
+        public String toUsAsciiString(int length) {
+            return new String(array, 0, 0, length);
+        }
+    }
+
+    public static String replaceNonAlphanumericByUnderscores(final String name, final ResizableByteArray sb) {
+        // size it accounting for worst case scenario
+        int length = name.length();
+        sb.ensureCapacity(length + 1);
+        // bogus value
+        char c = 0;
+        for (int i = 0; i < length; i++) {
+            c = name.charAt(i);
+            sb.set(i, rawReplacementOf(c));
+        }
+        if (c == '"') {
+            sb.set(length, (byte) '_');
+            return sb.toUsAsciiString(length + 1);
+        } else {
+            return sb.toUsAsciiString(length);
+        }
     }
 
     public static String toLowerCaseAndDotted(final String name) {
