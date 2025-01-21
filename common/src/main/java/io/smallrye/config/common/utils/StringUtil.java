@@ -24,6 +24,36 @@ import java.util.regex.Pattern;
  */
 public class StringUtil {
 
+    // this is accounting for Latin1 chars only
+    private static final byte[] NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS = new byte[256];
+
+    static {
+        // replace every non alpha-numeric latin char by an underscore
+        for (int c = 0; c < 256; c++) {
+            if ('a' <= c && c <= 'z' ||
+                    'A' <= c && c <= 'Z' ||
+                    '0' <= c && c <= '9') {
+                NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c] = (byte) c;
+            } else {
+                NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c] = '_';
+            }
+        }
+    }
+
+    public static boolean isAsciiLetterOrDigit(char c) {
+        if (c > 255) {
+            return false;
+        }
+        return NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c & 0xFF] != '_';
+    }
+
+    private static char replacementOf(char c) {
+        if (c > 255) {
+            return '_';
+        }
+        return (char) (((int) NON_ALPHANUMERIC_UNDERSCORE_REPLACEMENTS[c & 0xFF]) & 0xFF);
+    }
+
     private static final String[] NO_STRINGS = new String[0];
 
     private static final Pattern ITEM_PATTERN = Pattern.compile("(,+)|([^\\\\,]+)|\\\\(.)");
@@ -87,28 +117,20 @@ public class StringUtil {
         return list.toArray(NO_STRINGS);
     }
 
-    public static boolean isAsciiLetterOrDigit(char c) {
-        return 'a' <= c && c <= 'z' ||
-                'A' <= c && c <= 'Z' ||
-                '0' <= c && c <= '9';
-    }
-
     public static String replaceNonAlphanumericByUnderscores(final String name) {
         return replaceNonAlphanumericByUnderscores(name, new StringBuilder(name.length()));
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
         int length = name.length();
+        // bogus value
+        char c = 0;
         for (int i = 0; i < length; i++) {
-            char c = name.charAt(i);
-            if (isAsciiLetterOrDigit(c)) {
-                sb.append(c);
-            } else {
-                sb.append('_');
-                if (c == '"' && i + 1 == length) {
-                    sb.append('_');
-                }
-            }
+            c = name.charAt(i);
+            sb.append(replacementOf(c));
+        }
+        if (c == '"') {
+            sb.append('_');
         }
         return sb.toString();
     }
