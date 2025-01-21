@@ -125,21 +125,13 @@ public class StringUtil {
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name) {
+        final int length = name.length();
+        if (length == 0) {
+            return name;
+        }
         // size it accounting for worst case scenario
-        byte[] usAsciiResult = new byte[name.length() + 1];
-        int length = name.length();
-        // bogus value
-        char c = 0;
-        for (int i = 0; i < length; i++) {
-            c = name.charAt(i);
-            usAsciiResult[i] = rawReplacementOf(c);
-        }
-        if (c == '"') {
-            usAsciiResult[length] = '_';
-            return new String(usAsciiResult, 0, 0, usAsciiResult.length);
-        } else {
-            return new String(usAsciiResult, 0, 0, usAsciiResult.length - 1);
-        }
+        final byte[] result = new byte[length + 1];
+        return replaceNonAlphanumericByteUnderscoresWithByteArray(name, length, result);
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
@@ -164,38 +156,38 @@ public class StringUtil {
             this.array = new byte[initialSize];
         }
 
-        public void set(int index, byte value) {
-            array[index] = value;
-        }
-
-        public void ensureCapacity(int capacity) {
+        private byte[] ensureCapacity(int capacity) {
+            byte[] array = this.array;
             if (array.length < capacity) {
+                // no need to copy the content, it's going to be rewritten!
                 byte[] newArray = new byte[capacity];
-                System.arraycopy(array, 0, newArray, 0, array.length);
-                array = newArray;
+                this.array = newArray;
+                return newArray;
             }
-        }
-
-        public String toUsAsciiString(int length) {
-            return new String(array, 0, 0, length);
+            return array;
         }
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name, final ResizableByteArray sb) {
-        // size it accounting for worst case scenario
         int length = name.length();
-        sb.ensureCapacity(length + 1);
-        // bogus value
+        if (length == 0) {
+            return name;
+        }
+        // size it accounting for worst case scenario
+        return replaceNonAlphanumericByteUnderscoresWithByteArray(name, length, sb.ensureCapacity(length + 1));
+    }
+
+    private static String replaceNonAlphanumericByteUnderscoresWithByteArray(String name, int length, byte[] ascii) {
         char c = 0;
         for (int i = 0; i < length; i++) {
             c = name.charAt(i);
-            sb.set(i, rawReplacementOf(c));
+            ascii[i] = rawReplacementOf(c);
         }
         if (c == '"') {
-            sb.set(length, (byte) '_');
-            return sb.toUsAsciiString(length + 1);
+            ascii[length] = '_';
+            return new String(ascii, 0, 0, length + 1);
         } else {
-            return sb.toUsAsciiString(length);
+            return new String(ascii, 0, 0, length);
         }
     }
 
