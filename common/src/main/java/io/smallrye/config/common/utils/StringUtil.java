@@ -131,7 +131,17 @@ public class StringUtil {
         }
         // size it accounting for worst case scenario
         final byte[] result = new byte[length + 1];
-        return replaceNonAlphanumericByteUnderscoresWithByteArray(name, length, result);
+        char c = 0;
+        for (int i = 0; i < length; i++) {
+            c = name.charAt(i);
+            result[i] = rawReplacementOf(c);
+        }
+        if (c == '"') {
+            result[length] = '_';
+            return new String(result, 0, 0, length + 1);
+        } else {
+            return new String(result, 0, 0, length);
+        }
     }
 
     public static String replaceNonAlphanumericByUnderscores(final String name, final StringBuilder sb) {
@@ -174,10 +184,10 @@ public class StringUtil {
             return name;
         }
         // size it accounting for worst case scenario
-        return replaceNonAlphanumericByteUnderscoresWithByteArray(name, length, sb.ensureCapacity(length + 1));
-    }
-
-    private static String replaceNonAlphanumericByteUnderscoresWithByteArray(String name, int length, byte[] ascii) {
+        byte[] ascii = sb.ensureCapacity(length + 1);
+        // despite this could be refactored in a separate common method
+        // since this can run in Tier1 compilation level it is better to deplicate it
+        // and C1MaxInlineSize is 35 which means that's not going to be inlined by the C1 compiler
         char c = 0;
         for (int i = 0; i < length; i++) {
             c = name.charAt(i);
