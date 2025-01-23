@@ -62,6 +62,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     public static final int ORDINAL = 300;
 
     private final EnvVars envVars;
+    private EnvName reusableEnvName;
 
     protected EnvConfigSource() {
         this(ORDINAL);
@@ -74,6 +75,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     public EnvConfigSource(final Map<String, String> properties, final int ordinal) {
         super(NAME, getEnvOrdinal(properties, ordinal));
         this.envVars = new EnvVars(properties);
+        this.reusableEnvName = null;
     }
 
     @Override
@@ -103,7 +105,18 @@ public class EnvConfigSource extends AbstractConfigSource {
     }
 
     boolean hasPropertyName(final String propertyName) {
-        return envVars.getEnv().containsKey(new EnvName(propertyName));
+        EnvName envName = reusableEnvName;
+        if (envName == null) {
+            envName = new EnvName(propertyName);
+            this.reusableEnvName = envName;
+        } else {
+            envName.setName(propertyName);
+        }
+        try {
+            return envVars.getEnv().containsKey(envName);
+        } finally {
+            envName.reset();
+        }
     }
 
     /**
@@ -148,6 +161,7 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         private final Map<EnvName, EnvEntry> env;
         private final Set<String> names;
+        private EnvName reusableEnvName;
 
         public EnvVars(final Map<String, String> properties) {
             this.env = new HashMap<>(properties.size());
@@ -155,41 +169,67 @@ public class EnvConfigSource extends AbstractConfigSource {
             properties.forEach(new BiConsumer<>() {
                 @Override
                 public void accept(String key, String value) {
-                    EnvName envName = new EnvName(key);
-                    EnvEntry envEntry = env.get(envName);
-                    if (envEntry == null) {
-                        env.put(envName, new EnvEntry(key, value));
-                    } else {
-                        envEntry.add(key, value);
+                    EnvName envName = tmpEnvNameWith(key);
+                    try {
+                        EnvEntry envEntry = env.get(envName);
+                        if (envEntry == null) {
+                            env.put(envName, new EnvEntry(key, value));
+                            // it means envName cannot be reused
+                            envName = null;
+                        } else {
+                            envEntry.add(key, value);
+                        }
+                        EnvVars.this.names.add(key);
+                        EnvVars.this.names.add(toLowerCaseAndDotted(key));
+                    } finally {
+                        if (envName != null) {
+                            envName.reset();
+                        } else {
+                            reusableEnvName = null;
+                        }
                     }
-                    EnvVars.this.names.add(key);
-                    EnvVars.this.names.add(toLowerCaseAndDotted(key));
                 }
             });
         }
 
         public String get(final String propertyName) {
-            EnvEntry envEntry = env.get(new EnvName(propertyName));
-            if (envEntry != null) {
-                String value = envEntry.get();
-                if (value != null) {
-                    return value;
-                }
+            EnvName tmpEnvName = tmpEnvNameWith(propertyName);
+            try {
+                EnvEntry envEntry = env.get(tmpEnvName);
+                if (envEntry != null) {
+                    String value = envEntry.get();
+                    if (value != null) {
+                        return value;
+                    }
 
-                value = envEntry.getEntries().get(propertyName);
-                if (value != null) {
-                    return value;
-                }
+                    value = envEntry.getEntries().get(propertyName);
+                    if (value != null) {
+                        return value;
+                    }
 
-                String envName = replaceNonAlphanumericByUnderscores(propertyName);
-                value = envEntry.getEntries().get(envName);
-                if (value != null) {
-                    return value;
-                }
+                    String envName = replaceNonAlphanumericByUnderscores(propertyName);
+                    value = envEntry.getEntries().get(envName);
+                    if (value != null) {
+                        return value;
+                    }
 
-                return envEntry.envEntries.get(envName.toUpperCase());
+                    return envEntry.envEntries.get(envName.toUpperCase());
+                }
+                return null;
+            } finally {
+                tmpEnvName.reset();
             }
-            return null;
+        }
+
+        private EnvName tmpEnvNameWith(String propertyName) {
+            EnvName envName = reusableEnvName;
+            if (envName == null) {
+                envName = new EnvName(propertyName);
+                this.reusableEnvName = envName;
+            } else {
+                envName.setName(propertyName);
+            }
+            return envName;
         }
 
         public Map<EnvName, EnvEntry> getEnv() {
@@ -204,11 +244,27 @@ public class EnvConfigSource extends AbstractConfigSource {
     static final class EnvName implements Serializable {
         private static final long serialVersionUID = -2679716955093904512L;
 
-        private final String name;
+        private String name;
+        private int hash;
+        private boolean hashIsZero;
 
         public EnvName(final String name) {
             assert name != null;
             this.name = name;
+            this.hashIsZero = false;
+            this.hash = 0;
+        }
+
+        public void reset() {
+            this.name = null;
+            this.hashIsZero = false;
+            this.hash = 0;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+            this.hashIsZero = false;
+            this.hash = 0;
         }
 
         public String getName() {
@@ -229,26 +285,33 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         @Override
         public int hashCode() {
-            int h = 0;
-            int length = name.length();
-            if (length >= 2) {
-                if (name.charAt(length - 1) == '_' && name.charAt(length - 2) == '_') {
-                    length = length - 1;
-                }
-            }
-
-            for (int i = 0; i < length; i++) {
-                char c = name.charAt(i);
-                if (i == 0 && length > 1) {
-                    // The first '%' or '_' is meaninful because it represents a profiled property name
-                    if ((c == '%' || c == '_') && isAsciiLetterOrDigit(name.charAt(i + 1))) {
-                        h = 31 * h + 31;
-                        continue;
+            int h = hash;
+            if (h == 0 && !hashIsZero) {
+                int length = name.length();
+                if (length >= 2) {
+                    if (name.charAt(length - 1) == '_' && name.charAt(length - 2) == '_') {
+                        length = length - 1;
                     }
                 }
 
-                if (isAsciiLetterOrDigit(c)) {
-                    h = 31 * h + toLowerCase(c);
+                for (int i = 0; i < length; i++) {
+                    char c = name.charAt(i);
+                    if (i == 0 && length > 1) {
+                        // The first '%' or '_' is meaninful because it represents a profiled property name
+                        if ((c == '%' || c == '_') && isAsciiLetterOrDigit(name.charAt(i + 1))) {
+                            h = 31 * h + 31;
+                            continue;
+                        }
+                    }
+
+                    if (isAsciiLetterOrDigit(c)) {
+                        h = 31 * h + toLowerCase(c);
+                    }
+                }
+                if (h == 0) {
+                    hashIsZero = true;
+                } else {
+                    hash = h;
                 }
             }
             return h;
