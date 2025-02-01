@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,6 +75,31 @@ public class ConfigSourceFactoryTest {
             assertEquals("1234", mapping.value());
 
             return List.of(new PropertiesConfigSource(Map.of("factory.expression", mapping.value()), "", 100));
+        }
+    }
+
+    @Test
+    void propagateProfiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config("%prof.profiles.value", "prof", "profiles.value", "value"))
+                .withSources(new PropagateProfilesConfigSourceFactory())
+                .withProfile("prof")
+                .build();
+
+        assertNotNull(config);
+    }
+
+    @ConfigMapping(prefix = "profiles")
+    interface PropagateProfiles {
+        String value();
+    }
+
+    static class PropagateProfilesConfigSourceFactory implements ConfigurableConfigSourceFactory<PropagateProfiles> {
+        @Override
+        public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, final PropagateProfiles config) {
+            assertEquals(config.value(), "prof");
+            return List.of();
         }
     }
 }

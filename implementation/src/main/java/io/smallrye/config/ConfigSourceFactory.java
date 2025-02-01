@@ -2,6 +2,9 @@ package io.smallrye.config;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.OptionalInt;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -48,7 +51,11 @@ public interface ConfigSourceFactory {
         default Iterable<ConfigSource> getConfigSources(ConfigSourceContext context) {
             Type typeArgument = ((ParameterizedType) this.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
 
+            List<String> profiles = new ArrayList<>(context.getProfiles());
+            Collections.reverse(profiles);
+
             SmallRyeConfig config = new SmallRyeConfigBuilder()
+                    .withProfiles(profiles)
                     .withSources(new ConfigSourceContext.ConfigSourceContextConfigSource(context))
                     .withSources(context.getConfigSources())
                     .withMapping((Class<? extends MAPPING>) typeArgument)
