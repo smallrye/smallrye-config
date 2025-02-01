@@ -55,6 +55,7 @@ class IndexedPropertiesInjectionTest {
         assertEquals(Stream.of(new ConvertedValue("out")).collect(Collectors.toList()), indexedBean.getConverted());
         assertEquals(Stream.of("a", "b", "c").collect(Collectors.toList()), indexedBean.getDefaults());
         assertEquals(Stream.of("e", "f").collect(Collectors.toList()), indexedBean.getOverrideDefaults());
+        assertEquals(Stream.of("o").collect(Collectors.toList()), indexedBean.getOverrideIndexed());
         assertEquals(Stream.of("a", "b").collect(Collectors.toList()), indexedBean.getComma());
     }
 
@@ -100,6 +101,9 @@ class IndexedPropertiesInjectionTest {
         @Inject
         @ConfigProperty(name = "indexed.override.defaults", defaultValue = "a,b,c")
         List<String> overrideDefaults;
+        @Inject
+        @ConfigProperty(name = "indexed.override.indexed")
+        List<String> overrideIndexed;
         @Inject
         @ConfigProperty(name = "indexed.comma")
         List<String> comma;
@@ -154,6 +158,10 @@ class IndexedPropertiesInjectionTest {
             return overrideDefaults;
         }
 
+        public List<String> getOverrideIndexed() {
+            return overrideIndexed;
+        }
+
         public List<String> getComma() {
             return comma;
         }
@@ -189,6 +197,8 @@ class IndexedPropertiesInjectionTest {
                 .withSources(config("server.hosts[0]", "localhost", "server.hosts[1]", "config"))
                 .withSources(config("indexed.converted[0]", "in"))
                 .withSources(config("indexed.override.defaults[0]", "e", "indexed.override.defaults[1]", "f"))
+                .withSources(config("indexed.override.indexed[0]", "i", "indexed.override.indexed[1]", "i"))
+                .withSources(config("indexed.override.indexed", "o", "config_ordinal", "1000"))
                 .withSources(config("indexed.comma", "a,b,c", "indexed.comma[0]", "a", "indexed.comma[1]", "b"))
                 .withSources(config("optionals.indexed[0]", "a", "optionals.indexed[1]", "b"))
                 .withSources(config("supplier.indexed[0]", "a", "supplier.indexed[1]", "b"))

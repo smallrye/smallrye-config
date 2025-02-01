@@ -106,17 +106,32 @@ public final class ConfigProducerUtil {
             return config.convertValue(configValue, resolveConverter(type, config));
         }
 
+        // Check ordinality of indexed
+        int indexedOrdinality = Integer.MIN_VALUE;
+        List<ConfigValue> indexedValues = new ArrayList<>(indexedProperties.size());
+        for (String indexedProperty : indexedProperties) {
+            ConfigValue indexedValue = getConfigValue(indexedProperty, config);
+            if (indexedValue.getConfigSourceOrdinal() >= indexedOrdinality) {
+                indexedOrdinality = indexedValue.getConfigSourceOrdinal();
+            }
+            indexedValues.add(indexedValue);
+        }
+
         BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
                 collectionFactory) -> {
-            Collection<T> collection = collectionFactory.apply(indexedProperties.size());
-            for (String indexedProperty : indexedProperties) {
-                // Never null by the rules of converValue
-                collection.add(config.convertValue(getConfigValue(indexedProperty, config), itemConverter));
+            Collection<T> collection = collectionFactory.apply(indexedValues.size());
+            for (ConfigValue indexedValue : indexedValues) {
+                collection.add(config.convertValue(indexedValue, itemConverter));
             }
             return collection;
         };
 
-        return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
+        // Use indexed if comma separated empty or higher in ordinality
+        if (indexedOrdinality >= configValue.getConfigSourceOrdinal()) {
+            return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
+        } else {
+            return config.convertValue(configValue, resolveConverter(type, config));
+        }
     }
 
     private static <T> T convertMapValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
