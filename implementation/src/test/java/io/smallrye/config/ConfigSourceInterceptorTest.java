@@ -268,13 +268,7 @@ class ConfigSourceInterceptorTest {
             }
         };
 
-        System.out.println(first.get().value);
-        System.out.println(second.get().value);
-
         value.value = "something else";
-
-        System.out.println(first.get().value);
-        System.out.println(second.get().value);
     }
 
     public static class Value {
