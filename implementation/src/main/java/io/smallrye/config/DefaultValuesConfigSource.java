@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +16,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
 
     private final Map<String, String> properties;
     private final Map<PropertyName, String> wildcards;
+    private final boolean hasProfiledName;
 
     public DefaultValuesConfigSource(final Map<String, String> properties) {
         this(properties, NAME, ORDINAL);
@@ -24,6 +27,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         this.properties = new HashMap<>();
         this.wildcards = new HashMap<>();
         addDefaults(properties);
+        this.hasProfiledName = hasProfiledName(getPropertyNames());
     }
 
     @Override
@@ -32,7 +36,14 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     }
 
     public String getValue(final String propertyName) {
-        return properties.getOrDefault(propertyName, wildcards.get(new PropertyName(propertyName)));
+        if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+            return null;
+        }
+        String value = properties.get(propertyName);
+        if (value == null) {
+            value = wildcards.get(new PropertyName(propertyName));
+        }
+        return value;
     }
 
     void addDefaults(final Map<String, String> properties) {
