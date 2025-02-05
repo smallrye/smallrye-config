@@ -16,6 +16,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
+import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
 import static io.smallrye.config.common.utils.StringUtil.isAsciiLetterOrDigit;
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
@@ -62,6 +63,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     public static final int ORDINAL = 300;
 
     private final EnvVars envVars;
+    private final boolean hasProfiledName;
 
     protected EnvConfigSource() {
         this(ORDINAL);
@@ -74,6 +76,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     public EnvConfigSource(final Map<String, String> properties, final int ordinal) {
         super(NAME, getEnvOrdinal(properties, ordinal));
         this.envVars = new EnvVars(properties);
+        this.hasProfiledName = hasProfiledName(getPropertyNames());
     }
 
     @Override
@@ -99,6 +102,9 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     @Override
     public String getValue(final String propertyName) {
+        if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+            return null;
+        }
         return envVars.get(propertyName);
     }
 
