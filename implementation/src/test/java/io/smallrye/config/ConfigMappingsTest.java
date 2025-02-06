@@ -139,7 +139,7 @@ public class ConfigMappingsTest {
     void validateAnnotations() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class, "server"))));
+                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
@@ -149,8 +149,7 @@ public class ConfigMappingsTest {
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
         exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config,
-                        singleton(configClass(ServerPropertiesInterface.class, "server"))));
+                () -> registerConfigMappings(config, singleton(configClass(ServerPropertiesInterface.class))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
 
