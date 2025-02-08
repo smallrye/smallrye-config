@@ -22,10 +22,10 @@ public final class ConfigMappingLoader {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final ConcurrentHashMap<String, Object> classLoaderLocks = new ConcurrentHashMap<>();
 
-    private static final ClassValue<ConfigMappingObjectHolder> CACHE = new ClassValue<ConfigMappingObjectHolder>() {
+    private static final ClassValue<ConfigMappingImplementation> CACHE = new ClassValue<>() {
         @Override
-        protected ConfigMappingObjectHolder computeValue(final Class<?> type) {
-            return new ConfigMappingObjectHolder(getImplementationClass(type));
+        protected ConfigMappingImplementation computeValue(final Class<?> type) {
+            return new ConfigMappingImplementation(loadImplementation(type));
         }
     };
 
@@ -64,34 +64,7 @@ public final class ConfigMappingLoader {
     @SuppressWarnings("unchecked")
     static <T> Map<String, String> configMappingProperties(final Class<T> interfaceType) {
         try {
-            MethodHandle getDefaults = LOOKUP.findStatic(CACHE.get(interfaceType).getImplementationClass(), "getProperties",
-                    methodType(Map.class));
-            return (Map<String, String>) getDefaults.invoke();
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error r) {
-                throw r;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new UndeclaredThrowableException(t);
-        }
-    }
-
-    static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
-        try {
-            Class<? extends ConfigMappingObject> implClass = CACHE.get(interfaceType).getImplementationClass();
-            MethodHandle constructor = LOOKUP.findConstructor(implClass,
-                    methodType(void.class, ConfigMappingContext.class));
-            return (T) constructor.asType(constructor.type().changeReturnType(Object.class)).invokeExact(configMappingContext);
+            return (Map<String, String>) CACHE.get(interfaceType).getProperties().invoke();
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
@@ -112,25 +85,51 @@ public final class ConfigMappingLoader {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Class<? extends ConfigMappingObject> getImplementationClass(final Class<T> type) {
+    static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
+        try {
+            return (T) CACHE.get(interfaceType).constructor().invokeExact(configMappingContext);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error r) {
+                throw r;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new UndeclaredThrowableException(t);
+        }
+    }
+
+    public static ConfigMappingImplementation ensureLoaded(final Class<?> type) {
+        return CACHE.get(type);
+    }
+
+    static <T> Class<?> loadImplementation(final Class<T> type) {
         try {
             Class<?> implementationClass = type.getClassLoader()
                     .loadClass(ConfigMappingInterface.getImplementationClassName(type));
             if (type.isAssignableFrom(implementationClass)) {
-                return (Class<? extends ConfigMappingObject>) implementationClass;
+                return implementationClass;
             }
 
             ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
             if (mappingMetadata == null) {
                 throw ConfigMessages.msg.classIsNotAMapping(type);
             }
-            return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
+            return loadClass(type, mappingMetadata);
         } catch (ClassNotFoundException e) {
             ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
             if (mappingMetadata == null) {
                 throw ConfigMessages.msg.classIsNotAMapping(type);
             }
-            return (Class<? extends ConfigMappingObject>) loadClass(type, mappingMetadata);
+            return loadClass(type, mappingMetadata);
         }
     }
 
@@ -170,15 +169,35 @@ public final class ConfigMappingLoader {
         return classLoaderLocks.computeIfAbsent(className, c -> new Object());
     }
 
-    private static final class ConfigMappingObjectHolder {
-        private final Class<? extends ConfigMappingObject> implementationClass;
+    public static final class ConfigMappingImplementation {
+        private final Class<?> implementation;
+        private final MethodHandle constructor;
+        private final MethodHandle getProperties;
 
-        ConfigMappingObjectHolder(final Class<? extends ConfigMappingObject> implementationClass) {
-            this.implementationClass = implementationClass;
+        ConfigMappingImplementation(final Class<?> implementation) {
+            try {
+                this.implementation = implementation;
+                MethodHandle constructor = LOOKUP.findConstructor(implementation,
+                        methodType(void.class, ConfigMappingContext.class));
+                this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
+                this.getProperties = LOOKUP.findStatic(implementation, "getProperties", methodType(Map.class));
+            } catch (NoSuchMethodException e) {
+                throw new NoSuchMethodError(e.getMessage());
+            } catch (IllegalAccessException e) {
+                throw new IllegalAccessError(e.getMessage());
+            }
         }
 
-        public Class<? extends ConfigMappingObject> getImplementationClass() {
-            return implementationClass;
+        public Class<?> implementation() {
+            return implementation;
+        }
+
+        public MethodHandle constructor() {
+            return constructor;
+        }
+
+        public MethodHandle getProperties() {
+            return getProperties;
         }
     }
 

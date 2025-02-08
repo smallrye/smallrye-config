@@ -1,7 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
-import static io.smallrye.config.ConfigMappingLoader.getImplementationClass;
+import static io.smallrye.config.ConfigMappingLoader.ensureLoaded;
 import static io.smallrye.config.ConfigMappingLoader.loadClass;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 class ConfigMappingLoaderTest {
     @Test
     void multipleLoads() {
-        ConfigMappingLoader.getImplementationClass(Server.class);
-        ConfigMappingLoader.getImplementationClass(Server.class);
+        ConfigMappingLoader.ensureLoaded(Server.class);
+        ConfigMappingLoader.ensureLoaded(Server.class);
 
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080"))
@@ -38,8 +38,8 @@ class ConfigMappingLoaderTest {
         List<ConfigMappingMetadata> configMappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerManual.class);
         configMappingsMetadata.forEach(
                 mappingMetadata -> ConfigMappingLoader.loadClass(ServerManual.class, mappingMetadata));
-        ConfigMappingLoader.getImplementationClass(ServerManual.class);
-        ConfigMappingLoader.getImplementationClass(ServerManual.class);
+        ConfigMappingLoader.ensureLoaded(ServerManual.class);
+        ConfigMappingLoader.ensureLoaded(ServerManual.class);
     }
 
     @Test
@@ -56,9 +56,10 @@ class ConfigMappingLoaderTest {
 
     @Test
     void noArgsConstructor() throws Exception {
-        assertTrue(getImplementationClass(Server.class).getDeclaredConstructor().newInstance() instanceof Server);
-        assertTrue(getImplementationClass(ServerNested.class).getDeclaredConstructor().newInstance() instanceof ServerNested);
-        assertThrows(IllegalArgumentException.class, () -> getImplementationClass(ServerProperties.class));
+        assertInstanceOf(Server.class, ensureLoaded(Server.class).implementation().getDeclaredConstructor().newInstance());
+        assertInstanceOf(ServerNested.class,
+                ensureLoaded(ServerNested.class).implementation().getDeclaredConstructor().newInstance());
+        assertThrows(IllegalArgumentException.class, () -> ensureLoaded(ServerProperties.class));
     }
 
     @ConfigMapping(prefix = "server")
@@ -139,7 +140,7 @@ class ConfigMappingLoaderTest {
         loadClass(OptionalCollection.class, getConfigurationInterface(OptionalCollectionGroup.class));
         loadClass(OptionalCollection.class, configMappingInterface);
 
-        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(OptionalCollection.class);
+        Class<?> implementationClass = ensureLoaded(OptionalCollection.class).implementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
@@ -164,7 +165,7 @@ class ConfigMappingLoaderTest {
 
         loadClass(OptionalCollection.class, configMappingInterface);
 
-        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(OptionalCollectionPrimitive.class);
+        Class<?> implementationClass = ensureLoaded(OptionalCollectionPrimitive.class).implementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
@@ -194,7 +195,7 @@ class ConfigMappingLoaderTest {
         loadClass(OptionalCollection.class, getConfigurationInterface(MappingCollectionGroup.class));
         loadClass(OptionalCollection.class, configMappingInterface);
 
-        Class<? extends ConfigMappingObject> implementationClass = getImplementationClass(MappingCollection.class);
+        Class<?> implementationClass = ensureLoaded(MappingCollection.class).implementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
