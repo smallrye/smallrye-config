@@ -1,7 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,8 +24,21 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         super(name, ordinal);
         this.properties = new HashMap<>();
         this.wildcards = new HashMap<>();
-        addDefaults(properties);
-        this.hasProfiledName = hasProfiledName(getPropertyNames());
+        boolean hasProfiledName = false;
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            String propertyName = entry.getKey();
+            String value = entry.getValue();
+            if (propertyName.indexOf('*') == -1) {
+                this.properties.put(propertyName, value);
+            } else {
+                this.wildcards.put(new PropertyName(propertyName), value);
+            }
+
+            if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+                hasProfiledName = true;
+            }
+        }
+        this.hasProfiledName = hasProfiledName;
     }
 
     @Override
