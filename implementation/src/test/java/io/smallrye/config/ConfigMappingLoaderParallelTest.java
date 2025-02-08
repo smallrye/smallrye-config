@@ -29,8 +29,8 @@ class ConfigMappingLoaderParallelTest {
     }
 
     private void loadTestClass() {
-        ConfigMappingLoader.getImplementationClass(ConfigMappingLoaderTest.Server.class);
-        ConfigMappingLoader.getImplementationClass(ConfigMappingLoaderTest.Server.class);
+        ConfigMappingLoader.ensureLoaded(ConfigMappingLoaderTest.Server.class);
+        ConfigMappingLoader.ensureLoaded(ConfigMappingLoaderTest.Server.class);
 
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080"))

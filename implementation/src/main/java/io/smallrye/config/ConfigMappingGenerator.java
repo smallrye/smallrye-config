@@ -103,7 +103,6 @@ public class ConfigMappingGenerator {
     private static final String I_CLASS = getInternalName(Class.class);
     private static final String I_FIELD = getInternalName(Field.class);
 
-    private static final String I_CONFIGURATION_OBJECT = getInternalName(ConfigMappingObject.class);
     private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
     private static final String I_OBJECT_CREATOR = getInternalName(ConfigMappingContext.ObjectCreator.class);
     private static final String I_NAMING_STRATEGY = getInternalName(NamingStrategy.class);
@@ -134,10 +133,7 @@ public class ConfigMappingGenerator {
         ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
 
         visitor.visit(V1_8, ACC_PUBLIC, mapping.getClassInternalName(), null, I_OBJECT,
-                new String[] {
-                        I_CONFIGURATION_OBJECT,
-                        getInternalName(mapping.getInterfaceType())
-                });
+                new String[] { getInternalName(mapping.getInterfaceType()) });
         visitor.visitSource(null, null);
 
         // No Args Constructor - To use for proxies
