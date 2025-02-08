@@ -16,7 +16,6 @@
 
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
@@ -37,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -773,15 +773,48 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public final class MappingBuilder {
-        private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
+        private final Set<ConfigClass> mappings = new HashSet<>();
+        private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
         private final Set<String> ignoredPaths = new HashSet<>();
 
         public void mapping(ConfigClass configClass) {
             Assert.checkNotNullParam("configClass", configClass);
 
-            mappings.computeIfAbsent(getConfigMappingClass(configClass.getType()), k -> new HashSet<>(4))
-                    .add(configClass.getPrefix());
+            mappings.add(configClass);
+            addDefaultsAndIgnores(configClass);
+        }
 
+        public void mappingInstance(ConfigClass configClass, Object instance) {
+            Assert.checkNotNullParam("configClass", configClass);
+            Assert.checkNotNullParam("instance", instance);
+
+            // TODO - Validate that instance is an implementation of type?
+            mappingsInstances.put(configClass, instance);
+            addDefaultsAndIgnores(configClass);
+        }
+
+        public void ignoredPath(String ignoredPath) {
+            Assert.checkNotNullParam("ignoredPath", ignoredPath);
+            ignoredPaths.add(ignoredPath);
+        }
+
+        public Set<ConfigClass> getMappings() {
+            return mappings;
+        }
+
+        public Map<ConfigClass, Object> getMappingsInstances() {
+            return mappingsInstances;
+        }
+
+        public Set<String> getIgnoredPaths() {
+            return ignoredPaths;
+        }
+
+        boolean isEmpty() {
+            return mappings.isEmpty() && mappingsInstances.isEmpty();
+        }
+
+        private void addDefaultsAndIgnores(ConfigClass configClass) {
             configClass.getDefaults().forEach(new BiConsumer<String, String>() {
                 @Override
                 public void accept(final String propertyName, final String value) {
@@ -794,19 +827,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(configClass.getType()) != null) {
                 ignoredPaths.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
-        }
-
-        public void ignoredPath(String ignoredPath) {
-            Assert.checkNotNullParam("ignoredPath", ignoredPath);
-            ignoredPaths.add(ignoredPath);
-        }
-
-        public Map<Class<?>, Set<String>> getMappings() {
-            return mappings;
-        }
-
-        public Set<String> getIgnoredPaths() {
-            return ignoredPaths;
         }
     }
 
