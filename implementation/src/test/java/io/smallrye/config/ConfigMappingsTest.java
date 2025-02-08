@@ -323,4 +323,31 @@ public class ConfigMappingsTest {
         assertTrue(properties.containsKey("mapped.value"));
         assertTrue(properties.containsKey("mapped.collection[*].value"));
     }
+
+    @Test
+    void registerInstances() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("mapping.instance.value", "value"))
+                .withMapping(MappingInstance.class)
+                .build();
+
+        MappingInstance mapping = config.getConfigMapping(MappingInstance.class);
+
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
+        builder.getMappingsBuilder().mappingInstance(configClass(MappingInstance.class, "mapping.instance"), mapping);
+        SmallRyeConfig mappingConfig = builder.build();
+
+        MappingInstance mappingInstance = mappingConfig.getConfigMapping(MappingInstance.class);
+        assertEquals("value", mappingInstance.value());
+        assertEquals("default", mappingInstance.defaultValue());
+        assertEquals("default", mappingConfig.getRawValue("mapping.instance.default-value"));
+    }
+
+    @ConfigMapping(prefix = "mapping.instance")
+    interface MappingInstance {
+        String value();
+
+        @WithDefault("default")
+        String defaultValue();
+    }
 }

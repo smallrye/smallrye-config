@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +45,7 @@ public class ObjectCreatorTest {
                         "optional-list-group[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new SmallRyeConfigBuilder().getMappingsBuilder());
         ObjectCreator mapping = new ObjectCreatorImpl(context);
 
         assertEquals(2, mapping.unnamed().size());
@@ -271,7 +270,7 @@ public class ObjectCreatorTest {
                         "optional.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new SmallRyeConfigBuilder().getMappingsBuilder());
         OptionalGroup mapping = new OptionalGroupImpl(context);
 
         assertTrue(mapping.optional().isPresent());
@@ -333,7 +332,7 @@ public class ObjectCreatorTest {
                         "unnamed.key.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new SmallRyeConfigBuilder().getMappingsBuilder());
         context.applyPrefix("unnamed");
 
         UnnamedKeys mapping = new UnnamedKeysImpl(context);
@@ -391,7 +390,7 @@ public class ObjectCreatorTest {
                         "map.defaults-list.one[0].value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new SmallRyeConfigBuilder().getMappingsBuilder());
         context.applyPrefix("map");
         MapDefaults mapping = new MapDefaultsImpl(context);
 
@@ -502,7 +501,7 @@ public class ObjectCreatorTest {
                         "naming.nested_value.value", "value"))
                 .build();
 
-        ConfigMappingContext context = new ConfigMappingContext(config, new HashMap<>());
+        ConfigMappingContext context = new ConfigMappingContext(config, new SmallRyeConfigBuilder().getMappingsBuilder());
         context.applyPrefix("naming");
         Naming naming = new NamingImpl(context);
 

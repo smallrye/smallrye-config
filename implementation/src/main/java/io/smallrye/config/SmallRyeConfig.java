@@ -118,7 +118,7 @@ public class SmallRyeConfig implements Config, Serializable {
     Map<Class<?>, Map<String, Object>> buildMappings(final SmallRyeConfigBuilder builder)
             throws ConfigValidationException {
         SmallRyeConfigBuilder.MappingBuilder mappingsBuilder = builder.getMappingsBuilder();
-        if (mappingsBuilder.getMappings().isEmpty()) {
+        if (mappingsBuilder.isEmpty()) {
             return Collections.emptyMap();
         }
 
@@ -126,7 +126,7 @@ public class SmallRyeConfig implements Config, Serializable {
         ConfigMappingContext context = SecretKeys.doUnlocked(new Supplier<ConfigMappingContext>() {
             @Override
             public ConfigMappingContext get() {
-                return new ConfigMappingContext(SmallRyeConfig.this, mappingsBuilder.getMappings());
+                return new ConfigMappingContext(SmallRyeConfig.this, mappingsBuilder);
             }
         });
 
