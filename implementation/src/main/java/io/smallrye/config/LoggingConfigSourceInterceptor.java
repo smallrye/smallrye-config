@@ -48,4 +48,9 @@ public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
         }
         return secret;
     }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
 }

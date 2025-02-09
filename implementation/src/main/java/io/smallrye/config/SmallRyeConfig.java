@@ -919,12 +919,16 @@ public class SmallRyeConfig implements Config, Serializable {
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities, true),
                     current, chain);
             for (ConfigSourceInterceptor interceptor : negativeInterceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
+                if (interceptor.isEnabled()) {
+                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
+                }
             }
             current = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(sourcesWithPriorities, false),
                     current, chain);
             for (ConfigSourceInterceptor interceptor : positiveInterceptors) {
-                current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
+                if (interceptor.isEnabled()) {
+                    current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
+                }
             }
 
             this.profiles = profiles;
