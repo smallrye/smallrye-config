@@ -41,4 +41,9 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
         }
         return context.iterateNames();
     }
+
+    @Override
+    public boolean isEnabled() {
+        return !secrets.isEmpty();
+    }
 }

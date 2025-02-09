@@ -143,4 +143,9 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
         }
         return handler;
     }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
 }
