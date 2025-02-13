@@ -3,6 +3,7 @@ package io.smallrye.config.source.yaml;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -374,6 +375,32 @@ class YamlConfigSourceTest {
         assertEquals(LocalDateTime.of(2010, 10, 10, 10, 10, 10), config.getValue("dateTime", LocalDateTime.class));
         assertEquals(ZonedDateTime.of(2020, 10, 10, 10, 10, 10, 0, ZoneId.of("-5")),
                 config.getValue("zonedDateTime", ZonedDateTime.class));
+    }
+
+    @Test
+    void listOrder() {
+        String yaml = """
+                yaml-list:
+                  - thingA
+                  - thingB
+                  - thingC
+                  - thingD
+                  - thingE
+                  - thingF
+                  - thingG
+                  - thingH
+                  - thingI
+                  - thingJ
+                  - thingK
+                comma-list: thingA,thingB,thingC,thingD,thingE,thingF,thingG,thingH,thingI,thingJ,thingK""";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .build();
+
+        List<String> yamlList = config.getValues("yaml-list", String.class);
+        List<String> commaList = config.getValues("comma-list", String.class);
+        assertIterableEquals(commaList, yamlList);
     }
 
     public static class Users {
