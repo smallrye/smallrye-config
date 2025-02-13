@@ -126,7 +126,9 @@ class EnvConfigSourceTest {
                 .withSources(envConfigSource)
                 .build();
 
-        assertTrue(config.getValues("indexed", String.class, ArrayList::new).contains("foo"));
+        List<String> indexed = config.getValues("indexed", String.class, ArrayList::new);
+        assertTrue(indexed.contains("foo"));
+        assertEquals(1, indexed.size());
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("0"));
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("1"));
     }
