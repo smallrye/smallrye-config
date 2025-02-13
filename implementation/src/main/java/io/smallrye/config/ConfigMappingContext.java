@@ -60,7 +60,7 @@ public final class ConfigMappingContext {
             String prefix = entry.getKey().getPrefix();
             Object instance = entry.getValue();
             this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
-            this.usedProperties.addAll(entry.getKey().getDefaults().keySet());
+            this.usedProperties.addAll(entry.getKey().getProperties().keySet());
         }
 
         for (ConfigClass configClass : mappingBuilder.getMappings()) {
