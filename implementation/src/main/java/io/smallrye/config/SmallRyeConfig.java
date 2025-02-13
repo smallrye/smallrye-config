@@ -43,7 +43,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -228,40 +230,13 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     public List<String> getIndexedProperties(final String property) {
-        List<String> indexedProperties = new ArrayList<>();
-        for (String propertyName : this.getPropertyNames()) {
-            if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
-                int indexStart = property.length();
-                if (propertyName.charAt(indexStart) == '[') {
-                    int indexEnd = propertyName.indexOf(']', indexStart);
-                    if (indexEnd != -1 && propertyName.charAt(propertyName.length() - 1) != '.'
-                            && StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
-                        indexedProperties.add(propertyName);
-                    }
-                }
-            }
-        }
-        Collections.sort(indexedProperties);
-        return indexedProperties;
+        Map<Integer, String> indexedProperties = configSources.getPropertyNames().indexed().get(property);
+        return indexedProperties == null ? Collections.emptyList() : indexedProperties.values().stream().toList();
     }
 
     public List<Integer> getIndexedPropertiesIndexes(final String property) {
-        Set<Integer> indexes = new HashSet<>();
-        for (String propertyName : this.getPropertyNames()) {
-            if (propertyName.startsWith(property) && propertyName.length() > property.length()) {
-                int indexStart = property.length();
-                if (propertyName.charAt(indexStart) == '[') {
-                    int indexEnd = propertyName.indexOf(']', indexStart);
-                    if (indexEnd != -1 && propertyName.charAt(propertyName.length() - 1) != '.'
-                            && StringUtil.isNumeric(propertyName, indexStart + 1, indexEnd)) {
-                        indexes.add(Integer.parseInt(propertyName.substring(indexStart + 1, indexEnd)));
-                    }
-                }
-            }
-        }
-        List<Integer> sortIndexes = new ArrayList<>(indexes);
-        Collections.sort(sortIndexes);
-        return sortIndexes;
+        Map<Integer, String> indexedProperties = configSources.getPropertyNames().indexed().get(property);
+        return indexedProperties == null ? Collections.emptyList() : indexedProperties.keySet().stream().toList();
     }
 
     /**
@@ -1111,6 +1086,7 @@ public class SmallRyeConfig implements Config, Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final Set<String> names = new HashSet<>();
+            private final Map<String, Map<Integer, String>> indexed = new HashMap<>();
 
             Iterable<String> get() {
                 if (names.isEmpty()) {
@@ -1119,11 +1095,42 @@ public class SmallRyeConfig implements Config, Serializable {
                 return names;
             }
 
+            public Map<String, Map<Integer, String>> indexed() {
+                // ensure populated
+                get();
+                return indexed;
+            }
+
             Iterable<String> latest() {
                 names.clear();
                 Iterator<String> namesIterator = interceptorChain.iterateNames();
                 while (namesIterator.hasNext()) {
-                    names.add(namesIterator.next());
+                    String name = namesIterator.next();
+                    names.add(name);
+
+                    for (int i = 0; i < name.length(); i++) {
+                        if (name.charAt(i) == '[') {
+                            int indexEnd = name.indexOf(']', i);
+                            if (StringUtil.isNumeric(name, i + 1, indexEnd)) {
+                                if (indexEnd == name.length() - 1
+                                        || (name.charAt(indexEnd + 1) == '.' && indexEnd + 2 < name.length())) {
+                                    Integer index = Integer.valueOf(name.substring(i + 1, indexEnd));
+                                    String parentKey = name.substring(0, i);
+                                    indexed.computeIfAbsent(parentKey, key -> new TreeMap<>())
+                                            .compute(index, new BiFunction<Integer, String, String>() {
+                                                @Override
+                                                public String apply(final Integer key, final String value) {
+                                                    if (value != null && indexEnd == value.length() - 1) {
+                                                        return value;
+                                                    }
+                                                    return name;
+                                                }
+                                            });
+                                }
+                                i = indexEnd + 1;
+                            }
+                        }
+                    }
                 }
                 names.remove(ConfigSource.CONFIG_ORDINAL);
                 return Collections.unmodifiableSet(names);

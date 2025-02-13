@@ -233,11 +233,11 @@ public class StringUtil {
     }
 
     public static boolean isNumeric(final CharSequence digits, final int begin, final int end) {
-        if (digits.length() == 0) {
+        if (digits.isEmpty()) {
             return false;
         }
 
-        if (begin == end) {
+        if (end <= begin) {
             return false;
         }
 
