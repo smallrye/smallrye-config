@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
-import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -111,20 +110,33 @@ public final class ConfigMappings {
     public static final class ConfigClass {
         private final Class<?> type;
         private final String prefix;
-        private final Map<String, String> defaults;
+        private final Map<String, String> properties;
 
         public ConfigClass(final Class<?> type, final String prefix) {
-            this(type, prefix, loadDefaults(type, prefix));
-        }
-
-        public ConfigClass(final Class<?> type, final String prefix, final Map<String, String> defaults) {
             Assert.checkNotNullParam("klass", type);
             Assert.checkNotNullParam("path", prefix);
-            Assert.checkNotNullParam("defaults", defaults);
 
             this.type = type;
             this.prefix = prefix;
-            this.defaults = defaults;
+            this.properties = new HashMap<>();
+
+            Class<?> mappingClass = getConfigMappingClass(type);
+            StringBuilder sb = new StringBuilder(prefix);
+            for (Map.Entry<String, String> property : ConfigMappingLoader.configMappingProperties(mappingClass).entrySet()) {
+                String path = property.getKey();
+                String name;
+                if (prefix.isEmpty()) {
+                    name = path;
+                } else if (path.isEmpty()) {
+                    name = prefix;
+                } else if (path.charAt(0) == '[') {
+                    name = sb.append(path).toString();
+                } else {
+                    name = sb.append(".").append(path).toString();
+                }
+                properties.put(name, property.getValue());
+                sb.setLength(prefix.length());
+            }
         }
 
         @Deprecated(forRemoval = true)
@@ -140,8 +152,8 @@ public final class ConfigMappings {
             return prefix;
         }
 
-        public Map<String, String> getDefaults() {
-            return defaults;
+        public Map<String, String> getProperties() {
+            return properties;
         }
 
         @Override
@@ -162,11 +174,7 @@ public final class ConfigMappings {
         }
 
         public static ConfigClass configClass(final Class<?> klass, final String prefix) {
-            return new ConfigClass(klass, prefix, loadDefaults(klass, prefix));
-        }
-
-        public static ConfigClass configClass(final Class<?> klass, final String prefix, final Map<String, String> defaults) {
-            return new ConfigClass(klass, prefix, defaults);
+            return new ConfigClass(klass, prefix);
         }
 
         public static ConfigClass configClass(final Class<?> klass) {
@@ -190,33 +198,6 @@ public final class ConfigMappings {
                 }
                 return configClass(klass, prefix);
             }
-        }
-
-        private static Map<String, String> loadDefaults(final Class<?> klass, final String prefix) {
-            Class<?> mappingClass = getConfigMappingClass(klass);
-            Map<String, String> defaults = new HashMap<>();
-            StringBuilder sb = new StringBuilder(prefix);
-            for (Map.Entry<String, String> property : ConfigMappingLoader.configMappingProperties(mappingClass).entrySet()) {
-                if (property.getValue() == null) {
-                    continue;
-                }
-
-                // Do not override builder defaults with mapping defaults
-                String path = property.getKey();
-                String name;
-                if (prefix.isEmpty()) {
-                    name = path;
-                } else if (path.isEmpty()) {
-                    name = prefix;
-                } else if (path.charAt(0) == '[') {
-                    name = sb.append(path).toString();
-                } else {
-                    name = sb.append(".").append(path).toString();
-                }
-                defaults.put(name, property.getValue());
-                sb.setLength(prefix.length());
-            }
-            return defaults;
         }
     }
 }

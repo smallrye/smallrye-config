@@ -815,11 +815,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         private void addDefaultsAndIgnores(ConfigClass configClass) {
-            configClass.getDefaults().forEach(new BiConsumer<String, String>() {
+            configClass.getProperties().forEach(new BiConsumer<String, String>() {
                 @Override
                 public void accept(final String propertyName, final String value) {
                     // Do not override defaults set by the builder directly, which have priority over mapping defaults
-                    defaultValues.putIfAbsent(propertyName, value);
+                    if (value != null) {
+                        defaultValues.putIfAbsent(propertyName, value);
+                    }
                 }
             });
 
