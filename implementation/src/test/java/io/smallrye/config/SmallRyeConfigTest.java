@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -148,6 +149,29 @@ class SmallRyeConfigTest {
 
         assertThrows(NoSuchElementException.class,
                 () -> config.getIndexedValues("not.found", config.requireConverter(String.class), ArrayList::new));
+    }
+
+    @Test
+    void indexedOrder() {
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            indexes.add(i);
+        }
+        Collections.shuffle(indexes);
+
+        Map<String, String> properties = new HashMap<>();
+        for (Integer index : indexes) {
+            properties.put("prop[" + index + "]", index.toString());
+        }
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new PropertiesConfigSource(properties, ""))
+                .build();
+
+        List<Integer> values = config.getValues("prop", Integer.class, ArrayList::new);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i, values.get(i));
+        }
     }
 
     @Test
