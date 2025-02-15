@@ -127,7 +127,7 @@ public final class ConfigProducerUtil {
         };
 
         // Use indexed if comma separated empty or higher in ordinality
-        if (indexedOrdinality >= configValue.getConfigSourceOrdinal()) {
+        if (configValue.getValue() == null || indexedOrdinality >= configValue.getConfigSourceOrdinal()) {
             return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
         } else {
             return config.convertValue(configValue, resolveConverter(type, config));
