@@ -300,7 +300,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 200 - 1);
             }
 
-            private static class MultipleProfileProperty implements Comparable<MultipleProfileProperty> {
+            class MultipleProfileProperty implements Comparable<MultipleProfileProperty> {
                 private final String name;
                 private final String relocateName;
                 private final List<String> profiles;

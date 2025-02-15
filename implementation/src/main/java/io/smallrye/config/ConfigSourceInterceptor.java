@@ -55,18 +55,6 @@ public interface ConfigSourceInterceptor extends Serializable {
         return context.iterateNames();
     }
 
-    /**
-     * If the interceptor is enabled or disabled. If the interceptor is disabled, it will be removed from the final
-     * interceptor chain. The interceptor is still used and evaluated during the intermediate steps when assembling
-     * the configuration. For instance, an interceptor marked as disabled is still evaluated when calling the chain in
-     * {@link ConfigSourceFactory}, since late configuration may reenable or disable the current interceptor.
-     *
-     * @return <code>true</code> if the interceptor is enabld or <code>false</code> otherwise
-     */
-    default boolean isEnabled() {
-        return true;
-    }
-
     ConfigSourceInterceptor EMPTY = new ConfigSourceInterceptor() {
         private static final long serialVersionUID = 5749001327530543433L;
 

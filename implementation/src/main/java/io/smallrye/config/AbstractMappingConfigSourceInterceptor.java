@@ -8,10 +8,9 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
     private static final long serialVersionUID = -3181156290079915301L;
 
     private final Function<String, String> mapping;
-    private final boolean enabled;
 
     public AbstractMappingConfigSourceInterceptor(final Function<String, String> mapping) {
-        this(mapping, true);
+        this.mapping = mapping != null ? mapping : Function.identity();
     }
 
     public AbstractMappingConfigSourceInterceptor(final Map<String, String> mappings) {
@@ -20,12 +19,7 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
             public String apply(final String name) {
                 return mappings.getOrDefault(name, name);
             }
-        }, !mappings.isEmpty());
-    }
-
-    AbstractMappingConfigSourceInterceptor(final Function<String, String> mapping, boolean enabled) {
-        this.mapping = mapping != null ? mapping : Function.identity();
-        this.enabled = enabled;
+        });
     }
 
     @Override
@@ -54,11 +48,6 @@ public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSo
                 return name;
             }
         };
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
     }
 
     protected Function<String, String> getMapping() {
