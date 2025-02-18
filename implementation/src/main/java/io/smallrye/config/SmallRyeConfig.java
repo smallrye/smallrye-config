@@ -204,7 +204,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
         // Use indexed if comma separated empty or higher in ordinality
         ConfigValue commaSeparated = getConfigValue(name);
-        if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+        if (commaSeparated.getValue() == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
             return collection;
         } else {
             return getValue(name, newCollectionConverter(converter, collectionFactory));
@@ -397,7 +397,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Use indexed if comma separated empty or higher in ordinality
             ConfigValue commaSeparated = getConfigValue(name);
-            if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+            if (commaSeparated.getValue() == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
                 return (T) array;
             } else {
                 return convertValue(commaSeparated, requireConverter(propertyType));
@@ -531,7 +531,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Use indexed if comma separated empty or higher in ordinality
             ConfigValue commaSeparated = getConfigValue(name);
-            if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+            if (commaSeparated.getValue() == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
                 return (Optional<T>) Optional.of(array);
             } else {
                 return getValue(name, getOptionalConverter(propertyType));
@@ -574,7 +574,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
         // Use indexed if comma separated empty or higher in ordinality
         ConfigValue commaSeparated = getConfigValue(name);
-        if (commaSeparated == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
+        if (commaSeparated.getValue() == null || indexedOrdinality >= commaSeparated.getConfigSourceOrdinal()) {
             return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
         } else {
             return getOptionalValue(name, newCollectionConverter(converter, collectionFactory));

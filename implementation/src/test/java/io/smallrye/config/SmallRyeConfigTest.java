@@ -130,6 +130,49 @@ class SmallRyeConfigTest {
     }
 
     @Test
+    void indexedNegativeOrdinal() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("config_ordinal", "-1000", "indexed[0]", "one", "indexed[1]", "two", "indexed[2]", "three"))
+                .build();
+
+        List<String> indexed = config.getValues("indexed", String.class);
+        assertEquals(3, indexed.size());
+        assertEquals("one", indexed.get(0));
+        assertEquals("two", indexed.get(1));
+        assertEquals("three", indexed.get(2));
+
+        Optional<List<String>> indexedOptional = config.getOptionalValues("indexed", String.class);
+        assertTrue(indexedOptional.isPresent());
+        indexedOptional.ifPresent(new Consumer<List<String>>() {
+            @Override
+            public void accept(final List<String> indexed) {
+                assertEquals(3, indexed.size());
+                assertEquals("one", indexed.get(0));
+                assertEquals("two", indexed.get(1));
+                assertEquals("three", indexed.get(2));
+            }
+        });
+
+        String[] array = config.getValue("indexed", String[].class);
+        assertEquals(3, array.length);
+        assertEquals("one", array[0]);
+        assertEquals("two", array[1]);
+        assertEquals("three", array[2]);
+
+        Optional<String[]> arrayOptional = config.getOptionalValue("indexed", String[].class);
+        assertTrue(arrayOptional.isPresent());
+        arrayOptional.ifPresent(new Consumer<String[]>() {
+            @Override
+            public void accept(final String[] array) {
+                assertEquals(3, array.length);
+                assertEquals("one", array[0]);
+                assertEquals("two", array[1]);
+                assertEquals("three", array[2]);
+            }
+        });
+    }
+
+    @Test
     void getIndexedValues() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("server.environments[0]", "dev",
