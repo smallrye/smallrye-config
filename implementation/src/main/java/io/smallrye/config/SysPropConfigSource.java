@@ -16,7 +16,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
-import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
@@ -37,11 +36,8 @@ public class SysPropConfigSource extends AbstractConfigSource {
     public static final String NAME = "SysPropConfigSource";
     public static final int ORDINAL = 400;
 
-    private final boolean hasProfiledName;
-
     public SysPropConfigSource() {
         super(NAME, getSystemOrdinal());
-        this.hasProfiledName = hasProfiledName(getPropertyNames());
     }
 
     @Override
@@ -74,9 +70,6 @@ public class SysPropConfigSource extends AbstractConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
-            return null;
-        }
         return getSystemProperty(propertyName);
     }
 
