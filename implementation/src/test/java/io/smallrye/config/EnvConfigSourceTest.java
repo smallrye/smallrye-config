@@ -672,6 +672,19 @@ class EnvConfigSourceTest {
         }
     }
 
+    @Test
+    void prefixAsEnv() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("PREFIX", "VALUE", "PREFIX_VALUE", "VALUE"), 300))
+                .withMapping(PrefixAsEnv.class)
+                .build();
+    }
+
+    @ConfigMapping(prefix = "prefix")
+    interface PrefixAsEnv {
+        Optional<String> value();
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }

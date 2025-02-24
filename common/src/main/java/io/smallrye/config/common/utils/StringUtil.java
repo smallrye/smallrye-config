@@ -199,7 +199,7 @@ public class StringUtil {
      */
     public static boolean isInPath(final String path, final String name) {
         if (name.equals(path)) {
-            return true;
+            return false;
         }
 
         // if property is less than the root no way to match
