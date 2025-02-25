@@ -14,6 +14,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
 
     private final Map<String, String> properties;
     private final Map<PropertyName, String> wildcards;
+    private final boolean hasProfiledName;
 
     public DefaultValuesConfigSource(final Map<String, String> properties) {
         this(properties, NAME, ORDINAL);
@@ -23,7 +24,21 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         super(name, ordinal);
         this.properties = new HashMap<>();
         this.wildcards = new HashMap<>();
-        addDefaults(properties);
+        boolean hasProfiledName = false;
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            String propertyName = entry.getKey();
+            String value = entry.getValue();
+            if (propertyName.indexOf('*') == -1) {
+                this.properties.put(propertyName, value);
+            } else {
+                this.wildcards.put(new PropertyName(propertyName), value);
+            }
+
+            if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+                hasProfiledName = true;
+            }
+        }
+        this.hasProfiledName = hasProfiledName;
     }
 
     @Override
@@ -32,7 +47,14 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     }
 
     public String getValue(final String propertyName) {
-        return properties.getOrDefault(propertyName, wildcards.get(new PropertyName(propertyName)));
+        if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+            return null;
+        }
+        String value = properties.get(propertyName);
+        if (value == null) {
+            value = wildcards.get(new PropertyName(propertyName));
+        }
+        return value;
     }
 
     void addDefaults(final Map<String, String> properties) {

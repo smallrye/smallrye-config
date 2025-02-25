@@ -70,8 +70,13 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
             }
 
             private Iterator<String> nextConfigSource() {
-                return configSourceIterator.hasNext() ? configSourceIterator.next().getPropertyNames().iterator()
-                        : emptyIterator();
+                if (configSourceIterator.hasNext()) {
+                    Set<String> propertyNames = configSourceIterator.next().getPropertyNames();
+                    if (propertyNames != null && !propertyNames.isEmpty()) {
+                        return propertyNames.iterator();
+                    }
+                }
+                return emptyIterator();
             }
         };
     }

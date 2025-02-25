@@ -15,6 +15,7 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
@@ -25,7 +26,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import io.smallrye.config.common.AbstractConfigSource;
-import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -37,21 +37,51 @@ public class SysPropConfigSource extends AbstractConfigSource {
     public static final int ORDINAL = 400;
 
     public SysPropConfigSource() {
-        super(NAME, ConfigSourceUtil.getOrdinalFromMap(getSystemProperties(), ORDINAL));
+        super(NAME, getSystemOrdinal());
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return getSystemProperties();
+        if (System.getSecurityManager() == null) {
+            return unmodifiableMap(propertiesToMap(System.getProperties()));
+        } else {
+            return doPrivileged(new PrivilegedAction<Map<String, String>>() {
+                @Override
+                public Map<String, String> run() {
+                    return unmodifiableMap(propertiesToMap(doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
+                }
+            });
+        }
     }
 
     @Override
     public Set<String> getPropertyNames() {
-        return getProperties().keySet();
+        if (System.getSecurityManager() == null) {
+            return System.getProperties().stringPropertyNames();
+        } else {
+            return doPrivileged(new PrivilegedAction<Set<String>>() {
+                @Override
+                public Set<String> run() {
+                    return System.getProperties().stringPropertyNames();
+                }
+            });
+        }
     }
 
     @Override
     public String getValue(String propertyName) {
+        return getSystemProperty(propertyName);
+    }
+
+    private static int getSystemOrdinal() {
+        String value = getSystemProperty(CONFIG_ORDINAL_KEY);
+        if (value != null) {
+            return Converters.INTEGER_CONVERTER.convert(value);
+        }
+        return ORDINAL;
+    }
+
+    private static String getSystemProperty(final String propertyName) {
         if (System.getSecurityManager() == null) {
             return System.getProperty(propertyName);
         } else {
@@ -62,9 +92,5 @@ public class SysPropConfigSource extends AbstractConfigSource {
                 }
             });
         }
-    }
-
-    private static Map<String, String> getSystemProperties() {
-        return unmodifiableMap(propertiesToMap(doPrivileged((PrivilegedAction<Properties>) System::getProperties)));
     }
 }

@@ -287,7 +287,7 @@ public class StringUtil {
      */
     public static boolean isInPath(final String path, final String name) {
         if (name.equals(path)) {
-            return true;
+            return false;
         }
 
         // if property is less than the root no way to match
@@ -321,11 +321,11 @@ public class StringUtil {
     }
 
     public static boolean isNumeric(final CharSequence digits, final int begin, final int end) {
-        if (digits.length() == 0) {
+        if (digits.isEmpty()) {
             return false;
         }
 
-        if (begin == end) {
+        if (end <= begin) {
             return false;
         }
 

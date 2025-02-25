@@ -139,7 +139,7 @@ public class ConfigMappingsTest {
     void validateAnnotations() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class, "server"))));
+                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
@@ -149,8 +149,7 @@ public class ConfigMappingsTest {
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 
         exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config,
-                        singleton(configClass(ServerPropertiesInterface.class, "server"))));
+                () -> registerConfigMappings(config, singleton(configClass(ServerPropertiesInterface.class))));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
 
@@ -323,5 +322,32 @@ public class ConfigMappingsTest {
         assertTrue(properties.containsKey("mapped.nested.value"));
         assertTrue(properties.containsKey("mapped.value"));
         assertTrue(properties.containsKey("mapped.collection[*].value"));
+    }
+
+    @Test
+    void registerInstances() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("mapping.instance.value", "value"))
+                .withMapping(MappingInstance.class)
+                .build();
+
+        MappingInstance mapping = config.getConfigMapping(MappingInstance.class);
+
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
+        builder.getMappingsBuilder().mappingInstance(configClass(MappingInstance.class, "mapping.instance"), mapping);
+        SmallRyeConfig mappingConfig = builder.build();
+
+        MappingInstance mappingInstance = mappingConfig.getConfigMapping(MappingInstance.class);
+        assertEquals("value", mappingInstance.value());
+        assertEquals("default", mappingInstance.defaultValue());
+        assertEquals("default", mappingConfig.getRawValue("mapping.instance.default-value"));
+    }
+
+    @ConfigMapping(prefix = "mapping.instance")
+    interface MappingInstance {
+        String value();
+
+        @WithDefault("default")
+        String defaultValue();
     }
 }

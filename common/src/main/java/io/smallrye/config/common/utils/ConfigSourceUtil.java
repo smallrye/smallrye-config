@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -96,5 +97,14 @@ public class ConfigSourceUtil {
     public static int getOrdinalFromMap(Map<String, String> map, int defaultOrdinal) {
         String ordStr = map.get(CONFIG_ORDINAL_KEY);
         return ordStr == null ? defaultOrdinal : Integer.parseInt(ordStr);
+    }
+
+    public static boolean hasProfiledName(final Set<String> propertyNames) {
+        for (String propertyName : propertyNames) {
+            if (!propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+                return true;
+            }
+        }
+        return false;
     }
 }

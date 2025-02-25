@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +9,9 @@ import java.util.Set;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
+import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappingInterface.Property;
+import io.smallrye.config._private.ConfigMessages;
 
 /**
  * Utility class for {@link ConfigMapping} annotated classes.
@@ -66,8 +68,8 @@ public final class ConfigMappings {
         Map<String, Property> properties = new HashMap<>();
         // Because the properties key names do not include the path prefix we need to add it
         for (Map.Entry<String, Property> entry : ConfigMappingInterface
-                .getProperties(ConfigMappingLoader.getConfigMapping(configClass.getKlass()))
-                .get(configClass.getKlass())
+                .getProperties(ConfigMappingLoader.getConfigMapping(configClass.getType()))
+                .get(configClass.getType())
                 .get("").entrySet()) {
             properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
         }
@@ -87,14 +89,18 @@ public final class ConfigMappings {
     }
 
     static String prefix(final String prefix, final String path) {
+        return prefix(prefix, path, new StringBuilder(prefix));
+    }
+
+    static String prefix(final String prefix, final String path, final StringBuilder sb) {
         if (prefix.isEmpty()) {
             return path;
         } else if (path.isEmpty()) {
             return prefix;
         } else if (path.charAt(0) == '[') {
-            return prefix + path;
+            return sb.append(path).toString();
         } else {
-            return prefix + "." + path;
+            return sb.append(".").append(path).toString();
         }
     }
 
@@ -102,20 +108,52 @@ public final class ConfigMappings {
      * A representation of a {@link ConfigMapping} or <code>@ConfigProperties</code>.
      */
     public static final class ConfigClass {
-        private final Class<?> klass;
+        private final Class<?> type;
         private final String prefix;
+        private final Map<String, String> properties;
 
-        public ConfigClass(final Class<?> klass, final String prefix) {
-            this.klass = klass;
+        public ConfigClass(final Class<?> type, final String prefix) {
+            Assert.checkNotNullParam("klass", type);
+            Assert.checkNotNullParam("path", prefix);
+
+            this.type = type;
             this.prefix = prefix;
+            this.properties = new HashMap<>();
+
+            Class<?> mappingClass = getConfigMappingClass(type);
+            StringBuilder sb = new StringBuilder(prefix);
+            for (Map.Entry<String, String> property : ConfigMappingLoader.configMappingProperties(mappingClass).entrySet()) {
+                String path = property.getKey();
+                String name;
+                if (prefix.isEmpty()) {
+                    name = path;
+                } else if (path.isEmpty()) {
+                    name = prefix;
+                } else if (path.charAt(0) == '[') {
+                    name = sb.append(path).toString();
+                } else {
+                    name = sb.append(".").append(path).toString();
+                }
+                properties.put(name, property.getValue());
+                sb.setLength(prefix.length());
+            }
         }
 
+        @Deprecated(forRemoval = true)
         public Class<?> getKlass() {
-            return klass;
+            return type;
+        }
+
+        public Class<?> getType() {
+            return type;
         }
 
         public String getPrefix() {
             return prefix;
+        }
+
+        public Map<String, String> getProperties() {
+            return properties;
         }
 
         @Override
@@ -127,12 +165,12 @@ public final class ConfigMappings {
                 return false;
             }
             final ConfigClass that = (ConfigClass) o;
-            return klass.equals(that.klass) && prefix.equals(that.prefix);
+            return type.equals(that.type) && prefix.equals(that.prefix);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(klass, prefix);
+            return Objects.hash(type, prefix);
         }
 
         public static ConfigClass configClass(final Class<?> klass, final String prefix) {
@@ -140,6 +178,14 @@ public final class ConfigMappings {
         }
 
         public static ConfigClass configClass(final Class<?> klass) {
+            if (!klass.isInterface() && klass.isAnnotationPresent(ConfigMapping.class)) {
+                throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(klass);
+            }
+
+            if (klass.isInterface() && klass.isAnnotationPresent(ConfigProperties.class)) {
+                throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(klass);
+            }
+
             if (klass.isInterface()) {
                 ConfigMapping configMapping = klass.getAnnotation(ConfigMapping.class);
                 String prefix = configMapping != null ? configMapping.prefix() : "";

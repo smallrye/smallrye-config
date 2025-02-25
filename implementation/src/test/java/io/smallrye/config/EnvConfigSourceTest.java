@@ -126,7 +126,9 @@ class EnvConfigSourceTest {
                 .withSources(envConfigSource)
                 .build();
 
-        assertTrue(config.getValues("indexed", String.class, ArrayList::new).contains("foo"));
+        List<String> indexed = config.getValues("indexed", String.class, ArrayList::new);
+        assertTrue(indexed.contains("foo"));
+        assertEquals(1, indexed.size());
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("0"));
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("1"));
     }
@@ -668,6 +670,19 @@ class EnvConfigSourceTest {
                 Map<String, String> params();
             }
         }
+    }
+
+    @Test
+    void prefixAsEnv() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("PREFIX", "VALUE", "PREFIX_VALUE", "VALUE"), 300))
+                .withMapping(PrefixAsEnv.class)
+                .build();
+    }
+
+    @ConfigMapping(prefix = "prefix")
+    interface PrefixAsEnv {
+        Optional<String> value();
     }
 
     private static boolean envSourceEquals(String name, String lookup) {

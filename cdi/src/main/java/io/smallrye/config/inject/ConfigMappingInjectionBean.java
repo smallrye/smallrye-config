@@ -31,7 +31,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public Class<T> getBeanClass() {
-        return (Class<T>) configClass.getKlass();
+        return (Class<T>) configClass.getType();
     }
 
     @Override
@@ -63,7 +63,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public Set<Type> getTypes() {
-        return Collections.singleton(configClass.getKlass());
+        return Collections.singleton(configClass.getType());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName() + "_" + configClass.getKlass().getName();
+        return this.getClass().getSimpleName() + "_" + configClass.getType().getName();
     }
 
     @Override

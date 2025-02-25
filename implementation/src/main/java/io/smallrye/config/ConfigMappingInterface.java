@@ -13,6 +13,7 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +122,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      */
     public Property[] getProperties() {
         // We use a Map to override definitions from super members
-        Map<String, Property> properties = getSuperProperties(this);
+        Map<String, Property> properties = getSuperProperties(this, new HashSet<>());
         for (Property property : this.properties) {
             properties.put(property.getMemberName(), property);
         }
@@ -138,12 +139,22 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return ConfigMappingInterface.getNames(this);
     }
 
-    private static Map<String, Property> getSuperProperties(ConfigMappingInterface type) {
+    private static Map<String, Property> getSuperProperties(final ConfigMappingInterface type, final Set<String> ignored) {
         Map<String, Property> properties = new HashMap<>();
+
+        // to ignore implementation of abstract methods coming from super classes
+        for (Method method : type.getInterfaceType().getDeclaredMethods()) {
+            if (method.isDefault()) {
+                ignored.add(method.getName());
+            }
+        }
+
         for (ConfigMappingInterface superType : type.getSuperTypes()) {
-            properties.putAll(getSuperProperties(superType));
+            properties.putAll(getSuperProperties(superType, ignored));
             for (Property property : superType.getProperties()) {
-                properties.put(property.getMemberName(), property);
+                if (!ignored.contains(property.getMemberName())) {
+                    properties.put(property.getMemberName(), property);
+                }
             }
         }
         return properties;
@@ -311,31 +322,12 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 return false;
             }
             final Property property = (Property) o;
-            boolean result = method.equals(property.method) && propertyName.equals(property.propertyName);
-            if (result) {
-                return result;
-            }
-            return isMethodInHierarchy(property.getMethod().getDeclaringClass(), method);
+            return method.equals(property.method) && propertyName.equals(property.propertyName);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(method, propertyName);
-        }
-
-        private static boolean isMethodInHierarchy(final Class<?> declaringClass, final Method method) {
-            for (Class<?> parent : declaringClass.getInterfaces()) {
-                for (final Method parentMethod : parent.getMethods()) {
-                    if (parentMethod.getName().equals(method.getName())) {
-                        return true;
-                    }
-                }
-                boolean methodInHierarchy = isMethodInHierarchy(parent, method);
-                if (methodInHierarchy) {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 
@@ -832,6 +824,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return new ToStringMethod(method);
         }
 
+        String propertyName = getPropertyName(method);
+
         Method defaultMethod = hasDefaultMethodImplementation(method);
         if (defaultMethod != null) {
             return new DefaultMethodProperty(method, defaultMethod, getPropertyDef(defaultMethod, type));
@@ -839,7 +833,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         // now figure out what kind it is
         Class<? extends Converter<?>> convertWith = getConverter(type, method);
-        String propertyName = getPropertyName(method);
         Class<?> rawType = rawTypeOf(type.getType());
         if (rawType.isPrimitive()) {
             // primitive!
@@ -1019,35 +1012,29 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     private static void getNested(final Property[] properties, final Set<ConfigMappingInterface> nested) {
         for (Property property : properties) {
-            if (property instanceof GroupProperty) {
-                GroupProperty groupProperty = (GroupProperty) property;
+            if (property instanceof GroupProperty groupProperty) {
                 ConfigMappingInterface group = groupProperty.getGroupType();
                 nested.add(group);
                 Collections.addAll(nested, group.superTypes);
                 getNested(group.getProperties(), nested);
             }
 
-            if (property instanceof OptionalProperty) {
-                OptionalProperty optionalProperty = (OptionalProperty) property;
-                if (optionalProperty.getNestedProperty() instanceof GroupProperty) {
-                    GroupProperty groupProperty = (GroupProperty) optionalProperty.getNestedProperty();
+            if (property instanceof OptionalProperty optionalProperty) {
+                if (optionalProperty.getNestedProperty() instanceof GroupProperty groupProperty) {
                     ConfigMappingInterface group = groupProperty.getGroupType();
                     nested.add(group);
                     Collections.addAll(nested, group.superTypes);
                     getNested(group.getProperties(), nested);
-                } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty) {
-                    CollectionProperty collectionProperty = (CollectionProperty) optionalProperty.getNestedProperty();
+                } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty collectionProperty) {
                     getNested(new Property[] { collectionProperty.element }, nested);
                 }
             }
 
-            if (property instanceof MapProperty) {
-                MapProperty mapProperty = (MapProperty) property;
+            if (property instanceof MapProperty mapProperty) {
                 getNested(new Property[] { mapProperty.valueProperty }, nested);
             }
 
-            if (property instanceof CollectionProperty) {
-                CollectionProperty collectionProperty = (CollectionProperty) property;
+            if (property instanceof CollectionProperty collectionProperty) {
                 getNested(new Property[] { collectionProperty.element }, nested);
             }
         }

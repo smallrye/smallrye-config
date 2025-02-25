@@ -16,7 +16,6 @@
 
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
@@ -37,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,13 +44,13 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -537,13 +537,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return withMapping(ConfigClass.configClass(klass));
     }
 
-    public SmallRyeConfigBuilder withMapping(ConfigClass configClass) {
-        mappingsBuilder.mapping(configClass);
-        return this;
+    public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
+        return withMapping(ConfigClass.configClass(klass, prefix));
     }
 
-    public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
-        mappingsBuilder.mapping(klass, prefix);
+    public SmallRyeConfigBuilder withMapping(ConfigClass configClass) {
+        mappingsBuilder.mapping(configClass);
         return this;
     }
 
@@ -774,52 +773,24 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public final class MappingBuilder {
-        private final Map<Class<?>, Set<String>> mappings = new HashMap<>();
+        private final Set<ConfigClass> mappings = new HashSet<>();
+        private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
         private final Set<String> ignoredPaths = new HashSet<>();
 
-        private final StringBuilder sb = new StringBuilder();
-
         public void mapping(ConfigClass configClass) {
-            validateAnnotations(configClass.getKlass());
-            mapping(configClass.getKlass(), configClass.getPrefix());
+            Assert.checkNotNullParam("configClass", configClass);
+
+            mappings.add(configClass);
+            addDefaultsAndIgnores(configClass);
         }
 
-        public void mapping(Class<?> type, String prefix) {
-            Assert.checkNotNullParam("type", type);
-            Assert.checkNotNullParam("path", prefix);
+        public void mappingInstance(ConfigClass configClass, Object instance) {
+            Assert.checkNotNullParam("configClass", configClass);
+            Assert.checkNotNullParam("instance", instance);
 
-            Class<?> mappingClass = getConfigMappingClass(type);
-            mappings.computeIfAbsent(mappingClass, k -> new HashSet<>(4)).add(prefix);
-
-            // Load the mapping defaults, to make the defaults available to all config sources
-            Map<String, String> properties = ConfigMappingLoader.configMappingProperties(mappingClass);
-            sb.setLength(0);
-            sb.append(prefix);
-            for (Map.Entry<String, String> property : properties.entrySet()) {
-                if (property.getValue() == null) {
-                    continue;
-                }
-
-                // Do not override builder defaults with mapping defaults
-                String path = property.getKey();
-                String name;
-                if (prefix.isEmpty()) {
-                    name = path;
-                } else if (path.isEmpty()) {
-                    name = prefix;
-                } else if (path.charAt(0) == '[') {
-                    name = sb.append(path).toString();
-                } else {
-                    name = sb.append(".").append(path).toString();
-                }
-                sb.setLength(prefix.length());
-                defaultValues.putIfAbsent(name, property.getValue());
-            }
-
-            // It is an MP ConfigProperties, so ignore unmapped properties
-            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(type) != null) {
-                ignoredPaths.add(prefix.isEmpty() ? "*" : prefix + ".**");
-            }
+            // TODO - Validate that instance is an implementation of type?
+            mappingsInstances.put(configClass, instance);
+            addDefaultsAndIgnores(configClass);
         }
 
         public void ignoredPath(String ignoredPath) {
@@ -827,21 +798,36 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             ignoredPaths.add(ignoredPath);
         }
 
-        public Map<Class<?>, Set<String>> getMappings() {
+        public Set<ConfigClass> getMappings() {
             return mappings;
+        }
+
+        public Map<ConfigClass, Object> getMappingsInstances() {
+            return mappingsInstances;
         }
 
         public Set<String> getIgnoredPaths() {
             return ignoredPaths;
         }
 
-        private void validateAnnotations(Class<?> type) {
-            if (!type.isInterface() && type.isAnnotationPresent(ConfigMapping.class)) {
-                throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(type);
-            }
+        boolean isEmpty() {
+            return mappings.isEmpty() && mappingsInstances.isEmpty();
+        }
 
-            if (type.isInterface() && type.isAnnotationPresent(ConfigProperties.class)) {
-                throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(type);
+        private void addDefaultsAndIgnores(ConfigClass configClass) {
+            configClass.getProperties().forEach(new BiConsumer<String, String>() {
+                @Override
+                public void accept(final String propertyName, final String value) {
+                    // Do not override defaults set by the builder directly, which have priority over mapping defaults
+                    if (value != null) {
+                        defaultValues.putIfAbsent(propertyName, value);
+                    }
+                }
+            });
+
+            // It is an MP ConfigProperties, so ignore unmapped properties
+            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(configClass.getType()) != null) {
+                ignoredPaths.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
         }
     }

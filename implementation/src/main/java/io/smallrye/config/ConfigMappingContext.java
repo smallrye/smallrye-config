@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
@@ -26,6 +27,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
+import io.smallrye.config.ConfigMappings.ConfigClass;
+import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
 
@@ -46,18 +49,26 @@ public final class ConfigMappingContext {
 
     public ConfigMappingContext(
             final SmallRyeConfig config,
-            final Map<Class<?>, Set<String>> mappings) {
+            final MappingBuilder mappingBuilder) {
 
         this.config = config;
 
-        matchPropertiesWithEnv(mappings);
-        for (Map.Entry<Class<?>, Set<String>> mapping : mappings.entrySet()) {
-            Map<String, Object> mappingObjects = new HashMap<>();
-            for (String prefix : mapping.getValue()) {
-                applyPrefix(prefix);
-                mappingObjects.put(prefix, constructMapping(mapping.getKey(), prefix));
-            }
-            this.mappings.put(mapping.getKey(), mappingObjects);
+        matchPropertiesWithEnv(mappingBuilder);
+
+        for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
+            Class<?> type = getConfigMappingClass(entry.getKey().getType());
+            String prefix = entry.getKey().getPrefix();
+            Object instance = entry.getValue();
+            this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
+            this.usedProperties.addAll(entry.getKey().getProperties().keySet());
+        }
+
+        for (ConfigClass configClass : mappingBuilder.getMappings()) {
+            Class<?> type = getConfigMappingClass(configClass.getType());
+            String prefix = configClass.getPrefix();
+            applyPrefix(configClass.getPrefix());
+            Object instance = constructMapping(type, prefix);
+            this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
         }
     }
 
@@ -88,11 +99,6 @@ public final class ConfigMappingContext {
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
         return mappingObject;
-    }
-
-    @SuppressWarnings("unused")
-    public <T> ObjectCreator<T> constructObject(String path) {
-        return new ObjectCreator<>(path);
     }
 
     @SuppressWarnings("unchecked")
@@ -217,12 +223,12 @@ public final class ConfigMappingContext {
 
     // TODO - We shouldn't be mutating the EnvSource.
     // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
-    private void matchPropertiesWithEnv(final Map<Class<?>, Set<String>> mappings) {
+    private void matchPropertiesWithEnv(final MappingBuilder mappings) {
+        // TODO - Should we match with instances?
         Map<String, List<Class<?>>> prefixes = new HashMap<>();
-        for (Map.Entry<Class<?>, Set<String>> entry : mappings.entrySet()) {
-            for (String prefix : entry.getValue()) {
-                prefixes.computeIfAbsent(prefix, k -> new ArrayList<>()).add(entry.getKey());
-            }
+        for (ConfigClass configClass : mappings.getMappings()) {
+            Class<?> type = getConfigMappingClass(configClass.getType());
+            prefixes.computeIfAbsent(configClass.getPrefix(), k -> new ArrayList<>()).add(type);
         }
 
         StringBuilder sb = new StringBuilder();

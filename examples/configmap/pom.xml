@@ -4,13 +4,13 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>46</version>
+    <version>47</version>
     <relativePath />
   </parent>
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>configmap</artifactId>
-  <version>3.11.2-SNAPSHOT</version>
+  <version>3.12.3-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: ConfigMap</name>
 

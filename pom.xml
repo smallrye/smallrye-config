@@ -22,12 +22,12 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>46</version>
+    <version>47</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
   <artifactId>smallrye-config-parent</artifactId>
-  <version>3.11.2-SNAPSHOT</version>
+  <version>3.12.3-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>SmallRye Config: Parent</name>
@@ -38,7 +38,7 @@
     <maven.compiler.source>17</maven.compiler.source>
 
     <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
-    <version.smallrye.common>2.9.0</version.smallrye.common>
+    <version.smallrye.common>2.10.0</version.smallrye.common>
     <version.asm>9.7.1</version.asm>
 
     <version.smallrye.testing>2.3.1</version.smallrye.testing>
@@ -82,6 +82,32 @@
     <module>utils/jasypt</module>
     <module>documentation</module>
   </modules>
+
+  <build>
+    <plugins>
+      <!-- Override plugin to support Java 17, because we are not enforcing 17 yet at the parent level -->
+      <plugin>
+        <groupId>net.revelc.code</groupId>
+        <artifactId>impsort-maven-plugin</artifactId>
+        <version>1.12.0</version>
+        <configuration>
+          <groups>java.,javax.,jakarta.,org.,com.</groups>
+          <staticGroups>*</staticGroups>
+          <skip>${format.skip}</skip>
+          <removeUnused>true</removeUnused>
+          <compliance>17</compliance>
+        </configuration>
+        <executions>
+          <execution>
+            <id>sort-imports</id>
+            <goals>
+              <goal>sort</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
   <dependencyManagement>
     <dependencies>

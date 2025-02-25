@@ -1156,6 +1156,39 @@ class ConfigMappingInterfaceTest {
         assertEquals(8080, mapping.port());
     }
 
+    @Test
+    void methodFromParentImplementedAsDefault() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ChildMethods.class)
+                .withMapping(GrandChildMethods.class)
+                .build();
+
+        assertEquals("child", config.getConfigMapping(ChildMethods.class).value());
+        assertEquals("another", config.getConfigMapping(GrandChildMethods.class).value());
+    }
+
+    interface ParentMethods {
+        String value();
+    }
+
+    @ConfigMapping(prefix = "child")
+    interface ChildMethods extends ParentMethods {
+        default String value() {
+            return "child";
+        }
+    }
+
+    interface AnotherChildMethods extends ParentMethods {
+        default String value() {
+            return "another";
+        }
+    }
+
+    @ConfigMapping(prefix = "grandchild")
+    interface GrandChildMethods extends AnotherChildMethods {
+
+    }
+
     @ConfigMapping(prefix = "defaults")
     interface DefaultKotlinMethods {
         String host();

@@ -135,7 +135,7 @@ public class PropertyName {
             }
             matchPosition--;
         }
-        return matchPosition <= offset;
+        return matchPosition < offset;
     }
 
     @Override

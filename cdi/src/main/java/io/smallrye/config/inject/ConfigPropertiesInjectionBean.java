@@ -29,7 +29,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public Class<T> getBeanClass() {
-        return (Class<T>) configClass.getKlass();
+        return (Class<T>) configClass.getType();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
     public T create(final CreationalContext<T> creationalContext) {
         String prefix = configClass.getPrefix();
         if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
-            prefix = configClass.getKlass().getAnnotation(ConfigProperties.class).prefix();
+            prefix = configClass.getType().getAnnotation(ConfigProperties.class).prefix();
             if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
                 prefix = "";
             }
@@ -58,7 +58,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public Set<Type> getTypes() {
-        return Collections.singleton(configClass.getKlass());
+        return Collections.singleton(configClass.getType());
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName() + "_" + configClass.getKlass().getName() + "_"
+        return this.getClass().getSimpleName() + "_" + configClass.getType().getName() + "_"
                 + configClass.getPrefix();
     }
 

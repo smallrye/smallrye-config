@@ -4,7 +4,7 @@
     <parent>
         <artifactId>smallrye-config-parent</artifactId>
         <groupId>io.smallrye.config</groupId>
-        <version>3.11.2-SNAPSHOT</version>
+        <version>3.12.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -13,7 +13,7 @@
     <name>SmallRye Config: ConfigSource - YAML</name>
 
     <properties>
-        <snakeyaml.version>2.3</snakeyaml.version>
+        <snakeyaml.version>2.4</snakeyaml.version>
     </properties>
 
     <dependencies>
