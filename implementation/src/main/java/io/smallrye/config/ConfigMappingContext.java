@@ -290,7 +290,7 @@ public final class ConfigMappingContext {
      *         properties do not match.
      */
     private static List<Integer> indexOfDashes(final String mappedProperty, final String envProperty) {
-        if (mappedProperty.length() > envProperty.length()) {
+        if (mappedProperty.isEmpty() || mappedProperty.length() > envProperty.length()) {
             return null;
         }
 
