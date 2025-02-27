@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -361,6 +362,27 @@ class EnvConfigSourceTest {
         interface Nested {
             String another();
         }
+    }
+
+    @Test
+    void dashedEnvNamesWithEmpty() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("DASHED_IGNORED_ERRORS_0_", "error0"), 300))
+                .withMapping(DashedEnvNamesWithEmpty.class)
+                .build();
+
+        DashedEnvNamesWithEmpty mapping = config.getConfigMapping(DashedEnvNamesWithEmpty.class);
+
+        assertTrue(mapping.ignoredErrors().isPresent());
+        mapping.ignoredErrors().ifPresent(ignoredErrors -> assertIterableEquals(List.of("error0"), ignoredErrors));
+    }
+
+    @ConfigMapping(prefix = "dashed")
+    interface DashedEnvNamesWithEmpty {
+        @WithParentName
+        Optional<Boolean> enable();
+
+        Optional<List<String>> ignoredErrors();
     }
 
     @Test
