@@ -790,6 +790,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             // TODO - Validate that instance is an implementation of type?
             mappingsInstances.put(configClass, instance);
+            ignoredPaths.addAll(configClass.getProperties().keySet());
             addDefaultsAndIgnores(configClass);
         }
 

@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -326,8 +327,12 @@ public class ConfigMappingsTest {
 
     @Test
     void registerInstances() {
+        ConfigSource source = config(
+                "mapping.instance.value", "value",
+                "mapping.instance.map.one", "value");
+
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("mapping.instance.value", "value"))
+                .withSources(source)
                 .withMapping(MappingInstance.class)
                 .build();
 
@@ -335,11 +340,14 @@ public class ConfigMappingsTest {
 
         SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder();
         builder.getMappingsBuilder().mappingInstance(configClass(MappingInstance.class, "mapping.instance"), mapping);
-        SmallRyeConfig mappingConfig = builder.build();
+        SmallRyeConfig mappingConfig = builder
+                .withSources(source)
+                .build();
 
         MappingInstance mappingInstance = mappingConfig.getConfigMapping(MappingInstance.class);
         assertEquals("value", mappingInstance.value());
         assertEquals("default", mappingInstance.defaultValue());
+        assertEquals("value", mappingInstance.map().get("one"));
         assertEquals("default", mappingConfig.getRawValue("mapping.instance.default-value"));
     }
 
@@ -349,5 +357,7 @@ public class ConfigMappingsTest {
 
         @WithDefault("default")
         String defaultValue();
+
+        Map<String, String> map();
     }
 }
