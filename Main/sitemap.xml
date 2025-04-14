@@ -2,142 +2,142 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/config-value/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/configuration/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/customizer/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/environment-variables/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/expressions/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/getting-started/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/indexed-properties/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/map-support/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/mappings/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/profiles/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config/secret-keys/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/custom/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/factories/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/filesystem/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/hocon/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/json/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/keystore/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/locations/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/yaml/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/config-sources/zookeeper/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/converters/custom/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/config-events/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/config-source-injection/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/fallback/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/interceptors/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/logging/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://smallrye.io/smallrye-config/Main/extensions/relocate/</loc>
-         <lastmod>2025-03-27</lastmod>
+         <lastmod>2025-04-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
