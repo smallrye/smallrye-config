@@ -1,8 +1,8 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
-import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
 import java.lang.reflect.InvocationTargetException;
@@ -23,14 +23,12 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
 import io.smallrye.config._private.ConfigMessages;
-import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * A mapping context. This is used by generated classes during configuration mapping, and is released once the configuration
@@ -52,8 +50,6 @@ public final class ConfigMappingContext {
             final MappingBuilder mappingBuilder) {
 
         this.config = config;
-
-        matchPropertiesWithEnv(mappingBuilder);
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
             Class<?> type = getConfigMappingClass(entry.getKey().getType());
@@ -218,120 +214,6 @@ public final class ConfigMappingContext {
                 }
             }
         }
-    }
-
-    // TODO - We shouldn't be mutating the EnvSource.
-    // We should do the calculation when creating the EnvSource, but right now mappings and sources are not well integrated.
-    private void matchPropertiesWithEnv(final MappingBuilder mappings) {
-        // TODO - Should we match with instances?
-        Map<String, List<Class<?>>> prefixes = new HashMap<>();
-        for (ConfigClass configClass : mappings.getMappings()) {
-            Class<?> type = getConfigMappingClass(configClass.getType());
-            prefixes.computeIfAbsent(configClass.getPrefix(), k -> new ArrayList<>()).add(type);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (ConfigSource configSource : config.getConfigSources(EnvConfigSource.class)) {
-            EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
-            List<String> envProperties = new ArrayList<>(envConfigSource.getPropertyNames());
-            for (String envProperty : envProperties) {
-                String activeEnvProperty;
-                if (envProperty.charAt(0) == '%') {
-                    activeEnvProperty = activeName(envProperty, config.getProfiles());
-                } else {
-                    activeEnvProperty = envProperty;
-                }
-
-                outer: for (String prefix : prefixes.keySet()) {
-                    if (StringUtil.isInPath(prefix, activeEnvProperty)) {
-                        String mappedEnvProperty = prefix.isEmpty() ? activeEnvProperty
-                                : activeEnvProperty.substring(prefix.length() + 1);
-                        for (Class<?> mapping : prefixes.get(prefix)) {
-                            for (String mappedProperty : ConfigMappingLoader.configMappingProperties(mapping).keySet()) {
-                                List<Integer> prefixDashes = indexOfDashes(prefix,
-                                        activeEnvProperty.substring(0, prefix.length()));
-                                List<Integer> nameDashes = indexOfDashes(mappedProperty, mappedEnvProperty);
-                                if (prefixDashes != null && nameDashes != null) {
-                                    sb.append(activeEnvProperty);
-                                    for (Integer dash : prefixDashes) {
-                                        sb.setCharAt(dash, '-');
-                                    }
-                                    for (Integer dash : nameDashes) {
-                                        sb.setCharAt(prefix.length() + 1 + dash, '-');
-                                    }
-                                    String expectedEnvProperty = sb.toString();
-                                    if (!activeEnvProperty.equals(expectedEnvProperty)) {
-                                        envConfigSource.getPropertyNames().add(sb.toString());
-                                        envConfigSource.getPropertyNames().remove(envProperty);
-                                        // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                                        //ignoredPaths.add(activeEnvProperty);
-                                    }
-                                    sb.setLength(0);
-                                    break outer;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Finds and returns all indexes from a dotted Environment property name, related to its matched mapped
-     * property name that must be replaced with a dash. This allows to set single environment variables as
-     * <code>FOO_BAR_BAZ</code> and match them to mapped properties like <code>foo.*.baz</code>,
-     * <code>foo-bar.baz</code> or any other combinations find in mappings, without the need of additional metadata.
-     *
-     * @param mappedProperty the mapping property name.
-     * @param envProperty a generated dotted property from the {@link EnvConfigSource}.
-     * @return a List of indexes from the env property name to replace with a dash, or <code>null</code> if the
-     *         properties do not match.
-     */
-    private static List<Integer> indexOfDashes(final String mappedProperty, final String envProperty) {
-        if (mappedProperty.isEmpty() || mappedProperty.length() > envProperty.length()) {
-            return null;
-        }
-
-        List<Integer> dashesPosition = new ArrayList<>();
-        int matchPosition = envProperty.length() - 1;
-        for (int i = mappedProperty.length() - 1; i >= 0; i--) {
-            if (matchPosition == -1) {
-                return null;
-            }
-
-            char c = mappedProperty.charAt(i);
-            if (c == '.' || c == '-') {
-                char p = envProperty.charAt(matchPosition);
-                if (p != '.' && p != '-') { // a property coming from env can either be . or -
-                    return null;
-                }
-                if (c == '-') {
-                    dashesPosition.add(matchPosition);
-                }
-                matchPosition--;
-            } else if (c == '*') { // it's a map - skip to next separator
-                char p = envProperty.charAt(matchPosition);
-                if (p == '"') {
-                    matchPosition = envProperty.lastIndexOf('"', matchPosition - 1);
-                    if (matchPosition != -1) {
-                        matchPosition = envProperty.lastIndexOf('.', matchPosition);
-                    }
-                }
-                matchPosition = envProperty.lastIndexOf('.', matchPosition);
-            } else if (c == ']') { // it's a collection - skip to next separator
-                i = i - 2;
-                matchPosition = envProperty.lastIndexOf('[', matchPosition);
-                if (matchPosition != -1) {
-                    matchPosition--;
-                }
-            } else if (c != envProperty.charAt(matchPosition)) {
-                return null;
-            } else {
-                matchPosition--;
-            }
-        }
-        return dashesPosition;
     }
 
     private static boolean isPropertyInRoot(final String property, final String root) {
@@ -899,7 +781,7 @@ public final class ConfigMappingContext {
             }
 
             if (!candidates.isEmpty()) {
-                Map<String, String> properties = ConfigMappingLoader.configMappingProperties(groupType);
+                Map<String, String> properties = configMappingProperties(groupType);
                 for (String mappedProperty : properties.keySet()) {
                     for (String candidate : candidates) {
                         if (PropertyName.equals(candidate, mappedProperty)) {

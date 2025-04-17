@@ -286,6 +286,10 @@ public class StringUtil {
      * @return <code>true</code> if the dotted property name ir part of a dotted path, or <code>false</code> otherwise.
      */
     public static boolean isInPath(final String path, final String name) {
+        if (path.isEmpty()) {
+            return true;
+        }
+
         if (name.equals(path)) {
             return false;
         }
