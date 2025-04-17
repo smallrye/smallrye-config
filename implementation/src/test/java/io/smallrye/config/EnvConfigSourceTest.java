@@ -707,6 +707,31 @@ class EnvConfigSourceTest {
         Optional<String> value();
     }
 
+    @Test
+    void clashMapKeysWithNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("MAP_CLIENT_ID", "VALUE"), 300))
+                .withMapping(ClashMapKeysWithNames.class)
+                .build();
+
+        ClashMapKeysWithNames mapping = config.getConfigMapping(ClashMapKeysWithNames.class);
+        assertTrue(mapping.clashes().get(null).clientId().isPresent());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface ClashMapKeysWithNames {
+        @WithParentName
+        @WithUnnamedKey
+        @WithDefaults
+        Map<String, Clash> clashes();
+
+        interface Clash {
+            Optional<String> id();
+
+            Optional<String> clientId();
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }

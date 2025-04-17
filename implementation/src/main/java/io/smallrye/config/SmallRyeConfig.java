@@ -15,14 +15,12 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
-import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 import static java.util.stream.Collectors.toList;
@@ -40,16 +38,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -88,10 +85,6 @@ public class SmallRyeConfig implements Config, Serializable {
         this.configSources = new ConfigSources(builder);
         this.converters = buildConverters(builder);
         this.configValidator = builder.getValidator();
-
-        // Match dotted properties from other sources with Env with the same semantic meaning
-        // This needs to happen before matching dashed names from mappings
-        matchPropertiesWithEnv();
         this.mappings = new ConcurrentHashMap<>(buildMappings(builder));
     }
 
@@ -109,7 +102,7 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         final ConcurrentHashMap<Type, Converter<?>> converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        for (Map.Entry<Type, SmallRyeConfigBuilder.ConverterWithPriority> entry : convertersToBuild.entrySet()) {
+        for (Entry<Type, SmallRyeConfigBuilder.ConverterWithPriority> entry : convertersToBuild.entrySet()) {
             converters.put(entry.getKey(), entry.getValue().getConverter());
         }
         converters.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
@@ -142,37 +135,6 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         return context.getMappings();
-    }
-
-    private void matchPropertiesWithEnv() {
-        List<String> dottedProperties = new ArrayList<>();
-        for (ConfigSource configSource : getConfigSources()) {
-            if (!(configSource instanceof EnvConfigSource)) {
-                Set<String> propertyNames = configSource.getPropertyNames();
-                if (propertyNames != null) {
-                    dottedProperties.addAll(propertyNames.stream().map(new Function<String, String>() {
-                        @Override
-                        public String apply(final String name) {
-                            return activeName(name, getProfiles());
-                        }
-                    }).collect(Collectors.toList()));
-                }
-            }
-        }
-
-        for (ConfigSource configSource : getConfigSources(EnvConfigSource.class)) {
-            EnvConfigSource envConfigSource = (EnvConfigSource) configSource;
-            Set<String> envNames = envConfigSource.getPropertyNames();
-            for (String dottedProperty : dottedProperties) {
-                if (envConfigSource.hasPropertyName(dottedProperty)) {
-                    if (!envNames.contains(dottedProperty)) {
-                        // this may be expensive, but it shouldn't happen that often
-                        envNames.remove(toLowerCaseAndDotted(replaceNonAlphanumericByUnderscores(dottedProperty)));
-                        envNames.add(dottedProperty);
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -331,7 +293,7 @@ public class SmallRyeConfig implements Config, Serializable {
             final IntFunction<Map<K, V>> mapFactory) {
 
         Map<K, V> map = mapFactory.apply(keys.size());
-        for (Map.Entry<String, String> entry : keys.entrySet()) {
+        for (Entry<String, String> entry : keys.entrySet()) {
             // Use ConfigValue when converting the key to have proper error messages with the key name
             K key = convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
                     keyConverter);
@@ -363,7 +325,7 @@ public class SmallRyeConfig implements Config, Serializable {
             final IntFunction<C> collectionFactory) {
 
         Map<K, C> map = mapFactory.apply(keys.size());
-        for (Map.Entry<String, String> entry : keys.entrySet()) {
+        for (Entry<String, String> entry : keys.entrySet()) {
             // Use ConfigValue when converting the key to have proper error messages with the key name
             K key = convertValue(ConfigValue.builder().withName(entry.getKey()).withValue(entry.getKey()).build(),
                     keyConverter);
@@ -900,6 +862,22 @@ public class SmallRyeConfig implements Config, Serializable {
                     current, chain);
             for (ConfigSourceInterceptor interceptor : positiveInterceptors) {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
+            }
+
+            // Adjust the EnvSources to look for names with dashes instead of dots
+            List<Entry<String, Supplier<Iterator<String>>>> properties = new ArrayList<>(
+                    builder.getMappingsBuilder().getMappings().size());
+            // Match dotted properties from other sources with Env with the same semantic meaning
+            properties.add(Map.entry("", current::iterateNames));
+            // Match mappings properties with Env
+            for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
+                Class<?> type = getConfigMappingClass(mapping.getType());
+                properties.add(Map.entry(mapping.getPrefix(), () -> configMappingProperties(type).keySet().iterator()));
+            }
+            for (ConfigSource source : sources) {
+                if (source instanceof EnvConfigSource) {
+                    ((EnvConfigSource) source).matchEnvWithProperties(properties, profiles);
+                }
             }
 
             this.profiles = profiles;

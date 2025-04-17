@@ -15,6 +15,7 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
 import static io.smallrye.config.common.utils.StringUtil.isAsciiLetterOrDigit;
@@ -26,13 +27,20 @@ import static java.security.AccessController.doPrivileged;
 
 import java.io.Serializable;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import io.smallrye.config.common.AbstractConfigSource;
+import io.smallrye.config.common.utils.StringUtil;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} to access Environment Variables.
@@ -108,10 +116,6 @@ public class EnvConfigSource extends AbstractConfigSource {
         return envVars.get(propertyName);
     }
 
-    boolean hasPropertyName(final String propertyName) {
-        return envVars.getEnv().containsKey(new EnvName(propertyName));
-    }
-
     /**
      * A new Map with the contents of System.getEnv. In the Windows implementation, the Map is an extension of
      * ProcessEnvironment. This causes issues with Graal and native mode, since ProcessEnvironment should not be
@@ -135,6 +139,130 @@ public class EnvConfigSource extends AbstractConfigSource {
             return Converters.INTEGER_CONVERTER.convert(value);
         }
         return ordinal;
+    }
+
+    void matchEnvWithProperties(final List<Map.Entry<String, Supplier<Iterator<String>>>> properties,
+            final List<String> profiles) {
+        for (String envName : new ArrayList<>(envVars.getNames())) {
+            // Convert to the active key, since sources do not know which keys are active based on the profile
+            String activeEnvName = activeName(envName, profiles);
+            match: for (Map.Entry<String, Supplier<Iterator<String>>> property : properties) {
+                String prefix = property.getKey();
+                if (StringUtil.isInPath(prefix, activeEnvName)) {
+                    Iterator<String> names = property.getValue().get();
+                    // Priority to match exact key in case multiple candidates (with map patterns)
+                    while (names.hasNext()) {
+                        String name = names.next();
+                        int exactLength = activeEnvName.length() - prefix.length() - 1;
+                        if (name.length() == exactLength && matchEnvWithProperty(prefix, name, envName, activeEnvName)) {
+                            break match;
+                        }
+                    }
+                    // Check everything else
+                    names = property.getValue().get();
+                    while (names.hasNext()) {
+                        String name = names.next();
+                        if (matchEnvWithProperty(prefix, name, envName, activeEnvName)) {
+                            break match;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean matchEnvWithProperty(final String prefix, final String property, final String envName,
+            final String activeEnvName) {
+        Optional<List<Integer>> prefixDashes = indexOfDashes(
+                prefix, 0, prefix.length(),
+                activeEnvName, 0, prefix.length());
+        Optional<List<Integer>> nameDashes = indexOfDashes(
+                property, 0, property.length(),
+                activeEnvName, prefix.isEmpty() ? 0 : prefix.length() + 1,
+                prefix.isEmpty() ? activeEnvName.length() : activeEnvName.length() - prefix.length() - 1);
+        if (prefixDashes.isPresent() && nameDashes.isPresent()) {
+            StringBuilder sb = new StringBuilder(activeEnvName);
+            for (Integer dash : prefixDashes.get()) {
+                sb.setCharAt(dash, '-');
+            }
+            for (Integer dash : nameDashes.get()) {
+                sb.setCharAt(dash, '-');
+            }
+            if (!activeEnvName.contentEquals(sb)) {
+                envVars.getNames().add(sb.toString());
+                envVars.getNames().remove(envName);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Find and returns all indexes of an Environment Variable name that match a <code>-</code> (dash), in its
+     * equivalent property name representation name. For example:
+     * <ul>
+     * <li><code>foo-bar</code>> matches <code>FOO_BAR</code> with a dash at index 3</li>
+     * <li><code>foo-bar</code>> matches <code>foo.bar</code> with a dash at index 3</li>
+     * <li><code>foo.bar</code>> matches <code>FOO_BAR</code> with no dashes</li>
+     * <li><code>foo.bar</code>> does not match <code>BAR_BAR</code></li>
+     * <li><code>*.foo-bar</code>> does not match <code>BAZ_FOO_BAR</code> with a dash at index 7</li>
+     * </ul>
+     *
+     * @param property the property name.
+     * @param envProperty the Environment Variable name.
+     * @return an Optional List of indexes from the Environment Variable name that can match a <code>-</code> (dash);
+     *         an Optional with an empty list if properties match but no dashes are found;
+     *         an empty Optional if properties don't match.
+     */
+    static Optional<List<Integer>> indexOfDashes(final String property, final int offset, final int len,
+            final String envProperty, final int eoffset, final int elen) {
+        if (property.isEmpty()) {
+            return Optional.of(Collections.emptyList());
+        }
+
+        List<Integer> dashesPosition = new ArrayList<>();
+        int matchPosition = eoffset + elen - 1;
+        for (int i = offset + len - 1; i >= offset; i--) {
+            if (matchPosition == -1) {
+                return Optional.empty();
+            }
+
+            char c = property.charAt(i);
+            if (c == '.' || c == '-') {
+                char p = envProperty.charAt(matchPosition);
+                if (p != '.' && p != '-') { // a property coming from env can either be . or -
+                    return Optional.empty();
+                }
+                if (c == '-') {
+                    dashesPosition.add(matchPosition);
+                }
+                matchPosition--;
+            } else if (c == '*') { // it's a map - skip to next separator
+                char p = envProperty.charAt(matchPosition);
+                if (p == '"') {
+                    matchPosition = envProperty.lastIndexOf('"', matchPosition - 1);
+                    if (matchPosition != -1) {
+                        matchPosition = envProperty.lastIndexOf('.', matchPosition);
+                    }
+                }
+                matchPosition = envProperty.lastIndexOf('.', matchPosition);
+            } else if (c == ']') { // it's a collection - skip to next separator
+                i = i - 2;
+                matchPosition = envProperty.lastIndexOf('[', matchPosition);
+                if (matchPosition != -1) {
+                    matchPosition--;
+                }
+            } else if (c != envProperty.charAt(matchPosition)) {
+                return Optional.empty();
+            } else {
+                matchPosition--;
+            }
+        }
+        if (matchPosition >= eoffset) {
+            return Optional.empty();
+        }
+
+        return Optional.of(dashesPosition);
     }
 
     Object writeReplace() {
