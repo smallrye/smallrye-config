@@ -1117,4 +1117,57 @@ class YamlConfigMappingTest {
     interface OverrideIndexedWithHigher {
         List<String> values();
     }
+
+    @Test
+    void listWithUnnamed() {
+        String yaml = "sources:\n" +
+                "  - 8.8.8.8\n" +
+                "  - 8.8.4.4\n";
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ListWithUnnamed.class)
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .withValidateUnknown(false)
+                .build();
+
+        ListWithUnnamed mapping = config.getConfigMapping(ListWithUnnamed.class);
+        assertEquals(2, mapping.sources().size());
+        assertEquals("8.8.8.8", mapping.sources().get(0).unnamed().get());
+        assertEquals("8.8.4.4", mapping.sources().get(1).unnamed().get());
+
+        yaml = "sources:\n" +
+                "  - 8.8.8.8\n" +
+                "  - 8.8.4.4\n" +
+                "  - type: TCP\n" +
+                "    uri: 8.8.8.8\n" +
+                "  - tcp://8.8.8.8";
+
+        config = new SmallRyeConfigBuilder()
+                .withMapping(ListWithUnnamed.class)
+                .withSources(new YamlConfigSource("yaml", yaml))
+                .build();
+
+        mapping = config.getConfigMapping(ListWithUnnamed.class);
+        assertEquals(4, mapping.sources().size());
+        assertEquals("8.8.8.8", mapping.sources().get(0).unnamed().get());
+        assertEquals("8.8.4.4", mapping.sources().get(1).unnamed().get());
+        assertEquals("8.8.8.8", mapping.sources().get(2).uri().get());
+        assertEquals("TCP", mapping.sources().get(2).type().get());
+        assertEquals("tcp://8.8.8.8", mapping.sources().get(3).unnamed().get());
+    }
+
+    @ConfigMapping(prefix = "sources")
+    interface ListWithUnnamed {
+        @WithParentName
+        List<Source> sources();
+
+        interface Source {
+            @WithParentName
+            Optional<String> unnamed();
+
+            Optional<String> uri();
+
+            Optional<String> type();
+        }
+    }
 }
