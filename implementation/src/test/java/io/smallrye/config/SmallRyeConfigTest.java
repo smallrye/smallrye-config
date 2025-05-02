@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -771,5 +772,35 @@ class SmallRyeConfigTest {
                 assertEquals("four", list.get(1));
             }
         });
+    }
+
+    @Test
+    void wrapSmallRyeConfigWithProfile() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withProfile("prod")
+                .withSources(config("%prod.my.prop", "1234"))
+                .build();
+
+        SmallRyeConfig wrappedConfig = new SmallRyeConfigBuilder().withSources(new ConfigSource() {
+            @Override
+            public Set<String> getPropertyNames() {
+                Set<String> properties = new HashSet<>();
+                config.getPropertyNames().forEach(properties::add);
+                return properties;
+            }
+
+            @Override
+            public String getValue(final String propertyName) {
+                return config.getRawValue(propertyName);
+            }
+
+            @Override
+            public String getName() {
+                return "Wrapped Config";
+            }
+        }).build();
+
+        assertEquals("1234", wrappedConfig.getRawValue("my.prop"));
+        assertEquals("1234", wrappedConfig.getRawValue("%prod.my.prop"));
     }
 }
