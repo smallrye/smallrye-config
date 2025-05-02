@@ -16,10 +16,7 @@
   {
     "version": "3.12.3",
     "title": "3.12.3",
-    "aliases": [],
-    "properties": {
-      "hidden": true
-    }
+    "aliases": []
   },
   {
     "version": "3.12.2",
