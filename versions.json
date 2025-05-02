@@ -54,7 +54,10 @@
   {
     "version": "3.11.1",
     "title": "3.11.1",
-    "aliases": []
+    "aliases": [],
+    "properties": {
+      "hidden": true
+    }
   },
   {
     "version": "3.11.0",
