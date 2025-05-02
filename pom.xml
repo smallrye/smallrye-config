@@ -37,6 +37,8 @@
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.source>17</maven.compiler.source>
 
+    <version.sundrio>0.200.3</version.sundrio>
+
     <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
     <version.smallrye.common>2.12.0</version.smallrye.common>
     <version.asm>9.7.1</version.asm>
@@ -103,6 +105,36 @@
             <goals>
               <goal>sort</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.sundr</groupId>
+        <artifactId>sundr-maven-plugin</artifactId>
+        <version>${version.sundrio}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-bom</goal>
+            </goals>
+            <configuration>
+              <boms>
+                <bom>
+                  <artifactId>smallrye-config-bom</artifactId>
+                  <name>Smallrye Config: BOM</name>
+                  <description>Centralized dependencyManagement for the SmallRye Config Project</description>
+                  <modules>
+                    <includes>
+                      <include>io.smallrye.config:*</include>
+                    </includes>
+                    <excludes>
+                      <exclude>*:*tck*</exclude>
+                      <exclude>*:*test*</exclude>
+                    </excludes>
+                  </modules>
+                </bom>
+              </boms>
+            </configuration>
           </execution>
         </executions>
       </plugin>
