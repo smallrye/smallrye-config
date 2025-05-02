@@ -124,6 +124,7 @@ public class StringUtil {
         return list.toArray(NO_STRINGS);
     }
 
+    @SuppressWarnings("squid:S6466")
     public static String replaceNonAlphanumericByUnderscores(final String name) {
         final int length = name.length();
         if (length == 0) {
@@ -178,6 +179,7 @@ public class StringUtil {
         }
     }
 
+    @SuppressWarnings("squid:S6466")
     public static String replaceNonAlphanumericByUnderscores(final String name, final ResizableByteArray sb) {
         int length = name.length();
         if (length == 0) {
