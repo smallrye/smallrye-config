@@ -11,6 +11,10 @@
         <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/extensions/config-events/">
       
       
+        <link rel="prev" href="../logging/">
+      
+      
+        <link rel="next" href="../config-source-injection/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -18,7 +22,7 @@
     
     
       
-        <title>Config Events - SmallRye Config</title>
+        <title>Events - SmallRye Config</title>
       
     
     
@@ -111,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config Events
+              Events
             
           </span>
         </div>
@@ -299,10 +303,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../interceptors/" class="md-tabs__link">
           
   
@@ -1074,8 +1080,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1087,23 +1095,30 @@
       
         
       
+        
+      
+        
+      
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1116,7 +1131,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Extensions
@@ -1205,6 +1220,145 @@
   
   <span class="md-ellipsis">
     Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Events
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#observing-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observing Events
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-matching-on-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern matching on field.
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementing-events-in-a-configsource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementing Events in a ConfigSource
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-source-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Config Source Injection
     
   </span>
   
