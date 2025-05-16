@@ -732,6 +732,23 @@ class EnvConfigSourceTest {
         }
     }
 
+    @Test
+    void mapNumericKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("MAP_3", "100"), 300))
+                .withMapping(MapNumericKeys.class)
+                .build();
+
+        MapNumericKeys mapping = config.getConfigMapping(MapNumericKeys.class);
+        assertEquals(100, mapping.map().get("3"));
+    }
+
+    @ConfigMapping(prefix = "map")
+    public interface MapNumericKeys {
+        @WithParentName
+        Map<String, Integer> map();
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
