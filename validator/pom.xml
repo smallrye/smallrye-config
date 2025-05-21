@@ -32,7 +32,7 @@
 
         <!-- Test -->
         <version.hibernate.validator>8.0.0.Final</version.hibernate.validator>
-        <version.glassfish.expressly>5.0.0</version.glassfish.expressly>
+        <version.glassfish.expressly>6.0.0</version.glassfish.expressly>
     </properties>
 
     <dependencies>
