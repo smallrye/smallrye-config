@@ -31,7 +31,7 @@
         <version.jakarta.validation>3.0.1</version.jakarta.validation>
 
         <!-- Test -->
-        <version.hibernate.validator>8.0.0.Final</version.hibernate.validator>
+        <version.hibernate.validator>9.0.0.Final</version.hibernate.validator>
         <version.glassfish.expressly>5.0.0</version.glassfish.expressly>
     </properties>
 
