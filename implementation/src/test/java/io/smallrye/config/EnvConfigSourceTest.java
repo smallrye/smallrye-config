@@ -32,11 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -716,6 +718,24 @@ class EnvConfigSourceTest {
 
         ClashMapKeysWithNames mapping = config.getConfigMapping(ClashMapKeysWithNames.class);
         assertTrue(mapping.clashes().get(null).clientId().isPresent());
+
+        EnvConfigSource envConfigSource = new EnvConfigSource(Map.of("MAP_CLIENT_ID", "VALUE"), 300);
+        envConfigSource.matchEnvWithProperties(List.of(Map.entry("", new Supplier<Iterator<String>>() {
+            @Override
+            public Iterator<String> get() {
+                return List.of("map.*.id", "map.client-id").iterator();
+            }
+        })), List.of());
+        assertTrue(envConfigSource.getPropertyNames().contains("map.client-id"));
+
+        envConfigSource = new EnvConfigSource(Map.of("MAP_CLIENT_ID", "VALUE"), 300);
+        envConfigSource.matchEnvWithProperties(List.of(Map.entry("", new Supplier<Iterator<String>>() {
+            @Override
+            public Iterator<String> get() {
+                return List.of("map.client-id", "map.*.id").iterator();
+            }
+        })), List.of());
+        assertTrue(envConfigSource.getPropertyNames().contains("map.client-id"));
     }
 
     @ConfigMapping(prefix = "map")

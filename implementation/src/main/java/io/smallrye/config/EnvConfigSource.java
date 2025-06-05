@@ -15,6 +15,8 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.EnvConfigSource.ResizableIntArray.MINUS_ONE;
+import static io.smallrye.config.EnvConfigSource.ResizableIntArray.ZERO;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
@@ -28,13 +30,12 @@ import static java.security.AccessController.doPrivileged;
 import java.io.Serializable;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -150,19 +151,8 @@ public class EnvConfigSource extends AbstractConfigSource {
                 String prefix = property.getKey();
                 if (StringUtil.isInPath(prefix, activeEnvName)) {
                     Iterator<String> names = property.getValue().get();
-                    // Priority to match exact key in case multiple candidates (with map patterns)
                     while (names.hasNext()) {
-                        String name = names.next();
-                        int exactLength = activeEnvName.length() - prefix.length() - 1;
-                        if (name.length() == exactLength && matchEnvWithProperty(prefix, name, envName, activeEnvName)) {
-                            break match;
-                        }
-                    }
-                    // Check everything else
-                    names = property.getValue().get();
-                    while (names.hasNext()) {
-                        String name = names.next();
-                        if (matchEnvWithProperty(prefix, name, envName, activeEnvName)) {
+                        if (matchEnvWithProperty(prefix, names.next(), envName, activeEnvName)) {
                             break match;
                         }
                     }
@@ -173,26 +163,38 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     private boolean matchEnvWithProperty(final String prefix, final String property, final String envName,
             final String activeEnvName) {
-        Optional<List<Integer>> prefixDashes = indexOfDashes(
-                prefix, 0, prefix.length(),
-                activeEnvName, 0, prefix.length());
-        Optional<List<Integer>> nameDashes = indexOfDashes(
+        int[] prefixDashes = indexOfDashes(prefix, 0, prefix.length(), activeEnvName, 0, prefix.length());
+        if (prefixDashes[0] == -1) {
+            return false;
+        }
+
+        int[] nameDashes = indexOfDashes(
                 property, 0, property.length(),
                 activeEnvName, prefix.isEmpty() ? 0 : prefix.length() + 1,
                 prefix.isEmpty() ? activeEnvName.length() : activeEnvName.length() - prefix.length() - 1);
-        if (prefixDashes.isPresent() && nameDashes.isPresent()) {
-            StringBuilder sb = new StringBuilder(activeEnvName);
-            for (Integer dash : prefixDashes.get()) {
+        if (nameDashes[0] == -1) {
+            return false;
+        }
+
+        if (prefixDashes[0] == 0 && nameDashes[0] == 0) {
+            return false;
+        }
+
+        StringBuilder sb = new StringBuilder(activeEnvName);
+        if (prefixDashes[0] != 0) {
+            for (int dash : prefixDashes) {
                 sb.setCharAt(dash, '-');
             }
-            for (Integer dash : nameDashes.get()) {
+        }
+        if (nameDashes[0] != 0) {
+            for (int dash : nameDashes) {
                 sb.setCharAt(dash, '-');
             }
-            if (!activeEnvName.contentEquals(sb)) {
-                envVars.getNames().add(sb.toString());
-                envVars.getNames().remove(envName);
-                return true;
-            }
+        }
+        if (!activeEnvName.contentEquals(sb)) {
+            envVars.getNames().add(sb.toString());
+            envVars.getNames().remove(envName);
+            return true;
         }
         return false;
     }
@@ -210,31 +212,36 @@ public class EnvConfigSource extends AbstractConfigSource {
      *
      * @param property the property name.
      * @param envProperty the Environment Variable name.
-     * @return an Optional List of indexes from the Environment Variable name that can match a <code>-</code> (dash);
-     *         an Optional with an empty list if properties match but no dashes are found;
-     *         an empty Optional if properties don't match.
+     * @return an array of int of indexes from the Environment Variable name that can match a <code>-</code> (dash);
+     *         an array of int with the int element <code>0</code> if properties match but no dashes are found;
+     *         an array of int with the int element <code>-1</code> if properties don't match.
      */
-    static Optional<List<Integer>> indexOfDashes(final String property, final int offset, final int len,
+    static int[] indexOfDashes(final String property, final int offset, final int len,
             final String envProperty, final int eoffset, final int elen) {
         if (property.isEmpty()) {
-            return Optional.of(Collections.emptyList());
+            return ZERO.get();
         }
 
-        List<Integer> dashesPosition = new ArrayList<>();
+        ResizableIntArray dashesPosition = ZERO;
         int matchPosition = eoffset + elen - 1;
         for (int i = offset + len - 1; i >= offset; i--) {
             if (matchPosition == -1) {
-                return Optional.empty();
+                return MINUS_ONE.get();
             }
 
             char c = property.charAt(i);
             if (c == '.' || c == '-') {
                 char p = envProperty.charAt(matchPosition);
                 if (p != '.' && p != '-') { // a property coming from env can either be . or -
-                    return Optional.empty();
+                    return MINUS_ONE.get();
                 }
                 if (c == '-') {
-                    dashesPosition.add(matchPosition);
+                    if (dashesPosition == ZERO) {
+                        dashesPosition = new ResizableIntArray(1);
+                    } else {
+                        dashesPosition.ensureCapacity(dashesPosition.get().length + 1);
+                    }
+                    dashesPosition.get()[dashesPosition.get().length - 1] = matchPosition;
                 }
                 matchPosition--;
             } else if (c == '*') { // it's a map - skip to next separator
@@ -253,16 +260,46 @@ public class EnvConfigSource extends AbstractConfigSource {
                     matchPosition--;
                 }
             } else if (c != envProperty.charAt(matchPosition)) {
-                return Optional.empty();
+                return MINUS_ONE.get();
             } else {
                 matchPosition--;
             }
         }
         if (matchPosition >= eoffset) {
-            return Optional.empty();
+            return MINUS_ONE.get();
         }
 
-        return Optional.of(dashesPosition);
+        return dashesPosition.get();
+    }
+
+    static class ResizableIntArray {
+        static final ResizableIntArray ZERO = with(0);
+        static final ResizableIntArray MINUS_ONE = with(-1);
+
+        private int[] array;
+
+        ResizableIntArray(int initialSize) {
+            this.array = new int[initialSize];
+        }
+
+        int[] get() {
+            return array;
+        }
+
+        void ensureCapacity(int capacity) {
+            this.array = Arrays.copyOfRange(this.array, 0, capacity);
+        }
+
+        private static ResizableIntArray with(int i) {
+            ResizableIntArray minusOne = new ResizableIntArray(1) {
+                @Override
+                void ensureCapacity(final int capacity) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            minusOne.array[0] = i;
+            return minusOne;
+        }
     }
 
     Object writeReplace() {

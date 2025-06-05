@@ -21,6 +21,7 @@ import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
+import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
 import static java.util.stream.Collectors.toList;
@@ -45,6 +46,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -867,8 +869,32 @@ public class SmallRyeConfig implements Config, Serializable {
             // Adjust the EnvSources to look for names with dashes instead of dots
             List<Entry<String, Supplier<Iterator<String>>>> properties = new ArrayList<>(
                     builder.getMappingsBuilder().getMappings().size());
+
             // Match dotted properties from other sources with Env with the same semantic meaning
-            properties.add(Map.entry("", current::iterateNames));
+            properties.add(Map.entry("", new Supplier<>() {
+                private final List<String> properties = new ArrayList<>();
+                {
+                    // Filter out some sources that do not contribute to the matching
+                    for (ConfigSource configSource : configSources) {
+                        if (!(configSource instanceof EnvConfigSource) && configSource != defaultValues) {
+                            Set<String> propertyNames = configSource.getPropertyNames();
+                            if (propertyNames != null) {
+                                properties.addAll(propertyNames.stream().map(new Function<String, String>() {
+                                    @Override
+                                    public String apply(final String name) {
+                                        return activeName(name, profiles);
+                                    }
+                                }).toList());
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public Iterator<String> get() {
+                    return properties.iterator();
+                }
+            }));
             // Match mappings properties with Env
             for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
                 Class<?> type = getConfigMappingClass(mapping.getType());
@@ -884,7 +910,7 @@ public class SmallRyeConfig implements Config, Serializable {
             this.sources = configSources;
             this.defaultValues = defaultValues;
             this.interceptorChain = current;
-            this.propertyNames = new PropertyNames();
+            this.propertyNames = new PropertyNames(current);
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
@@ -1063,8 +1089,14 @@ public class SmallRyeConfig implements Config, Serializable {
         class PropertyNames implements Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
+            private final SmallRyeConfigSourceInterceptorContext interceptorChain;
+
             private final Set<String> names = new HashSet<>();
             private final Map<String, Map<Integer, String>> indexed = new HashMap<>();
+
+            public PropertyNames(final SmallRyeConfigSourceInterceptorContext interceptorChain) {
+                this.interceptorChain = interceptorChain;
+            }
 
             Iterable<String> get() {
                 if (names.isEmpty()) {
