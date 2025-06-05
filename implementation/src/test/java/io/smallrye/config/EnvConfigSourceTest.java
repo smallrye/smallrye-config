@@ -769,6 +769,38 @@ class EnvConfigSourceTest {
         Map<String, Integer> map();
     }
 
+    @Test
+    void upperCaseKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of(
+                        "UPPERCASE_KEYS_MAP_FOO_0__LIST", "one,two",
+                        "UPPERCASE_KEYS_MAP_DASHED_FOO_0__LIST", "one,two"), 300))
+                .withSources(config(
+                        "uppercase.keys.map.FOO[0].value", "value",
+                        "uppercase.keys.map.FOO[0].list", "one",
+                        "uppercase.keys.map-dashed.FOO[0].value", "value",
+                        "uppercase.keys.map-dashed.FOO[0].list", "one"))
+                .withMapping(UpperCaseKeys.class)
+                .build();
+
+        UpperCaseKeys mapping = config.getConfigMapping(UpperCaseKeys.class);
+        assertIterableEquals(List.of("one", "two"), mapping.map().get("FOO").get(0).list());
+        assertIterableEquals(List.of("one", "two"), mapping.mapDashed().get("FOO").get(0).list());
+    }
+
+    @ConfigMapping(prefix = "uppercase.keys")
+    interface UpperCaseKeys {
+        Map<String, List<Nested>> map();
+
+        Map<String, List<Nested>> mapDashed();
+
+        interface Nested {
+            String value();
+
+            List<String> list();
+        }
+    }
+
     private static boolean envSourceEquals(String name, String lookup) {
         return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
     }
