@@ -177,6 +177,11 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
 
         if (prefixDashes[0] == 0 && nameDashes[0] == 0) {
+            // Properties are equals, but may contain Map key uppercases, so replace
+            if (EnvName.equals(activeEnvName, property)) {
+                envVars.getNames().add(property);
+                envVars.getNames().remove(envName);
+            }
             return false;
         }
 
@@ -191,8 +196,17 @@ public class EnvConfigSource extends AbstractConfigSource {
                 sb.setCharAt(dash, '-');
             }
         }
+        String dashedEnvName = sb.toString();
+
+        // Properties are equals, but may contain Map key uppercases, so replace
+        if (EnvName.equals(property, dashedEnvName)) {
+            envVars.getNames().add(property);
+            envVars.getNames().remove(envName);
+            return true;
+        }
+
         if (!activeEnvName.contentEquals(sb)) {
-            envVars.getNames().add(sb.toString());
+            envVars.getNames().add(dashedEnvName);
             envVars.getNames().remove(envName);
             return true;
         }
@@ -259,7 +273,7 @@ public class EnvConfigSource extends AbstractConfigSource {
                 if (matchPosition != -1) {
                     matchPosition--;
                 }
-            } else if (c != envProperty.charAt(matchPosition)) {
+            } else if (toLowerCase(c) != toLowerCase(envProperty.charAt(matchPosition))) {
                 return MINUS_ONE.get();
             } else {
                 matchPosition--;
