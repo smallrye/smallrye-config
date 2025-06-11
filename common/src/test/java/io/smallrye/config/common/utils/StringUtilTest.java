@@ -190,7 +190,9 @@ class StringUtilTest {
         assertNotNull(StringUtil.toLowerCaseAndDotted("00_PYTHON_2_7"));
 
         assertEquals("foo.bar.3", StringUtil.toLowerCaseAndDotted("FOO_BAR_3"));
+        assertEquals("foo.bar.33", StringUtil.toLowerCaseAndDotted("FOO_BAR_33"));
         assertEquals("foo.bar[3]", StringUtil.toLowerCaseAndDotted("FOO_BAR_3_"));
+        assertEquals("foo.bar[33]", StringUtil.toLowerCaseAndDotted("FOO_BAR_33_"));
     }
 
     @Test
