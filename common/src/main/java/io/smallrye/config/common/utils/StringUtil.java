@@ -245,13 +245,6 @@ public class StringUtil {
                     if (Character.isDigit(d)) { // maybe index
                         result[next] = (byte) d;
                         int j = next + 1;
-
-                        // ending with a digit
-                        if (j >= length) {
-                            result[i] = '.';
-                            continue;
-                        }
-
                         for (; j < length; j++) {
                             d = name.charAt(j);
                             if (Character.isDigit(d)) { // index
@@ -266,7 +259,10 @@ public class StringUtil {
                                 break;
                             }
                         }
-
+                        // ending with a digit
+                        if (j >= length) {
+                            result[i] = '.';
+                        }
                     } else if (name.charAt(next) == '_') { // double _ start quote
                         result[i] = '.';
                         result[next] = '"';
