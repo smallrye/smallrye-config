@@ -179,8 +179,8 @@ public class EnvConfigSource extends AbstractConfigSource {
         if (prefixDashes[0] == 0 && nameDashes[0] == 0) {
             // Properties are equals, but may contain Map key uppercases, so replace
             if (EnvName.equals(activeEnvName, property)) {
-                envVars.getNames().add(property);
                 envVars.getNames().remove(envName);
+                envVars.getNames().add(property);
             }
             return false;
         }
@@ -200,14 +200,14 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         // Properties are equals, but may contain Map key uppercases, so replace
         if (EnvName.equals(property, dashedEnvName)) {
-            envVars.getNames().add(property);
             envVars.getNames().remove(envName);
+            envVars.getNames().add(property);
             return true;
         }
 
         if (!activeEnvName.contentEquals(sb)) {
-            envVars.getNames().add(dashedEnvName);
             envVars.getNames().remove(envName);
+            envVars.getNames().add(dashedEnvName);
             return true;
         }
         return false;

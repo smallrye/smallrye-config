@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.function.Supplier;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.ConfigSourceFactory.ConfigurableConfigSourceFactory;
 import io.smallrye.config.EnvConfigSource.EnvName;
 
 /**
@@ -520,7 +522,7 @@ class EnvConfigSourceTest {
 
     @Test
     void mappingFactory() {
-        ConfigSourceFactory.ConfigurableConfigSourceFactory<MappingFactory> sourceFactory = new ConfigSourceFactory.ConfigurableConfigSourceFactory<>() {
+        ConfigurableConfigSourceFactory<MappingFactory> sourceFactory = new ConfigurableConfigSourceFactory<>() {
             @Override
             public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, final MappingFactory mapping) {
                 assertEquals("value", mapping.aValue());
@@ -798,6 +800,32 @@ class EnvConfigSourceTest {
             String value();
 
             List<String> list();
+        }
+    }
+
+    @Test
+    void matchEnvVarWithFactory() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new MatchEnvVarConfigSourceFactory())
+                .withSources(new EnvConfigSource(Map.of(
+                        "MAP_KEY", "value"), 300))
+                .withMapping(MatchEnvVarWithFactory.class)
+                .build();
+
+        MatchEnvVarWithFactory mapping = config.getConfigMapping(MatchEnvVarWithFactory.class);
+
+        assertEquals("value", mapping.map().get("key"));
+    }
+
+    @ConfigMapping(prefix = "")
+    interface MatchEnvVarWithFactory {
+        Map<String, String> map();
+    }
+
+    static class MatchEnvVarConfigSourceFactory implements ConfigurableConfigSourceFactory<MatchEnvVarWithFactory> {
+        @Override
+        public Iterable<ConfigSource> getConfigSources(final ConfigSourceContext context, final MatchEnvVarWithFactory config) {
+            return Collections.emptyList();
         }
     }
 
