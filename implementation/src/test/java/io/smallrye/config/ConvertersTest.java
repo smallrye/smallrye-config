@@ -43,6 +43,88 @@ import org.junit.jupiter.api.Test;
 
 class ConvertersTest {
     @Test
+    void booleanConverter() {
+        SmallRyeConfig config = buildConfig(
+                "boolean.TRUE", "TRUE",
+                "boolean.1", "1",
+                "boolean.YES", "YES",
+                "boolean.Y", "Y",
+                "boolean.ON", "ON",
+                "boolean.JA", "JA",
+                "boolean.J", "J",
+                "boolean.SI", "SI",
+                "boolean.SIM", "SIM",
+                "boolean.OUI", "OUI",
+                "boolean.true", "true",
+                "boolean.yes", "yes",
+                "boolean.y", "y",
+                "boolean.on", "on",
+                "boolean.ja", "ja",
+                "boolean.j", "j",
+                "boolean.si", "si",
+                "boolean.sim", "sim",
+                "boolean.oui", "oui",
+                "boolean.FALSE", "FALSE",
+                "boolean.0", "0",
+                "boolean.NO", "NO",
+                "boolean.N", "N",
+                "boolean.OFF", "OFF",
+                "boolean.NEIN", "NEIN",
+                "boolean.NÃO", "NÃO",
+                "boolean.NON", "NON",
+                "boolean.false", "false",
+                "boolean.0", "0",
+                "boolean.no", "no",
+                "boolean.n", "n",
+                "boolean.off", "off",
+                "boolean.nein", "nein",
+                "boolean.não", "não",
+                "boolean.non", "non",
+                "boolean.unexpected", "unexpected");
+
+        assertTrue(config.getValue("boolean.TRUE", boolean.class));
+        assertTrue(config.getValue("boolean.1", boolean.class));
+        assertTrue(config.getValue("boolean.YES", boolean.class));
+        assertTrue(config.getValue("boolean.Y", boolean.class));
+        assertTrue(config.getValue("boolean.ON", boolean.class));
+        assertTrue(config.getValue("boolean.JA", boolean.class));
+        assertTrue(config.getValue("boolean.J", boolean.class));
+        assertTrue(config.getValue("boolean.SI", boolean.class));
+        assertTrue(config.getValue("boolean.SIM", boolean.class));
+        assertTrue(config.getValue("boolean.OUI", boolean.class));
+
+        assertTrue(config.getValue("boolean.true", boolean.class));
+        assertTrue(config.getValue("boolean.yes", boolean.class));
+        assertTrue(config.getValue("boolean.y", boolean.class));
+        assertTrue(config.getValue("boolean.on", boolean.class));
+        assertTrue(config.getValue("boolean.ja", boolean.class));
+        assertTrue(config.getValue("boolean.j", boolean.class));
+        assertTrue(config.getValue("boolean.si", boolean.class));
+        assertTrue(config.getValue("boolean.sim", boolean.class));
+        assertTrue(config.getValue("boolean.oui", boolean.class));
+
+        assertFalse(config.getValue("boolean.FALSE", boolean.class));
+        assertFalse(config.getValue("boolean.0", boolean.class));
+        assertFalse(config.getValue("boolean.NO", boolean.class));
+        assertFalse(config.getValue("boolean.N", boolean.class));
+        assertFalse(config.getValue("boolean.OFF", boolean.class));
+        assertFalse(config.getValue("boolean.NEIN", boolean.class));
+        assertFalse(config.getValue("boolean.NÃO", boolean.class));
+        assertFalse(config.getValue("boolean.NON", boolean.class));
+
+        assertFalse(config.getValue("boolean.false", boolean.class));
+        assertFalse(config.getValue("boolean.0", boolean.class));
+        assertFalse(config.getValue("boolean.no", boolean.class));
+        assertFalse(config.getValue("boolean.n", boolean.class));
+        assertFalse(config.getValue("boolean.off", boolean.class));
+        assertFalse(config.getValue("boolean.nein", boolean.class));
+        assertFalse(config.getValue("boolean.não", boolean.class));
+        assertFalse(config.getValue("boolean.non", boolean.class));
+
+        assertFalse(config.getValue("boolean.unexpected", boolean.class));
+    }
+
+    @Test
     void collectionConverters() {
         SmallRyeConfig config = buildConfig("empty.collection", "", "one.collection", ",foo", "two.collection", "foo,,bar,,");
         final Converter<Collection<String>> conv = Converters

@@ -51,6 +51,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.AbstractConverter;
 import io.smallrye.config.common.AbstractDelegatingConverter;
@@ -71,8 +72,10 @@ public final class Converters {
     static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
 
     static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
-            value -> Boolean.valueOf(
-                    "TRUE".equalsIgnoreCase(value)
+            new Converter<Boolean>() {
+                @Override
+                public Boolean convert(final String value) throws IllegalArgumentException, NullPointerException {
+                    if ("TRUE".equalsIgnoreCase(value)
                             || "1".equalsIgnoreCase(value)
                             || "YES".equalsIgnoreCase(value)
                             || "Y".equalsIgnoreCase(value)
@@ -81,7 +84,23 @@ public final class Converters {
                             || "J".equalsIgnoreCase(value)
                             || "SI".equalsIgnoreCase(value)
                             || "SIM".equalsIgnoreCase(value)
-                            || "OUI".equalsIgnoreCase(value)))));
+                            || "OUI".equalsIgnoreCase(value)) {
+                        return Boolean.TRUE;
+                    } else if ("FALSE".equalsIgnoreCase(value)
+                            || "0".equalsIgnoreCase(value)
+                            || "NO".equalsIgnoreCase(value)
+                            || "N".equalsIgnoreCase(value)
+                            || "OFF".equalsIgnoreCase(value)
+                            || "NEIN".equalsIgnoreCase(value)
+                            || "NÃO".equalsIgnoreCase(value)
+                            || "NON".equalsIgnoreCase(value)) {
+                        return Boolean.FALSE;
+                    } else {
+                        ConfigLogging.log.booleanConversionFalse(value);
+                        return Boolean.FALSE;
+                    }
+                }
+            })));
 
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
             newTrimmingConverter(newEmptyValueConverter(value -> {

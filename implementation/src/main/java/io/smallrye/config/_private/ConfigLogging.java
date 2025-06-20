@@ -45,4 +45,7 @@ public interface ConfigLogging extends BasicLogger {
     @Message(id = 1007, value = "Duplicate value found for name : %s, config source name : %s, (old value : %s)")
     void duplicateValue(String key, String sourceName, String oldValue);
 
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1008, value = "The value %s has been converted by a Boolean Converter to \"false\"")
+    void booleanConversionFalse(String value);
 }
