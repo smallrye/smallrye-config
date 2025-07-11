@@ -222,8 +222,8 @@ public class ConfigMappingGenerator {
      * class annotated with {@link org.eclipse.microprofile.config.inject.ConfigProperties}.
      * <p>
      *
-     * The generated configuration interface implements {@link ConfigMappingClassMapper} which provides the brige
-     * between the instace of the configuration class and the implementation of the configuration interface provided by
+     * The generated configuration interface implements {@link ConfigMappingClassMapper} which provides the bridge
+     * between the instance of the configuration class and the implementation of the configuration interface provided by
      * {@link ConfigMappingGenerator#generate(ConfigMappingInterface)} to retrieve the configuration values.
      *
      * @param classType the configuration class.
