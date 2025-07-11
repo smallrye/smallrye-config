@@ -872,14 +872,14 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Match dotted properties from other sources with Env with the same semantic meaning
             properties.add(Map.entry("", new Supplier<>() {
-                private final List<String> properties = new ArrayList<>();
+                private final List<String> names = new ArrayList<>();
                 {
                     // Filter out some sources that do not contribute to the matching
                     for (ConfigSource configSource : configSources) {
                         if (!(configSource instanceof EnvConfigSource) && configSource != defaultValues) {
                             Set<String> propertyNames = configSource.getPropertyNames();
                             if (propertyNames != null) {
-                                properties.addAll(propertyNames.stream().map(new Function<String, String>() {
+                                names.addAll(propertyNames.stream().map(new Function<String, String>() {
                                     @Override
                                     public String apply(final String name) {
                                         return activeName(name, profiles);
@@ -892,13 +892,34 @@ public class SmallRyeConfig implements Config, Serializable {
 
                 @Override
                 public Iterator<String> get() {
-                    return properties.iterator();
+                    return names.iterator();
                 }
             }));
             // Match mappings properties with Env
             for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
                 Class<?> type = getConfigMappingClass(mapping.getType());
-                properties.add(Map.entry(mapping.getPrefix(), () -> configMappingProperties(type).keySet().iterator()));
+                properties.add(Map.entry(mapping.getPrefix(), new Supplier<>() {
+                    private final List<String> names = new ArrayList<>(configMappingProperties(type).keySet());
+                    {
+                        // Sort by most specific key search to avoid clashing with map keys
+                        names.sort(new Comparator<String>() {
+                            @Override
+                            public int compare(String o1, String o2) {
+                                if (PropertyName.equals(o1, o2)) {
+                                    // A name containing a star is always smaller
+                                    return Integer.compare(o1.length(), o2.length()) * -1;
+                                } else {
+                                    return o1.compareTo(o2);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public Iterator<String> get() {
+                        return names.iterator();
+                    }
+                }));
             }
             for (ConfigSource source : sources) {
                 if (source instanceof EnvConfigSource) {
@@ -1086,7 +1107,7 @@ public class SmallRyeConfig implements Config, Serializable {
             return propertyNames;
         }
 
-        class PropertyNames implements Serializable {
+        private static class PropertyNames implements Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final SmallRyeConfigSourceInterceptorContext interceptorChain;
