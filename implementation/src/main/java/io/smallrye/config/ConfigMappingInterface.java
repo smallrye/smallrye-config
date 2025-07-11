@@ -12,6 +12,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -29,9 +31,10 @@ import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
- * The metadata reprensentation of a {@link ConfigMapping} annotated class.
+ * The metadata representation of a {@link ConfigMapping} annotated class.
  */
 public final class ConfigMappingInterface implements ConfigMappingMetadata {
+
     static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     static final Property[] NO_PROPERTIES = new Property[0];
     static final ClassValue<ConfigMappingInterface> cv = new ClassValue<>() {
@@ -61,7 +64,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 toStringMethod = (ToStringMethod) property;
             }
         }
-        this.properties = filteredProperties.toArray(new Property[0]);
+        // let's make sure the properties are ordered as we might generate code from them
+        // and we need code generation to be deterministic
+        filteredProperties.sort(PropertyComparator.INSTANCE);
+        this.properties = filteredProperties.toArray(Property[]::new);
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
     }
 
@@ -140,7 +146,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     private static Map<String, Property> getSuperProperties(final ConfigMappingInterface type, final Set<String> ignored) {
-        Map<String, Property> properties = new HashMap<>();
+        Map<String, Property> properties = new TreeMap<>();
 
         // to ignore implementation of abstract methods coming from super classes
         for (Method method : type.getInterfaceType().getDeclaredMethods()) {
@@ -797,7 +803,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             Method method = methods[i];
             int mods = method.getModifiers();
             if (!Modifier.isPublic(mods) || Modifier.isStatic(mods) || !Modifier.isAbstract(mods)) {
-                // no need for recursive calls here, which are costy in interpreted mode!
+                // no need for recursive calls here, which are costly in interpreted mode!
                 continue;
             }
             if (method.getParameterCount() > 0) {
@@ -1086,10 +1092,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      * @return a <code>Map</code> with the mapping properties names
      */
     public static Map<String, Map<String, Set<String>>> getNames(final ConfigMappingInterface configMapping) {
-        Map<String, Map<String, Set<String>>> names = new HashMap<>();
+        Map<String, Map<String, Set<String>>> names = new TreeMap<>();
         Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configMapping);
         for (Map.Entry<Class<?>, Map<String, Map<String, Property>>> entry : properties.entrySet()) {
-            Map<String, Set<String>> groups = new HashMap<>();
+            Map<String, Set<String>> groups = new TreeMap<>();
             for (Map.Entry<String, Map<String, Property>> group : entry.getValue().entrySet()) {
                 groups.put(group.getKey(), group.getValue().keySet());
             }
@@ -1130,8 +1136,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         ConfigMappingInterface groupType = groupProperty.getGroupType();
         Map<String, Property> groupProperties = properties
-                .computeIfAbsent(groupType.getInterfaceType(), group -> new HashMap<>())
-                .computeIfAbsent(path.get(), s -> new HashMap<>());
+                .computeIfAbsent(groupType.getInterfaceType(), group -> new TreeMap<>())
+                .computeIfAbsent(path.get(), s -> new TreeMap<>());
 
         getProperties(groupProperty, namingStrategy, path, properties, groupProperties);
     }
@@ -1310,6 +1316,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         String get() {
             return path;
+        }
+    }
+
+    private static class PropertyComparator implements Comparator<Property> {
+
+        private static final PropertyComparator INSTANCE = new PropertyComparator();
+
+        @Override
+        public int compare(Property p1, Property p2) {
+            return p1.getMemberName().compareTo(p2.getMemberName());
         }
     }
 }
