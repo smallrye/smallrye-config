@@ -1,11 +1,13 @@
 package io.smallrye.config.jasypt;
 
+import static io.smallrye.config.EnvConfigSource.ORDINAL;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -22,6 +24,22 @@ class JasyptSecretKeysHandlerTest {
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
                 .withSources(new PropertiesConfigSource(properties, "", 0))
+                .build();
+
+        assertEquals("12345678", config.getRawValue("my.secret"));
+    }
+
+    @Test
+    void jasyptWithEnv() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withSources(new EnvConfigSource(Map.of(
+                        "SMALLRYE_CONFIG_SECRET_HANDLER_JASYPT_PASSWORD", "jasypt",
+                        "SMALLRYE_CONFIG_SECRET_HANDLER_JASYPT_ALGORITHM", "PBEWithHMACSHA512AndAES_256"), ORDINAL))
+                .withSources(new PropertiesConfigSource(
+                        Map.of("my.secret", "${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}"),
+                        "", 0))
                 .build();
 
         assertEquals("12345678", config.getRawValue("my.secret"));
