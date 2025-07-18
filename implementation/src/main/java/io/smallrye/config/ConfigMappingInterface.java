@@ -47,6 +47,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final String className;
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
+    private final Property[] fullHierarchyProperties;
     private final ToStringMethod toStringMethod;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
@@ -68,6 +69,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         // and we need code generation to be deterministic
         filteredProperties.sort(PropertyComparator.INSTANCE);
         this.properties = filteredProperties.toArray(Property[]::new);
+        this.fullHierarchyProperties = collectFullHierarchyProperties(this, this.properties);
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
     }
 
@@ -127,12 +129,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      * @return the array of {@link Property}
      */
     public Property[] getProperties() {
-        // We use a Map to override definitions from super members
-        Map<String, Property> properties = getSuperProperties(this, new HashSet<>());
-        for (Property property : this.properties) {
-            properties.put(property.getMemberName(), property);
-        }
-        return properties.values().toArray(new Property[0]);
+        return fullHierarchyProperties;
     }
 
     /**
@@ -145,9 +142,19 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return ConfigMappingInterface.getNames(this);
     }
 
-    private static Map<String, Property> getSuperProperties(final ConfigMappingInterface type, final Set<String> ignored) {
-        Map<String, Property> properties = new TreeMap<>();
+    private static Property[] collectFullHierarchyProperties(final ConfigMappingInterface type, final Property[] properties) {
+        // We use a Map to override definitions from super members
+        // We want the properties to be sorted so that the iteration order is deterministic
+        Map<String, Property> fullHierarchyProperties = new TreeMap<>();
+        collectSuperProperties(type, fullHierarchyProperties, new HashSet<>());
+        for (Property property : properties) {
+            fullHierarchyProperties.put(property.getMemberName(), property);
+        }
+        return fullHierarchyProperties.values().toArray(Property[]::new);
+    }
 
+    private static void collectSuperProperties(final ConfigMappingInterface type, Map<String, Property> properties,
+            final Set<String> ignored) {
         // to ignore implementation of abstract methods coming from super classes
         for (Method method : type.getInterfaceType().getDeclaredMethods()) {
             if (method.isDefault()) {
@@ -156,14 +163,13 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         for (ConfigMappingInterface superType : type.getSuperTypes()) {
-            properties.putAll(getSuperProperties(superType, ignored));
+            collectSuperProperties(superType, properties, ignored);
             for (Property property : superType.getProperties()) {
                 if (!ignored.contains(property.getMemberName())) {
                     properties.put(property.getMemberName(), property);
                 }
             }
         }
-        return properties;
     }
 
     ToStringMethod getToStringMethod() {
