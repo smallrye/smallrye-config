@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.StringUtil.isNumeric;
+import static io.smallrye.config.common.utils.StringUtil.isNumericEquals;
 
 /**
  * A configuration name.
@@ -37,7 +38,7 @@ public class PropertyName {
             return false;
         }
         final PropertyName that = (PropertyName) o;
-        return equals(this.name, that.name) || equals(that.name, this.name);
+        return equals(this.name, that.name);
     }
 
     /**
@@ -111,22 +112,29 @@ public class PropertyName {
                         i = 0;
                     }
                 }
-            } else if (n == ']' && o == ']') {
-                if (name.length() >= 3 && other.length() >= 3
-                        && name.charAt(matchPosition - 1) == '*' && name.charAt(matchPosition - 2) == '['
-                        && other.charAt(i - 1) == '*' && other.charAt(i - 2) == '[') {
-                    matchPosition = matchPosition - 2;
-                    i = i - 1;
-                    continue;
-                } else {
-                    int beginIndexed = other.lastIndexOf('[', i);
-                    if (beginIndexed != -1) {
-                        int range = i - beginIndexed - 1;
-                        if (isNumeric(other, beginIndexed + range, i)) {
-                            matchPosition = matchPosition - 3;
-                            i = i - range - 1;
-                            continue;
-                        }
+            } else if (o == ']' && n == ']') {
+                int otherBeginIndexed = other.lastIndexOf('[', i);
+                int nameBeginIndexed = name.lastIndexOf('[', matchPosition);
+                if (otherBeginIndexed != -1 && nameBeginIndexed != -1) {
+                    if (other.charAt(otherBeginIndexed + 1) == '*' && name.charAt(nameBeginIndexed + 1) == '*') {
+                        i = i - 2;
+                        matchPosition = matchPosition - 3;
+                        continue;
+                    } else if (other.charAt(otherBeginIndexed + 1) == '*'
+                            && isNumeric(name, nameBeginIndexed + 1, matchPosition - nameBeginIndexed - 1)) {
+                        i = i - 2;
+                        matchPosition = nameBeginIndexed - 1;
+                        continue;
+                    } else if (name.charAt(nameBeginIndexed + 1) == '*'
+                            && isNumeric(other, otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
+                        i = otherBeginIndexed;
+                        matchPosition = matchPosition - 3;
+                        continue;
+                    } else if (isNumericEquals(name, nameBeginIndexed + 1, matchPosition - nameBeginIndexed - 1, other,
+                            otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
+                        i = otherBeginIndexed;
+                        matchPosition = nameBeginIndexed - 1;
+                        continue;
                     }
                 }
                 return false;

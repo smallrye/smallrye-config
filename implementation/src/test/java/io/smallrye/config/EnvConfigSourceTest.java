@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -116,19 +115,15 @@ class EnvConfigSourceTest {
 
     @Test
     void indexed() {
-        Map<String, String> env = new HashMap<>() {
-            {
-                put("INDEXED_0_", "foo");
-                put("INDEXED_0__PROP", "bar");
-                put("INDEXED_0__PROPS_0_", "0");
-                put("INDEXED_0__PROPS_1_", "1");
-            }
-        };
+        Map<String, String> env = Map.of(
+                "INDEXED_0_", "foo",
+                "INDEXED_0__PROP", "bar",
+                "INDEXED_0__PROPS_0_", "0",
+                "INDEXED_0__PROPS_1_", "1");
 
-        EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
-                .withSources(envConfigSource)
+                .withSources(new EnvConfigSource(env, 300))
                 .build();
 
         List<String> indexed = config.getValues("indexed", String.class, ArrayList::new);
@@ -136,6 +131,36 @@ class EnvConfigSourceTest {
         assertEquals(1, indexed.size());
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("0"));
         assertTrue(config.getValues("indexed[0].props", String.class, ArrayList::new).contains("1"));
+    }
+
+    @Test
+    void indexedDashed() {
+        List<String> expected = List.of("ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE");
+        Map<String, String> env = Map.of(
+                "INDEXED_DASHED_0_", "ZERO",
+                "INDEXED_DASHED_1_", "ONE",
+                "INDEXED_DASHED_2_", "TWO",
+                "INDEXED_DASHED_3_", "THREE",
+                "INDEXED_DASHED_4_", "FOUR",
+                "INDEXED_DASHED_5_", "FIVE",
+                "INDEXED_DASHED_6_", "SIX",
+                "INDEXED_DASHED_7_", "SEVEN",
+                "INDEXED_DASHED_8_", "EIGHT",
+                "INDEXED_DASHED_9_", "NINE");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(env, 300))
+                .withSources(config(
+                        "indexed-dashed[9]", "nine"))
+                .withMapping(Indexed.class)
+                .build();
+        assertIterableEquals(expected, config.getConfigMapping(Indexed.class).indexed());
+    }
+
+    @ConfigMapping
+    interface Indexed {
+        @WithName("indexed-dashed")
+        List<String> indexed();
     }
 
     @Test
@@ -153,12 +178,9 @@ class EnvConfigSourceTest {
 
     @Test
     void map() {
-        Map<String, String> env = new HashMap<>() {
-            {
-                put("TEST_LANGUAGE__DE_ETR__", "Einfache Sprache");
-                put("TEST_LANGUAGE_PT_BR", "FROM ENV");
-            }
-        };
+        Map<String, String> env = Map.of(
+                "TEST_LANGUAGE__DE_ETR__", "Einfache Sprache",
+                "TEST_LANGUAGE_PT_BR", "FROM ENV");
 
         EnvConfigSource envConfigSource = new EnvConfigSource(env, 300);
         SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -170,11 +192,12 @@ class EnvConfigSourceTest {
         assertEquals("Einfache Sprache", config.getRawValue("test.language.\"de.etr\""));
 
         Map<String, String> map = config.getValues("test.language", STRING_CONVERTER, STRING_CONVERTER);
-        assertEquals(map.get("de.etr"), "Einfache Sprache");
-        assertEquals(map.get("pt-br"), "FROM ENV");
+        assertEquals("Einfache Sprache", map.get("de.etr"));
+        assertEquals("FROM ENV", map.get("pt-br"));
     }
 
     @Test
+    @SuppressWarnings("StringOperationCanBeSimplified")
     void envEquals() {
         assertTrue(EnvName.equals("", new String("")));
         assertTrue(EnvName.equals(" ", new String(" ")));
@@ -216,15 +239,26 @@ class EnvConfigSourceTest {
         assertTrue(envSourceEquals("_ENV_SMALLRYE_MP_CONFIG_PROP", new String("%env.smallrye.mp.config.prop")));
 
         assertTrue(EnvName.equals("indexed[0]", new String("indexed[0]")));
+        assertFalse(EnvName.equals("indexed[0]", new String("indexed[1]")));
+        assertFalse(EnvName.equals("indexed[*]", new String("indexed[1]")));
         assertTrue(EnvName.equals("INDEXED_0_", new String("INDEXED_0_")));
+        assertFalse(EnvName.equals("INDEXED_0_", new String("INDEXED_1_")));
         assertTrue(EnvName.equals("indexed[0]", new String("INDEXED_0_")));
+        assertFalse(EnvName.equals("indexed[0]", new String("INDEXED_1_")));
         assertTrue(EnvName.equals("INDEXED_0_", new String("indexed[0]")));
+        assertFalse(EnvName.equals("INDEXED_0_", new String("indexed[1]")));
         assertTrue(envSourceEquals("indexed[0]", new String("indexed[0]")));
+        assertFalse(envSourceEquals("indexed[0]", new String("indexed[1]")));
         assertTrue(envSourceEquals("INDEXED_0_", new String("INDEXED_0_")));
+        assertFalse(envSourceEquals("INDEXED_0_", new String("INDEXED_1_")));
         assertTrue(envSourceEquals("INDEXED_0_", new String("indexed[0]")));
+        assertFalse(envSourceEquals("INDEXED_0_", new String("indexed[1]")));
         assertTrue(envSourceEquals("foo.bar.indexed[0]", new String("foo.bar.indexed[0]")));
+        assertFalse(envSourceEquals("foo.bar.indexed[0]", new String("foo.bar.indexed[1]")));
         assertTrue(envSourceEquals("FOO_BAR_INDEXED_0_", new String("foo.bar.indexed[0]")));
+        assertFalse(envSourceEquals("FOO_BAR_INDEXED_0_", new String("foo.bar.indexed[1]")));
         assertTrue(envSourceEquals("foo.bar[0].indexed[0]", new String("foo.bar[0].indexed[0]")));
+        assertFalse(envSourceEquals("foo.bar[0].indexed[0]", new String("foo.bar[0].indexed[1]")));
         assertTrue(envSourceEquals("FOO_BAR_0__INDEXED_0_", new String("foo.bar[0].indexed[0]")));
 
         assertTrue(EnvName.equals("env.\"quoted.key\".value", new String("env.\"quoted.key\".value")));
@@ -830,6 +864,7 @@ class EnvConfigSourceTest {
     }
 
     private static boolean envSourceEquals(String name, String lookup) {
-        return BOOLEAN_CONVERTER.convert(new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup));
+        String value = new EnvConfigSource(Map.of(name, "true"), 100).getValue(lookup);
+        return value != null && BOOLEAN_CONVERTER.convert(value);
     }
 }

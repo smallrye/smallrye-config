@@ -21,7 +21,7 @@ import static io.smallrye.config.ProfileConfigSourceInterceptor.activeName;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.CONFIG_ORDINAL_KEY;
 import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
 import static io.smallrye.config.common.utils.StringUtil.isAsciiLetterOrDigit;
-import static io.smallrye.config.common.utils.StringUtil.isNumeric;
+import static io.smallrye.config.common.utils.StringUtil.isNumericEquals;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static java.lang.Character.toLowerCase;
@@ -454,6 +454,8 @@ public class EnvConfigSource extends AbstractConfigSource {
                 return false;
             }
 
+            // we cannot check for length equals because a " is represented by __
+
             char n;
             char o;
 
@@ -499,8 +501,7 @@ public class EnvConfigSource extends AbstractConfigSource {
                         int range = i - beginIndexed - 1;
                         if (name.lastIndexOf('_', matchPosition - 1) == matchPosition - range - 1
                                 || name.lastIndexOf('[', matchPosition - 1) == matchPosition - range - 1) {
-                            if (isNumeric(other, beginIndexed + range, i)
-                                    && isNumeric(name, matchPosition - range, matchPosition)) {
+                            if (isNumericEquals(name, matchPosition - range, range, other, beginIndexed + range, range)) {
                                 matchPosition = matchPosition - range - 2;
                                 i = i - range - 1;
                                 continue;

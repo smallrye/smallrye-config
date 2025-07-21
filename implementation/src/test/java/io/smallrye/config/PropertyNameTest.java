@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("StringOperationCanBeSimplified")
 class PropertyNameTest {
     @Test
     void propertyNameEquals() {
@@ -37,7 +38,12 @@ class PropertyNameTest {
         assertEquals(name("foo.*[*].bar[*]"), name("foo.baz[0].bar[0]"));
         assertEquals(name(new String("foo.*[*].bar[*]")), name(new String("foo.*[*].bar[*]")));
         assertEquals(name("foo.baz[0].bar[0]"), name("foo.*[*].bar[*]"));
+        assertEquals(name("foo.baz[99].bar[0]"), name("foo.*[99].bar[*]"));
+        assertNotEquals(name("foo.baz[99].bar[0]"), name("foo.*[9].bar[*]"));
+        assertNotEquals(name("foo.baz[99].bar[0]"), name("foo.*[xy].bar[*]"));
         assertEquals(name(new String("foo.baz[0].bar[0]")), name(new String("foo.baz[0].bar[0]")));
+        assertEquals(name(new String("foo.baz[99].bar[123]")), name(new String("foo.baz[99].bar[123]")));
+        assertNotEquals(name(new String("foo.baz[99].bar[123]")), name(new String("foo.baz[99].bar[xyz]")));
         assertNotEquals(name("foo.bar.baz[*]").hashCode(), name("foo.bar.*").hashCode());
         assertNotEquals(name("foo.bar.baz[*]"), name("foo.bar.*"));
 
@@ -72,5 +78,25 @@ class PropertyNameTest {
         assertFalse(PropertyName.equals("async", "sync"));
         assertFalse(PropertyName.equals("async-client", "sync-client"));
         assertFalse(PropertyName.equals("sync-client", "async-client"));
+    }
+
+    @Test
+    void indexed() {
+        assertEquals(name("indexed[]"), name(new String("indexed[]")));
+        assertEquals(name("indexed[0]"), name(new String("indexed[0]")));
+
+        assertEquals(name("indexed[*]"), name(new String("indexed[0]")));
+        assertEquals(name("indexed[*]"), name(new String("indexed[10]")));
+        assertEquals(name("indexed[*]"), name(new String("indexed[99999]")));
+
+        assertEquals(name("indexed[0]"), name(new String("indexed[*]")));
+        assertEquals(name("indexed[10]"), name(new String("indexed[*]")));
+        assertEquals(name("indexed[123456789]"), name(new String("indexed[*]")));
+
+        assertNotEquals(name("indexed[1]"), name(new String("indexed[0]")));
+        assertNotEquals(name("indexed[123]"), name(new String("indexed[456]")));
+        assertNotEquals(name("indexed[0]"), name(new String("indexed[x]")));
+        assertNotEquals(name("indexed[123]"), name(new String("indexed[x]")));
+        assertNotEquals(name("indexed[0]"), name(new String("indexed[xyz]")));
     }
 }
