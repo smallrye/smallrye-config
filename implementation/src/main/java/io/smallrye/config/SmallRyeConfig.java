@@ -1142,7 +1142,7 @@ public class SmallRyeConfig implements Config, Serializable {
                     for (int i = 0; i < name.length(); i++) {
                         if (name.charAt(i) == '[') {
                             int indexEnd = name.indexOf(']', i);
-                            if (StringUtil.isNumeric(name, i + 1, indexEnd)) {
+                            if (StringUtil.isNumeric(name, i + 1, indexEnd - 1 - i)) {
                                 if (indexEnd == name.length() - 1
                                         || (name.charAt(indexEnd + 1) == '.' && indexEnd + 2 < name.length())) {
                                     Integer index = Integer.valueOf(name.substring(i + 1, indexEnd));

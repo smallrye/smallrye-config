@@ -329,21 +329,53 @@ public class StringUtil {
         return isNumeric(digits, 0, digits.length());
     }
 
-    public static boolean isNumeric(final CharSequence digits, final int begin, final int end) {
+    public static boolean isNumeric(final CharSequence digits, final int begin, final int len) {
         if (digits.isEmpty()) {
             return false;
         }
 
-        if (end <= begin) {
+        if (begin + len <= begin) {
             return false;
         }
 
-        for (int i = begin; i < end; i++) {
+        for (int i = begin; i < begin + len; i++) {
             if (!Character.isDigit(digits.charAt(i))) {
                 return false;
             }
         }
         return true;
+    }
+
+    public static boolean isNumericEquals(final CharSequence digits, final CharSequence other) {
+        return isNumericEquals(digits, 0, digits.length(), other, 0, other.length());
+    }
+
+    public static boolean isNumericEquals(final CharSequence digits, final int offset, final int len,
+            final CharSequence other, final int ooffset, final int olen) {
+        if (digits == other) {
+            return true;
+        }
+
+        char d;
+        char o;
+
+        int matchPosition = offset;
+        for (int i = ooffset; i < ooffset + olen; i++) {
+            if (matchPosition == -1) {
+                return false;
+            }
+
+            d = digits.charAt(matchPosition);
+            o = other.charAt(i);
+
+            if (Character.isDigit(d) && Character.isDigit(o) && d == o) {
+                matchPosition++;
+            } else {
+                return false;
+            }
+        }
+
+        return matchPosition == offset + len;
     }
 
     public static String unquoted(final String name) {
@@ -372,9 +404,9 @@ public class StringUtil {
 
     public static int index(final String name) {
         if (name.charAt(name.length() - 1) == ']') {
-            int start = name.lastIndexOf('[');
-            if (start != -1 && isNumeric(name, start + 1, name.length() - 1)) {
-                return Integer.parseInt(name.substring(start + 1, name.length() - 1));
+            int begin = name.lastIndexOf('[');
+            if (begin != -1 && isNumeric(name, begin + 1, name.length() - 1 - begin - 1)) {
+                return Integer.parseInt(name.substring(begin + 1, name.length() - 1));
             }
         }
         throw new IllegalArgumentException();
@@ -387,7 +419,7 @@ public class StringUtil {
 
         if (name.charAt(name.length() - 1) == ']') {
             int begin = name.lastIndexOf('[');
-            if (begin != -1 && isNumeric(name, begin + 1, name.length() - 1)) {
+            if (begin != -1 && isNumeric(name, begin + 1, name.length() - 1 - begin - 1)) {
                 return name.substring(0, begin);
             }
         }

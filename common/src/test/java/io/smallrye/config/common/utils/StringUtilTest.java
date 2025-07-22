@@ -199,8 +199,18 @@ class StringUtilTest {
     void isNumeric() {
         assertTrue(StringUtil.isNumeric("0"));
         assertFalse(StringUtil.isNumeric("false"));
-        assertTrue(StringUtil.isNumeric("foo[0]", 4, 5));
-        assertTrue(StringUtil.isNumeric(new StringBuilder("foo[0]"), 4, 5));
+        assertTrue(StringUtil.isNumeric("foo[0]", 4, 1));
+        assertTrue(StringUtil.isNumeric(new StringBuilder("foo[0]"), 4, 1));
+    }
+
+    @Test
+    void isNumericEquals() {
+        assertTrue(StringUtil.isNumericEquals("0", "0"));
+        assertFalse(StringUtil.isNumericEquals("1", "0"));
+        assertTrue(StringUtil.isNumericEquals("123456789", "123456789"));
+        assertTrue(StringUtil.isNumericEquals("foo-123-bar", 4, 3, "123", 0, 3));
+        assertTrue(StringUtil.isNumericEquals("123", 0, 3, "foo-123-bar", 4, 3));
+        assertFalse(StringUtil.isNumericEquals("abc", "123"));
     }
 
     @Test
