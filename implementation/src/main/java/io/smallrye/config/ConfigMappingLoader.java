@@ -10,6 +10,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -65,6 +66,29 @@ public final class ConfigMappingLoader {
     static <T> Map<String, String> configMappingProperties(final Class<T> interfaceType) {
         try {
             return (Map<String, String>) CACHE.get(interfaceType).getProperties().invoke();
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            try {
+                throw e.getCause();
+            } catch (RuntimeException | Error r) {
+                throw r;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new UndeclaredThrowableException(t);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Set<String> configMappingSecrets(final Class<T> interfaceType) {
+        try {
+            return (Set<String>) CACHE.get(interfaceType).getSecrets().invoke();
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
@@ -173,6 +197,7 @@ public final class ConfigMappingLoader {
         private final Class<?> implementation;
         private final MethodHandle constructor;
         private final MethodHandle getProperties;
+        private final MethodHandle getSecrets;
 
         ConfigMappingImplementation(final Class<?> implementation) {
             try {
@@ -181,6 +206,7 @@ public final class ConfigMappingLoader {
                         methodType(void.class, ConfigMappingContext.class));
                 this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
                 this.getProperties = LOOKUP.findStatic(implementation, "getProperties", methodType(Map.class));
+                this.getSecrets = LOOKUP.findStatic(implementation, "getSecrets", methodType(Set.class));
             } catch (NoSuchMethodException e) {
                 throw new NoSuchMethodError(e.getMessage());
             } catch (IllegalAccessException e) {
@@ -198,6 +224,10 @@ public final class ConfigMappingLoader {
 
         public MethodHandle getProperties() {
             return getProperties;
+        }
+
+        public MethodHandle getSecrets() {
+            return getSecrets;
         }
     }
 
