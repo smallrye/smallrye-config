@@ -47,7 +47,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final String className;
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
-    private final Property[] fullHierarchyProperties;
     private final ToStringMethod toStringMethod;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
@@ -68,8 +67,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         // let's make sure the properties are ordered as we might generate code from them
         // and we need code generation to be deterministic
         filteredProperties.sort(PropertyComparator.INSTANCE);
-        this.properties = filteredProperties.toArray(Property[]::new);
-        this.fullHierarchyProperties = collectFullHierarchyProperties(this, this.properties);
+        this.properties = collectFullHierarchyProperties(this, filteredProperties.toArray(Property[]::new));
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
     }
 
@@ -129,17 +127,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      * @return the array of {@link Property}
      */
     public Property[] getProperties() {
-        return fullHierarchyProperties;
-    }
-
-    /**
-     * Constructs a representation of all {@link Property} names contained in the {@link ConfigMappingInterface}.
-     *
-     * @return a <code>Map</code> with the mapping properties names
-     * @see ConfigMappingInterface#getNames(ConfigMappingInterface)
-     */
-    public Map<String, Map<String, Set<String>>> getNames() {
-        return ConfigMappingInterface.getNames(this);
+        return properties;
     }
 
     private static Property[] collectFullHierarchyProperties(final ConfigMappingInterface type, final Property[] properties) {
@@ -229,7 +217,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public String getPropertyName(final NamingStrategy namingStrategy) {
-            // TODO - Transform in a single class that checks isPropertyName?
             return hasPropertyName() ? getPropertyName() : namingStrategy.apply(getPropertyName());
         }
 
@@ -1077,37 +1064,6 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         } else {
             throw ConfigMessages.msg.noRawType(type);
         }
-    }
-
-    /**
-     * Constructs a representation of all {@link Property} names contained in the {@link ConfigMappingInterface}.
-     *
-     * <ul>
-     * <li>The first level <code>Map</code> key is each <code>Class</code> name that is part of the mapping</li>
-     * <li>The second level <code>Map</code> key is each <code>String</code> path</li>
-     * <li>The <code>Set</code> contains all {@link Property} <code>String</code> names under the mapping path,
-     * including sub-elements and nested elements</li>
-     * </ul>
-     *
-     * The path names do not include the {@link ConfigMapping#prefix()} because the same {@link ConfigMappingInterface}
-     * can be registered for multiple prefixes.
-     * <p>
-     * The mapping class root {@link Property} use the empty <code>String</code> for the path key.
-     *
-     * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
-     * @return a <code>Map</code> with the mapping properties names
-     */
-    public static Map<String, Map<String, Set<String>>> getNames(final ConfigMappingInterface configMapping) {
-        Map<String, Map<String, Set<String>>> names = new TreeMap<>();
-        Map<Class<?>, Map<String, Map<String, Property>>> properties = getProperties(configMapping);
-        for (Map.Entry<Class<?>, Map<String, Map<String, Property>>> entry : properties.entrySet()) {
-            Map<String, Set<String>> groups = new TreeMap<>();
-            for (Map.Entry<String, Map<String, Property>> group : entry.getValue().entrySet()) {
-                groups.put(group.getKey(), group.getValue().keySet());
-            }
-            names.put(entry.getKey().getName(), groups);
-        }
-        return names;
     }
 
     /**
