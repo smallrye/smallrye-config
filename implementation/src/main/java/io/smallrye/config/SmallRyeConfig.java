@@ -335,42 +335,168 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * Return the content of the direct sub properties as the requested type of Map.
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Map} converting both the key and value to their specified types.
+     * The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
+     * considering the configuration name as {@code server.reasons}, the key type as {@code Integer} and the
+     * property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons}, the key type as {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
      *
-     * @param name The configuration property name
-     * @param keyClass the type into which the keys should be converted
-     * @param valueClass the type into which the values should be converted
+     * @param name The configuration property name to look for in the configuration
+     * @param keyClass The type into which the resolved property keys are converted
+     * @param valueClass The type into which the resolved property values are converted
+     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
+     *         type
      * @param <K> the key type
      * @param <V> the value type
-     * @return the resolved property value as an instance of the requested Map (not {@code null})
-     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
-     * @throws NoSuchElementException if no direct sub properties could be found.
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Class)
+     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
      */
-    public <K, V> Map<K, V> getValues(String name, Class<K> keyClass, Class<V> valueClass) {
+    public <K, V> Map<K, V> getValues(final String name, final Class<K> keyClass, final Class<V> valueClass) {
         return getValues(name, requireConverter(keyClass), requireConverter(valueClass));
     }
 
-    public <K, V> Map<K, V> getValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Map} converting both the key and value using the specified {@linkplain Converters Converters}.
+     * The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
+     * considering the configuration name as {@code server.reasons} and {@linkplain Converters Converters} to
+     * convert the key type as an {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
+     * {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
+     *         type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getValues(String, Class, Class)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Class)
+     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
+     */
+    public <K, V> Map<K, V> getValues(
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter) {
         return getValues(name, keyConverter, valueConverter, HashMap::new);
     }
 
     /**
-     * Return the content of the direct sub properties as the requested type of Map.
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Map} converting both the key and value using the specified {@linkplain Converters Converters}.
+     * The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
+     * considering the configuration name as {@code server.reasons} and {@linkplain Converters Converters} to
+     * convert the key type as an {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
+     * {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
      *
-     * @param name The configuration property name
-     * @param keyConverter The converter to use for the keys.
-     * @param valueConverter The converter to use for the values.
-     * @param <K> The type of the keys.
-     * @param <V> The type of the values.
-     * @return the resolved property value as an instance of the requested Map or {@code null} if it could not be found.
-     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
-     * @throws NoSuchElementException if no direct sub properties could be found.
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
+     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
+     *         type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getValues(String, Class, Class)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getOptionalValues(String, Class)
+     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
      */
     public <K, V> Map<K, V> getValues(
-            String name,
-            Converter<K> keyConverter,
-            Converter<V> valueConverter,
-            IntFunction<Map<K, V>> mapFactory) {
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, V>> mapFactory) {
 
         Map<String, String> keys = getMapKeys(name);
         if (keys.isEmpty()) {
@@ -819,26 +945,174 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * Return the content of the direct sub properties as the requested type of Map.
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Optional<Map>} converting both the key and value to their specified types.
+     * The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
+     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons}, the key type as
+     * {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons}, the key type as {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
      *
-     * @param name The configuration property name
-     * @param keyClass the type into which the keys should be converted
-     * @param valueClass the type into which the values should be converted
+     * @param name The configuration property name to look for in the configuration
+     * @param keyClass The type into which the resolved property keys are converted
+     * @param valueClass The type into which the resolved property values are converted
+     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
+     *         property type
      * @param <K> the key type
      * @param <V> the value type
-     * @return the resolved property value as an instance of the requested Map (not {@code null})
-     * @throws IllegalArgumentException if a key or a value cannot be converted to the specified types
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Class, Class)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
      */
-    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Class<K> keyClass, Class<V> valueClass) {
+    public <K, V> Optional<Map<K, V>> getOptionalValues(
+            final String name,
+            final Class<K> keyClass,
+            final Class<V> valueClass) {
         return getOptionalValues(name, requireConverter(keyClass), requireConverter(valueClass));
     }
 
-    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter) {
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Optional<Map>} converting both the key and value using the specified
+     * {@linkplain Converters Converters}. The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
+     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons} and
+     * {@linkplain Converters Converters} to convert the key type as an {@code Integer} and the property type as a
+     * {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
+     * {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
+     *         property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getOptionalValues(String, Class, Class)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Class, Class)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
+     */
+    public <K, V> Optional<Map<K, V>> getOptionalValues(
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter) {
         return getOptionalValues(name, keyConverter, valueConverter, HashMap::new);
     }
 
-    public <K, V> Optional<Map<K, V>> getOptionalValues(String name, Converter<K> keyConverter, Converter<V> valueConverter,
-            IntFunction<Map<K, V>> mapFactory) {
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
+     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
+     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
+     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
+     * returning {@code Optional<Map>} converting both the key and value using the specified
+     * {@linkplain Converters Converters}. The following configuration:
+     * <ul>
+     * <li>server.reasons.200=OK</li>
+     * <li>server.reasons.201=CREATED</li>
+     * <li>server.reasons.404=NOT_FOUND</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
+     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons} and
+     * {@linkplain Converters Converters} to convert the key type as an {@code Integer} and the property type as a
+     * {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
+     * the escape character.
+     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
+     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
+     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
+     * {@code Integer} and the property type as a {@code String}.
+     * <p>
+     * The keyed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
+     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
+     *         property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getOptionalValues(String, Class, Class)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getValues(String, Class, Class)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
+     */
+    public <K, V> Optional<Map<K, V>> getOptionalValues(
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, V>> mapFactory) {
+
         Map<String, String> keys = getMapKeys(name);
         if (keys.isEmpty()) {
             // Try legacy MapConverter
