@@ -507,20 +507,125 @@ public class SmallRyeConfig implements Config, Serializable {
         return getMapValues(keys, keyConverter, valueConverter, mapFactory);
     }
 
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
+     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
+     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
+     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
+     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
+     * a single entry in the returning {@code Map}, and single element in the {@code Collection} value, converting both
+     * the key and value to their specified types. The following configuration:
+     * <ul>
+     * <li>server.env.prod[0]=alpha</li>
+     * <li>server.env.prod[1]=beta</li>
+     * <li>server.env.dev[0]=local</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Map} with the entry key {@code prod} and entry value {@code Collection} with the values
+     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
+     * {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String}, and
+     * the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
+     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
+     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a {@code Map} with
+     * the entry key {@code prod} and entry value {@code Collection} with the values {@code alpha} and {@code beta},
+     * and the entry key {@code dev} and entry value {@code Collection} with the value {@code local}, considering the
+     * configuration name as {@code server.env}, the key type as a {@code String}, and the property type as a
+     * {@code String}.
+     * <p>
+     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyClass The type into which the resolved property keys are converted
+     * @param valueClass The type into which the resolved property values are converted
+     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
+     * @return the resolved property values as a {@code Map} of keys of the property name and values as a
+     *         {@code Collections} of instances of the property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @param <C> the collection type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Class, Class, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
+     */
     public <K, V, C extends Collection<V>> Map<K, C> getValues(
-            String name,
-            Class<K> keyClass,
-            Class<V> valueClass,
-            IntFunction<C> collectionFactory) {
+            final String name,
+            final Class<K> keyClass,
+            final Class<V> valueClass,
+            final IntFunction<C> collectionFactory) {
         return getValues(name, requireConverter(keyClass), requireConverter(valueClass), HashMap::new, collectionFactory);
     }
 
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
+     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
+     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
+     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
+     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
+     * a single entry in the returning {@code Map}, and single element in the {@code Collection} value, converting both
+     * the key and value using the specified {@linkplain Converters Converters}. The following configuration:
+     * <ul>
+     * <li>server.env.prod[0]=alpha</li>
+     * <li>server.env.prod[1]=beta</li>
+     * <li>server.env.dev[0]=local</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Map} with the entry key {@code prod} and entry value {@code Collection} with the values
+     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
+     * {@code local}, considering the configuration name as {@code server.env} and {@linkplain Converters Converters}
+     * to convert the key type as a {@code String} and the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
+     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
+     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a {@code Map} with
+     * the entry key {@code prod} and entry value {@code Collection} with the values {@code alpha} and {@code beta},
+     * and the entry key {@code dev} and entry value {@code Collection} with the value {@code local}, considering the
+     * configuration name as {@code server.env}, and {@linkplain Converters Converters} to convert the key type as a
+     * {@code String} and the property type as a {@code String}.
+     * <p>
+     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
+     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
+     * @return the resolved property values as a {@code Map} of keys of the property name and values as a
+     *         {@code Collections} of instances of the property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @param <C> the collection type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
+     *         an empty string, or the converter returns {@code null}
+     *
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Class, Class, IntFunction)
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
+     */
     public <K, V, C extends Collection<V>> Map<K, C> getValues(
-            String name,
-            Converter<K> keyConverter,
-            Converter<V> valueConverter,
-            IntFunction<Map<K, C>> mapFactory,
-            IntFunction<C> collectionFactory) {
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, C>> mapFactory,
+            final IntFunction<C> collectionFactory) {
 
         Map<String, String> keys = getMapIndexedKeys(name);
         if (keys.isEmpty()) {
@@ -945,7 +1050,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * Returns the values for the specified configuration name from the underlying
+     * Returns the values for the specified configuration name from the underlyingx
      * {@linkplain ConfigSource configuration sources}.
      * <p>
      * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
@@ -1122,21 +1227,124 @@ public class SmallRyeConfig implements Config, Serializable {
         return Optional.of(getMapValues(keys, keyConverter, valueConverter, mapFactory));
     }
 
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
+     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
+     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
+     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
+     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
+     * a single entry in the returning {@code Optional<Map>}, and single element in the {@code Collection} value,
+     * converting both the key and value to their specified types. The following configuration:
+     * <ul>
+     * <li>server.env.prod[0]=alpha</li>
+     * <li>server.env.prod[1]=beta</li>
+     * <li>server.env.dev[0]=local</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the
+     * values {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the
+     * value {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String},
+     * and the property type as a {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
+     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
+     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a
+     * {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the values
+     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
+     * {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String}, and
+     * the property type as a {@code String}.
+     * <p>
+     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyClass The type into which the resolved property keys are converted
+     * @param valueClass The type into which the resolved property values are converted
+     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
+     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values as a
+     *         {@code Collections} of instances of the property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @param <C> the collection type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     *
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Class, Class, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
+     */
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
-            String name,
-            Class<K> keyClass,
-            Class<V> valueClass,
-            IntFunction<C> collectionFactory) {
+            final String name,
+            final Class<K> keyClass,
+            final Class<V> valueClass,
+            final IntFunction<C> collectionFactory) {
         return getOptionalValues(name, requireConverter(keyClass), requireConverter(valueClass), HashMap::new,
                 collectionFactory);
     }
 
+    /**
+     * Returns the values for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
+     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
+     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
+     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
+     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
+     * a single entry in the returning {@code Optional<Map>}, and single element in the {@code Collection} value,
+     * converting both the key and value using the specified {@linkplain Converters Converters}. The following
+     * configuration:
+     * <ul>
+     * <li>server.env.prod[0]=alpha</li>
+     * <li>server.env.prod[1]=beta</li>
+     * <li>server.env.dev[0]=local</li>
+     * </ul>
+     * <p>
+     * Results in a {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the
+     * values {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the
+     * value {@code local}, considering the configuration name as {@code server.env} and
+     * {@linkplain Converters Converters} to convert the key type as a {@code String} and the property type as a
+     * {@code String}.
+     * <p>
+     * Otherwise, the configuration value is a single element represented by key value pairs as
+     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
+     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
+     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a
+     * {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the values
+     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
+     * {@code local}, considering the configuration name as {@code server.env}, and {@linkplain Converters Converters}
+     * to convert the key type as a {@code String} and the property type as a {@code String}.
+     * <p>
+     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
+     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
+     * @param valueConverter The {@link Converter} to use to convert the resolved property values
+     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
+     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
+     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values as a
+     *         {@code Collections} of instances of the property type
+     * @param <K> the key type
+     * @param <V> the value type
+     * @param <C> the collection type
+     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
+     *         type
+     *
+     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Class, Class, IntFunction)
+     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
+     */
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
-            String name,
-            Converter<K> keyConverter,
-            Converter<V> valueConverter,
-            IntFunction<Map<K, C>> mapFactory,
-            IntFunction<C> collectionFactory) {
+            final String name,
+            final Converter<K> keyConverter,
+            final Converter<V> valueConverter,
+            final IntFunction<Map<K, C>> mapFactory,
+            final IntFunction<C> collectionFactory) {
 
         Map<String, String> keys = getMapIndexedKeys(name);
         if (keys.isEmpty()) {
