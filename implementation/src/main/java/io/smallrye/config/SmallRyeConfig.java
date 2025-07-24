@@ -57,7 +57,6 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.common.annotation.Experimental;
 import io.smallrye.config.SmallRyeConfigBuilder.InterceptorWithPriority;
 import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
@@ -830,27 +829,8 @@ public class SmallRyeConfig implements Config, Serializable {
         return convertValue(configValue, converter);
     }
 
-    /**
-     * This method handles converting values for both CDI injections and programatical calls.<br>
-     * <br>
-     *
-     * Calls for converting non-optional values ({@link Config#getValue} and "Injecting Native Values")
-     * should throw an {@link Exception} for each of the following:<br>
-     *
-     * 1. {@link IllegalArgumentException} - if the property cannot be converted by the {@link Converter} to the specified type
-     * <br>
-     * 2. {@link NoSuchElementException} - if the property is not defined <br>
-     * 3. {@link NoSuchElementException} - if the property is defined as an empty string <br>
-     * 4. {@link NoSuchElementException} - if the {@link Converter} returns {@code null} <br>
-     * <br>
-     *
-     * Calls for converting optional values ({@link Config#getOptionalValue} and "Injecting Optional Values")
-     * should only throw an {@link Exception} for #1 ({@link IllegalArgumentException} when the property cannot be converted to
-     * the specified type).
-     */
     public <T> T convertValue(ConfigValue configValue, Converter<T> converter) {
         if (configValue.hasProblems()) {
-            // TODO - Maybe it will depend on the problem, but we only get the expression NoSuchElement here for now
             if (Converters.isOptionalConverter(converter)) {
                 configValue = configValue.noProblems();
             } else {
@@ -869,7 +849,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 converted = converter.convert(configValue.getValue());
             } catch (IllegalArgumentException e) {
                 throw ConfigMessages.msg.converterException(e, configValue.getNameProfiled(), configValue.getValue(),
-                        e.getLocalizedMessage()); // 1
+                        e.getLocalizedMessage());
             }
         } else {
             try {
@@ -894,17 +874,27 @@ public class SmallRyeConfig implements Config, Serializable {
         return converted;
     }
 
-    public ConfigValue getConfigValue(String name) {
+    /**
+     * Returns the {@link ConfigValue} for the specified configuration name from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * The lookup of the configuration is performed immediately, meaning that calls to {@link ConfigValue} will always
+     * yield the same results.
+     * <p>
+     * A {@link ConfigValue} is always returned even if a property name cannot be found. In this case, every method in
+     * {@link ConfigValue} returns {@code null}, or the default value for primitive types, except for
+     * {@link ConfigValue#getName()}, which includes the original property name being looked up.
+     *
+     * @param name The configuration property name to look for in the configuration
+     * @return the resolved property value as a {@link ConfigValue}
+     */
+    @Override
+    public ConfigValue getConfigValue(final String name) {
         final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
         return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
     }
 
-    /**
-     * Get the <em>raw value</em> of a configuration property.
-     *
-     * @param name the property name (must not be {@code null})
-     * @return the raw value, or {@code null} if no property value was discovered for the given property name
-     */
+    @Deprecated
     public String getRawValue(String name) {
         final ConfigValue configValue = getConfigValue(name);
         return configValue != null ? configValue.getValue() : null;
@@ -1519,7 +1509,24 @@ public class SmallRyeConfig implements Config, Serializable {
         return mappings;
     }
 
-    public <T> T getConfigMapping(Class<T> type) {
+    /**
+     * Returns an instance of a {@link ConfigMapping} annotated type, mapping all the configuration names matching the
+     * {@link ConfigMapping#prefix()} and the {@link ConfigMapping} members to values from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * {@linkplain ConfigMapping ConfigMapping} instances are cached. They are populated when the
+     * {@link SmallRyeConfig} instance is initialized and their values are not updated on
+     * {@linkplain ConfigSource configuration sources} changes.
+     *
+     * @param type an interface annotated with {@link ConfigMapping}
+     * @return an instance of a {@link ConfigMapping} annotated type
+     * @param <T> the type of the {@link ConfigMapping}
+     * @throws ConfigValidationException if the mapping names or values cannot be converter to the specified types, if
+     *         the properties values are not present, defined as an empty string, or the conversion returns {@code null}
+     *
+     * @see SmallRyeConfig#getConfigMapping(Class, String)
+     */
+    public <T> T getConfigMapping(final Class<T> type) {
         String prefix;
         if (type.isInterface()) {
             ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
@@ -1531,7 +1538,25 @@ public class SmallRyeConfig implements Config, Serializable {
         return getConfigMapping(type, prefix);
     }
 
-    public <T> T getConfigMapping(Class<T> type, String prefix) {
+    /**
+     * Returns an instance of a {@link ConfigMapping} annotated type, mapping all the configuration names matching the
+     * prefix and the {@link ConfigMapping} members to values from the underlying
+     * {@linkplain ConfigSource configuration sources}.
+     * <p>
+     * {@linkplain ConfigMapping ConfigMapping} instances are cached. They are populated when the
+     * {@link SmallRyeConfig} instance is initialized and their values are not updated on
+     * {@linkplain ConfigSource configuration sources} changes.
+     *
+     * @param type an interface annotated with {@link ConfigMapping}
+     * @param prefix the prefix to override {@link ConfigMapping#prefix()}
+     * @return an instance of a {@link ConfigMapping} annotated type
+     * @param <T> the type of the {@link ConfigMapping}
+     * @throws ConfigValidationException if the mapping names or values cannot be converter to the specified types, if
+     *         the properties values are not present, defined as an empty string, or the conversion returns {@code null}
+     *
+     * @see SmallRyeConfig#getConfigMapping(Class)
+     */
+    public <T> T getConfigMapping(final Class<T> type, final String prefix) {
         if (prefix == null) {
             return getConfigMapping(type);
         }
@@ -1569,7 +1594,6 @@ public class SmallRyeConfig implements Config, Serializable {
      *
      * @return the names of all configured keys of the underlying configuration
      */
-    @Experimental("Retrieve an updated list of all configuration property names")
     public Iterable<String> getLatestPropertyNames() {
         return configSources.getPropertyNames().latest();
     }
@@ -1585,7 +1609,6 @@ public class SmallRyeConfig implements Config, Serializable {
      * @param name the property name.
      * @return true if the property is present or false otherwise.
      */
-    @Experimental("Check if a property is present")
     public boolean isPropertyPresent(String name) {
         return Expressions.withoutExpansion(() -> {
             ConfigValue configValue = SmallRyeConfig.this.getConfigValue(name);
@@ -1593,11 +1616,25 @@ public class SmallRyeConfig implements Config, Serializable {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Iterable<ConfigSource> getConfigSources() {
         return configSources.getSources();
     }
 
+    /**
+     * Return the currently registered {@linkplain ConfigSource configuration sources} in {@link SmallRyeConfig} that
+     * match the specified type
+     * <p>
+     * The returned sources will be sorted by descending ordinal value and name, which can be iterated in a thread-safe
+     * manner. The {@link Iterable} contains a fixed number of {@linkplain ConfigSource configuration
+     * sources}, determined at configuration initialization, and the config sources themselves may be static or dynamic.
+     *
+     * @param type The type of the {@link ConfigSource} to look for in the configuration
+     * @return an {@link Iterable} of {@linkplain ConfigSource configuration sources}
+     */
     public Iterable<ConfigSource> getConfigSources(final Class<?> type) {
         final List<ConfigSource> configSourcesByType = new ArrayList<>();
         for (ConfigSource configSource : getConfigSources()) {
@@ -1608,6 +1645,15 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSourcesByType;
     }
 
+    /**
+     * Return the first registered {@linkplain ConfigSource configuration sources} in {@link SmallRyeConfig} that
+     * match the specified name, sorted by descending ordinal value and name.
+     * <p>
+     *
+     * @param name the {{@linkplain ConfigSource} name to look for in the configuration
+     * @return an {@link Optional} of a {@linkplain ConfigSource}, or an empty {@link Optional} if no
+     *         {@linkplain ConfigSource} matches the specified name.
+     */
     public Optional<ConfigSource> getConfigSource(final String name) {
         for (ConfigSource configSource : getConfigSources()) {
             final String configSourceName = configSource.getName();
@@ -1677,6 +1723,9 @@ public class SmallRyeConfig implements Config, Serializable {
         return (Converter<T>) converters.computeIfAbsent(asType, clazz -> Converters.Implicit.getConverter((Class<?>) clazz));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T> T unwrap(final Class<T> type) {
         if (Config.class.isAssignableFrom(type)) {
@@ -1686,6 +1735,15 @@ public class SmallRyeConfig implements Config, Serializable {
         throw ConfigMessages.msg.getTypeNotSupportedForUnwrapping(type);
     }
 
+    /**
+     * Returns a {@code List} of the active profiles in {@link SmallRyeConfig}.
+     * <p>
+     * Profiles are sorted in reverse order according to how they were set in
+     * {@link SmallRyeConfig#SMALLRYE_CONFIG_PROFILE}, as the last profile overrides the previous one until there are
+     * no profiles left in the list.
+     *
+     * @return a {@code List} of the active profiles
+     */
     public List<String> getProfiles() {
         return configSources.getProfiles();
     }
