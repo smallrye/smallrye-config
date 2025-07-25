@@ -66,11 +66,35 @@ import io.smallrye.config.common.utils.StringUtil;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SmallRyeConfig implements Config, Serializable {
+    /**
+     * Configuration name to set the main Profiles to activate. The configuration supports multiple profiles separated
+     * by a comma.
+     */
     public static final String SMALLRYE_CONFIG_PROFILE = "smallrye.config.profile";
+    /**
+     * Configuration name to set the parent Profile to activate.
+     */
     public static final String SMALLRYE_CONFIG_PROFILE_PARENT = "smallrye.config.profile.parent";
+    /**
+     * Configuration name to set additional config locations to be loaded with the Config. The configuration supports
+     * multiple locations separated by a comma and each must represent a valid {@code java.net.URI}.
+     */
     public static final String SMALLRYE_CONFIG_LOCATIONS = "smallrye.config.locations";
+    /**
+     * Configuration name to validate that a {@link ConfigMapping} maps every available configuration name contained
+     * in the mapping prefix. The configuration value must be a {@code boolean}.
+     */
     public static final String SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN = "smallrye.config.mapping.validate-unknown";
+    /**
+     * Configuration name to set the names of the secret handlers to be loaded. A value of {@code all} loads all
+     * available secret handlers and a value of none {@code skips} the load. The configuration supports multiple secret
+     * handlers separated by a comma.
+     */
     public static final String SMALLRYE_CONFIG_SECRET_HANDLERS = "smallrye.config.secret-handlers";
+    /**
+     * Configuration name to enable logging of configuration values lookup in {@code DEBUG} log level. The configuration
+     * value must be a {@code boolean}.
+     */
     public static final String SMALLRYE_CONFIG_LOG_VALUES = "smallrye.config.log.values";
 
     private static final long serialVersionUID = 8138651532357898263L;
