@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import io.smallrye.common.constraint.Assert;
  * An exception which is thrown when a configuration validation problem occurs.
  */
 public class ConfigValidationException extends RuntimeException {
+    @Serial
     private static final long serialVersionUID = -2637730579475070264L;
 
     private final Problem[] problems;
@@ -50,6 +52,7 @@ public class ConfigValidationException extends RuntimeException {
 
     public static final class Problem implements Serializable {
         public static final Problem[] NO_PROBLEMS = new Problem[0];
+        @Serial
         private static final long serialVersionUID = 5984436393578154541L;
 
         private final String message;

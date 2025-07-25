@@ -4,6 +4,7 @@ import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
 
+import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -349,6 +350,7 @@ public final class ConfigProducerUtil {
     }
 
     static final class IndexedCollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
+        @Serial
         private static final long serialVersionUID = 5186940408317652618L;
 
         private final IntFunction<Collection<T>> collectionFactory;
@@ -372,6 +374,7 @@ public final class ConfigProducerUtil {
     }
 
     static final class MapKeyConverter<K, V> extends AbstractConverter<Map<? extends K, ? extends V>> {
+        @Serial
         private static final long serialVersionUID = -2920578756435265533L;
 
         private final Converter<? extends K> keyConverter;

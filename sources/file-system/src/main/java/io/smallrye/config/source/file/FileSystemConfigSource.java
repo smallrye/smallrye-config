@@ -18,6 +18,7 @@ package io.smallrye.config.source.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +57,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class FileSystemConfigSource extends MapBackedConfigSource {
+    @Serial
     private static final long serialVersionUID = 654034634846856045L;
 
     public static final String NAME = "FileSystemConfigSource[dir=%s]";

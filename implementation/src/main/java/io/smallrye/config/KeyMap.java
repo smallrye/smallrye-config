@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,9 +19,11 @@ import io.smallrye.common.function.Functions;
  */
 public final class KeyMap<V> extends HashMap<String, KeyMap<V>> {
     private static final Object NO_VALUE = new Serializable() {
+        @Serial
         private static final long serialVersionUID = -6072559389176920349L;
     };
 
+    @Serial
     private static final long serialVersionUID = 3584966224369608557L;
 
     private KeyMap<V> any;

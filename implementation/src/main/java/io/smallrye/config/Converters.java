@@ -19,6 +19,7 @@ import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
 import java.io.File;
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -674,6 +675,7 @@ public final class Converters {
      * after a configuration property lookup.
      */
     static final class ConfigValueConverter implements Converter<ConfigValue> {
+        @Serial
         private static final long serialVersionUID = -5005688684588039934L;
 
         @Override
@@ -683,6 +685,7 @@ public final class Converters {
     }
 
     static final class PatternCheckConverter<T> implements Converter<T>, Serializable {
+        @Serial
         private static final long serialVersionUID = 358813973126582008L;
 
         private final Converter<? extends T> delegate;
@@ -705,7 +708,7 @@ public final class Converters {
     }
 
     static final class RangeCheckConverter<T> implements Converter<T>, Serializable {
-
+        @Serial
         private static final long serialVersionUID = 2764654140347010865L;
 
         private final Comparator<? super T> comparator;
@@ -757,6 +760,7 @@ public final class Converters {
             return result;
         }
 
+        @Serial
         @SuppressWarnings("unchecked")
         Object readResolve() {
             return comparator != null ? this
@@ -765,6 +769,7 @@ public final class Converters {
     }
 
     static final class CollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
+        @Serial
         private static final long serialVersionUID = -8452214026800305628L;
 
         private final IntFunction<C> collectionFactory;
@@ -798,6 +803,7 @@ public final class Converters {
     }
 
     static final class ArrayConverter<T, A> extends AbstractDelegatingConverter<T, A> {
+        @Serial
         private static final long serialVersionUID = 2630282286159527380L;
 
         private final Class<A> arrayType;
@@ -856,6 +862,7 @@ public final class Converters {
     }
 
     static final class OptionalConverter<T> extends AbstractDelegatingConverter<T, Optional<T>> {
+        @Serial
         private static final long serialVersionUID = -4051551570591834428L;
 
         OptionalConverter(final Converter<? extends T> delegate) {
@@ -880,6 +887,7 @@ public final class Converters {
     }
 
     static final class OptionalIntConverter extends AbstractDelegatingConverter<Integer, OptionalInt> {
+        @Serial
         private static final long serialVersionUID = 4331039532024222756L;
 
         OptionalIntConverter(final Converter<? extends Integer> delegate) {
@@ -901,6 +909,7 @@ public final class Converters {
     }
 
     static final class OptionalLongConverter extends AbstractDelegatingConverter<Long, OptionalLong> {
+        @Serial
         private static final long serialVersionUID = 140937551800590852L;
 
         OptionalLongConverter(final Converter<? extends Long> delegate) {
@@ -922,6 +931,7 @@ public final class Converters {
     }
 
     static final class OptionalDoubleConverter extends AbstractDelegatingConverter<Double, OptionalDouble> {
+        @Serial
         private static final long serialVersionUID = -2882741842811044902L;
 
         OptionalDoubleConverter(final Converter<? extends Double> delegate) {
@@ -959,12 +969,14 @@ public final class Converters {
             return function.convert(value);
         }
 
+        @Serial
         Object writeReplace() {
             return new Ser(id);
         }
     }
 
     static final class Ser implements Serializable {
+        @Serial
         private static final long serialVersionUID = 5646753664957303950L;
 
         private final short id;
@@ -973,6 +985,7 @@ public final class Converters {
             this.id = (short) id;
         }
 
+        @Serial
         Object readResolve() throws ObjectStreamException {
             switch (id) {
                 case 0:
@@ -1018,6 +1031,7 @@ public final class Converters {
     }
 
     static class EmptyValueConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        @Serial
         private static final long serialVersionUID = 5607979836385662739L;
 
         private final T emptyValue;
@@ -1045,6 +1059,7 @@ public final class Converters {
     }
 
     static class TrimmingConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+        @Serial
         private static final long serialVersionUID = 3241445721544473135L;
 
         TrimmingConverter(final Converter<? extends T> delegate) {
@@ -1076,6 +1091,7 @@ public final class Converters {
      * @param <V> The type of the value
      */
     static class MapConverter<K, V> extends AbstractConverter<Map<K, V>> {
+        @Serial
         private static final long serialVersionUID = 4343545736186221103L;
 
         /**
@@ -1234,7 +1250,7 @@ public final class Converters {
         }
 
         static class StaticMethodConverter<T> implements Converter<T>, Serializable {
-
+            @Serial
             private static final long serialVersionUID = 3350265927359848883L;
 
             private final Class<? extends T> clazz;
@@ -1258,11 +1274,13 @@ public final class Converters {
                 }
             }
 
+            @Serial
             Object writeReplace() {
                 return new Serialized(method.getDeclaringClass(), method.getName(), method.getParameterTypes()[0]);
             }
 
             static final class Serialized implements Serializable {
+                @Serial
                 private static final long serialVersionUID = -6334004040897615452L;
 
                 private final Class<?> c;
@@ -1277,6 +1295,7 @@ public final class Converters {
                     this.p = p;
                 }
 
+                @Serial
                 Object readResolve() throws ObjectStreamException {
                     return getConverter(c);
                 }
@@ -1284,7 +1303,7 @@ public final class Converters {
         }
 
         static class ConstructorConverter<T> implements Converter<T>, Serializable {
-
+            @Serial
             private static final long serialVersionUID = 3350265927359848883L;
 
             private final Constructor<? extends T> ctor;
@@ -1305,11 +1324,13 @@ public final class Converters {
                 }
             }
 
+            @Serial
             Object writeReplace() {
                 return new Serialized(ctor.getDeclaringClass(), ctor.getParameterTypes()[0]);
             }
 
             static final class Serialized implements Serializable {
+                @Serial
                 private static final long serialVersionUID = -2903564775826815453L;
 
                 private final Class<?> c;
@@ -1321,6 +1342,7 @@ public final class Converters {
                     this.p = p;
                 }
 
+                @Serial
                 Object readResolve() throws ObjectStreamException {
                     return getConverter(c);
                 }
@@ -1328,6 +1350,7 @@ public final class Converters {
         }
 
         static class HyphenateEnumConverter<E extends Enum<E>> implements Converter<E>, Serializable {
+            @Serial
             private static final long serialVersionUID = -8298320652413719873L;
 
             private final Class<E> enumType;

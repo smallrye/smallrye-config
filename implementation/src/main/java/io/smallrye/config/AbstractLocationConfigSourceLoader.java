@@ -5,6 +5,7 @@ import static io.smallrye.common.classloader.ClassPathUtils.consumeAsPaths;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -292,6 +293,7 @@ public abstract class AbstractLocationConfigSourceLoader {
     }
 
     private static class URIConverter implements Converter<URI> {
+        @Serial
         private static final long serialVersionUID = -4852082279190307320L;
 
         @Override

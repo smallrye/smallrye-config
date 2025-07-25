@@ -2,6 +2,7 @@ package io.smallrye.config.common;
 
 import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 public abstract class MapBackedConfigSource extends AbstractConfigSource {
+    @Serial
     private static final long serialVersionUID = -7159956218217228877L;
 
     private final Map<String, String> properties;

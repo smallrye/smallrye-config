@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigValue.CONFIG_SOURCE_COMPARATOR;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -9,6 +10,7 @@ import jakarta.annotation.Priority;
 
 @Priority(Priorities.LIBRARY + 600)
 public class FallbackConfigSourceInterceptor extends AbstractMappingConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = 1472367702046537565L;
 
     public FallbackConfigSourceInterceptor(final Function<String, String> mapping) {

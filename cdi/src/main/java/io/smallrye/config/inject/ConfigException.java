@@ -16,6 +16,8 @@
 
 package io.smallrye.config.inject;
 
+import java.io.Serial;
+
 /**
  * A relatively generic Exception that encapsulates the configuration
  * property's name.
@@ -23,7 +25,7 @@ package io.smallrye.config.inject;
  * @author Steve Moyer - The Pennsylvania State University
  */
 public class ConfigException extends Exception {
-
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String configPropertyName;

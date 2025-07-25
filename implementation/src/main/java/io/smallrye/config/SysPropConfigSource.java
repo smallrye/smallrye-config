@@ -20,6 +20,7 @@ import static io.smallrye.config.common.utils.ConfigSourceUtil.propertiesToMap;
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.unmodifiableMap;
 
+import java.io.Serial;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Properties;
@@ -31,6 +32,7 @@ import io.smallrye.config.common.AbstractConfigSource;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SysPropConfigSource extends AbstractConfigSource {
+    @Serial
     private static final long serialVersionUID = 9167738611308785403L;
 
     public static final String NAME = "SysPropConfigSource";

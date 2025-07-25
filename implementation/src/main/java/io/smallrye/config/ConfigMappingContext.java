@@ -5,6 +5,7 @@ import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
+import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -819,6 +820,7 @@ public final class ConfigMappingContext {
     }
 
     static class MapWithDefault<K, V> extends HashMap<K, V> {
+        @Serial
         private static final long serialVersionUID = 1390928078837140814L;
         private final V defaultValue;
 

@@ -4,6 +4,7 @@ import static java.util.Collections.singletonMap;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import io.smallrye.config.common.MapBackedConfigSource;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public class YamlConfigSource extends MapBackedConfigSource {
+    @Serial
     private static final long serialVersionUID = -418186029484956531L;
 
     public static final String NAME = "YamlConfigSource[source=%s]";

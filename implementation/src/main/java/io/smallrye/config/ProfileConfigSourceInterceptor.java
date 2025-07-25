@@ -5,6 +5,7 @@ import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -17,6 +18,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 @Priority(Priorities.LIBRARY + 200)
 public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = -6305289277993917313L;
 
     private static final Converter<ArrayList<String>> PROFILES_CONVERTER = newCollectionConverter(
