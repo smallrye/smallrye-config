@@ -1668,6 +1668,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.defaultValues;
     }
 
+    @Deprecated
     public <T> T convert(String value, Class<T> asType) {
         return value != null ? requireConverter(asType).convert(value) : null;
     }
@@ -1695,10 +1696,22 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     // @Override // in MP Config 2.0+
+    /**
+     * {@inheritDoc}
+     */
     public <T> Optional<Converter<T>> getConverter(Class<T> asType) {
         return Optional.ofNullable(getConverterOrNull(asType));
     }
 
+    /**
+     * Return the {@link Converter} used by this instance to produce instances of the specified type from
+     * {@code String} values.
+     *
+     * @param asType the type to be produced by the converter
+     * @return an instance of the {@link Converter} the specified type
+     * @param <T> the conversion type
+     * @throws java.lang.IllegalArgumentException if no {@link Converter} is registered for the specified type
+     */
     public <T> Converter<T> requireConverter(final Class<T> asType) {
         final Converter<T> conv = getConverterOrNull(asType);
         if (conv == null) {
