@@ -63,7 +63,20 @@ import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.utils.StringUtil;
 
 /**
- * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
+ * {@link SmallRyeConfig} provides a way to retrieve configuration values from a configuration name.
+ * <p>
+ * A {@link SmallRyeConfig} instance is obtained via the {@link SmallRyeConfigBuilder#build()}, which details how
+ * {@link SmallRyeConfig} will behave. Generally, a {@link SmallRyeConfig} instance is composed of:
+ * <ul>
+ * <li>{@linkplain ConfigSource Configuration Sources} to lookup the configuration values</li>
+ * <li>{@linkplain Converter Converters} to convert values to specific types</li>
+ * <li>{@linkplain ConfigSourceInterceptor Interceptors} to enhance the configuration lookup process</li>
+ * <li>{@linkplain ConfigMapping} Config Mappings classes to group multiple configuration values in a common prefix</li>
+ * </ul>
+ *
+ * @author Jeff Mesnil
+ * @author David M. Lloyd
+ * @author Roberto Cortez
  */
 public class SmallRyeConfig implements Config, Serializable {
     /**
