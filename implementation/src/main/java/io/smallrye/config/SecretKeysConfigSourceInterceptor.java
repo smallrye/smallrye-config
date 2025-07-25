@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -10,6 +11,7 @@ import io.smallrye.config._private.ConfigMessages;
 
 @Priority(Priorities.LIBRARY + 100)
 public class SecretKeysConfigSourceInterceptor implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = 7291982039729980590L;
 
     private final Set<String> secrets;

@@ -27,6 +27,7 @@ import static io.smallrye.config.common.utils.StringUtil.unquoted;
 import static java.util.stream.Collectors.toList;
 
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
@@ -110,6 +111,7 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     public static final String SMALLRYE_CONFIG_LOG_VALUES = "smallrye.config.log.values";
 
+    @Serial
     private static final long serialVersionUID = 8138651532357898263L;
 
     private final ConfigSources configSources;
@@ -1799,6 +1801,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private static class ConfigSources implements Serializable {
+        @Serial
         private static final long serialVersionUID = 3483018375584151712L;
 
         private final List<String> profiles;
@@ -2110,6 +2113,7 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         private static class PropertyNames implements Serializable {
+            @Serial
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final SmallRyeConfigSourceInterceptorContext interceptorChain;
@@ -2172,6 +2176,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     static class ConfigSourceWithPriority implements Comparable<ConfigSourceWithPriority>, Serializable {
+        @Serial
         private static final long serialVersionUID = 3709554647398262957L;
 
         private final ConfigSource source;
@@ -2241,6 +2246,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private static class SmallRyeConfigSourceInterceptorContext implements ConfigSourceInterceptorContext {
+        @Serial
         private static final long serialVersionUID = 6654406739008729337L;
 
         private final ConfigSourceInterceptor interceptor;
@@ -2283,6 +2289,7 @@ public class SmallRyeConfig implements Config, Serializable {
         }
 
         static class InterceptorChain implements Supplier<ConfigSourceInterceptorContext>, Serializable {
+            @Serial
             private static final long serialVersionUID = 7387475787257736307L;
 
             private ConfigSourceInterceptorContext chain;
@@ -2315,6 +2322,7 @@ public class SmallRyeConfig implements Config, Serializable {
         }
     }
 
+    @Serial
     private Object writeReplace() throws ObjectStreamException {
         return RegisteredConfig.instance;
     }
@@ -2323,9 +2331,11 @@ public class SmallRyeConfig implements Config, Serializable {
      * Serialization placeholder which deserializes to the current registered config
      */
     private static class RegisteredConfig implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
         private static final RegisteredConfig instance = new RegisteredConfig();
 
+        @Serial
         private Object readResolve() throws ObjectStreamException {
             return ConfigProvider.getConfig();
         }

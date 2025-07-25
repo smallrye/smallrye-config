@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
@@ -34,6 +35,7 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class PropertiesConfigSource extends MapBackedConfigValueConfigSource {
+    @Serial
     private static final long serialVersionUID = 1866835565147832432L;
 
     public static final String NAME = "PropertiesConfigSource[source=%s]";

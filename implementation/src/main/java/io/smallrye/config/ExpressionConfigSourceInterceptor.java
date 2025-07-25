@@ -6,6 +6,7 @@ import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 import static io.smallrye.config._private.ConfigMessages.msg;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import io.smallrye.config._private.ConfigMessages;
 
 @Priority(Priorities.LIBRARY + 300)
 public class ExpressionConfigSourceInterceptor implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = -539336551011916218L;
 
     private static final int MAX_DEPTH = 32;

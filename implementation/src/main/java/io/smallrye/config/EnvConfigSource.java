@@ -27,6 +27,7 @@ import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static java.lang.Character.toLowerCase;
 import static java.security.AccessController.doPrivileged;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ import io.smallrye.config.common.utils.StringUtil;
  * limitations.
  */
 public class EnvConfigSource extends AbstractConfigSource {
+    @Serial
     private static final long serialVersionUID = -4525015934376795496L;
 
     public static final String NAME = "EnvConfigSource";
@@ -316,19 +318,23 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
     }
 
+    @Serial
     Object writeReplace() {
         return new Ser();
     }
 
     static final class Ser implements Serializable {
+        @Serial
         private static final long serialVersionUID = 6812312718645271331L;
 
+        @Serial
         Object readResolve() {
             return new EnvConfigSource();
         }
     }
 
     static final class EnvVars implements Serializable {
+        @Serial
         private static final long serialVersionUID = -56318356411229247L;
 
         private final Map<EnvName, EnvEntry> env;
@@ -387,6 +393,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     }
 
     static final class EnvName implements Serializable {
+        @Serial
         private static final long serialVersionUID = -2679716955093904512L;
 
         private final String name;
@@ -534,6 +541,7 @@ public class EnvConfigSource extends AbstractConfigSource {
     }
 
     static final class EnvEntry implements Serializable {
+        @Serial
         private static final long serialVersionUID = -8786927401082731020L;
 
         private final String name;

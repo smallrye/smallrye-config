@@ -1,10 +1,12 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.function.Supplier;
 
 @SuppressWarnings("squid:S5164")
 public final class SecretKeys implements Serializable {
+    @Serial
     private static final long serialVersionUID = -3226034787747746735L;
 
     private static final ThreadLocal<Boolean> LOCKED = new ThreadLocal<>();

@@ -1,10 +1,12 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
 
 public abstract class AbstractMappingConfigSourceInterceptor implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = -3181156290079915301L;
 
     private final Function<String, String> mapping;

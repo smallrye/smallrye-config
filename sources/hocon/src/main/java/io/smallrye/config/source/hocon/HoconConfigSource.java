@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
@@ -20,6 +21,7 @@ import io.smallrye.common.classloader.ClassPathUtils;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 public class HoconConfigSource extends MapBackedConfigSource {
+    @Serial
     private static final long serialVersionUID = -458821383311704657L;
 
     public static final String NAME = "HoconConfigSource[source=%s]";

@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -7,6 +8,7 @@ import java.util.Set;
 import io.smallrye.config.common.AbstractConfigSource;
 
 public final class DefaultValuesConfigSource extends AbstractConfigSource {
+    @Serial
     private static final long serialVersionUID = -6386021034957868328L;
 
     public static final String NAME = "DefaultValuesConfigSource";

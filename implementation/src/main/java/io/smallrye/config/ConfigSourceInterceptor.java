@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
@@ -56,6 +57,7 @@ public interface ConfigSourceInterceptor extends Serializable {
     }
 
     ConfigSourceInterceptor EMPTY = new ConfigSourceInterceptor() {
+        @Serial
         private static final long serialVersionUID = 5749001327530543433L;
 
         @Override

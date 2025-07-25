@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -10,6 +11,7 @@ import io.smallrye.config.common.AbstractConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSource implements ConfigValueConfigSource {
+    @Serial
     private static final long serialVersionUID = -4619155951589529987L;
 
     private final Map<String, ConfigValue> properties;

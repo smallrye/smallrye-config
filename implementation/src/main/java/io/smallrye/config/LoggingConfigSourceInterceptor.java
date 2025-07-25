@@ -2,12 +2,15 @@ package io.smallrye.config;
 
 import static io.smallrye.config.SecretKeys.doLocked;
 
+import java.io.Serial;
+
 import jakarta.annotation.Priority;
 
 import io.smallrye.config._private.ConfigLogging;
 
 @Priority(Priorities.LIBRARY + 250)
 public class LoggingConfigSourceInterceptor implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = 367246512037404779L;
 
     private final boolean enabled;

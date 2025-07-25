@@ -1,5 +1,6 @@
 package io.smallrye.config.source.zookeeper;
 
+import java.io.Serial;
 import java.util.*;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -18,6 +19,7 @@ import io.smallrye.config.common.AbstractConfigSource;
  * author: Simon Woodman swoodman@redhat.com
  */
 public class ZooKeeperConfigSource extends AbstractConfigSource {
+    @Serial
     private static final long serialVersionUID = 3127679154588598693L;
 
     public static final String NAME = "ZooKeeperConfigSource";

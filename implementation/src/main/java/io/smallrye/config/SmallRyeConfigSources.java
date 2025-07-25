@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static java.util.Collections.emptyIterator;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import io.smallrye.config.SmallRyeConfig.ConfigSourceWithPriority;
 
 class SmallRyeConfigSources implements ConfigSourceInterceptor {
+    @Serial
     private static final long serialVersionUID = 7560201715403486552L;
 
     private final List<ConfigValueConfigSource> configSources;
@@ -86,6 +88,7 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
     }
 
     static final class ConfigValueConfigSourceWrapper implements ConfigValueConfigSource, Serializable {
+        @Serial
         private static final long serialVersionUID = -1109094614437147326L;
 
         private final ConfigSource configSource;
