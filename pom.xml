@@ -40,7 +40,7 @@
     <version.sundrio>0.200.4</version.sundrio>
 
     <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
-    <version.smallrye.common>2.13.7</version.smallrye.common>
+    <version.smallrye.common>2.13.8</version.smallrye.common>
     <version.asm>9.8</version.asm>
 
     <version.smallrye.testing>2.3.1</version.smallrye.testing>
