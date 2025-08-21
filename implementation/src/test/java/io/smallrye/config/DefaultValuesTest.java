@@ -17,8 +17,8 @@ class DefaultValuesTest {
                 .withDefaultValue("my.prop.default", "1234")
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("1234", config.getRawValue("my.prop.default"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("1234", config.getConfigValue("my.prop.default").getValue());
     }
 
     @Test
@@ -37,8 +37,8 @@ class DefaultValuesTest {
 
         DefaultValues mapping = config.getConfigMapping(DefaultValues.class);
 
-        assertEquals("5678", config.getRawValue("my.value"));
-        assertEquals("1234", config.getRawValue("my.default-value"));
+        assertEquals("5678", config.getConfigValue("my.value").getValue());
+        assertEquals("1234", config.getConfigValue("my.default-value").getValue());
         assertEquals("5678", mapping.value());
         assertEquals("1234", mapping.defaultValue());
         assertEquals("1234", mapping.list().get(0));

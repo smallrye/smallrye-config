@@ -71,9 +71,9 @@ public class ProfileTest {
                     .withProfile("common,dev")
                     .build();
 
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertEquals("common", config.getRawValue("my.prop.common"));
-            assertEquals("dev", config.getRawValue("my.prop.profile"));
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+            assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -131,7 +131,7 @@ public class ProfileTest {
             assertEquals(childSource.getOrdinal(), parentSource.getOrdinal());
 
             assertEquals("dev", config.getProfiles().get(0));
-            assertEquals("child", config.getRawValue("my.prop"));
+            assertEquals("child", config.getConfigValue("my.prop").getValue());
 
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);

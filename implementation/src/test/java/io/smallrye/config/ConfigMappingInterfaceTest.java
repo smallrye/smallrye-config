@@ -381,7 +381,7 @@ class ConfigMappingInterfaceTest {
 
         Server server = config.getConfigMapping(Server.class, "server");
 
-        assertNotEquals(config.getRawValue("server.port"), config.getRawValue("server.port"));
+        assertNotEquals(config.getConfigValue("server.port").getValue(), config.getConfigValue("server.port").getValue());
         assertEquals(server.port(), server.port());
     }
 
@@ -1625,7 +1625,7 @@ class ConfigMappingInterfaceTest {
 
         DefaultsBuilderAndMapping mapping = config.getConfigMapping(DefaultsBuilderAndMapping.class);
 
-        assertEquals("localhost", config.getRawValue("server.host"));
+        assertEquals("localhost", config.getConfigValue("server.host").getValue());
         assertEquals(443, mapping.ssl().port());
         assertEquals(2, mapping.ssl().protocols().size());
     }
@@ -1891,7 +1891,7 @@ class ConfigMappingInterfaceTest {
 
         DefaultsPropertyNames mapping = config.getConfigMapping(DefaultsPropertyNames.class);
         assertEquals("value", mapping.value());
-        assertEquals("value", config.getRawValue("defaults.myProperty"));
+        assertEquals("value", config.getConfigValue("defaults.myProperty").getValue());
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
         assertTrue(properties.contains("defaults.myProperty"));
@@ -2334,8 +2334,8 @@ class ConfigMappingInterfaceTest {
                 .withMapping(DoNotOverrideBuilderDefault.class)
                 .build();
 
-        assertEquals("another", config.getRawValue("override.value"));
-        assertEquals("another", config.getRawValue("override.map.key.value"));
+        assertEquals("another", config.getConfigValue("override.value").getValue());
+        assertEquals("another", config.getConfigValue("override.map.key.value").getValue());
 
         DoNotOverrideBuilderDefault mapping = config.getConfigMapping(DoNotOverrideBuilderDefault.class);
         assertEquals("another", mapping.value());

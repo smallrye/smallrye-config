@@ -28,7 +28,7 @@ class MultipleSecretHandlersTest {
                 .withSources(new PropertiesConfigSource(properties, "", 0))
                 .build();
 
-        assertEquals("decoded", config.getRawValue("aes-gcm-nopadding.secret"));
-        assertEquals("12345678", config.getRawValue("jasypt.secret"));
+        assertEquals("decoded", config.getConfigValue("aes-gcm-nopadding.secret").getValue());
+        assertEquals("12345678", config.getConfigValue("jasypt.secret").getValue());
     }
 }

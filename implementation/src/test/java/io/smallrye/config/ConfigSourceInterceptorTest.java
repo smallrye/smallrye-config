@@ -144,7 +144,7 @@ class ConfigSourceInterceptorTest {
                 })
                 .build();
 
-        assertEquals("1", config.getRawValue("my.prop"));
+        assertEquals("1", config.getConfigValue("my.prop").getValue());
         Set<String> names = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         assertEquals(1, names.size());
         assertFalse(names.contains("my.prop"));
@@ -164,7 +164,7 @@ class ConfigSourceInterceptorTest {
                 .withProfile("dev")
                 .build();
 
-        assertEquals("8082", config.getRawValue("real.port"));
+        assertEquals("8082", config.getConfigValue("real.port").getValue());
     }
 
     @Test
@@ -209,7 +209,7 @@ class ConfigSourceInterceptorTest {
                 })
                 .build();
 
-        assertEquals("final", config.getRawValue("restart"));
+        assertEquals("final", config.getConfigValue("restart").getValue());
         assertEquals(2, counter.get(0));
         assertEquals("final", config.getConfigValue("final").getName());
         assertEquals("final", config.getConfigValue("restart").getName());
@@ -242,7 +242,7 @@ class ConfigSourceInterceptorTest {
                 })
                 .build();
 
-        assertEquals("final", config.getRawValue("restart"));
+        assertEquals("final", config.getConfigValue("restart").getValue());
     }
 
     @ConfigMapping

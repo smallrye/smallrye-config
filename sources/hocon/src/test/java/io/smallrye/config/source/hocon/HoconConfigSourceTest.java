@@ -59,11 +59,11 @@ class HoconConfigSourceTest {
                 .withSources(new HoconConfigSource(HoconConfigSource.class.getResource("/expressions.conf")))
                 .build();
 
-        assertEquals("baz", config.getRawValue("foo"));
+        assertEquals("baz", config.getConfigValue("foo").getValue());
         // Resolved by internally by HOCON
-        assertEquals("bar", config.getRawValue("expression"));
+        assertEquals("bar", config.getConfigValue("expression").getValue());
         // Resolved by config interceptor
-        assertEquals("baz", config.getRawValue("interceptor"));
+        assertEquals("baz", config.getConfigValue("interceptor").getValue());
     }
 
     @Test
@@ -96,7 +96,7 @@ class HoconConfigSourceTest {
     void systemFile() {
         SmallRyeConfig config = buildConfig("./src/test/resources/list.conf");
 
-        assertEquals("FJ", config.getRawValue("countries[0].code"));
+        assertEquals("FJ", config.getConfigValue("countries[0].code").getValue());
     }
 
     @Test

@@ -32,8 +32,8 @@ class DotEnvConfigSourceProviderTest {
                 .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("1234", config.getRawValue("MY_PROP"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("1234", config.getConfigValue("MY_PROP").getValue());
 
         for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource.getName().endsWith(".env]")) {
@@ -72,12 +72,12 @@ class DotEnvConfigSourceProviderTest {
                 .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
                 .build();
 
-        assertEquals("main", config.getRawValue("my.prop.main"));
-        assertEquals("main", config.getRawValue("MY_PROP_MAIN"));
-        assertEquals("common", config.getRawValue("my.prop.common"));
-        assertEquals("common", config.getRawValue("MY_PROP_COMMON"));
-        assertEquals("dev", config.getRawValue("my.prop.profile"));
-        assertEquals("dev", config.getRawValue("MY_PROP_PROFILE"));
+        assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+        assertEquals("main", config.getConfigValue("MY_PROP_MAIN").getValue());
+        assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+        assertEquals("common", config.getConfigValue("MY_PROP_COMMON").getValue());
+        assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
+        assertEquals("dev", config.getConfigValue("MY_PROP_PROFILE").getValue());
     }
 
     @Test
@@ -94,8 +94,8 @@ class DotEnvConfigSourceProviderTest {
                 .withSources(dotEnvSources(tempDir.resolve(".env").toFile().toURI().toString(), getContextClassLoader()))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("1234", config.getRawValue("foo.bar.baz"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("1234", config.getConfigValue("foo.bar.baz").getValue());
     }
 
     @Test

@@ -348,7 +348,7 @@ public class ConfigMappingsTest {
         assertEquals("value", mappingInstance.value());
         assertEquals("default", mappingInstance.defaultValue());
         assertEquals("value", mappingInstance.map().get("one"));
-        assertEquals("default", mappingConfig.getRawValue("mapping.instance.default-value"));
+        assertEquals("default", mappingConfig.getConfigValue("mapping.instance.default-value").getValue());
     }
 
     @ConfigMapping(prefix = "mapping.instance")

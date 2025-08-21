@@ -41,7 +41,7 @@ class ConfigMappingReloadableTest {
 
                     @Override
                     public String getValue(final String propertyName) {
-                        return config.getRawValue(propertyName);
+                        return config.getConfigValue(propertyName).getValue();
                     }
 
                     @Override

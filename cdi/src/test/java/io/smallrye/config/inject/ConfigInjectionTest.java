@@ -91,7 +91,7 @@ class ConfigInjectionTest {
         assertThrows(SecurityException.class, () -> configBean.getConfig().getValue("secret", String.class),
                 "Not allowed to access secret key secret");
         assertEquals("1234", configBean.getConfig().getValue("my.prop", String.class));
-        assertEquals("1234", configBean.getSmallRyeConfig().getRawValue("my.prop"));
+        assertEquals("1234", configBean.getSmallRyeConfig().getConfigValue("my.prop").getValue());
         assertEquals(HyphenatedEnum.A_B, configBean.getHyphenatedEnum());
         assertNull(configBean.getMissingExpression().getValue());
         assertFalse(configBean.getMissingExpressionOptional().isPresent());

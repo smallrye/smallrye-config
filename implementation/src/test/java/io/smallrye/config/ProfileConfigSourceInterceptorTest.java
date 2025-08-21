@@ -224,8 +224,8 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("1234", config.getRawValue("common.prop"));
-        assertEquals("5678", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("common.prop").getValue());
+        assertEquals("5678", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -237,10 +237,10 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("common", config.getRawValue("common.prop"));
-        assertEquals("dev", config.getRawValue("dev.prop"));
-        assertEquals("5678", config.getRawValue("my.prop"));
-        assertNull(config.getRawValue("test.prop"));
+        assertEquals("common", config.getConfigValue("common.prop").getValue());
+        assertEquals("dev", config.getConfigValue("dev.prop").getValue());
+        assertEquals("5678", config.getConfigValue("my.prop").getValue());
+        assertNull(config.getConfigValue("test.prop").getValue());
     }
 
     @Test
@@ -252,7 +252,7 @@ class ProfileConfigSourceInterceptorTest {
                 .withProfile("bar")
                 .build();
 
-        assertEquals("5678", config.getRawValue("common.prop"));
+        assertEquals("5678", config.getConfigValue("common.prop").getValue());
     }
 
     @Test
@@ -264,7 +264,7 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("5678", config.getRawValue("common.prop"));
+        assertEquals("5678", config.getConfigValue("common.prop").getValue());
     }
 
     @Test
@@ -277,7 +277,7 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("9", config.getRawValue("common.prop"));
+        assertEquals("9", config.getConfigValue("common.prop").getValue());
     }
 
     @Test
@@ -289,8 +289,8 @@ class ProfileConfigSourceInterceptorTest {
                 .withProfile("prof")
                 .build();
 
-        assertEquals("1234", config.getRawValue("common.prop"));
-        assertEquals("5678", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("common.prop").getValue());
+        assertEquals("5678", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -332,8 +332,8 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("1234", config.getRawValue("common.prop"));
-        assertEquals("5678", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("common.prop").getValue());
+        assertEquals("5678", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -348,9 +348,9 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("custom", config.getRawValue("my.config2"));
-        assertEquals("dev", config.getRawValue("my.config1"));
-        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
+        assertEquals("custom", config.getConfigValue("my.config2").getValue());
+        assertEquals("dev", config.getConfigValue("my.config1").getValue());
+        assertEquals("dev", config.getConfigValue(SMALLRYE_CONFIG_PROFILE_PARENT).getValue());
     }
 
     @Test
@@ -368,9 +368,9 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("custom", config.getRawValue("my.config2"));
-        assertEquals("dev", config.getRawValue("my.config1"));
-        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
+        assertEquals("custom", config.getConfigValue("my.config2").getValue());
+        assertEquals("dev", config.getConfigValue("my.config1").getValue());
+        assertEquals("dev", config.getConfigValue(SMALLRYE_CONFIG_PROFILE_PARENT).getValue());
     }
 
     @Test
@@ -410,10 +410,10 @@ class ProfileConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("dev", config.getRawValue(SMALLRYE_CONFIG_PROFILE_PARENT));
-        assertEquals("dev", config.getRawValue("quarkus.config.profile.parent"));
-        assertEquals("dev", config.getRawValue("my.config1"));
-        assertEquals("custom", config.getRawValue("my.config2"));
+        assertEquals("dev", config.getConfigValue(SMALLRYE_CONFIG_PROFILE_PARENT).getValue());
+        assertEquals("dev", config.getConfigValue("quarkus.config.profile.parent").getValue());
+        assertEquals("dev", config.getConfigValue("my.config1").getValue());
+        assertEquals("custom", config.getConfigValue("my.config2").getValue());
     }
 
     @Test
@@ -463,10 +463,10 @@ class ProfileConfigSourceInterceptorTest {
         assertArrayEquals(new String[] { "child", "parent", "grandparent", "greatgrandparent", "end" },
                 config.getProfiles().toArray(new String[5]));
 
-        assertEquals("Goten", config.getRawValue("child"));
-        assertEquals("Goku", config.getRawValue("parent"));
-        assertEquals("Bardock", config.getRawValue("grandparent"));
-        assertEquals("Gohan", config.getRawValue("greatgrandparent"));
+        assertEquals("Goten", config.getConfigValue("child").getValue());
+        assertEquals("Goku", config.getConfigValue("parent").getValue());
+        assertEquals("Bardock", config.getConfigValue("grandparent").getValue());
+        assertEquals("Gohan", config.getConfigValue("greatgrandparent").getValue());
     }
 
     @Test
@@ -493,12 +493,12 @@ class ProfileConfigSourceInterceptorTest {
                 .withSources(config("%commonone,prodone,devone.prop.start.with", "1"));
 
         SmallRyeConfig prod = builder.withProfile("prod").build();
-        assertEquals("value", prod.getRawValue("my.prop"));
-        assertEquals("value", prod.getRawValue("%prod.my.prop"));
-        assertEquals("override", prod.getRawValue("my.override"));
-        assertEquals("override", prod.getRawValue("%prod.my.override"));
-        assertEquals("single", prod.getRawValue("another.prop"));
-        assertEquals("double", prod.getRawValue("triple.prop"));
+        assertEquals("value", prod.getConfigValue("my.prop").getValue());
+        assertEquals("value", prod.getConfigValue("%prod.my.prop").getValue());
+        assertEquals("override", prod.getConfigValue("my.override").getValue());
+        assertEquals("override", prod.getConfigValue("%prod.my.override").getValue());
+        assertEquals("single", prod.getConfigValue("another.prop").getValue());
+        assertEquals("double", prod.getConfigValue("triple.prop").getValue());
         Set<String> prodNames = StreamSupport.stream(prod.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(prodNames.contains("my.prop"));
         assertTrue(prodNames.contains("my.override"));
@@ -508,11 +508,11 @@ class ProfileConfigSourceInterceptorTest {
         builder.getProfiles().clear();
 
         SmallRyeConfig dev = builder.withProfile("dev").build();
-        assertEquals("value", dev.getRawValue("my.prop"));
-        assertEquals("value", dev.getRawValue("%dev.my.prop"));
-        assertEquals("value", dev.getRawValue("my.override"));
-        assertEquals("value", dev.getRawValue("%dev.my.override"));
-        assertEquals("triple", dev.getRawValue("triple.prop"));
+        assertEquals("value", dev.getConfigValue("my.prop").getValue());
+        assertEquals("value", dev.getConfigValue("%dev.my.prop").getValue());
+        assertEquals("value", dev.getConfigValue("my.override").getValue());
+        assertEquals("value", dev.getConfigValue("%dev.my.override").getValue());
+        assertEquals("triple", dev.getConfigValue("triple.prop").getValue());
         Set<String> devNames = StreamSupport.stream(dev.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(devNames.contains("my.prop"));
         assertTrue(devNames.contains("my.override"));
@@ -522,7 +522,7 @@ class ProfileConfigSourceInterceptorTest {
         builder.getProfiles().clear();
 
         SmallRyeConfig common = builder.withProfile("common").build();
-        assertEquals("double", common.getRawValue("triple.prop"));
+        assertEquals("double", common.getConfigValue("triple.prop").getValue());
         Set<String> commonNames = StreamSupport.stream(common.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(commonNames.contains("triple.prop"));
         assertFalse(commonNames.contains("my.prop"));

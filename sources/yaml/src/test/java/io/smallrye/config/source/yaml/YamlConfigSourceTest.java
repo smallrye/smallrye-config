@@ -82,8 +82,8 @@ class YamlConfigSourceTest {
                 " name: smallrye";
 
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
-        assertEquals("hello", config.getRawValue("greeting.message"));
-        assertEquals("smallrye", config.getRawValue("greeting.name"));
+        assertEquals("hello", config.getConfigValue("greeting.message").getValue());
+        assertEquals("smallrye", config.getConfigValue("greeting.name").getValue());
 
         // 2
         yaml = "greeting:\n" +
@@ -91,8 +91,8 @@ class YamlConfigSourceTest {
                 "  name: smallrye";
 
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
-        assertEquals("hello", config.getRawValue("greeting.message"));
-        assertEquals("smallrye", config.getRawValue("greeting.name"));
+        assertEquals("hello", config.getConfigValue("greeting.message").getValue());
+        assertEquals("smallrye", config.getConfigValue("greeting.name").getValue());
 
         // 4
         yaml = "greeting:\n" +
@@ -100,8 +100,8 @@ class YamlConfigSourceTest {
                 "    name: smallrye";
 
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
-        assertEquals("hello", config.getRawValue("greeting.message"));
-        assertEquals("smallrye", config.getRawValue("greeting.name"));
+        assertEquals("hello", config.getConfigValue("greeting.message").getValue());
+        assertEquals("smallrye", config.getConfigValue("greeting.name").getValue());
 
         // 8
         yaml = "greeting:\n" +
@@ -109,8 +109,8 @@ class YamlConfigSourceTest {
                 "        name: smallrye";
 
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
-        assertEquals("hello", config.getRawValue("greeting.message"));
-        assertEquals("smallrye", config.getRawValue("greeting.name"));
+        assertEquals("hello", config.getConfigValue("greeting.message").getValue());
+        assertEquals("smallrye", config.getConfigValue("greeting.name").getValue());
 
         // 11
         yaml = "greeting:\n" +
@@ -118,8 +118,8 @@ class YamlConfigSourceTest {
                 "           name: smallrye";
 
         config = new SmallRyeConfigBuilder().withSources(new YamlConfigSource("Yaml", yaml)).build();
-        assertEquals("hello", config.getRawValue("greeting.message"));
-        assertEquals("smallrye", config.getRawValue("greeting.name"));
+        assertEquals("hello", config.getConfigValue("greeting.message").getValue());
+        assertEquals("smallrye", config.getConfigValue("greeting.name").getValue());
     }
 
     @Test
@@ -163,7 +163,7 @@ class YamlConfigSourceTest {
         assertTrue(propertyNames.contains("quarkus.http.ssl-port"));
         assertTrue(propertyNames.contains("quarkus.http.ssl.protocols"));
         assertTrue(propertyNames.contains("quarkus.http.ssl.protocols[0]"));
-        assertNotNull(config.getRawValue("quarkus.http.ssl.protocols[0]"));
+        assertNotNull(config.getConfigValue("quarkus.http.ssl.protocols[0]").getValue());
     }
 
     @Test
@@ -184,7 +184,7 @@ class YamlConfigSourceTest {
 
         assertTrue(propertyNames.contains("quarkus.log.category.liquibase.level"));
         assertTrue(propertyNames.contains("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
-        assertNotNull(config.getRawValue("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level"));
+        assertNotNull(config.getConfigValue("quarkus.log.category.\"liquibase.changelog.ChangeSet\".level").getValue());
     }
 
     @Test

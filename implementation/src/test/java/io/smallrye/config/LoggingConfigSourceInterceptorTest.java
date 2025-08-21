@@ -39,7 +39,7 @@ class LoggingConfigSourceInterceptorTest {
                 .withSources(config("my.prop", "1234"))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertTrue(logCapture.records().stream().map(LogRecord::getMessage).findAny().isEmpty());
     }
 
@@ -111,7 +111,7 @@ class LoggingConfigSourceInterceptorTest {
                 .withSources(config("my.prop.expand", "${expand}", "expand", "1234"))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop.expand"));
+        assertEquals("1234", config.getConfigValue("my.prop.expand").getValue());
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         assertTrue(logs.contains(
                 "SRCFG01001: The config my.prop.expand was loaded from KeyValuesConfigSource with the value ${expand}"));
@@ -127,7 +127,7 @@ class LoggingConfigSourceInterceptorTest {
                 .withProfile("prod")
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).collect(toList());
         assertTrue(logs.contains("SRCFG01001: The config my.prop was loaded from KeyValuesConfigSource with the value 1234"));
         assertFalse(logs.stream().anyMatch(log -> log.contains("%prod.my.prop")));
