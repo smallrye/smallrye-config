@@ -27,7 +27,7 @@ jobs:
     name: build with jdk ${{matrix.java}}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         name: checkout
 
       - uses: actions/setup-java@v4
@@ -55,7 +55,7 @@ jobs:
     name: build with jdk ${{matrix.java}} windows
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         name: checkout
 
       - uses: actions/setup-java@v4
@@ -76,7 +76,7 @@ jobs:
     name: docs
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         name: checkout
 
       - uses: actions/setup-java@v4
@@ -110,7 +110,7 @@ jobs:
     name: quality
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
