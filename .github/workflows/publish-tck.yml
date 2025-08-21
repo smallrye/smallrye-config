@@ -22,7 +22,7 @@ jobs:
         with:
           ref: ${{inputs.version}}
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         name: set up jdk ${{matrix.java}}
         with:
           distribution: 'temurin'
