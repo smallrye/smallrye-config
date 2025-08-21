@@ -43,11 +43,11 @@ class ArrayTest {
                         + "    - ~\n"))
                 .build();
 
-        assertEquals("something,1,true", config.getRawValue("foo"));
-        assertEquals("something", config.getRawValue("foo[0]"));
-        assertEquals("1", config.getRawValue("foo[1]"));
-        assertEquals("true", config.getRawValue("foo[2]"));
-        assertNull(config.getRawValue("foo[3]"));
+        assertEquals("something,1,true", config.getConfigValue("foo").getValue());
+        assertEquals("something", config.getConfigValue("foo[0]").getValue());
+        assertEquals("1", config.getConfigValue("foo[1]").getValue());
+        assertEquals("true", config.getConfigValue("foo[2]").getValue());
+        assertNull(config.getConfigValue("foo[3]").getValue());
         assertFalse(((Set<String>) config.getPropertyNames()).contains("foo[3]"));
     }
 }

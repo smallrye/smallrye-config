@@ -54,7 +54,7 @@ public class ConfigSourceFactoryTest {
                 .build();
 
         assertEquals("1234", config.getConfigMapping(Expression.class).value());
-        assertEquals("1234", config.getRawValue("factory.expression"));
+        assertEquals("1234", config.getConfigValue("factory.expression").getValue());
     }
 
     @ConfigMapping(prefix = "expression")

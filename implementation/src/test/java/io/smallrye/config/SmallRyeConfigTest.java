@@ -407,16 +407,16 @@ class SmallRyeConfigTest {
     @Test
     void getPropertyNames() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultInterceptors().addDefaultSources().build();
-        assertEquals("1234", config.getRawValue("SMALLRYE_MP_CONFIG_PROP"));
-        assertEquals("1234", config.getRawValue("smallrye.mp.config.prop"));
-        assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
+        assertEquals("1234", config.getConfigValue("SMALLRYE_MP_CONFIG_PROP").getValue());
+        assertEquals("1234", config.getConfigValue("smallrye.mp.config.prop").getValue());
+        assertEquals("1234", config.getConfigValue("smallrye.mp-config.prop").getValue());
         assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp.config.prop"));
 
         config = new SmallRyeConfigBuilder().addDefaultInterceptors().addDefaultSources()
                 .withSources(KeyValuesConfigSource.config("smallrye.mp-config.prop", "5678")).build();
-        assertEquals("1234", config.getRawValue("SMALLRYE_MP_CONFIG_PROP"));
-        assertEquals("1234", config.getRawValue("smallrye.mp-config.prop"));
+        assertEquals("1234", config.getConfigValue("SMALLRYE_MP_CONFIG_PROP").getValue());
+        assertEquals("1234", config.getConfigValue("smallrye.mp-config.prop").getValue());
         assertTrue(((Set<String>) config.getPropertyNames()).contains("SMALLRYE_MP_CONFIG_PROP"));
         assertTrue(((Set<String>) config.getPropertyNames()).contains("smallrye.mp-config.prop"));
     }
@@ -448,7 +448,7 @@ class SmallRyeConfigTest {
     void builderSourcesProvider() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(classLoader -> singletonList(config("my.prop", "1234")))
                 .build();
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -465,7 +465,7 @@ class SmallRyeConfigTest {
                 .build();
 
         assertTrue(config.getConfigSource("EnvConfigSource").isPresent());
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -631,7 +631,7 @@ class SmallRyeConfigTest {
                 .withSources(config("env.\"quoted-key\".value", "default"))
                 .build();
 
-        assertEquals("env", config.getRawValue("env.\"quoted-key\".value"));
+        assertEquals("env", config.getConfigValue("env.\"quoted-key\".value").getValue());
 
         ConfigSource keymap = config.getConfigSource("KeyValuesConfigSource").get();
         assertEquals("default", keymap.getValue("env.\"quoted-key\".value"));
@@ -644,7 +644,7 @@ class SmallRyeConfigTest {
                 .withSources(new EnvConfigSource(singletonMap("", "value"), 300))
                 .build();
 
-        assertEquals("value", config.getRawValue(""));
+        assertEquals("value", config.getConfigValue("").getValue());
     }
 
     @Test
@@ -673,7 +673,7 @@ class SmallRyeConfigTest {
 
         assertFalse(config.getConfigSources(SysPropConfigSource.class).iterator().hasNext());
         assertFalse(config.getConfigSources(EnvConfigSource.class).iterator().hasNext());
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -791,7 +791,7 @@ class SmallRyeConfigTest {
 
             @Override
             public String getValue(final String propertyName) {
-                return config.getRawValue(propertyName);
+                return config.getConfigValue(propertyName).getValue();
             }
 
             @Override
@@ -800,7 +800,7 @@ class SmallRyeConfigTest {
             }
         }).build();
 
-        assertEquals("1234", wrappedConfig.getRawValue("my.prop"));
-        assertEquals("1234", wrappedConfig.getRawValue("%prod.my.prop"));
+        assertEquals("1234", wrappedConfig.getConfigValue("my.prop").getValue());
+        assertEquals("1234", wrappedConfig.getConfigValue("%prod.my.prop").getValue());
     }
 }

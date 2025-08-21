@@ -1027,7 +1027,7 @@ public class ConfigMappingCollectionsTest {
         ListDefaults mapping = config.getConfigMapping(ListDefaults.class);
         assertEquals(1, mapping.values().size());
         assertEquals("baz", mapping.values().get(0));
-        assertNull(config.getRawValue("list.defaults.values[9]"));
+        assertNull(config.getConfigValue("list.defaults.values[9]").getValue());
     }
 
     @ConfigMapping(prefix = "list.defaults")

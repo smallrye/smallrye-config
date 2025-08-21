@@ -88,7 +88,7 @@ class EnvConfigSourceTest {
 
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().withProfile("env").build();
 
-        assertEquals("5678", config.getRawValue("smallrye.mp.config.prop"));
+        assertEquals("5678", config.getConfigValue("smallrye.mp.config.prop").getValue());
     }
 
     @Test
@@ -170,10 +170,10 @@ class EnvConfigSourceTest {
                 .withSources(new EnvConfigSource(Map.of("999_MY_VALUE", "foo", "_999_MY_VALUE", "bar"), 300))
                 .build();
 
-        assertEquals("foo", config.getRawValue("999.my.value"));
-        assertEquals("foo", config.getRawValue("999_MY_VALUE"));
-        assertEquals("bar", config.getRawValue("_999_MY_VALUE"));
-        assertEquals("bar", config.getRawValue("%999.my.value"));
+        assertEquals("foo", config.getConfigValue("999.my.value").getValue());
+        assertEquals("foo", config.getConfigValue("999_MY_VALUE").getValue());
+        assertEquals("bar", config.getConfigValue("_999_MY_VALUE").getValue());
+        assertEquals("bar", config.getConfigValue("%999.my.value").getValue());
     }
 
     @Test
@@ -189,7 +189,7 @@ class EnvConfigSourceTest {
                 .withSources(envConfigSource)
                 .build();
 
-        assertEquals("Einfache Sprache", config.getRawValue("test.language.\"de.etr\""));
+        assertEquals("Einfache Sprache", config.getConfigValue("test.language.\"de.etr\"").getValue());
 
         Map<String, String> map = config.getValues("test.language", STRING_CONVERTER, STRING_CONVERTER);
         assertEquals("Einfache Sprache", map.get("de.etr"));
@@ -317,15 +317,15 @@ class EnvConfigSourceTest {
         assertTrue(properties.contains("FOO_BAR_BAZ"));
         assertTrue(properties.contains("foo.bar-baz"));
         assertFalse(properties.contains("foo.bar.baz"));
-        assertEquals("fromEnv", config.getRawValue("foo.bar-baz"));
+        assertEquals("fromEnv", config.getConfigValue("foo.bar-baz").getValue());
 
         assertTrue(properties.contains("FOO_BAR_DEVBAZ"));
         assertTrue(properties.contains("foo.bar-devbaz"));
         assertFalse(properties.contains("foo.bar.devbaz"));
-        assertEquals("fromEnv", config.getRawValue("foo.bar-devbaz"));
+        assertEquals("fromEnv", config.getConfigValue("foo.bar-devbaz").getValue());
 
         assertTrue(properties.contains("foo.bar-commonbaz"));
-        assertEquals("fromEnv", config.getRawValue("foo.bar-commonbaz"));
+        assertEquals("fromEnv", config.getConfigValue("foo.bar-commonbaz").getValue());
     }
 
     @Test

@@ -34,9 +34,9 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "another.expression", "${my.expression}"))
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
-        assertEquals("default", config.getRawValue("my.expression"));
-        assertEquals("default", config.getRawValue("another.expression"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
+        assertEquals("default", config.getConfigValue("my.expression").getValue());
+        assertEquals("default", config.getConfigValue("another.expression").getValue());
     }
 
     @Test
@@ -49,7 +49,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "my.secret", "${aes-gcm-nopadding::DPZqAC4GZNAXi6_43A4O2SBmaQssGkq6PS7rz8tzHDt1}"))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.secret"));
+        assertEquals("1234", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -122,7 +122,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "my.expression", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}"))
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -138,7 +138,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "key", "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI"))
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -156,8 +156,8 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                         "another.expression", "${my.expression}"))
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
-        assertEquals("default", config.getRawValue("my.expression"));
-        assertEquals("default", config.getRawValue("another.expression"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
+        assertEquals("default", config.getConfigValue("my.expression").getValue());
+        assertEquals("default", config.getConfigValue("another.expression").getValue());
     }
 }

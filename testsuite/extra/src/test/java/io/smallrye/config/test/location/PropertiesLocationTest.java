@@ -56,8 +56,8 @@ public class PropertiesLocationTest {
 
             SmallRyeConfig config = buildConfig("resources.properties");
 
-            assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals("5678", config.getRawValue("my.prop.two"));
+            assertEquals("1234", config.getConfigValue("my.prop.one").getValue());
+            assertEquals("5678", config.getConfigValue("my.prop.two").getValue());
             assertEquals(2, countSources(config, "resources.properties"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -93,8 +93,8 @@ public class PropertiesLocationTest {
 
             SmallRyeConfig config = buildConfig("resources.yml");
 
-            assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals("5678", config.getRawValue("my.prop.two"));
+            assertEquals("1234", config.getConfigValue("my.prop.one").getValue());
+            assertEquals("5678", config.getConfigValue("my.prop.two").getValue());
             assertEquals(2, countSources(config, "resources.yml"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -116,7 +116,7 @@ public class PropertiesLocationTest {
 
             SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.properties");
 
-            assertEquals("1234", config.getRawValue("my.prop.one"));
+            assertEquals("1234", config.getConfigValue("my.prop.one").getValue());
             assertEquals(1, countSources(config, "resources.properties"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -142,7 +142,7 @@ public class PropertiesLocationTest {
 
             SmallRyeConfig config = buildConfig("jar:" + filePathOne.toUri() + "!/resources.yml");
 
-            assertEquals("1234", config.getRawValue("my.prop.one"));
+            assertEquals("1234", config.getConfigValue("my.prop.one").getValue());
             assertEquals(1, countSources(config, "resources.yml"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -200,14 +200,14 @@ public class PropertiesLocationTest {
                     .build();
 
             // Check if all sources are up
-            assertEquals("1234", config.getRawValue("my.prop.one"));
-            assertEquals("5678", config.getRawValue("my.prop.two"));
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertEquals("fallback", config.getRawValue("my.prop.fallback"));
+            assertEquals("1234", config.getConfigValue("my.prop.one").getValue());
+            assertEquals("5678", config.getConfigValue("my.prop.two").getValue());
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("fallback", config.getConfigValue("my.prop.fallback").getValue());
             // This should be loaded by the first defined source in the locations configuration
-            assertEquals("main", config.getRawValue("my.prop.common"));
+            assertEquals("main", config.getConfigValue("my.prop.common").getValue());
             // This should be loaded by the first discovered source in the classpath
-            assertEquals("1", config.getRawValue("my.prop.jar.common"));
+            assertEquals("1", config.getConfigValue("my.prop.jar.common").getValue());
             assertEquals(3, countSources(config, "microprofile-config.properties"));
             assertEquals(1, countSources(config, "fallback.properties"));
             assertTrue(stream(config.getConfigSources().spliterator(), false)
@@ -268,9 +268,9 @@ public class PropertiesLocationTest {
                     .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "META-INF/config.properties")
                     .build();
 
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertEquals("common", config.getRawValue("my.prop.common"));
-            assertEquals("dev", config.getRawValue("my.prop.profile"));
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+            assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -310,9 +310,9 @@ public class PropertiesLocationTest {
                     .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "jar:" + filePathOne.toUri() + "!/META-INF/config.properties")
                     .build();
 
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertEquals("common", config.getRawValue("my.prop.common"));
-            assertEquals("dev", config.getRawValue("my.prop.profile"));
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+            assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -384,11 +384,11 @@ public class PropertiesLocationTest {
                             tempDir.resolve("config.properties").toUri() + "," + "config.properties")
                     .build();
 
-            assertEquals("main-file", config.getRawValue("my.prop.main.file"));
-            assertEquals("main-cp", config.getRawValue("my.prop.main.cp"));
-            assertEquals("main-file", config.getRawValue("my.prop.main"));
-            assertEquals("common-file", config.getRawValue("my.prop.common"));
-            assertEquals("dev-file", config.getRawValue("my.prop.profile"));
+            assertEquals("main-file", config.getConfigValue("my.prop.main.file").getValue());
+            assertEquals("main-cp", config.getConfigValue("my.prop.main.cp").getValue());
+            assertEquals("main-file", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("common-file", config.getConfigValue("my.prop.common").getValue());
+            assertEquals("dev-file", config.getConfigValue("my.prop.profile").getValue());
 
             List<ConfigSource> sources = stream(config.getConfigSources().spliterator(), false)
                     .filter(configSource -> configSource.getName().contains("config.properties")
@@ -429,9 +429,9 @@ public class PropertiesLocationTest {
                     .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "META-INF/config.properties")
                     .build();
 
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertEquals("common", config.getRawValue("my.prop.common"));
-            assertEquals("dev", config.getRawValue("my.prop.dev"));
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+            assertEquals("dev", config.getConfigValue("my.prop.dev").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -464,7 +464,7 @@ public class PropertiesLocationTest {
                     .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "jar:" + filePath.toUri() + "!/resources.yml")
                     .build();
 
-            assertEquals("5678", config.getRawValue("my.prop.one"));
+            assertEquals("5678", config.getConfigValue("my.prop.one").getValue());
             assertEquals(2, countSources(config, "resources"));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -523,8 +523,8 @@ public class PropertiesLocationTest {
                     .withProfile("test")
                     .build();
 
-            assertEquals("main", config.getRawValue("my.prop.main"));
-            assertNull(config.getRawValue("my.prop.test"));
+            assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+            assertNull(config.getConfigValue("my.prop.test").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }

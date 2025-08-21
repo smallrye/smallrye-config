@@ -411,7 +411,7 @@ class ConvertersTest {
                 .withSources(KeyValuesConfigSource.config("byte.array", Base64.getEncoder().encodeToString("bytes".getBytes())))
                 .withConverter(byte[].class, 1000, (Converter<byte[]>) value -> Base64.getDecoder().decode(value.getBytes()))
                 .build();
-        assertEquals("Ynl0ZXM=", config.getRawValue("byte.array"));
+        assertEquals("Ynl0ZXM=", config.getConfigValue("byte.array").getValue());
         assertEquals("bytes", new String(config.getValue("byte.array", byte[].class)));
     }
 

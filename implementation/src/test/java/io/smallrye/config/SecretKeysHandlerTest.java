@@ -37,7 +37,7 @@ class SecretKeysHandlerTest {
                 .withDefaultValue("my.secret", "${handler::secret}")
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -69,7 +69,7 @@ class SecretKeysHandlerTest {
                 .withDefaultValue("my.secret", "${handler::secret}")
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -91,6 +91,6 @@ class SecretKeysHandlerTest {
                 .withDefaultValue("my.expression", "${handler::secret}")
                 .build();
 
-        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
     }
 }

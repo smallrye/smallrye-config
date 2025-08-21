@@ -29,8 +29,8 @@ class YamlLocationConfigSourceFactoryTest {
     void systemFile() {
         SmallRyeConfig config = buildConfig("./src/test/resources/additional.yml");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertNull(config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertNull(config.getConfigValue("more.prop").getValue());
         assertEquals(1, countSources(config));
     }
 
@@ -38,8 +38,8 @@ class YamlLocationConfigSourceFactoryTest {
     void systemFolder() {
         SmallRyeConfig config = buildConfig("./src/test/resources");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("5678", config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(2, countSources(config));
     }
 
@@ -48,7 +48,7 @@ class YamlLocationConfigSourceFactoryTest {
         SmallRyeConfig config = buildConfig(
                 "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/more.yml");
 
-        assertEquals("5678", config.getRawValue("more.prop"));
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(1, countSources(config));
     }
 
@@ -56,7 +56,7 @@ class YamlLocationConfigSourceFactoryTest {
     void classpath() {
         SmallRyeConfig config = buildConfig("additional.yml");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertEquals(1, countSources(config));
     }
 
@@ -65,8 +65,8 @@ class YamlLocationConfigSourceFactoryTest {
         SmallRyeConfig config = buildConfig("./src/test/resources",
                 "https://raw.githubusercontent.com/smallrye/smallrye-config/main/sources/yaml/src/test/resources/more.yml");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("5678", config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(3, countSources(config));
     }
 
@@ -74,7 +74,7 @@ class YamlLocationConfigSourceFactoryTest {
     void notFound() {
         SmallRyeConfig config = buildConfig("not.found");
 
-        assertNull(config.getRawValue("my.prop"));
+        assertNull(config.getConfigValue("my.prop").getValue());
         assertEquals(0, countSources(config));
     }
 

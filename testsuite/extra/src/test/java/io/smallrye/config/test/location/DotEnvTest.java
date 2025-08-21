@@ -31,7 +31,7 @@ public class DotEnvTest {
                 .withSources(new DotEnvConfigSourceProvider())
                 .build();
 
-        assertEquals("value", config.getRawValue("foo.bar"));
+        assertEquals("value", config.getConfigValue("foo.bar").getValue());
 
         System.setProperty("user.dir", previousUserDir);
     }
@@ -49,7 +49,7 @@ public class DotEnvTest {
                 .withSources(new DotEnvConfigSourceProvider())
                 .build();
 
-        assertNull(config.getRawValue("foo.bar"));
+        assertNull(config.getConfigValue("foo.bar").getValue());
 
         System.setProperty("user.dir", previousUserDir);
     }

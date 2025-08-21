@@ -26,7 +26,7 @@ class JasyptSecretKeysHandlerTest {
                 .withSources(new PropertiesConfigSource(properties, "", 0))
                 .build();
 
-        assertEquals("12345678", config.getRawValue("my.secret"));
+        assertEquals("12345678", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -42,7 +42,7 @@ class JasyptSecretKeysHandlerTest {
                         "", 0))
                 .build();
 
-        assertEquals("12345678", config.getRawValue("my.secret"));
+        assertEquals("12345678", config.getConfigValue("my.secret").getValue());
     }
 
     @Test
@@ -59,6 +59,6 @@ class JasyptSecretKeysHandlerTest {
                 .withSources(new PropertiesConfigSource(properties, "", 0))
                 .build();
 
-        assertEquals("12345678", config.getRawValue("my.secret"));
+        assertEquals("12345678", config.getConfigValue("my.secret").getValue());
     }
 }

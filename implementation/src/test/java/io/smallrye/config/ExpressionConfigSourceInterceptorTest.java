@@ -93,17 +93,17 @@ class ExpressionConfigSourceInterceptorTest {
         SmallRyeConfig config = buildConfig("my.prop", "1234", "my.prop.two", "${my.prop}", "my.prop.three",
                 "${my.prop.two}", "my.prop.four", "${my.prop.three}");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("1234", config.getRawValue("my.prop.two"));
-        assertEquals("1234", config.getRawValue("my.prop.three"));
-        assertEquals("1234", config.getRawValue("my.prop.four"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("1234", config.getConfigValue("my.prop.two").getValue());
+        assertEquals("1234", config.getConfigValue("my.prop.three").getValue());
+        assertEquals("1234", config.getConfigValue("my.prop.four").getValue());
     }
 
     @Test
     void infiniteExpansion() {
         SmallRyeConfig config = buildConfig("my.prop", "${my.prop}");
 
-        assertThrows(IllegalArgumentException.class, () -> config.getRawValue("my.prop"),
+        assertThrows(IllegalArgumentException.class, () -> config.getConfigValue("my.prop").getValue(),
                 "Recursive expression expansion is too deep for my.prop");
     }
 
@@ -120,18 +120,18 @@ class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void escape() {
-        assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getRawValue("expression"));
-        assertEquals("${my.prop}", buildConfig("expression", "\\${my.prop}").getRawValue("expression"));
+        assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getConfigValue("expression").getValue());
+        assertEquals("${my.prop}", buildConfig("expression", "\\${my.prop}").getConfigValue("expression").getValue());
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
-                        .getRawValue("camel.expression"));
+                        .getConfigValue("camel.expression").getValue());
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=\\${date:now:yyyyMMddssSS}.txt&charset=utf-8")
-                        .getRawValue("camel.expression"));
+                        .getConfigValue("camel.expression").getValue());
     }
 
     @Test
@@ -193,19 +193,19 @@ class ExpressionConfigSourceInterceptorTest {
     @Test
     void escapeDollar() {
         SmallRyeConfig config = buildConfig("my.prop", "\\${value\\${another}end:value}");
-        assertEquals("${value${another}end:value}", config.getRawValue("my.prop"));
+        assertEquals("${value${another}end:value}", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
     void escapeBraces() {
         SmallRyeConfig config = buildConfig("my.prop", "${value:111{111}");
-        assertEquals("111{111", config.getRawValue("my.prop"));
+        assertEquals("111{111", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
     void windowPath() {
         SmallRyeConfig config = buildConfig("window.path", "C:\\Some\\Path");
-        assertEquals("C:\\Some\\Path", config.getRawValue("window.path"));
+        assertEquals("C:\\Some\\Path", config.getConfigValue("window.path").getValue());
     }
 
     @Test

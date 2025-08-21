@@ -62,9 +62,9 @@ class ConfigConfigSourceTest {
                 .collect(toList());
         assertEquals(1, configSources.stream().filter(source -> source.getName().equals("test")).count());
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertEquals("test", config.getConfigValue("my.prop").getConfigSourceName());
-        assertEquals("1234", config.getRawValue("any"));
+        assertEquals("1234", config.getConfigValue("any").getValue());
         assertEquals("test", config.getConfigValue("any").getConfigSourceName());
     }
 
@@ -104,9 +104,9 @@ class ConfigConfigSourceTest {
                 })
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertEquals("KeyValuesConfigSource", config.getConfigValue("my.prop").getConfigSourceName());
-        assertEquals("1234", config.getRawValue("any"));
+        assertEquals("1234", config.getConfigValue("any").getValue());
         assertEquals("test", config.getConfigValue("any").getConfigSourceName());
     }
 
@@ -134,9 +134,9 @@ class ConfigConfigSourceTest {
                     }
                 })).build();
 
-        assertEquals("1234", config.getRawValue("smallrye.prop"));
-        assertEquals("1234", config.getRawValue("smallrye.another"));
-        assertEquals("1", config.getRawValue("mp.prop"));
+        assertEquals("1234", config.getConfigValue("smallrye.prop").getValue());
+        assertEquals("1234", config.getConfigValue("smallrye.another").getValue());
+        assertEquals("1", config.getConfigValue("mp.prop").getValue());
     }
 
     @Test
@@ -148,7 +148,7 @@ class ConfigConfigSourceTest {
                 .withSources(new ConfigurableConfigSource(context -> singletonList(config(SMALLRYE_CONFIG_PROFILE, "bar"))))
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -161,7 +161,7 @@ class ConfigConfigSourceTest {
                         context -> singletonList(config("config_ordinal", "400", "my.prop", "5678"))))
                 .build();
 
-        assertEquals("5678", config.getRawValue("my.prop"));
+        assertEquals("5678", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
@@ -175,7 +175,7 @@ class ConfigConfigSourceTest {
                 .build();
 
         // Profiles come in priority order
-        assertEquals("bar,foo", config.getRawValue("profiles"));
+        assertEquals("bar,foo", config.getConfigValue("profiles").getValue());
     }
 
     @Test
@@ -213,6 +213,6 @@ class ConfigConfigSourceTest {
 
         assertEquals(Integer.MAX_VALUE, config.getConfigSources().iterator().next().getOrdinal());
         assertEquals("1234", config.getConfigSources().iterator().next().getValue("my.prop"));
-        assertThrows(RuntimeException.class, () -> config.getRawValue("my.prop"));
+        assertThrows(RuntimeException.class, () -> config.getConfigValue("my.prop").getValue());
     }
 }

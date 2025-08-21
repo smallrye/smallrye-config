@@ -52,8 +52,8 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, "./src/test/resources/additional.properties")
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertNull(config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertNull(config.getConfigValue("more.prop").getValue());
         assertEquals(1, countSources(config));
 
         config = new SmallRyeConfigBuilder()
@@ -65,8 +65,8 @@ class PropertiesLocationConfigSourceFactoryTest {
                                 .toString())
                 .build();
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertNull(config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertNull(config.getConfigValue("more.prop").getValue());
         assertEquals(1, countSources(config));
     }
 
@@ -74,8 +74,8 @@ class PropertiesLocationConfigSourceFactoryTest {
     void systemFolder() {
         SmallRyeConfig config = buildConfig("./src/test/resources");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("5678", config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(4, countSources(config));
     }
 
@@ -84,7 +84,7 @@ class PropertiesLocationConfigSourceFactoryTest {
         SmallRyeConfig config = buildConfig(
                 "https://raw.githubusercontent.com/smallrye/smallrye-config/main/implementation/src/test/resources/config-values.properties");
 
-        assertEquals("abc", config.getRawValue("my.prop"));
+        assertEquals("abc", config.getConfigValue("my.prop").getValue());
         assertEquals(1, countSources(config));
     }
 
@@ -92,7 +92,7 @@ class PropertiesLocationConfigSourceFactoryTest {
     void classpath() {
         SmallRyeConfig config = buildConfig("additional.properties");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertEquals(1, countSources(config));
         assertEquals(500, config.getConfigSources().iterator().next().getOrdinal());
     }
@@ -102,8 +102,8 @@ class PropertiesLocationConfigSourceFactoryTest {
         SmallRyeConfig config = buildConfig("./src/test/resources",
                 "https://raw.githubusercontent.com/smallrye/smallrye-config/main/implementation/src/test/resources/config-values.properties");
 
-        assertEquals("1234", config.getRawValue("my.prop"));
-        assertEquals("5678", config.getRawValue("more.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+        assertEquals("5678", config.getConfigValue("more.prop").getValue());
         assertEquals(5, countSources(config));
     }
 
@@ -111,7 +111,7 @@ class PropertiesLocationConfigSourceFactoryTest {
     void notFound() {
         SmallRyeConfig config = buildConfig("not.found");
 
-        assertNull(config.getRawValue("my.prop"));
+        assertNull(config.getConfigValue("my.prop").getValue());
         assertEquals(0, countSources(config));
 
         assertThrows(IllegalArgumentException.class, () -> buildConfig("file:/not/found/not-found.properties"),
@@ -169,9 +169,9 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .withDefaultValue(SMALLRYE_CONFIG_LOCATIONS, tempDir.resolve("config.properties").toUri().toString())
                 .build();
 
-        assertEquals("main", config.getRawValue("my.prop.main"));
-        assertEquals("common", config.getRawValue("my.prop.common"));
-        assertEquals("dev", config.getRawValue("my.prop.profile"));
+        assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+        assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+        assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
     }
 
     @Test
@@ -247,9 +247,9 @@ class PropertiesLocationConfigSourceFactoryTest {
                         "http://localhost:" + server.getAddress().getPort() + "/config.properties")
                 .build();
 
-        assertEquals("main", config.getRawValue("my.prop.main"));
-        assertEquals("common", config.getRawValue("my.prop.common"));
-        assertEquals("dev", config.getRawValue("my.prop.profile"));
+        assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+        assertEquals("common", config.getConfigValue("my.prop.common").getValue());
+        assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
 
         server.stop(0);
     }
@@ -346,10 +346,10 @@ class PropertiesLocationConfigSourceFactoryTest {
                 })
                 .build();
 
-        assertEquals("main", config.getRawValue("my.prop.main"));
-        assertEquals("dev", config.getRawValue("my.prop.dev"));
-        assertEquals("main", config.getRawValue("context.main"));
-        assertEquals("dev", config.getRawValue("context.dev"));
+        assertEquals("main", config.getConfigValue("my.prop.main").getValue());
+        assertEquals("dev", config.getConfigValue("my.prop.dev").getValue());
+        assertEquals("main", config.getConfigValue("context.main").getValue());
+        assertEquals("dev", config.getConfigValue("context.dev").getValue());
     }
 
     @Test
@@ -389,10 +389,10 @@ class PropertiesLocationConfigSourceFactoryTest {
 
         assertTrue(config.getProfiles().contains("base"));
         assertTrue(config.getProfiles().contains("prod"));
-        assertEquals("unprofiled", config.getRawValue("only-in-unprofiled"));
-        assertEquals("base", config.getRawValue("only-in-base"));
-        assertEquals("prod", config.getRawValue("only-in-prod"));
-        assertEquals("prod", config.getRawValue("my.prop"));
+        assertEquals("unprofiled", config.getConfigValue("only-in-unprofiled").getValue());
+        assertEquals("base", config.getConfigValue("only-in-base").getValue());
+        assertEquals("prod", config.getConfigValue("only-in-prod").getValue());
+        assertEquals("prod", config.getConfigValue("my.prop").getValue());
     }
 
     private static SmallRyeConfig buildConfig(String... locations) {

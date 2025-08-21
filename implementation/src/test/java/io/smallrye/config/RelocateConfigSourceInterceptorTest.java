@@ -93,8 +93,8 @@ class RelocateConfigSourceInterceptorTest {
                 .addDefaultInterceptors()
                 .build();
 
-        assertEquals("relocated", config.getRawValue("original.name"));
-        assertEquals("relocated", config.getRawValue("relocated.name"));
+        assertEquals("relocated", config.getConfigValue("original.name").getValue());
+        assertEquals("relocated", config.getConfigValue("relocated.name").getValue());
     }
 
     @Test
@@ -138,8 +138,8 @@ class RelocateConfigSourceInterceptorTest {
     void relocatePropertyNames() {
         SmallRyeConfig config = buildConfig("smallrye.jwt.token.header", "Authorization");
 
-        assertEquals("Authorization", config.getRawValue("smallrye.jwt.token.header"));
-        assertEquals("Authorization", config.getRawValue("mp.jwt.token.header"));
+        assertEquals("Authorization", config.getConfigValue("smallrye.jwt.token.header").getValue());
+        assertEquals("Authorization", config.getConfigValue("mp.jwt.token.header").getValue());
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertEquals(2, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
@@ -150,8 +150,8 @@ class RelocateConfigSourceInterceptorTest {
     void fallbackPropertyNames() {
         SmallRyeConfig config = buildConfig("mp.jwt.token.header", "Authorization");
 
-        assertEquals("Authorization", config.getRawValue("smallrye.jwt.token.header"));
-        assertEquals("Authorization", config.getRawValue("mp.jwt.token.header"));
+        assertEquals("Authorization", config.getConfigValue("smallrye.jwt.token.header").getValue());
+        assertEquals("Authorization", config.getConfigValue("mp.jwt.token.header").getValue());
         List<String> names = stream(config.getPropertyNames().spliterator(), false).collect(toList());
         assertEquals(2, names.size());
         assertTrue(names.contains("smallrye.jwt.token.header"));
@@ -450,10 +450,10 @@ class RelocateConfigSourceInterceptorTest {
         assertEquals("one", values.get("one"));
 
         // Direct lookups to all keys
-        assertEquals("one", config.getRawValue("new.one"));
-        assertEquals("one", config.getRawValue("old.one"));
-        assertEquals("one", config.getRawValue("new.\"one\""));
-        assertEquals("one", config.getRawValue("old.\"one\""));
+        assertEquals("one", config.getConfigValue("new.one").getValue());
+        assertEquals("one", config.getConfigValue("old.one").getValue());
+        assertEquals("one", config.getConfigValue("new.\"one\"").getValue());
+        assertEquals("one", config.getConfigValue("old.\"one\"").getValue());
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {

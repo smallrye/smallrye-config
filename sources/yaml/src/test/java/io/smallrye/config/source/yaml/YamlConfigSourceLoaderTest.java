@@ -31,6 +31,6 @@ public class YamlConfigSourceLoaderTest {
                 .build();
 
         assertTrue(config.getConfigSources(YamlConfigSource.class).iterator().hasNext());
-        assertEquals("1234", config.getRawValue("my.prop"));
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
     }
 }

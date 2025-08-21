@@ -250,10 +250,10 @@ public class ConfigMappingNamingStrategyTest {
         assertEquals("value", mapping.snakeDefaults().snakeDefault());
         assertEquals("value", mapping.verbatimDefaults().verbatimDefault());
 
-        assertEquals("value", config.getRawValue("defaults.verbatimDefault"));
-        assertEquals("value", config.getRawValue("defaults.kebabDefaults.kebab-default"));
-        assertEquals("value", config.getRawValue("defaults.snakeDefaults.snake_default"));
-        assertEquals("value", config.getRawValue("defaults.verbatimDefaults.verbatimDefault"));
+        assertEquals("value", config.getConfigValue("defaults.verbatimDefault").getValue());
+        assertEquals("value", config.getConfigValue("defaults.kebabDefaults.kebab-default").getValue());
+        assertEquals("value", config.getConfigValue("defaults.snakeDefaults.snake_default").getValue());
+        assertEquals("value", config.getConfigValue("defaults.verbatimDefaults.verbatimDefault").getValue());
     }
 
     @ConfigMapping(prefix = "defaults", namingStrategy = VERBATIM)

@@ -25,7 +25,7 @@ class SmallRyeConfigBuilderCustomizerTest {
                 .withCustomizers(new CustomConfigBuilder())
                 .build();
 
-        assertEquals("1234", config.getRawValue("from.custom.builder"));
+        assertEquals("1234", config.getConfigValue("from.custom.builder").getValue());
     }
 
     @Test
@@ -45,7 +45,7 @@ class SmallRyeConfigBuilderCustomizerTest {
 
             SmallRyeConfig config = new SmallRyeConfigBuilder().addDiscoveredCustomizers().build();
 
-            assertEquals("1234", config.getRawValue("from.custom.builder"));
+            assertEquals("1234", config.getConfigValue("from.custom.builder").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -70,8 +70,8 @@ class SmallRyeConfigBuilderCustomizerTest {
 
             SmallRyeConfig config = new SmallRyeConfigBuilder().addDiscoveredCustomizers().build();
 
-            assertEquals("two", config.getRawValue("one"));
-            assertEquals("true", config.getRawValue("addDefaultSources"));
+            assertEquals("two", config.getConfigValue("one").getValue());
+            assertEquals("true", config.getConfigValue("addDefaultSources").getValue());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
