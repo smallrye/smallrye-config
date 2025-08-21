@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -213,62 +214,50 @@ public final class Converters {
     static final Converter<URI> URI_CONVERTER = BuiltInConverter.of(20,
             newTrimmingConverter(newEmptyValueConverter(URI::create)));
 
+    static final Converter<DateTimeFormatter> DATE_TIME_FORMATTER_CONVERTER = BuiltInConverter.of(21,
+            newTrimmingConverter(newEmptyValueConverter(DateTimeFormatter::ofPattern)));
+
+    static final Converter<CharSequence> CHAR_SEQUENCE_CONVERTER = BuiltInConverter.of(22,
+            newTrimmingConverter(newEmptyValueConverter(Object::toString)));
+
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
     static final Map<Type, Converter<?>> ALL_CONVERTERS = new HashMap<>();
 
     static {
         ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
-
         ALL_CONVERTERS.put(Boolean.class, BOOLEAN_CONVERTER);
-
         ALL_CONVERTERS.put(Double.class, DOUBLE_CONVERTER);
-
         ALL_CONVERTERS.put(Float.class, FLOAT_CONVERTER);
-
         ALL_CONVERTERS.put(Long.class, LONG_CONVERTER);
-
         ALL_CONVERTERS.put(Integer.class, INTEGER_CONVERTER);
-
         ALL_CONVERTERS.put(Short.class, SHORT_CONVERTER);
-
         ALL_CONVERTERS.put(Class.class, CLASS_CONVERTER);
         ALL_CONVERTERS.put(InetAddress.class, INET_ADDRESS_CONVERTER);
-
         ALL_CONVERTERS.put(OptionalInt.class, OPTIONAL_INT_CONVERTER);
         ALL_CONVERTERS.put(OptionalLong.class, OPTIONAL_LONG_CONVERTER);
         ALL_CONVERTERS.put(OptionalDouble.class, OPTIONAL_DOUBLE_CONVERTER);
-
         ALL_CONVERTERS.put(Character.class, CHARACTER_CONVERTER);
-
         ALL_CONVERTERS.put(Byte.class, BYTE_CONVERTER);
-
         ALL_CONVERTERS.put(UUID.class, UUID_CONVERTER);
-
         ALL_CONVERTERS.put(Currency.class, CURRENCY_CONVERTER);
-
         ALL_CONVERTERS.put(BitSet.class, BITSET_CONVERTER);
-
         ALL_CONVERTERS.put(Pattern.class, PATTERN_CONVERTER);
-
         ALL_CONVERTERS.put(Path.class, PATH_CONVERTER);
         ALL_CONVERTERS.put(File.class, FILE_CONVERTER);
-
         ALL_CONVERTERS.put(URI.class, URI_CONVERTER);
+        ALL_CONVERTERS.put(DateTimeFormatter.class, DATE_TIME_FORMATTER_CONVERTER);
+        ALL_CONVERTERS.put(CharSequence.class, CHAR_SEQUENCE_CONVERTER);
 
         Map<Class<?>, Class<?>> primitiveTypes = new HashMap<>(9);
         primitiveTypes.put(byte.class, Byte.class);
         primitiveTypes.put(short.class, Short.class);
         primitiveTypes.put(int.class, Integer.class);
         primitiveTypes.put(long.class, Long.class);
-
         primitiveTypes.put(float.class, Float.class);
         primitiveTypes.put(double.class, Double.class);
-
         primitiveTypes.put(char.class, Character.class);
-
         primitiveTypes.put(boolean.class, Boolean.class);
-
         primitiveTypes.put(void.class, Void.class);
         PRIMITIVE_TYPES = primitiveTypes;
     }
@@ -987,46 +976,32 @@ public final class Converters {
 
         @Serial
         Object readResolve() throws ObjectStreamException {
-            switch (id) {
-                case 0:
-                    return STRING_CONVERTER;
-                case 1:
-                    return BOOLEAN_CONVERTER;
-                case 2:
-                    return DOUBLE_CONVERTER;
-                case 3:
-                    return FLOAT_CONVERTER;
-                case 4:
-                    return LONG_CONVERTER;
-                case 5:
-                    return INTEGER_CONVERTER;
-                case 6:
-                    return CLASS_CONVERTER;
-                case 7:
-                    return OPTIONAL_INT_CONVERTER;
-                case 8:
-                    return OPTIONAL_LONG_CONVERTER;
-                case 9:
-                    return OPTIONAL_DOUBLE_CONVERTER;
-                case 10:
-                    return INET_ADDRESS_CONVERTER;
-                case 11:
-                    return CHARACTER_CONVERTER;
-                case 12:
-                    return SHORT_CONVERTER;
-                case 13:
-                    return BYTE_CONVERTER;
-                case 14:
-                    return UUID_CONVERTER;
-                case 15:
-                    return CURRENCY_CONVERTER;
-                case 16:
-                    return BITSET_CONVERTER;
-                case 17:
-                    return PATTERN_CONVERTER;
-                default:
-                    throw ConfigMessages.msg.unknownConverterId(id);
-            }
+            return switch (id) {
+                case 0 -> STRING_CONVERTER;
+                case 1 -> BOOLEAN_CONVERTER;
+                case 2 -> DOUBLE_CONVERTER;
+                case 3 -> FLOAT_CONVERTER;
+                case 4 -> LONG_CONVERTER;
+                case 5 -> INTEGER_CONVERTER;
+                case 6 -> CLASS_CONVERTER;
+                case 7 -> OPTIONAL_INT_CONVERTER;
+                case 8 -> OPTIONAL_LONG_CONVERTER;
+                case 9 -> OPTIONAL_DOUBLE_CONVERTER;
+                case 10 -> INET_ADDRESS_CONVERTER;
+                case 11 -> CHARACTER_CONVERTER;
+                case 12 -> SHORT_CONVERTER;
+                case 13 -> BYTE_CONVERTER;
+                case 14 -> UUID_CONVERTER;
+                case 15 -> CURRENCY_CONVERTER;
+                case 16 -> BITSET_CONVERTER;
+                case 17 -> PATTERN_CONVERTER;
+                case 18 -> PATH_CONVERTER;
+                case 19 -> FILE_CONVERTER;
+                case 20 -> URI_CONVERTER;
+                case 21 -> DATE_TIME_FORMATTER_CONVERTER;
+                case 22 -> CHAR_SEQUENCE_CONVERTER;
+                default -> throw ConfigMessages.msg.unknownConverterId(id);
+            };
         }
     }
 
