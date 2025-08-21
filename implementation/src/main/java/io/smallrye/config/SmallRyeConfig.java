@@ -1234,7 +1234,7 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     /**
-     * Returns the values for the specified configuration name from the underlyingx
+     * Returns the values for the specified configuration name from the underlying
      * {@linkplain ConfigSource configuration sources}.
      * <p>
      * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
