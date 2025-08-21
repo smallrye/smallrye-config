@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigSourceFactory;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -27,7 +28,7 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 .addDiscoveredSecretKeysHandlers()
                 .withDefaultValues(Map.of(
                         ENCRYPTION_KEY, "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
-                        "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true",
+                        DECODE_KEY, "true",
                         "my.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
                         "my.expression", "${not.found:default}",
                         "another.expression", "${my.expression}"))
@@ -138,5 +139,25 @@ class AESGCMNoPaddingSecretKeysHandlerTest {
                 .build();
 
         assertEquals("decoded", config.getRawValue("my.secret"));
+    }
+
+    @Test
+    void envVars() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withSources(new EnvConfigSource(Map.of(
+                        "SMALLRYE_CONFIG_SECRET_HANDLER_AES_GCM_NOPADDING_ENCRYPTION_KEY",
+                        "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
+                        "SMALLRYE_CONFIG_SECRET_HANDLER_AES_GCM_NOPADDING_ENCRYPTION_KEY_DECODE", "true"), 300))
+                .withDefaultValues(Map.of(
+                        "my.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
+                        "my.expression", "${not.found:default}",
+                        "another.expression", "${my.expression}"))
+                .build();
+
+        assertEquals("decoded", config.getRawValue("my.secret"));
+        assertEquals("default", config.getRawValue("my.expression"));
+        assertEquals("default", config.getRawValue("another.expression"));
     }
 }
