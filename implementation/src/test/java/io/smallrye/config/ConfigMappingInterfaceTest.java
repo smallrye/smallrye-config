@@ -2716,4 +2716,35 @@ class ConfigMappingInterfaceTest {
             Optional<String> value();
         }
     }
+
+    @Test
+    void groupDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("group-defaults.group.value", "value"))
+                .withMapping(GroupDefaults.class)
+                .build();
+
+        GroupDefaults mapping = config.getConfigMapping(GroupDefaults.class);
+        assertEquals("value", mapping.group().value());
+        assertEquals("default", mapping.defaults().group().get("default").value());
+    }
+
+    @ConfigMapping(prefix = "group-defaults")
+    interface GroupDefaults {
+        Group group();
+
+        @WithParentName
+        Defaults defaults();
+
+        interface Defaults {
+            @WithDefaults
+            @WithUnnamedKey("main")
+            Map<String, Group> group();
+        }
+
+        interface Group {
+            @WithDefault("default")
+            String value();
+        }
+    }
 }
