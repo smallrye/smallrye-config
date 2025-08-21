@@ -15,6 +15,7 @@
  */
 package io.smallrye.config;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -186,9 +188,9 @@ class ConvertersTest {
     void minimumValue() {
         SmallRyeConfig config = buildConfig("one.plus.one", "2", "animal", "anteater", "when", "1950-01-01");
         final Converter<Integer> intConv = Converters.getImplicitConverter(Integer.class);
-        final Converter<Integer> intMin2Conv = Converters.minimumValueConverter(intConv, Integer.valueOf(2), true);
-        final Converter<Integer> intMin2ExConv = Converters.minimumValueConverter(intConv, Integer.valueOf(2), false);
-        final Converter<Integer> intMin3Conv = Converters.minimumValueConverter(intConv, Integer.valueOf(3), true);
+        final Converter<Integer> intMin2Conv = Converters.minimumValueConverter(intConv, 2, true);
+        final Converter<Integer> intMin2ExConv = Converters.minimumValueConverter(intConv, 2, false);
+        final Converter<Integer> intMin3Conv = Converters.minimumValueConverter(intConv, 3, true);
         assertFalse(config.getOptionalValue("missing", intConv).isPresent());
         try {
             config.getValue("one.plus.one", intMin3Conv);
@@ -243,9 +245,9 @@ class ConvertersTest {
     void maximumValue() {
         SmallRyeConfig config = buildConfig("one.plus.one", "2", "animal", "anteater", "when", "1950-01-01");
         final Converter<Integer> intConv = Converters.getImplicitConverter(Integer.class);
-        final Converter<Integer> intMax2Conv = Converters.maximumValueConverter(intConv, Integer.valueOf(2), true);
-        final Converter<Integer> intMax2ExConv = Converters.maximumValueConverter(intConv, Integer.valueOf(2), false);
-        final Converter<Integer> intMax3Conv = Converters.maximumValueConverter(intConv, Integer.valueOf(3), true);
+        final Converter<Integer> intMax2Conv = Converters.maximumValueConverter(intConv, 2, true);
+        final Converter<Integer> intMax2ExConv = Converters.maximumValueConverter(intConv, 2, false);
+        final Converter<Integer> intMax3Conv = Converters.maximumValueConverter(intConv, 3, true);
         assertFalse(config.getOptionalValue("missing", intConv).isPresent());
         assertEquals(2, config.getValue("one.plus.one", intMax3Conv).intValue());
         assertEquals(2, config.getValue("one.plus.one", intMax2Conv).intValue());
@@ -370,7 +372,7 @@ class ConvertersTest {
         }
 
         assertTrue(config.getOptionalValue("boolean.key", Boolean.class).isPresent());
-        assertTrue(config.getValue("boolean.key", Boolean.class).booleanValue());
+        assertTrue(config.getValue("boolean.key", Boolean.class));
         assertFalse(config.getOptionalValue("boolean.missing.key", Boolean.class).isPresent());
         assertFalse(config.getOptionalValue("empty.key", Boolean.class).isPresent());
         try {
@@ -491,6 +493,24 @@ class ConvertersTest {
         Converter<URI> uriConverter = config.getConverterOrNull(URI.class);
         assertNotNull(uriConverter);
         assertTrue(uriConverter.getClass().getName().contains("BuiltInConverter"));
+    }
+
+    @Test
+    void dateTimeFormatter() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("dtf", "yyyy-MM-dd"))
+                .build();
+        DateTimeFormatter dtf = config.getValue("dtf", DateTimeFormatter.class);
+        assertEquals("2020-10-10", dtf.format(LocalDate.of(2020, 10, 10)));
+    }
+
+    @Test
+    void charSequence() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("cs", "CharSequence"))
+                .build();
+
+        assertEquals("CharSequence", config.getValue("cs", CharSequence.class));
     }
 
     @SafeVarargs

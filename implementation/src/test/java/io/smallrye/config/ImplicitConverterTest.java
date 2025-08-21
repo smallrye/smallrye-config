@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,7 +13,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Date;
+import java.util.Locale;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
@@ -23,7 +28,7 @@ class ImplicitConverterTest {
     @Test
     void implicitURLConverter() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config("my.url", "https://github.com/smallrye/smallrye-config/"))
+                .withSources(config("my.url", "https://github.com/smallrye/smallrye-config/"))
                 .build();
         URL url = config.getValue("my.url", URL.class);
         assertNotNull(url);
@@ -35,7 +40,7 @@ class ImplicitConverterTest {
     @Test
     void implicitLocalDateConverter() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(KeyValuesConfigSource.config("my.date", "2019-04-01"))
+                .withSources(config("my.date", "2019-04-01"))
                 .build();
         LocalDate date = config.getValue("my.date", LocalDate.class);
         assertNotNull(date);
@@ -131,7 +136,7 @@ class ImplicitConverterTest {
         A256GCMKW,
         PBES2_HS256_A128KW,
         PBES2_HS384_A192KW,
-        PBES2_HS512_A256KW;
+        PBES2_HS512_A256KW
     }
 
     @Test
@@ -196,5 +201,23 @@ class ImplicitConverterTest {
         assertEquals(HTTPConduit.HttpClientHTTPConduitFactory, converter.convert("http-client-http-conduit-factory"));
         assertEquals(HTTPConduit.URLConnectionHTTPConduitFactory, converter.convert("URLConnectionHTTPConduitFactory"));
         assertEquals(HTTPConduit.URLConnectionHTTPConduitFactory, converter.convert("url-connection-http-conduit-factory"));
+    }
+
+    @Test
+    void simpleDateFormat() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("sdf", "yyyy-MM-dd"))
+                .build();
+        SimpleDateFormat sdf = config.getValue("sdf", SimpleDateFormat.class);
+        assertEquals("1970-01-01", sdf.format(Date.from(Instant.EPOCH)));
+    }
+
+    @Test
+    void locale() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config("locale", "PT"))
+                .build();
+
+        assertEquals(Locale.forLanguageTag("PT"), config.getValue("locale", Locale.class));
     }
 }
