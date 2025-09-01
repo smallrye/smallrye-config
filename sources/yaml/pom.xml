@@ -13,7 +13,7 @@
     <name>SmallRye Config: ConfigSource - YAML</name>
 
     <properties>
-        <snakeyaml.version>2.4</snakeyaml.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
     </properties>
 
     <dependencies>
