@@ -7,6 +7,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
@@ -69,7 +70,7 @@ public interface ConfigInstanceBuilder<I> {
     <F extends ToIntFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, int value);
 
     /**
-     * Set a property on the configuration object to an integer value.
+     * Set a property on the configuration object to a long value.
      *
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
@@ -88,7 +89,7 @@ public interface ConfigInstanceBuilder<I> {
      * @param <F> the accessor type
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, double value);
+    <F extends ToDoubleFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, double value);
 
     /**
      * Set a property on the configuration object to a boolean value.
