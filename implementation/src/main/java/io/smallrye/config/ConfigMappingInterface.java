@@ -49,6 +49,7 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
     private final ToStringMethod toStringMethod;
+    private final Set<GeneratedConfigClass> auxiliaryClasses;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingHandler handler,
             final ConfigMappingInterface[] superTypes, final Property[] properties) {
@@ -71,6 +72,7 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
         filteredProperties.sort(PropertyComparator.INSTANCE);
         this.properties = collectFullHierarchyProperties(this, filteredProperties.toArray(Property[]::new));
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
+        this.auxiliaryClasses = Set.of(new ConfigMappingBuilder());
     }
 
     static String getGeneratedClassName(Class<?> interfaceType) {
@@ -129,6 +131,11 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
      */
     public Property[] getProperties() {
         return properties;
+    }
+
+    @Override
+    public Set<GeneratedConfigClass> getAuxiliaryClasses() {
+        return auxiliaryClasses;
     }
 
     private static Property[] collectFullHierarchyProperties(final ConfigMappingInterface type, final Property[] properties) {
@@ -198,6 +205,48 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
             return ConfigMappingGenerator.generate(this);
         } catch (Throwable e) {
             throw ConfigMessages.msg.couldNotGenerateMapping(e, generatedClassName);
+        }
+    }
+
+    public class ConfigMappingBuilder implements GeneratedConfigClass {
+        private final String builderClassName;
+
+        public ConfigMappingBuilder() {
+            this.builderClassName = getGeneratedBuilderClassName(interfaceType);
+        }
+
+        @Override
+        public Class<?> getParent() {
+            return ConfigMappingInterface.this.getParent();
+        }
+
+        @Override
+        public Class<?> getInterfaceType() {
+            return ConfigMappingInterface.this.getInterfaceType();
+        }
+
+        @Override
+        public ConfigMappingHandler getHandler() {
+            return ConfigMappingInterface.this.getHandler();
+        }
+
+        @Override
+        public String getClassName() {
+            return builderClassName;
+        }
+
+        @Override
+        public byte[] generateClassBytes() {
+            return ConfigMappingGenerator.generateBuilder(ConfigMappingInterface.this, builderClassName.replace('.', '/'));
+        }
+
+        @Override
+        public Property[] getProperties() {
+            return ConfigMappingInterface.this.getProperties();
+        }
+
+        static String getGeneratedBuilderClassName(Class<?> type) {
+            return type.getName() + "$$CMBuilder";
         }
     }
 
