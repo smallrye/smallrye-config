@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingInterface.ConfigMappingBuilder.getBuilderClassName;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -16,9 +17,11 @@ import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DCMPL;
+import static org.objectweb.asm.Opcodes.DLOAD;
 import static org.objectweb.asm.Opcodes.DRETURN;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.FCMPL;
+import static org.objectweb.asm.Opcodes.FLOAD;
 import static org.objectweb.asm.Opcodes.FRETURN;
 import static org.objectweb.asm.Opcodes.F_SAME;
 import static org.objectweb.asm.Opcodes.GETFIELD;
@@ -41,6 +44,7 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.LCMP;
+import static org.objectweb.asm.Opcodes.LLOAD;
 import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
@@ -81,6 +85,7 @@ import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
+import io.smallrye.config.ConfigMappingInterface.GroupProperty;
 import io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import io.smallrye.config.ConfigMappingInterface.MapProperty;
 import io.smallrye.config.ConfigMappingInterface.MayBeOptionalProperty;
@@ -144,29 +149,39 @@ public class ConfigMappingGenerator {
         noArgsCtor.visitEnd();
         noArgsCtor.visitMaxs(0, 0);
 
+        // Builder Constructor
+        String builderName = getBuilderClassName(mapping.getInterfaceType()).replace('.', '/');
+        MethodVisitor builderCtor = visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + builderName + ";)V", null, null);
+        builderCtor.visitVarInsn(ALOAD, V_THIS);
+        builderCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
+        for (Property property : mapping.getProperties()) {
+            Method method = property.getMethod();
+            String memberName = method.getName();
+            String fieldDesc = getDescriptor(method.getReturnType());
+            builderCtor.visitVarInsn(ALOAD, V_THIS);
+            builderCtor.visitVarInsn(ALOAD, 1);
+            builderCtor.visitFieldInsn(GETFIELD, builderName, memberName, fieldDesc);
+            builderCtor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
+        }
+        builderCtor.visitInsn(RETURN);
+        builderCtor.visitEnd();
+        builderCtor.visitMaxs(0, 0);
+
+        // ConfigMappingContext Constructor
         MethodVisitor ctor = visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
         ctor.visitParameter("context", ACC_FINAL);
         Label ctorStart = new Label();
         Label ctorEnd = new Label();
         ctor.visitLabel(ctorStart);
-        // stack: -
         ctor.visitVarInsn(ALOAD, V_THIS);
-        // stack: this
         ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
-        // stack: -
         ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-        // stack: ctxt
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getNameBuilder", "()L" + I_STRING_BUILDER + ';',
-                false);
-        // stack: sb
+        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getNameBuilder", "()L" + I_STRING_BUILDER + ';', false);
         ctor.visitInsn(DUP);
-        // stack: sb sb
         Label ctorSbStart = new Label();
         ctor.visitLabel(ctorSbStart);
         ctor.visitVarInsn(ASTORE, V_STRING_BUILDER);
-        // stack: sb
         ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
-        // stack: len
         Label ctorLenStart = new Label();
         ctor.visitLabel(ctorLenStart);
         ctor.visitVarInsn(ISTORE, V_LENGTH);
@@ -207,6 +222,138 @@ public class ConfigMappingGenerator {
         generateEquals(visitor, mapping);
         generateHashCode(visitor, mapping);
         generateToString(visitor, mapping);
+
+        return writer.toByteArray();
+    }
+
+    private static final String I_CONFIG_INSTANCE_BUILDER = getInternalName(ConfigInstanceBuilder.class);
+    private static final String I_CONFIG_INSTANCE_BUILDER_IMPL = getInternalName(ConfigInstanceBuilderImpl.class);
+
+    static byte[] generateBuilder(final ConfigMappingInterface mapping, final String builderClassName) {
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
+
+        visitor.visit(V1_8, ACC_PUBLIC, builderClassName, null, I_OBJECT, new String[] {});
+        visitor.visitSource(null, null);
+
+        // No Args Constructor
+        MethodVisitor noArgsCtor = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+        noArgsCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
+        for (Property property : mapping.getProperties()) {
+            if ((property.isLeaf() || property.isPrimitive()) && property.hasDefaultValue()
+                    && property.getDefaultValue() != null) {
+                noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                noArgsCtor.visitLdcInsn(property.getDefaultValue());
+                if (property.isPrimitive()) {
+                    PrimitiveProperty primitive = property.asPrimitive();
+                    noArgsCtor.visitLdcInsn(Type.getType(getDescriptor(primitive.getBoxType())));
+                } else {
+                    noArgsCtor.visitLdcInsn(Type.getType(getDescriptor(property.getMethod().getReturnType())));
+                }
+                noArgsCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValue",
+                        "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT + ";", false);
+                if (property.isPrimitive()) {
+                    PrimitiveProperty primitive = property.asPrimitive();
+                    noArgsCtor.visitTypeInsn(CHECKCAST, getInternalName(primitive.getBoxType()));
+                    noArgsCtor.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitive.getBoxType()),
+                            primitive.getUnboxMethodName(),
+                            primitive.getUnboxMethodDescriptor(), false);
+                } else {
+                    noArgsCtor.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
+                }
+                noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, property.getMethod().getName(),
+                        getDescriptor(property.getMethod().getReturnType()));
+            } else if (property.isGroup()) {
+                noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                noArgsCtor.visitLdcInsn(Type.getType(getDescriptor(property.getMethod().getReturnType())));
+                noArgsCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER, "forInterface",
+                        "(L" + I_CLASS + ";)L" + I_CONFIG_INSTANCE_BUILDER + ";", true);
+                noArgsCtor.visitMethodInsn(INVOKEINTERFACE, I_CONFIG_INSTANCE_BUILDER, "build", "()L" + I_OBJECT + ";", true);
+                noArgsCtor.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
+                noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, property.getMethod().getName(),
+                        getDescriptor(property.getMethod().getReturnType()));
+            } else if (property.isCollection() && property.asCollection().getElement().isLeaf()) {
+                CollectionProperty collectionProperty = property.asCollection();
+                LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+                if (elementProperty.hasDefaultValue() && elementProperty.getDefaultValue() != null) {
+                    noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                    noArgsCtor.visitLdcInsn(elementProperty.getDefaultValue());
+                    noArgsCtor.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                    noArgsCtor.visitLdcInsn(Type.getType(getDescriptor(collectionProperty.getCollectionRawType())));
+                    noArgsCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValues",
+                            "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
+                    noArgsCtor.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
+                    noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, property.getMethod().getName(),
+                            getDescriptor(property.getMethod().getReturnType()));
+                }
+            } else if (property.isMap()) {
+                MapProperty mapProperty = property.asMap();
+                if (mapProperty.getValueProperty().isLeaf() && mapProperty.hasDefaultValue()
+                        && mapProperty.getDefaultValue() != null) {
+                    noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                    noArgsCtor.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
+                    noArgsCtor.visitInsn(DUP);
+                    noArgsCtor.visitLdcInsn(mapProperty.getDefaultValue());
+                    noArgsCtor.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
+                            "(L" + I_OBJECT + ";)V", false);
+                    noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, property.getMethod().getName(),
+                            getDescriptor(property.getMethod().getReturnType()));
+                } else if (mapProperty.getValueProperty().isGroup()) {
+                    GroupProperty groupProperty = mapProperty.getValueProperty().asGroup();
+                    noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                    noArgsCtor.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
+                    noArgsCtor.visitInsn(DUP);
+                    noArgsCtor.visitLdcInsn(getType(groupProperty.getGroupType().getInterfaceType()));
+                    noArgsCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER, "forInterface",
+                            "(L" + I_CLASS + ";)L" + I_CONFIG_INSTANCE_BUILDER + ";", true);
+                    noArgsCtor.visitMethodInsn(INVOKEINTERFACE, I_CONFIG_INSTANCE_BUILDER, "build", "()L" + I_OBJECT + ";",
+                            true);
+                    noArgsCtor.visitTypeInsn(CHECKCAST, getInternalName(groupProperty.getGroupType().getInterfaceType()));
+                    noArgsCtor.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
+                            "(L" + I_OBJECT + ";)V", false);
+                    noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, property.getMethod().getName(),
+                            getDescriptor(property.getMethod().getReturnType()));
+                }
+            }
+        }
+        noArgsCtor.visitInsn(RETURN);
+        noArgsCtor.visitEnd();
+        noArgsCtor.visitMaxs(0, 0);
+
+        for (Property property : mapping.getProperties()) {
+            Method method = property.getMethod();
+            String memberName = method.getName();
+
+            // Field Declaration
+            String fieldDesc = getDescriptor(method.getReturnType());
+            // TODO - Should it be public? And use field access to copy from the builder to the config class?
+            visitor.visitField(ACC_PUBLIC, memberName, fieldDesc, null, null);
+
+            // Setter
+            MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC, memberName, "(" + fieldDesc + ")V", null, null);
+            mv.visitVarInsn(ALOAD, V_THIS);
+            switch (Type.getReturnType(method).getSort()) {
+                case Type.BOOLEAN,
+                        Type.SHORT,
+                        Type.CHAR,
+                        Type.BYTE,
+                        Type.INT ->
+                    mv.visitVarInsn(ILOAD, 1);
+
+                case Type.LONG -> mv.visitVarInsn(LLOAD, 1);
+
+                case Type.FLOAT -> mv.visitVarInsn(FLOAD, 1);
+
+                case Type.DOUBLE -> mv.visitVarInsn(DLOAD, 1);
+
+                default -> mv.visitVarInsn(ALOAD, 1);
+            }
+            mv.visitFieldInsn(PUTFIELD, builderClassName, memberName, fieldDesc);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
 
         return writer.toByteArray();
     }

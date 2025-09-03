@@ -1,20 +1,30 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config._private.ConfigMessages.msg;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
@@ -46,20 +56,19 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     private static final ClassValue<Supplier<?>> builderFactories = new ClassValue<>() {
         protected Supplier<?> computeValue(final Class<?> type) {
             assert type.isInterface();
-            String interfaceName = type.getName();
+            // TODO - Should we cache this eagerly in io.smallrye.config.ConfigMappingLoader.ConfigMappingImplementation?
             MethodHandles.Lookup lookup;
             try {
                 lookup = MethodHandles.privateLookupIn(type, myLookup);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
-            String implInternalName = interfaceName.replace('.', '/') + "$$SC_BuilderImpl";
             Class<?> impl;
             try {
-                impl = lookup.findClass(implInternalName);
+                ConfigMappingLoader.ensureLoaded(type);
+                impl = lookup.findClass(ConfigMappingInterface.ConfigMappingBuilder.getBuilderClassName(type));
             } catch (ClassNotFoundException e) {
-                // generate the impl instead
-                throw new UnsupportedOperationException("Todo");
+                throw new IllegalStateException(e);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
@@ -74,7 +83,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
             // capture the constructor as a Supplier
             return () -> {
                 try {
-                    return (ConfigInstanceBuilderImpl<?>) mh.invokeExact();
+                    return mh.invoke();
                 } catch (RuntimeException | Error e) {
                     throw e;
                 } catch (Throwable e) {
@@ -83,33 +92,33 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
             };
         }
     };
+
     /**
      * Class value which holds the cached config class instance constructors.
      */
     private static final ClassValue<Function<Object, ?>> configFactories = new ClassValue<>() {
+        // TODO - This is to load the mapping class implementation, which we already have, just missing the right constructor in the ConfigMappingLoader, so we can probably remove this one
         protected Function<Object, ?> computeValue(final Class<?> type) {
             assert type.isInterface();
-            String interfaceName = type.getName();
+            // TODO - Should we cache this eagerly in io.smallrye.config.ConfigMappingLoader.ConfigMappingImplementation?
             MethodHandles.Lookup lookup;
             try {
                 lookup = MethodHandles.privateLookupIn(type, myLookup);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
-            String implInternalName = interfaceName.replace('.', '/') + "$$SC_BuilderImpl";
             Class<?> impl;
+            Class<?> builderClass;
             try {
-                impl = lookup.findClass(implInternalName);
+                impl = ConfigMappingLoader.ensureLoaded(type).implementation();
+                builderClass = lookup.findClass(ConfigMappingInterface.ConfigMappingBuilder.getBuilderClassName(type));
             } catch (ClassNotFoundException e) {
-                // generate the impl instead
-                throw new UnsupportedOperationException("Todo");
+                throw new IllegalStateException(e);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
             MethodHandle mh;
-            Class<?> builderClass = null;
-            if (true)
-                throw new UnsupportedOperationException("Not finished yet...");
+
             try {
                 mh = lookup.findConstructor(impl, MethodType.methodType(void.class, builderClass));
             } catch (NoSuchMethodException e) {
@@ -120,7 +129,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
             // capture the constructor as a Function
             return builder -> {
                 try {
-                    return type.cast(mh.invokeExact(builder));
+                    return mh.invoke(builder);
                 } catch (RuntimeException | Error e) {
                     throw e;
                 } catch (Throwable e) {
@@ -143,7 +152,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> configurationInterface)
             throws IllegalArgumentException, SecurityException {
-        return new ConfigInstanceBuilderImpl<I>(configurationInterface, builderFactories.get(configurationInterface).get());
+        return new ConfigInstanceBuilderImpl<>(configurationInterface, builderFactories.get(configurationInterface).get());
     }
 
     // =====================================
@@ -196,7 +205,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return this;
     }
 
-    public <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter,
+    public <F extends ToDoubleFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter,
             final double value) {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
@@ -293,6 +302,63 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     // =====================================
 
+    public static <T> T convertValue(final String value, final Class<T> type) {
+        Converter<T> converter = Converters.getConverter(type);
+        if (converter == null) {
+            throw new IllegalArgumentException("No converter found for type " + type);
+        }
+        return converter.convert(value);
+    }
+
+    public static <T, C extends Collection<T>> C convertValues(
+            final String value,
+            final Class<T> itemType,
+            final Class<C> collectionType) {
+        return convertValues(value, itemType, createCollectionFactory(collectionType));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, C extends Collection<T>> C convertValues(
+            final String value,
+            final Class<T> itemType,
+            final IntFunction<? extends Collection<T>> collectionFactory) {
+        Converter<T> converter = Converters.getConverter(itemType);
+        if (converter == null) {
+            throw new IllegalArgumentException("No converter found for type " + itemType);
+        }
+        return (C) newCollectionConverter(converter, collectionFactory).convert(value);
+    }
+
+    // TODO - Duplicated from ConfigMappingContext
+    public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
+            final Class<C> type) {
+        if (type.equals(List.class)) {
+            return ArrayList::new;
+        }
+
+        if (type.equals(Set.class)) {
+            return HashSet::new;
+        }
+
+        throw new IllegalArgumentException();
+    }
+
+    // TODO - Duplicated from ConfigMappingContext
+    static class MapWithDefault<K, V> extends HashMap<K, V> {
+        @Serial
+        private static final long serialVersionUID = 1390928078837140814L;
+        private final V defaultValue;
+
+        MapWithDefault(final V defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public V get(final Object key) {
+            return getOrDefault(key, defaultValue);
+        }
+    }
+
     private Converter<?> getConverter(final Object getter, final Class<?> callerClass) {
         throw new UnsupportedOperationException("Need class info registry");
     }
@@ -313,7 +379,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         }
         Object replaced;
         try {
-            replaced = writeReplace.invokeExact(lambda);
+            replaced = writeReplace.invoke(lambda);
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
@@ -326,7 +392,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         if (sl.getCapturedArgCount() != 0) {
             throw msg.invalidGetter();
         }
-        String implClassName = sl.getImplClass();
         // TODO: check implClassName against the supertype hierarchy of the config interface using shared info mapping
         String setterName = sl.getImplMethodName();
         Class<?> type = parseReturnType(sl.getImplMethodSignature());
@@ -337,7 +402,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         Class<?> builderClass = builderObject.getClass();
         MethodHandle setter;
         try {
-            setter = lookup.findVirtual(builderClass, setterName, MethodType.methodType(void.class, builderClass, type));
+            setter = lookup.findVirtual(builderClass, setterName, MethodType.methodType(void.class, type));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -347,7 +412,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         MethodHandle castSetter = setter.asType(MethodType.methodType(void.class, builderClass, Object.class));
         return (builder, val) -> {
             try {
-                castSetter.invokeExact(builderObject, builder, val);
+                castSetter.invoke(builderObject, val);
             } catch (RuntimeException | Error e) {
                 throw e;
             } catch (Throwable e) {
@@ -369,46 +434,24 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     private Class<?> parseType(String desc, int start, int end) {
-        switch (desc.charAt(start)) {
-            case 'L': {
-                return parseClassName(desc, start + 1, end - 1);
-            }
-            case '[': {
-                return parseType(desc, start + 1, end).arrayType();
-            }
-            case 'B': {
-                return byte.class;
-            }
-            case 'C': {
-                return char.class;
-            }
-            case 'D': {
-                return double.class;
-            }
-            case 'F': {
-                return float.class;
-            }
-            case 'I': {
-                return int.class;
-            }
-            case 'J': {
-                return long.class;
-            }
-            case 'S': {
-                return short.class;
-            }
-            case 'Z': {
-                return boolean.class;
-            }
-            default: {
-                throw msg.invalidGetter();
-            }
-        }
+        return switch (desc.charAt(start)) {
+            case 'L' -> parseClassName(desc, start + 1, end - 1);
+            case '[' -> parseType(desc, start + 1, end).arrayType();
+            case 'B' -> byte.class;
+            case 'C' -> char.class;
+            case 'D' -> double.class;
+            case 'F' -> float.class;
+            case 'I' -> int.class;
+            case 'J' -> long.class;
+            case 'S' -> short.class;
+            case 'Z' -> boolean.class;
+            default -> throw msg.invalidGetter();
+        };
     }
 
     private Class<?> parseClassName(final String signature, final int start, final int end) {
         try {
-            return lookup.findClass(signature.substring(start, end));
+            return lookup.findClass(signature.substring(start, end).replaceAll("/", "."));
         } catch (ClassNotFoundException e) {
             throw msg.invalidGetter();
         } catch (IllegalAccessException e) {
