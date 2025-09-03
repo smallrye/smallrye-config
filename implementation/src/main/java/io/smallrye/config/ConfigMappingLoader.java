@@ -6,6 +6,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -93,13 +94,20 @@ public final class ConfigMappingLoader {
                 if (generatedClass instanceof ConfigMappingClass) {
                     return loadedClass;
                 }
-                return defineClass(parent, generatedClass.getClassName(), generatedClass.generateClassBytes());
+                return loadClass(parent, generatedClass);
             } catch (ClassNotFoundException e) {
-                return defineClass(parent, generatedClass.getClassName(), generatedClass.generateClassBytes());
+                return loadClass(parent, generatedClass);
             } finally {
                 CLASS_LOADER_LOCKS.remove(generatedClass.getClassName());
             }
         }
+    }
+
+    private static Class<?> loadClass(final Class<?> parent, final GeneratedConfigClass generatedClass) {
+        for (GeneratedConfigClass auxiliaryClass : generatedClass.getAuxiliaryClasses()) {
+            defineClass(parent, auxiliaryClass.getClassName(), auxiliaryClass.generateClassBytes());
+        }
+        return defineClass(parent, generatedClass.getClassName(), generatedClass.generateClassBytes());
     }
 
     /**
@@ -166,6 +174,15 @@ public final class ConfigMappingLoader {
          * @return the properties
          */
         Property[] getProperties();
+
+        /**
+         * Returns additional generated classes that must be defined alongside this class.
+         *
+         * @return the auxiliary classes, empty by default
+         */
+        default Set<GeneratedConfigClass> getAuxiliaryClasses() {
+            return Collections.emptySet();
+        }
     }
 
     static final class ConfigClassImplementation {
