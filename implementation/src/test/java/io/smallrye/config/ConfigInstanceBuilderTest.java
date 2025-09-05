@@ -6,14 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +20,7 @@ class ConfigInstanceBuilderTest {
     void builder() {
         Server server = forInterface(Server.class)
                 .with(Server::host, "localhost")
-                .with(Server::port, Integer.valueOf(8080))
+                .with(Server::port, 8080)
                 .build();
 
         assertEquals("localhost", server.host());
@@ -108,8 +106,8 @@ class ConfigInstanceBuilderTest {
     void optionals() {
         Optionals optionals = forInterface(Optionals.class)
                 .withOptional(Optionals::optional, "value")
-                .withOptional((Function<Optionals, OptionalInt> & Serializable) Optionals::optionalInt, 1)
-                .withOptional((Function<Optionals, OptionalLong> & Serializable) Optionals::optionalLong, 1)
+                .withOptional(Optionals::optionalInt, 1)
+                .withOptional(Optionals::optionalLong, 1)
                 .withOptional(Optionals::optionalDouble, 1.1d)
                 .withOptional(Optionals::optionalBoolean, true)
                 .build();
@@ -161,6 +159,34 @@ class ConfigInstanceBuilderTest {
             @WithDefault("nested")
             String value();
         }
+    }
+
+    @Test
+    void optionalDefaults() {
+        OptionalDefaults optionalDefaults = forInterface(OptionalDefaults.class).build();
+
+        assertTrue(optionalDefaults.optional().isPresent());
+        assertEquals("value", optionalDefaults.optional().get());
+        assertTrue(optionalDefaults.optionalInt().isPresent());
+        assertEquals(10, optionalDefaults.optionalInt().getAsInt());
+        assertTrue(optionalDefaults.optionalLong().isPresent());
+        assertEquals(10L, optionalDefaults.optionalLong().getAsLong());
+        assertTrue(optionalDefaults.optionalDouble().isPresent());
+        assertEquals(10.10d, optionalDefaults.optionalDouble().getAsDouble());
+    }
+
+    interface OptionalDefaults {
+        @WithDefault("value")
+        Optional<String> optional();
+
+        @WithDefault("10")
+        OptionalInt optionalInt();
+
+        @WithDefault("10")
+        OptionalLong optionalLong();
+
+        @WithDefault("10.10")
+        OptionalDouble optionalDouble();
     }
 
     @Test
