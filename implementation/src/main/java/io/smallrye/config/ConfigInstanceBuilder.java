@@ -11,6 +11,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
+import org.eclipse.microprofile.config.spi.Converter;
+
 /**
  * A builder which can produce instances of a configuration interface.
  * <p>
@@ -64,10 +66,9 @@ public interface ConfigInstanceBuilder<I> {
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
      * @return this builder (not {@code null})
-     * @param <F> the accessor type
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    <F extends ToIntFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, int value);
+    ConfigInstanceBuilder<I> with(ToIntFunctionGetter<I> getter, int value);
 
     /**
      * Set a property on the configuration object to a long value.
@@ -75,10 +76,9 @@ public interface ConfigInstanceBuilder<I> {
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
      * @return this builder (not {@code null})
-     * @param <F> the accessor type
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, long value);
+    ConfigInstanceBuilder<I> with(ToLongFunctionGetter<I> getter, long value);
 
     /**
      * Set a property on the configuration object to a floating-point value.
@@ -86,10 +86,9 @@ public interface ConfigInstanceBuilder<I> {
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
      * @return this builder (not {@code null})
-     * @param <F> the accessor type
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    <F extends ToDoubleFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(F getter, double value);
+    ConfigInstanceBuilder<I> with(ToDoubleFunctionGetter<I> getter, double value);
 
     /**
      * Set a property on the configuration object to a boolean value.
@@ -123,12 +122,10 @@ public interface ConfigInstanceBuilder<I> {
      *
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
-     * @param <F> the accessor type
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    default <F extends Function<? super I, OptionalInt> & Serializable> ConfigInstanceBuilder<I> withOptional(F getter,
-            int value) {
+    default ConfigInstanceBuilder<I> withOptional(OptionalIntGetter<I> getter, int value) {
         return with(getter, OptionalInt.of(value));
     }
 
@@ -137,12 +134,10 @@ public interface ConfigInstanceBuilder<I> {
      *
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
-     * @param <F> the accessor type
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    default <F extends Function<? super I, OptionalLong> & Serializable> ConfigInstanceBuilder<I> withOptional(F getter,
-            long value) {
+    default ConfigInstanceBuilder<I> withOptional(OptionalLongGetter<I> getter, long value) {
         return with(getter, OptionalLong.of(value));
     }
 
@@ -151,12 +146,10 @@ public interface ConfigInstanceBuilder<I> {
      *
      * @param getter the property accessor (must not be {@code null})
      * @param value the value to set (must not be {@code null})
-     * @param <F> the accessor type
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
-    default <F extends Function<? super I, OptionalDouble> & Serializable> ConfigInstanceBuilder<I> withOptional(F getter,
-            double value) {
+    default ConfigInstanceBuilder<I> withOptional(OptionalDoubleGetter<I> getter, double value) {
         return with(getter, OptionalDouble.of(value));
     }
 
@@ -317,5 +310,27 @@ public interface ConfigInstanceBuilder<I> {
     static <I> ConfigInstanceBuilder<I> forInterface(Class<I> interfaceClass)
             throws IllegalArgumentException, SecurityException {
         return ConfigInstanceBuilderImpl.forInterface(interfaceClass);
+    }
+
+    static <T> void registerConverter(Class<T> type, Converter<T> converter) {
+        ConfigInstanceBuilderImpl.CONVERTERS.put(type, converter);
+    }
+
+    interface ToIntFunctionGetter<T> extends ToIntFunction<T>, Serializable {
+    }
+
+    interface ToLongFunctionGetter<T> extends ToLongFunction<T>, Serializable {
+    }
+
+    interface ToDoubleFunctionGetter<T> extends ToDoubleFunction<T>, Serializable {
+    }
+
+    interface OptionalIntGetter<T> extends Function<T, OptionalInt>, Serializable {
+    }
+
+    interface OptionalLongGetter<T> extends Function<T, OptionalLong>, Serializable {
+    }
+
+    interface OptionalDoubleGetter<T> extends Function<T, OptionalDouble>, Serializable {
     }
 }
