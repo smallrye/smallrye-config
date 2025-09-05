@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.Converters.newCollectionConverter;
+import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config._private.ConfigMessages.msg;
 
 import java.io.Serial;
@@ -9,6 +10,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +18,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -24,13 +29,15 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.Converters.Implicit;
+import io.smallrye.config.SmallRyeConfigBuilder.ConverterWithPriority;
+import io.smallrye.config._private.ConfigMessages;
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -188,7 +195,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return this;
     }
 
-    public <F extends ToIntFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter, final int value) {
+    public ConfigInstanceBuilder<I> with(final ToIntFunctionGetter<I> getter, final int value) {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
@@ -196,8 +203,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return this;
     }
 
-    public <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter,
-            final long value) {
+    public ConfigInstanceBuilder<I> with(final ToLongFunctionGetter<I> getter, final long value) {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
@@ -205,12 +211,11 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return this;
     }
 
-    public <F extends ToDoubleFunction<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter,
-            final double value) {
+    public ConfigInstanceBuilder<I> with(final ToDoubleFunctionGetter<I> getter, final double value) {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, Double.valueOf(value));
+        setter.accept(builderObject, value);
         return this;
     }
 
@@ -302,12 +307,62 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     // =====================================
 
+    static final Map<Type, Converter<?>> CONVERTERS = new ConcurrentHashMap<>();
+
+    static {
+        registerConverters();
+    }
+
+    private static void registerConverters() {
+        Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>();
+
+        // TODO - We need to register this for Native in Quarkus - Also, we are doubling the work because SR Config also does the registration
+        for (Converter<?> converter : ServiceLoader.load(Converter.class, SecuritySupport.getContextClassLoader())) {
+            Type type = Converters.getConverterType(converter.getClass());
+            if (type == null) {
+                throw ConfigMessages.msg.unableToAddConverter(converter);
+            }
+            SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
+        }
+
+        CONVERTERS.putAll(Converters.ALL_CONVERTERS);
+        CONVERTERS.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
+        for (Entry<Type, ConverterWithPriority> entry : convertersToBuild.entrySet()) {
+            CONVERTERS.put(entry.getKey(), entry.getValue().getConverter());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Converter<T> getConverter(Class<T> type) {
+        Converter<?> exactConverter = CONVERTERS.get(type);
+        if (exactConverter != null) {
+            return (Converter<T>) exactConverter;
+        }
+        if (type.isPrimitive()) {
+            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(type));
+        }
+        if (type.isArray()) {
+            final Converter<?> conv = getConverter(type.getComponentType());
+            return conv == null ? null : Converters.newArrayConverter(conv, type);
+        }
+
+        return Implicit.getConverter(type);
+    }
+
     public static <T> T convertValue(final String value, final Class<T> type) {
-        Converter<T> converter = Converters.getConverter(type);
+        Converter<T> converter = getConverter(type);
         if (converter == null) {
             throw new IllegalArgumentException("No converter found for type " + type);
         }
         return converter.convert(value);
+    }
+
+    public static <T> Optional<T> convertOptionalValue(final String value, final Class<T> type) {
+        Converter<T> converter = getConverter(type);
+        if (converter == null) {
+            throw new IllegalArgumentException("No converter found for type " + type);
+        }
+        return Converters.newOptionalConverter(converter).convert(value);
     }
 
     public static <T, C extends Collection<T>> C convertValues(
@@ -318,11 +373,23 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     @SuppressWarnings("unchecked")
+    public <T, C extends Collection<T>> Optional<C> convertOptionalValues(
+            final String value,
+            final Class<T> itemType,
+            final IntFunction<? extends Collection<T>> collectionFactory) {
+        Converter<T> converter = getConverter(itemType);
+        if (converter == null) {
+            throw new IllegalArgumentException("No converter found for type " + itemType);
+        }
+        return (Optional<C>) newOptionalConverter(newCollectionConverter(converter, collectionFactory)).convert(value);
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T, C extends Collection<T>> C convertValues(
             final String value,
             final Class<T> itemType,
             final IntFunction<? extends Collection<T>> collectionFactory) {
-        Converter<T> converter = Converters.getConverter(itemType);
+        Converter<T> converter = getConverter(itemType);
         if (converter == null) {
             throw new IllegalArgumentException("No converter found for type " + itemType);
         }
@@ -330,7 +397,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     // TODO - Duplicated from ConfigMappingContext
-    public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
+    static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
             final Class<C> type) {
         if (type.equals(List.class)) {
             return ArrayList::new;

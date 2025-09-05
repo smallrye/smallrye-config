@@ -213,23 +213,6 @@ public final class Converters {
         return getConverterType(clazz.getSuperclass());
     }
 
-    // TODO - Should we add / keep this here?
-    @SuppressWarnings("unchecked")
-    public static <T> Converter<T> getConverter(Class<T> type) {
-        final Converter<?> exactConverter = ALL_CONVERTERS.get(type);
-        if (exactConverter != null) {
-            return (Converter<T>) exactConverter;
-        }
-        if (type.isPrimitive()) {
-            return (Converter<T>) getConverter(Converters.wrapPrimitiveType(type));
-        }
-        if (type.isArray()) {
-            final Converter<?> conv = getConverter(type.getComponentType());
-            return conv == null ? null : Converters.newArrayConverter(conv, type);
-        }
-        return Implicit.getConverter(type);
-    }
-
     /**
      * Get the implicit converter for the given type class, if any.
      *
