@@ -6,7 +6,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Serial;
@@ -51,11 +50,12 @@ class ConfigInstanceBuilderFullTest {
     @Test
     void emptyWithDefaults() {
         HttpConfig httpConfig = ConfigInstanceBuilder.forInterface(HttpConfig.class)
+                .with(HttpConfig::host, "localhost")
                 .build();
 
         assertEquals(8080, httpConfig.port());
         assertEquals(8081, httpConfig.testPort());
-        assertNull(httpConfig.host());
+        assertEquals("localhost", httpConfig.host());
         assertFalse(httpConfig.testHost().isPresent());
         assertTrue(httpConfig.hostEnabled());
         assertEquals(8443, httpConfig.sslPort());
@@ -230,12 +230,6 @@ class ConfigInstanceBuilderFullTest {
         assertNotNull(httpConfig.websocketServer());
         assertFalse(httpConfig.websocketServer().maxFrameSize().isPresent());
         assertFalse(httpConfig.websocketServer().maxMessageSize().isPresent());
-    }
-
-    @Test
-    void populate() {
-        HttpConfig httpConfig = ConfigInstanceBuilder.forInterface(HttpConfig.class)
-                .build();
     }
 
     @ConfigMapping
