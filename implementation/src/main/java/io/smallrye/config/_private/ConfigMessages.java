@@ -246,4 +246,7 @@ public interface ConfigMessages {
             return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
         }
     }
+
+    @Message(id = 63, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
+    NoSuchElementException propertyNotSet(String property);
 }
