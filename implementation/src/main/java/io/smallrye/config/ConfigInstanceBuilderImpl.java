@@ -398,7 +398,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     public static <T> T requireValue(final T value, final String name) {
         if (value == null) {
-            // TODO - Change message?
             throw msg.propertyNotSet(name);
         }
         return value;
