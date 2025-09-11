@@ -152,20 +152,40 @@ public class ConfigMappingGenerator {
         builderCtor.visitVarInsn(ALOAD, V_THIS);
         builderCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
         for (Property property : mapping.getProperties()) {
+            if (!property.isDefaultMethod()) {
+                Method method = property.getMethod();
+                String memberName = method.getName();
+                String fieldDesc = getDescriptor(method.getReturnType());
+                builderCtor.visitVarInsn(ALOAD, V_THIS);
+                builderCtor.visitVarInsn(ALOAD, 1);
+                builderCtor.visitMethodInsn(INVOKEVIRTUAL, builderName, memberName, "()" + fieldDesc, false);
+                if (!property.isPrimitive()) {
+                    builderCtor.visitLdcInsn(method.getDeclaringClass().getName() + "." + memberName);
+                    builderCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "requireValue",
+                            "(L" + I_OBJECT + ";L" + I_STRING + ";)L" + I_OBJECT + ";", false);
+                    builderCtor.visitTypeInsn(CHECKCAST, getInternalName(method.getReturnType()));
+                }
+                builderCtor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
+            }
+        }
+        // We don't know the order in the constructor and the default method may require call to other
+        // properties that may not be initialized yet, so we add them last
+        for (Property property : mapping.getProperties()) {
             Method method = property.getMethod();
             String memberName = method.getName();
             String fieldDesc = getDescriptor(method.getReturnType());
-            builderCtor.visitVarInsn(ALOAD, V_THIS);
-            builderCtor.visitVarInsn(ALOAD, 1);
-            builderCtor.visitMethodInsn(INVOKEVIRTUAL, builderName, memberName, "()" + fieldDesc, false);
-            if (!property.isPrimitive()) {
-                builderCtor.visitLdcInsn(method.getDeclaringClass().getName() + "." + memberName);
-                builderCtor.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "requireValue",
-                        "(L" + I_OBJECT + ";L" + I_STRING + ";)L" + I_OBJECT + ";", false);
-                builderCtor.visitTypeInsn(CHECKCAST, getInternalName(method.getReturnType()));
+
+            if (property.isDefaultMethod()) {
+                builderCtor.visitVarInsn(ALOAD, V_THIS);
+                Method defaultMethod = property.asDefaultMethod().getDefaultMethod();
+                builderCtor.visitVarInsn(ALOAD, V_THIS);
+                builderCtor.visitMethodInsn(INVOKESTATIC, getInternalName(defaultMethod.getDeclaringClass()),
+                        defaultMethod.getName(),
+                        "(" + getType(mapping.getInterfaceType()) + ")" + fieldDesc, false);
+                builderCtor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
             }
-            builderCtor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
         }
+
         builderCtor.visitInsn(RETURN);
         builderCtor.visitEnd();
         builderCtor.visitMaxs(0, 0);
@@ -227,6 +247,10 @@ public class ConfigMappingGenerator {
         noArgsCtor.visitVarInsn(ALOAD, V_THIS);
         noArgsCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
         for (Property property : mapping.getProperties()) {
+            if (property.isDefaultMethod()) {
+                continue;
+            }
+
             String fieldDesc = getDescriptor(property.getMethod().getReturnType());
             String memberName = property.getMethod().getName();
             String defaultMethodName = "default_" + memberName;
@@ -308,7 +332,8 @@ public class ConfigMappingGenerator {
                 }
             } else if (property.isMap()) {
                 MapProperty mapProperty = property.asMap();
-                if (mapProperty.getValueProperty().isLeaf()) {
+                Property valueProperty = mapProperty.getValueProperty();
+                if (valueProperty.isLeaf()) {
                     if (mapProperty.hasDefaultValue() && mapProperty.getDefaultValue() != null) {
                         generateGetterWithDefaullt = true;
                         // Default Method
@@ -318,6 +343,7 @@ public class ConfigMappingGenerator {
                         mv.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
                         mv.visitInsn(DUP);
                         mv.visitLdcInsn(mapProperty.getDefaultValue());
+                        // TODO - Miss Converter
                         mv.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
                                 "(L" + I_OBJECT + ";)V", false);
                         mv.visitInsn(getReturnInstruction(property));
@@ -329,21 +355,41 @@ public class ConfigMappingGenerator {
                         noArgsCtor.visitMethodInsn(INVOKESTATIC, I_MAP, "of", "()L" + I_MAP + ";", true);
                         noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, "L" + I_MAP + ";");
                     }
-                } else if (mapProperty.getValueProperty().isCollection()
-                        && mapProperty.getValueProperty().asCollection().getElement().isLeaf()) {
-                    // TODO - Check if Collections in Maps support defaults (can't remember)
-                    // There is no default, but we initialize an empty Map inline in field
-                    noArgsCtor.visitVarInsn(ALOAD, V_THIS);
-                    noArgsCtor.visitMethodInsn(INVOKESTATIC, I_MAP, "of", "()L" + I_MAP + ";", true);
-                    noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, "L" + I_MAP + ";");
-                } else if (mapProperty.getValueProperty().isGroup())
+                } else if (valueProperty.isCollection() && valueProperty.asCollection().getElement().isLeaf()) {
+                    CollectionProperty collectionProperty = valueProperty.asCollection();
+                    LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+                    if (mapProperty.hasDefaultValue() && mapProperty.getDefaultValue() != null) {
+                        generateGetterWithDefaullt = true;
+                        // Default Method
+                        MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc,
+                                null,
+                                null);
+                        mv.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
+                        mv.visitInsn(DUP);
+                        mv.visitLdcInsn(mapProperty.getDefaultValue());
+                        mv.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                        mv.visitLdcInsn(Type.getType(getDescriptor(collectionProperty.getCollectionRawType())));
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValues",
+                                "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
+                        mv.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
+                                "(L" + I_OBJECT + ";)V", false);
+                        mv.visitInsn(getReturnInstruction(property));
+                        mv.visitMaxs(0, 0);
+                        mv.visitEnd();
+                    } else {
+                        // There is no default, but we initialize an empty Map inline in field
+                        noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                        noArgsCtor.visitMethodInsn(INVOKESTATIC, I_MAP, "of", "()L" + I_MAP + ";", true);
+                        noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, "L" + I_MAP + ";");
+                    }
+                } else if (valueProperty.isGroup())
                     if (mapProperty.hasDefaultValue()) {
                         generateGetterWithDefaullt = true;
                         // Default Method
                         MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc,
                                 null,
                                 null);
-                        GroupProperty groupProperty = mapProperty.getValueProperty().asGroup();
+                        GroupProperty groupProperty = valueProperty.asGroup();
                         mv.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
                         mv.visitInsn(DUP);
                         mv.visitLdcInsn(getType(groupProperty.getGroupType().getInterfaceType()));
@@ -406,6 +452,11 @@ public class ConfigMappingGenerator {
                 mv.visitInsn(getReturnInstruction(property));
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
+            } else if (property.isOptional() && property.asOptional().getNestedProperty().isGroup()) {
+                // There is no default, but we initialize an empty Optional inline in field
+                noArgsCtor.visitVarInsn(ALOAD, V_THIS);
+                noArgsCtor.visitMethodInsn(INVOKESTATIC, I_OPTIONAL, "empty", "()L" + I_OPTIONAL + ";", false);
+                noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, "L" + I_OPTIONAL + ";");
             }
 
             MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC, memberName, "()" + fieldDesc, null, null);
@@ -430,9 +481,8 @@ public class ConfigMappingGenerator {
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
             }
-
         }
-        // TODO - May required recursive lookups
+
         noArgsCtor.visitInsn(RETURN);
         noArgsCtor.visitEnd();
         noArgsCtor.visitMaxs(0, 0);

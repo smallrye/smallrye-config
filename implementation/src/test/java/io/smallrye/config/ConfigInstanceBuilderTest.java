@@ -112,6 +112,9 @@ class ConfigInstanceBuilderTest {
                 .withOptional(Optionals::optionalLong, 1)
                 .withOptional(Optionals::optionalDouble, 1.1d)
                 .withOptional(Optionals::optionalBoolean, true)
+                .withOptional(Optionals::group, ConfigInstanceBuilder.forInterface(Optionals.Group.class)
+                        .with(Optionals.Group::value, "value")
+                        .build())
                 .build();
 
         assertTrue(optionals.optional().isPresent());
@@ -124,6 +127,16 @@ class ConfigInstanceBuilderTest {
         assertEquals(1.1d, optionals.optionalDouble().getAsDouble());
         assertTrue(optionals.optionalBoolean().isPresent());
         assertTrue(optionals.optionalBoolean().get());
+        assertTrue(optionals.group().isPresent());
+        assertEquals("value", optionals.group().get().value());
+
+        Optionals empty = forInterface(Optionals.class).build();
+        assertTrue(empty.optional().isEmpty());
+        assertTrue(empty.optionalInt().isEmpty());
+        assertTrue(empty.optionalLong().isEmpty());
+        assertTrue(empty.optionalDouble().isEmpty());
+        assertTrue(empty.optionalBoolean().isEmpty());
+        assertTrue(empty.group().isEmpty());
     }
 
     @ConfigMapping
@@ -137,6 +150,12 @@ class ConfigInstanceBuilderTest {
         OptionalDouble optionalDouble();
 
         Optional<Boolean> optionalBoolean();
+
+        Optional<Group> group();
+
+        interface Group {
+            String value();
+        }
     }
 
     @Test
@@ -220,6 +239,7 @@ class ConfigInstanceBuilderTest {
     void maps() {
         Maps maps = forInterface(Maps.class)
                 .with(Maps::map, Map.of("one", "one", "two", "two"))
+                .with(Maps::nested, Map.of("one", Map.<String, String> of()))
                 .build();
 
         assertEquals("one", maps.map().get("one"));
@@ -228,6 +248,11 @@ class ConfigInstanceBuilderTest {
         assertEquals("value", maps.defaults().get("two"));
         assertEquals("value", maps.defaults().get("three"));
         assertEquals("value", maps.group().get("any").value());
+        assertIterableEquals(List.of("one", "two", "three"), maps.mapLists().get("any"));
+
+        assertThrows(NoSuchElementException.class, () -> forInterface(Maps.class)
+                .with(Maps::map, Map.of("one", "one", "two", "two"))
+                .build());
     }
 
     @ConfigMapping
@@ -241,6 +266,13 @@ class ConfigInstanceBuilderTest {
 
         @WithDefaults
         Map<String, Group> group();
+
+        // TODO - Add defaults for middle maps?
+        @WithDefault("any")
+        Map<String, Map<String, String>> nested();
+
+        @WithDefault("one,two,three")
+        Map<String, List<String>> mapLists();
 
         interface Group {
             @WithDefault("value")
