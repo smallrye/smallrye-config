@@ -396,6 +396,14 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return (C) newCollectionConverter(converter, collectionFactory).convert(value);
     }
 
+    public static <T> T requireValue(final T value, final String name) {
+        if (value == null) {
+            // TODO - Change message?
+            throw msg.propertyNotSet(name);
+        }
+        return value;
+    }
+
     // TODO - Duplicated from ConfigMappingContext
     static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
             final Class<C> type) {

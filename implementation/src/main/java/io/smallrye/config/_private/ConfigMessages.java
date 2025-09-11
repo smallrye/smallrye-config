@@ -240,4 +240,7 @@ public interface ConfigMessages {
 
     @Message(id = 61, value = "The accessor for a configuration property is not valid")
     IllegalArgumentException invalidGetter();
+
+    @Message(id = 56, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
+    NoSuchElementException propertyNotSet(String property);
 }

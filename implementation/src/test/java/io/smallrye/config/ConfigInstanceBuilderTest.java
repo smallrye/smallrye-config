@@ -3,11 +3,13 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigInstanceBuilder.forInterface;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -192,12 +194,16 @@ class ConfigInstanceBuilderTest {
     @Test
     void collections() {
         Collections collections = forInterface(Collections.class)
+                .with(Collections::empty, List.<String> of())
                 .with(Collections::list, List.of("one", "two", "three"))
                 .build();
 
         assertIterableEquals(List.of("one", "two", "three"), collections.list());
-        assertNull(collections.empty());
+        assertNotNull(collections.empty());
+        assertTrue(collections.empty().isEmpty());
         assertIterableEquals(List.of("one", "two", "three"), collections.defaults());
+
+        assertThrows(NoSuchElementException.class, () -> forInterface(Collections.class).build());
     }
 
     @ConfigMapping
