@@ -74,6 +74,7 @@ import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.Converter;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -234,6 +235,7 @@ public class ConfigMappingGenerator {
     private static final String I_OPTIONAL_INT = getInternalName(OptionalInt.class);
     private static final String I_OPTIONAL_LONG = getInternalName(OptionalLong.class);
     private static final String I_OPTIONAL_DOUBLE = getInternalName(OptionalDouble.class);
+    private static final String I_CONVERTER = getInternalName(Converter.class);
 
     static byte[] generateBuilder(final ConfigMappingInterface mapping, final String builderClassName) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
@@ -251,6 +253,7 @@ public class ConfigMappingGenerator {
                 continue;
             }
 
+            // Set Default / Generate method to retrieve the default
             String fieldDesc = getDescriptor(property.getMethod().getReturnType());
             String memberName = property.getMethod().getName();
             String defaultMethodName = "default_" + memberName;
@@ -261,18 +264,27 @@ public class ConfigMappingGenerator {
                 noArgsCtor.visitMethodInsn(INVOKESTATIC, builderClassName, defaultMethodName, "()" + fieldDesc, false);
                 noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, fieldDesc);
                 // Default Method
-                PrimitiveProperty primitive = property.asPrimitive();
+                PrimitiveProperty primitiveProperty = property.asPrimitive();
                 MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc, null,
                         null);
                 mv.visitLdcInsn(property.getDefaultValue());
-                mv.visitLdcInsn(Type.getType(getDescriptor(primitive.getBoxType())));
+                if (primitiveProperty.hasConvertWith()) {
+                    String convertWith = getInternalName(primitiveProperty.getConvertWith());
+                    mv.visitTypeInsn(NEW, convertWith);
+                    mv.visitInsn(DUP);
+                    mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                } else {
+                    mv.visitLdcInsn(Type.getType(getDescriptor(primitiveProperty.getBoxType())));
+                    mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                            "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                }
                 mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValue",
-                        "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT + ";", false);
-                mv.visitTypeInsn(CHECKCAST, getInternalName(primitive.getBoxType()));
+                        "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ";", false);
+                mv.visitTypeInsn(CHECKCAST, getInternalName(primitiveProperty.getBoxType()));
                 mv.visitMethodInsn(INVOKEVIRTUAL,
-                        getInternalName(primitive.getBoxType()),
-                        primitive.getUnboxMethodName(),
-                        primitive.getUnboxMethodDescriptor(), false);
+                        getInternalName(primitiveProperty.getBoxType()),
+                        primitiveProperty.getUnboxMethodName(),
+                        primitiveProperty.getUnboxMethodDescriptor(), false);
                 mv.visitInsn(getReturnInstruction(property));
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
@@ -284,9 +296,18 @@ public class ConfigMappingGenerator {
                     MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc, null,
                             null);
                     mv.visitLdcInsn(property.getDefaultValue());
-                    mv.visitLdcInsn(Type.getType(fieldDesc));
+                    if (leafProperty.hasConvertWith()) {
+                        String convertWith = getInternalName(leafProperty.getConvertWith());
+                        mv.visitTypeInsn(NEW, convertWith);
+                        mv.visitInsn(DUP);
+                        mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                    } else {
+                        mv.visitLdcInsn(Type.getType(fieldDesc));
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                    }
                     mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValue",
-                            "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OBJECT + ";", false);
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ";", false);
                     mv.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
                     mv.visitInsn(getReturnInstruction(property));
                     mv.visitMaxs(0, 0);
@@ -317,9 +338,18 @@ public class ConfigMappingGenerator {
                             null);
                     LeafProperty optionalProperty = property.asLeaf();
                     mv.visitLdcInsn(property.getDefaultValue());
-                    mv.visitLdcInsn(Type.getType(getDescriptor(optionalProperty.getValueRawType())));
+                    if (optionalProperty.hasConvertWith()) {
+                        String convertWith = getInternalName(optionalProperty.getConvertWith());
+                        mv.visitTypeInsn(NEW, convertWith);
+                        mv.visitInsn(DUP);
+                        mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                    } else {
+                        mv.visitLdcInsn(Type.getType(getDescriptor(optionalProperty.getValueRawType())));
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                    }
                     mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertOptionalValue",
-                            "(L" + I_STRING + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";", false);
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OPTIONAL + ";", false);
                     mv.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
                     mv.visitInsn(getReturnInstruction(property));
                     mv.visitMaxs(0, 0);
@@ -343,7 +373,18 @@ public class ConfigMappingGenerator {
                         mv.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
                         mv.visitInsn(DUP);
                         mv.visitLdcInsn(mapProperty.getDefaultValue());
-                        // TODO - Miss Converter
+                        if (valueProperty.hasConvertWith()) {
+                            String convertWith = getInternalName(valueProperty.asLeaf().getConvertWith());
+                            mv.visitTypeInsn(NEW, convertWith);
+                            mv.visitInsn(DUP);
+                            mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                        } else {
+                            mv.visitLdcInsn(getType(valueProperty.asLeaf().getValueRawType()));
+                            mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                    "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                        }
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValue",
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";)L" + I_OBJECT + ";", false);
                         mv.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
                                 "(L" + I_OBJECT + ";)V", false);
                         mv.visitInsn(getReturnInstruction(property));
@@ -367,10 +408,19 @@ public class ConfigMappingGenerator {
                         mv.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
                         mv.visitInsn(DUP);
                         mv.visitLdcInsn(mapProperty.getDefaultValue());
-                        mv.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                        if (elementProperty.hasConvertWith()) {
+                            String convertWith = getInternalName(elementProperty.getConvertWith());
+                            mv.visitTypeInsn(NEW, convertWith);
+                            mv.visitInsn(DUP);
+                            mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                        } else {
+                            mv.visitLdcInsn(getType(elementProperty.getValueRawType()));
+                            mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                    "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                        }
                         mv.visitLdcInsn(Type.getType(getDescriptor(collectionProperty.getCollectionRawType())));
                         mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValues",
-                                "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
+                                "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
                         mv.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
                                 "(L" + I_OBJECT + ";)V", false);
                         mv.visitInsn(getReturnInstruction(property));
@@ -418,10 +468,19 @@ public class ConfigMappingGenerator {
                     MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc, null,
                             null);
                     mv.visitLdcInsn(elementProperty.getDefaultValue());
-                    mv.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                    if (elementProperty.hasConvertWith()) {
+                        String convertWith = getInternalName(elementProperty.getConvertWith());
+                        mv.visitTypeInsn(NEW, convertWith);
+                        mv.visitInsn(DUP);
+                        mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                    } else {
+                        mv.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                    }
                     mv.visitLdcInsn(Type.getType(getDescriptor(collectionProperty.getCollectionRawType())));
                     mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertValues",
-                            "(L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
                     mv.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
                     mv.visitInsn(getReturnInstruction(property));
                     mv.visitMaxs(0, 0);
@@ -432,7 +491,28 @@ public class ConfigMappingGenerator {
                 CollectionProperty collectionProperty = property.asOptional().getNestedProperty().asCollection();
                 LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
                 if (elementProperty.hasDefaultValue() && elementProperty.getDefaultValue() != null) {
-                    throw new UnsupportedOperationException();
+                    generateGetterWithDefaullt = true;
+                    // Default Method
+                    MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC | ACC_STATIC, defaultMethodName, "()" + fieldDesc, null,
+                            null);
+                    mv.visitLdcInsn(elementProperty.getDefaultValue());
+                    if (elementProperty.hasConvertWith()) {
+                        String convertWith = getInternalName(elementProperty.getConvertWith());
+                        mv.visitTypeInsn(NEW, convertWith);
+                        mv.visitInsn(DUP);
+                        mv.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
+                    } else {
+                        mv.visitLdcInsn(Type.getType(getDescriptor(elementProperty.getValueRawType())));
+                        mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "getConverter",
+                                "(L" + I_CLASS + ";)L" + I_CONVERTER + ";", false);
+                    }
+                    mv.visitLdcInsn(Type.getType(getDescriptor(collectionProperty.getCollectionRawType())));
+                    mv.visitMethodInsn(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "convertOptionalValues",
+                            "(L" + I_STRING + ";L" + I_CONVERTER + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";", false);
+                    mv.visitTypeInsn(CHECKCAST, getInternalName(property.getMethod().getReturnType()));
+                    mv.visitInsn(getReturnInstruction(property));
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
                 } else {
                     // There is no default, but we initialize an empty Optional inline in field
                     noArgsCtor.visitVarInsn(ALOAD, V_THIS);
@@ -459,6 +539,7 @@ public class ConfigMappingGenerator {
                 noArgsCtor.visitFieldInsn(PUTFIELD, builderClassName, memberName, "L" + I_OPTIONAL + ";");
             }
 
+            // Getter
             MethodVisitor mv = visitor.visitMethod(ACC_PUBLIC, memberName, "()" + fieldDesc, null, null);
             if (generateGetterWithDefaullt) {
                 mv.visitVarInsn(ALOAD, V_THIS);
@@ -493,7 +574,6 @@ public class ConfigMappingGenerator {
 
             // Field Declaration
             String fieldDesc = getDescriptor(method.getReturnType());
-            // TODO - Should it be public? And use field access to copy from the builder to the config class?
             visitor.visitField(ACC_PUBLIC, memberName, fieldDesc, null, null);
 
             // Setter
