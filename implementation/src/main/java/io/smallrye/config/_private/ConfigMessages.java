@@ -236,6 +236,9 @@ public interface ConfigMessages {
     @Message(id = 62, value = "The accessor for a configuration property is not valid")
     IllegalArgumentException invalidGetter();
 
+    @Message(id = 63, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
+    NoSuchElementException propertyNotSet(String property);
+
     default SecurityException accessDenied(Class<?> ourClass, Class<?> targetType) {
         Module ourModule = ourClass.getModule();
         Module targetModule = targetType.getModule();
@@ -246,7 +249,4 @@ public interface ConfigMessages {
             return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
         }
     }
-
-    @Message(id = 63, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
-    NoSuchElementException propertyNotSet(String property);
 }
