@@ -132,7 +132,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return properties;
     }
 
-    // TODO - Document
+    /**
+     * Get a {@code List} of {@link io.smallrye.config.ConfigMappingMetadata} of auxiliary classes to load for this
+     * {@link io.smallrye.config.ConfigMappingInterface}, like dedicated builders for the mapping.
+     *
+     * @return a {@code List} of {@link io.smallrye.config.ConfigMappingMetadata} of auxiliary classes
+     *
+     * @see io.smallrye.config.ConfigMappingInterface.ConfigMappingBuilder
+     */
     public List<ConfigMappingMetadata> getAuxiliaryClasses() {
         return auxiliaryClasses;
     }
