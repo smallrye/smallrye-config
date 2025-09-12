@@ -14,8 +14,13 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 
+import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.ConfigInstanceBuilderTest.ConverterNotFound.NotFound;
+import io.smallrye.config.ConfigInstanceBuilderTest.Converters.Numbers;
 
 class ConfigInstanceBuilderTest {
     @Test
@@ -194,6 +199,8 @@ class ConfigInstanceBuilderTest {
         assertEquals(10L, optionalDefaults.optionalLong().getAsLong());
         assertTrue(optionalDefaults.optionalDouble().isPresent());
         assertEquals(10.10d, optionalDefaults.optionalDouble().getAsDouble());
+        assertTrue(optionalDefaults.optionalList().isPresent());
+        assertIterableEquals(List.of("one", "two", "three"), optionalDefaults.optionalList().get());
     }
 
     interface OptionalDefaults {
@@ -208,6 +215,9 @@ class ConfigInstanceBuilderTest {
 
         @WithDefault("10.10")
         OptionalDouble optionalDouble();
+
+        @WithDefault("one,two,three")
+        Optional<List<String>> optionalList();
     }
 
     @Test
@@ -221,6 +231,7 @@ class ConfigInstanceBuilderTest {
         assertNotNull(collections.empty());
         assertTrue(collections.empty().isEmpty());
         assertIterableEquals(List.of("one", "two", "three"), collections.defaults());
+        assertTrue(collections.setDefaults().contains("one"));
 
         assertThrows(NoSuchElementException.class, () -> forInterface(Collections.class).build());
     }
@@ -233,6 +244,9 @@ class ConfigInstanceBuilderTest {
 
         @WithDefault("one,two,three")
         List<String> defaults();
+
+        @WithDefault("one")
+        Set<String> setDefaults();
     }
 
     @Test
@@ -247,8 +261,10 @@ class ConfigInstanceBuilderTest {
         assertEquals("value", maps.defaults().get("one"));
         assertEquals("value", maps.defaults().get("two"));
         assertEquals("value", maps.defaults().get("three"));
+        assertEquals(10, maps.mapIntegers().get("default"));
         assertEquals("value", maps.group().get("any").value());
         assertIterableEquals(List.of("one", "two", "three"), maps.mapLists().get("any"));
+        assertIterableEquals(List.of(1, 2, 3), maps.mapListsIntegers().get("any"));
 
         assertThrows(NoSuchElementException.class, () -> forInterface(Maps.class)
                 .with(Maps::map, Map.of("one", "one", "two", "two"))
@@ -264,6 +280,9 @@ class ConfigInstanceBuilderTest {
         @WithDefault("value")
         Map<String, String> defaults();
 
+        @WithDefault("10")
+        Map<String, Integer> mapIntegers();
+
         @WithDefaults
         Map<String, Group> group();
 
@@ -274,9 +293,136 @@ class ConfigInstanceBuilderTest {
         @WithDefault("one,two,three")
         Map<String, List<String>> mapLists();
 
+        @WithDefault("1,2,3")
+        Map<String, List<Integer>> mapListsIntegers();
+
         interface Group {
             @WithDefault("value")
             String value();
         }
+    }
+
+    @Test
+    void converters() {
+        Converters converters = forInterface(Converters.class).build();
+
+        assertEquals("converted", converters.value());
+        assertEquals(999, converters.intValue());
+        assertEquals(Numbers.ONE, converters.numbers());
+        assertEquals(Numbers.THREE, converters.numbersOverride());
+        assertTrue(converters.optional().isPresent());
+        assertEquals("converted", converters.optional().get());
+        assertTrue(converters.optionalInt().isPresent());
+        assertEquals(999, converters.optionalInt().get());
+        assertTrue(converters.optionalList().isPresent());
+        assertIterableEquals(List.of("converted", "converted", "converted"), converters.optionalList().get());
+        assertIterableEquals(List.of("converted", "converted", "converted"), converters.list());
+        assertIterableEquals(List.of(999, 999, 999), converters.listInt());
+        assertEquals("converted", converters.map().get("default"));
+        assertEquals("converted", converters.map().get("any"));
+        assertEquals(999, converters.mapInt().get("default"));
+        assertEquals(999, converters.mapInt().get("any"));
+        assertIterableEquals(List.of("converted", "converted", "converted"), converters.mapList().get("default"));
+        assertIterableEquals(List.of("converted", "converted", "converted"), converters.mapList().get("any"));
+        assertIterableEquals(List.of(999, 999, 999), converters.mapListInt().get("default"));
+        assertIterableEquals(List.of(999, 999, 999), converters.mapListInt().get("any"));
+    }
+
+    @ConfigMapping
+    interface Converters {
+        @WithDefault("to-convert")
+        @WithConverter(StringValueConverter.class)
+        String value();
+
+        @WithDefault("to-convert")
+        @WithConverter(IntegerValueConverter.class)
+        int intValue();
+
+        @WithDefault("one")
+        Numbers numbers();
+
+        @WithDefault("to-convert")
+        @WithConverter(NumbersConverter.class)
+        Numbers numbersOverride();
+
+        @WithDefault("to-convert")
+        Optional<@WithConverter(StringValueConverter.class) String> optional();
+
+        @WithDefault("to-convert")
+        Optional<@WithConverter(IntegerValueConverter.class) Integer> optionalInt();
+
+        @WithDefault("one,two,three")
+        Optional<@WithConverter(StringValueConverter.class) List<String>> optionalList();
+
+        @WithDefault("one,two,three")
+        List<@WithConverter(StringValueConverter.class) String> list();
+
+        @WithDefault("1,2,3")
+        List<@WithConverter(IntegerValueConverter.class) Integer> listInt();
+
+        @WithDefault("to-convert")
+        Map<String, @WithConverter(StringValueConverter.class) String> map();
+
+        @WithDefault("to-convert")
+        Map<String, @WithConverter(IntegerValueConverter.class) Integer> mapInt();
+
+        @WithDefault("one,two,three")
+        Map<String, @WithConverter(StringValueConverter.class) List<String>> mapList();
+
+        @WithDefault("1,2,3")
+        Map<String, @WithConverter(IntegerValueConverter.class) List<String>> mapListInt();
+
+        class StringValueConverter implements Converter<String> {
+            @Override
+            public String convert(String value) throws IllegalArgumentException, NullPointerException {
+                return "converted";
+            }
+        }
+
+        class IntegerValueConverter implements Converter<Integer> {
+            @Override
+            public Integer convert(String value) throws IllegalArgumentException, NullPointerException {
+                return 999;
+            }
+        }
+
+        enum Numbers {
+            ONE,
+            TWO,
+            THREE
+        }
+
+        class NumbersConverter implements Converter<Numbers> {
+            @Override
+            public Numbers convert(String value) throws IllegalArgumentException, NullPointerException {
+                return Numbers.THREE;
+            }
+        }
+    }
+
+    @Test
+    void converterNotFound() {
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                () -> forInterface(ConverterNotFound.class).build());
+        assertTrue(illegalArgumentException.getMessage().contains("SRCFG00013"));
+    }
+
+    interface ConverterNotFound {
+        @WithDefault("value")
+        NotFound value();
+
+        class NotFound {
+
+        }
+    }
+
+    @Test
+    void converterNull() {
+        assertThrows(NoSuchElementException.class, () -> forInterface(ConverterNull.class).build());
+    }
+
+    interface ConverterNull {
+        @WithDefault("")
+        String value();
     }
 }
