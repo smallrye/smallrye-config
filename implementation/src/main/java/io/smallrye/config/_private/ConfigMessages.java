@@ -215,17 +215,6 @@ public interface ConfigMessages {
     @Message(id = 57, value = "Could not generate ConfigMapping")
     IllegalStateException couldNotGenerateMapping(@Cause Throwable throwable);
 
-    default SecurityException accessDenied(Class<?> ourClass, Class<?> targetType) {
-        Module ourModule = ourClass.getModule();
-        Module targetModule = targetType.getModule();
-        assert targetModule.isNamed(); // otherwise we wouldn't be here
-        if (ourModule.isNamed()) {
-            return accessDenied(ourModule.getName(), targetType, targetType.getPackageName(), targetModule.getName());
-        } else {
-            return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
-        }
-    }
-
     @Message(id = 58, value = "Access to %2$s was denied in a modular environment. To avoid this error, edit "
             + "`module-info.java` of %4$s to include `opens %3$s to %1$s`; or, add `--add-opens=%4$s/%3$s=%1$s` to "
             + "the JVM command line.")
@@ -241,6 +230,17 @@ public interface ConfigMessages {
     @Message(id = 61, value = "The accessor for a configuration property is not valid")
     IllegalArgumentException invalidGetter();
 
-    @Message(id = 56, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
+    @Message(id = 62, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
     NoSuchElementException propertyNotSet(String property);
+
+    default SecurityException accessDenied(Class<?> ourClass, Class<?> targetType) {
+        Module ourModule = ourClass.getModule();
+        Module targetModule = targetType.getModule();
+        assert targetModule.isNamed(); // otherwise we wouldn't be here
+        if (ourModule.isNamed()) {
+            return accessDenied(ourModule.getName(), targetType, targetType.getPackageName(), targetModule.getName());
+        } else {
+            return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
+        }
+    }
 }

@@ -24,13 +24,10 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -107,7 +104,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         // TODO - This is to load the mapping class implementation, which we already have, just missing the right constructor in the ConfigMappingLoader, so we can probably remove this one
         protected Function<Object, ?> computeValue(final Class<?> type) {
             assert type.isInterface();
-            // TODO - Should we cache this eagerly in io.smallrye.config.ConfigMappingLoader.ConfigMappingImplementation?
             MethodHandles.Lookup lookup;
             try {
                 lookup = MethodHandles.privateLookupIn(type, myLookup);
@@ -199,7 +195,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, Integer.valueOf(value));
+        setter.accept(builderObject, value);
         return this;
     }
 
@@ -207,7 +203,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, Long.valueOf(value));
+        setter.accept(builderObject, value);
         return this;
     }
 
@@ -223,83 +219,9 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         Assert.checkNotNullParam("getter", getter);
         Class<?> callerClass = sw.getCallerClass();
         BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, Boolean.valueOf(value));
+        setter.accept(builderObject, value);
         return this;
     }
-
-    // -------------------------------------
-
-    public <T, F extends Function<? super I, T> & Serializable> ConfigInstanceBuilder<I> withDefaultFor(final F getter) {
-        Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        Consumer<Object> resetter = getResetter(getter, callerClass);
-        resetter.accept(builderObject);
-        return this;
-    }
-
-    public <F extends ToIntFunction<? super I> & Serializable> ConfigInstanceBuilder<I> withDefaultFor(final F getter) {
-        Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        Consumer<Object> resetter = getResetter(getter, callerClass);
-        resetter.accept(builderObject);
-        return this;
-    }
-
-    public <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> withDefaultFor(final F getter) {
-        Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        Consumer<Object> resetter = getResetter(getter, callerClass);
-        resetter.accept(builderObject);
-        return this;
-    }
-
-    public <F extends Predicate<? super I> & Serializable> ConfigInstanceBuilder<I> withDefaultFor(final F getter) {
-        Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        Consumer<Object> resetter = getResetter(getter, callerClass);
-        resetter.accept(builderObject);
-        return this;
-    }
-
-    // -------------------------------------
-
-    public <F extends Function<? super I, ?> & Serializable> ConfigInstanceBuilder<I> withString(final F getter,
-            final String value) {
-        return withString(getter, value, sw.getCallerClass());
-    }
-
-    public <F extends ToIntFunction<? super I> & Serializable> ConfigInstanceBuilder<I> withString(final F getter,
-            final String value) {
-        return withString(getter, value, sw.getCallerClass());
-    }
-
-    public <F extends ToLongFunction<? super I> & Serializable> ConfigInstanceBuilder<I> withString(final F getter,
-            final String value) {
-        return withString(getter, value, sw.getCallerClass());
-    }
-
-    public <F extends Predicate<? super I> & Serializable> ConfigInstanceBuilder<I> withString(final F getter,
-            final String value) {
-        return withString(getter, value, sw.getCallerClass());
-    }
-
-    private ConfigInstanceBuilderImpl<I> withString(final Object getter, final String value, final Class<?> callerClass) {
-        Assert.checkNotNullParam("getter", getter);
-        Assert.checkNotNullParam("value", value);
-        Converter<?> converter = getConverter(getter, callerClass);
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, converter.convert(value));
-        return this;
-    }
-
-    // -------------------------------------
-
-    public ConfigInstanceBuilder<I> withString(final Class<? super I> propertyClass, final String propertyName,
-            final String value) {
-        throw new UnsupportedOperationException("Need class info registry");
-    }
-
-    // -------------------------------------
 
     public I build() {
         return configurationInterface.cast(configFactories.get(configurationInterface).apply(builderObject));
@@ -365,11 +287,12 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return convert;
     }
 
+    @SuppressWarnings("unused")
     public static <T> Optional<T> convertOptionalValue(final String value, final Converter<T> converter) {
         return convertValue(value, Converters.newOptionalConverter(converter));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public static <T, C extends Collection<T>> C convertValues(
             final String value,
             final Converter<T> converter,
@@ -377,7 +300,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return (C) convertValue(value, newCollectionConverter(converter, createCollectionFactory(collectionType)));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public static <T, C extends Collection<T>> Optional<C> convertOptionalValues(
             final String value,
             final Converter<T> converter,
@@ -387,6 +310,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return (Optional<C>) newOptionalConverter(collectionConverter).convert(value);
     }
 
+    @SuppressWarnings("unused")
     public static <T> T requireValue(final T value, final String name) {
         if (value == null) {
             throw msg.propertyNotSet(name);
@@ -394,8 +318,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return value;
     }
 
-    // TODO - Duplicated from ConfigMappingContext
-    static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
+    public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
             final Class<C> type) {
         if (type.equals(List.class)) {
             return ArrayList::new;
@@ -408,8 +331,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         throw new IllegalArgumentException();
     }
 
-    // TODO - Duplicated from ConfigMappingContext
-    static class MapWithDefault<K, V> extends HashMap<K, V> {
+    public static class MapWithDefault<K, V> extends HashMap<K, V> {
         @Serial
         private static final long serialVersionUID = 1390928078837140814L;
         private final V defaultValue;
@@ -422,10 +344,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         public V get(final Object key) {
             return getOrDefault(key, defaultValue);
         }
-    }
-
-    private Converter<?> getConverter(final Object getter, final Class<?> callerClass) {
-        throw new UnsupportedOperationException("Need class info registry");
     }
 
     private BiConsumer<Object, Object> getSetter(final Object getter, final Class<?> callerClass) {
@@ -450,10 +368,9 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         } catch (Throwable e) {
             throw new UndeclaredThrowableException(e);
         }
-        if (!(replaced instanceof SerializedLambda)) {
+        if (!(replaced instanceof SerializedLambda sl)) {
             throw msg.invalidGetter();
         }
-        SerializedLambda sl = (SerializedLambda) replaced;
         if (sl.getCapturedArgCount() != 0) {
             throw msg.invalidGetter();
         }
@@ -484,10 +401,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
                 throw new UndeclaredThrowableException(e);
             }
         };
-    }
-
-    private Consumer<Object> getResetter(final Object getter, final Class<?> callerClass) {
-        throw new UnsupportedOperationException("Unsupported for now");
     }
 
     private Class<?> parseReturnType(final String signature) {

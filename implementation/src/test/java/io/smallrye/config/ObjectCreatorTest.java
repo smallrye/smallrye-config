@@ -15,9 +15,8 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.ConfigInstanceBuilderImpl.MapWithDefault;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
-import io.smallrye.config.ConfigMappingContext.MapWithDefault;
-import io.smallrye.config.ConfigMappingContext.ObjectCreator;
 
 public class ObjectCreatorTest {
     @Test
