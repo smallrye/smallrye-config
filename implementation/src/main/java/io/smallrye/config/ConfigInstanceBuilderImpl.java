@@ -333,7 +333,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Converter<T> getConverter(Class<T> type) {
+    public static <T> Converter<T> getConverter(Class<T> type) {
         Converter<?> exactConverter = CONVERTERS.get(type);
         if (exactConverter != null) {
             return (Converter<T>) exactConverter;
@@ -342,58 +342,49 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
             return (Converter<T>) getConverter(Converters.wrapPrimitiveType(type));
         }
         if (type.isArray()) {
-            final Converter<?> conv = getConverter(type.getComponentType());
-            return conv == null ? null : Converters.newArrayConverter(conv, type);
+            Converter<?> conv = getConverter(type.getComponentType());
+            if (conv != null) {
+                return Converters.newArrayConverter(conv, type);
+            }
+            throw ConfigMessages.msg.noRegisteredConverter(type);
         }
 
-        return Implicit.getConverter(type);
-    }
-
-    public static <T> T convertValue(final String value, final Class<T> type) {
-        Converter<T> converter = getConverter(type);
+        Converter<T> converter = Implicit.getConverter(type);
         if (converter == null) {
-            throw new IllegalArgumentException("No converter found for type " + type);
+            throw ConfigMessages.msg.noRegisteredConverter(type);
         }
-        return converter.convert(value);
+        return converter;
     }
 
-    public static <T> Optional<T> convertOptionalValue(final String value, final Class<T> type) {
-        Converter<T> converter = getConverter(type);
-        if (converter == null) {
-            throw new IllegalArgumentException("No converter found for type " + type);
+    public static <T> T convertValue(final String value, final Converter<T> converter) {
+        T convert = converter.convert(value);
+        if (convert == null) {
+            // TODO - new messsage instead of reuse?
+            throw ConfigMessages.msg.converterReturnedNull("", value, converter.getClass().getTypeName());
         }
-        return Converters.newOptionalConverter(converter).convert(value);
+        return convert;
     }
 
+    public static <T> Optional<T> convertOptionalValue(final String value, final Converter<T> converter) {
+        return convertValue(value, Converters.newOptionalConverter(converter));
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T, C extends Collection<T>> C convertValues(
             final String value,
-            final Class<T> itemType,
+            final Converter<T> converter,
             final Class<C> collectionType) {
-        return convertValues(value, itemType, createCollectionFactory(collectionType));
+        return (C) convertValue(value, newCollectionConverter(converter, createCollectionFactory(collectionType)));
     }
 
     @SuppressWarnings("unchecked")
-    public <T, C extends Collection<T>> Optional<C> convertOptionalValues(
+    public static <T, C extends Collection<T>> Optional<C> convertOptionalValues(
             final String value,
-            final Class<T> itemType,
-            final IntFunction<? extends Collection<T>> collectionFactory) {
-        Converter<T> converter = getConverter(itemType);
-        if (converter == null) {
-            throw new IllegalArgumentException("No converter found for type " + itemType);
-        }
-        return (Optional<C>) newOptionalConverter(newCollectionConverter(converter, collectionFactory)).convert(value);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T, C extends Collection<T>> C convertValues(
-            final String value,
-            final Class<T> itemType,
-            final IntFunction<? extends Collection<T>> collectionFactory) {
-        Converter<T> converter = getConverter(itemType);
-        if (converter == null) {
-            throw new IllegalArgumentException("No converter found for type " + itemType);
-        }
-        return (C) newCollectionConverter(converter, collectionFactory).convert(value);
+            final Converter<T> converter,
+            final Class<C> collectionType) {
+        Converter<Collection<T>> collectionConverter = newCollectionConverter(converter,
+                createCollectionFactory(collectionType));
+        return (Optional<C>) newOptionalConverter(collectionConverter).convert(value);
     }
 
     public static <T> T requireValue(final T value, final String name) {
