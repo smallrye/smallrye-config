@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
+import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
 import java.io.Serial;
@@ -519,8 +520,24 @@ public final class ConfigMappingContext {
                 final String propertyName,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
+            return convertValue(context, propertyName, getConverter(context, valueRawType, valueConvertWith));
+        }
+
+        @SuppressWarnings("unused")
+        public static <V> Secret<V> secretValue(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith) {
+            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
+            return convertValue(context, propertyName, valueConverter);
+        }
+
+        private static <V> V convertValue(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<V> valueConverter) {
             context.usedProperties.add(propertyName);
-            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
             return context.config.getValue(propertyName, valueConverter);
         }
 
@@ -543,8 +560,25 @@ public final class ConfigMappingContext {
                 final String propertyName,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
+            return convertOptionalValue(context, propertyName, getConverter(context, valueRawType, valueConvertWith));
+        }
+
+        @SuppressWarnings("unused")
+        public static <V> Optional<Secret<V>> optionalSecretValue(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith) {
+            Converter<Optional<Secret<V>>> valueConverter = Converters
+                    .newOptionalConverter(newSecretConverter(getConverter(context, valueRawType, valueConvertWith)));
+            return convertValue(context, propertyName, valueConverter);
+        }
+
+        private static <V> Optional<V> convertOptionalValue(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<V> valueConverter) {
             context.usedProperties.add(propertyName);
-            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
             return context.config.getOptionalValue(propertyName, valueConverter);
         }
 
@@ -568,9 +602,28 @@ public final class ConfigMappingContext {
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
+            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            return convertValues(context, propertyName, itemConverter, collectionRawType);
+        }
+
+        @SuppressWarnings("unused")
+        public static <V, C extends Collection<Secret<V>>> C secretValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> itemRawType,
+                final Class<? extends Converter<V>> itemConvertWith,
+                final Class<C> collectionRawType) {
+            Converter<Secret<V>> itemConverter = newSecretConverter(getConverter(context, itemRawType, itemConvertWith));
+            return convertValues(context, propertyName, itemConverter, collectionRawType);
+        }
+
+        public static <V, C extends Collection<V>> C convertValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<V> itemConverter,
+                final Class<C> collectionRawType) {
             context.usedProperties.add(propertyName);
             context.usedProperties.addAll(context.config.getIndexedProperties(propertyName));
-            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
             IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
             return context.config.getValues(propertyName, itemConverter, collectionFactory);
         }
@@ -596,9 +649,28 @@ public final class ConfigMappingContext {
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
+            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
+        }
+
+        @SuppressWarnings("unused")
+        public static <V, C extends Collection<Secret<V>>> Optional<C> optionalSecretValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<V> itemRawType,
+                final Class<? extends Converter<V>> itemConvertWith,
+                final Class<C> collectionRawType) {
+            Converter<Secret<V>> itemConverter = newSecretConverter(getConverter(context, itemRawType, itemConvertWith));
+            return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
+        }
+
+        public static <V, C extends Collection<V>> Optional<C> convertOptionalValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<V> itemConverter,
+                final Class<C> collectionRawType) {
             context.usedProperties.add(propertyName);
             context.usedProperties.addAll(context.config.getIndexedProperties(propertyName));
-            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
             IntFunction<C> collectionFactory = (IntFunction<C>) createCollectionFactory(collectionRawType);
             return context.config.getOptionalValues(propertyName, itemConverter, collectionFactory);
         }
@@ -628,9 +700,33 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Iterable<String> keys,
                 final String defaultValue) {
-
             Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
             Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
+        }
+
+        @SuppressWarnings("unused")
+        public static <K, V> Map<K, Secret<V>> secretValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<K> keyRawType,
+                final Class<? extends Converter<K>> keyConvertWith,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith,
+                final Iterable<String> keys,
+                final String defaultValue) {
+            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
+            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
+            return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
+        }
+
+        public static <K, V> Map<K, V> convertValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<K> keyConverter,
+                final Converter<V> valueConverter,
+                final Iterable<String> keys,
+                final String defaultValue) {
 
             Map<String, String> mapKeys = new HashMap<>();
             if (keys != null) {
@@ -693,9 +789,34 @@ public final class ConfigMappingContext {
                 final Class<C> collectionRawType,
                 final Iterable<String> keys,
                 final String defaultValue) {
-
             Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
             Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys, defaultValue);
+        }
+
+        public static <K, V, C extends Collection<Secret<V>>> Map<K, C> secretValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Class<K> keyRawType,
+                final Class<? extends Converter<K>> keyConvertWith,
+                final Class<V> valueRawType,
+                final Class<? extends Converter<V>> valueConvertWith,
+                final Class<C> collectionRawType,
+                final Iterable<String> keys,
+                final String defaultValue) {
+            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
+            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
+            return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys, defaultValue);
+        }
+
+        public static <K, V, C extends Collection<V>> Map<K, C> convertValues(
+                final ConfigMappingContext context,
+                final String propertyName,
+                final Converter<K> keyConverter,
+                final Converter<V> valueConverter,
+                final Class<C> collectionRawType,
+                final Iterable<String> keys,
+                final String defaultValue) {
 
             Map<String, String> mapKeys = new HashMap<>();
             if (keys != null) {

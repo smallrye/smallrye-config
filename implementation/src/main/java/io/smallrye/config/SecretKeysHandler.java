@@ -10,6 +10,8 @@ package io.smallrye.config;
  * Instances of this interface will be discovered via the {@link java.util.ServiceLoader} mechanism and can be
  * registered by providing a {@code META-INF/services/io.smallrye.config.SecretKeysHandler} which contains the fully
  * qualified class name of the custom {@code SecretKeysHandler} implementation.
+ *
+ * @see io.smallrye.config.SecretKeysHandlerFactory
  */
 public interface SecretKeysHandler {
     /**

@@ -597,6 +597,28 @@ Map<String, Alias> any = server.aliases.get("prod");
 - A mapping can wrap any complex type with an `Optional`
 - `Optional` mappings do not require the configuration path and value to be present
 
+## Secrets
+
+- A mapping can mark a member type as a secret with `Secret<T>`:
+
+```java
+@ConfigMapping(prefix = "credentials")
+public interface Credentials {
+    String username();
+
+    Secret<String> password();
+}
+```
+
+A `Secret` value modifies the behaviour of the config system by:
+
+- Omitting the name of the secret in `SmallRyeConfig#getPropertyNames()`
+- Omitting the name and value of the secret in the mapping `toString` method
+- Throwing a `SecurityException` when trying to retrieve the value via `SmallRyeConfig` programmatic API
+
+A Secret can be of any type that can be converted by a registered `org.eclipse.microprofile.config.spi.Converter` of 
+the same type.
+
 ## toString, equals, hashcode
 
 If the config mapping contains a `toString` method declaration, the config mapping instance will include a proper

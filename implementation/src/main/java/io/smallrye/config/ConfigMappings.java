@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -111,6 +112,7 @@ public final class ConfigMappings {
         private final Class<?> type;
         private final String prefix;
         private final Map<String, String> properties;
+        private final Set<String> secrets;
 
         public ConfigClass(final Class<?> type, final String prefix) {
             Assert.checkNotNullParam("klass", type);
@@ -119,8 +121,10 @@ public final class ConfigMappings {
             this.type = type;
             this.prefix = prefix;
             this.properties = new HashMap<>();
+            this.secrets = new HashSet<>();
 
             Class<?> mappingClass = getConfigMappingClass(type);
+            Set<String> secrets = ConfigMappingLoader.configMappingSecrets(mappingClass);
             StringBuilder sb = new StringBuilder(prefix);
             for (Map.Entry<String, String> property : ConfigMappingLoader.configMappingProperties(mappingClass).entrySet()) {
                 String path = property.getKey();
@@ -135,6 +139,9 @@ public final class ConfigMappings {
                     name = sb.append(".").append(path).toString();
                 }
                 properties.put(name, property.getValue());
+                if (secrets.contains(property.getKey())) {
+                    this.secrets.add(name);
+                }
                 sb.setLength(prefix.length());
             }
         }
@@ -154,6 +161,10 @@ public final class ConfigMappings {
 
         public Map<String, String> getProperties() {
             return properties;
+        }
+
+        public Set<String> getSecrets() {
+            return secrets;
         }
 
         @Override

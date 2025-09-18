@@ -61,10 +61,10 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -74,7 +74,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -112,9 +111,10 @@ public class ConfigMappingGenerator {
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_STRING = getInternalName(String.class);
     private static final String I_OPTIONAL = getInternalName(Optional.class);
-    private static final String I_MAP = getInternalName(Map.class);
     private static final String I_COLLECTION = getInternalName(Collection.class);
+    private static final String I_MAP = getInternalName(Map.class);
     private static final String I_ITERABLE = getInternalName(Iterable.class);
+    private static final String I_SECRET = getInternalName(Secret.class);
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
@@ -191,7 +191,7 @@ public class ConfigMappingGenerator {
         ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "propertyName", "()Ljava/util/function/Function;", false);
         ctor.visitVarInsn(ASTORE, V_NAMING_FUNCTION);
 
-        addProperties(visitor, ctor, new HashSet<>(), mapping, mapping.getClassInternalName());
+        addProperties(visitor, ctor, mapping);
 
         ctor.visitInsn(RETURN);
         ctor.visitLabel(ctorEnd);
@@ -203,7 +203,7 @@ public class ConfigMappingGenerator {
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
 
-        generateProperties(visitor, mapping);
+        generateStaticInit(visitor, mapping);
         generateEquals(visitor, mapping);
         generateHashCode(visitor, mapping);
         generateToString(visitor, mapping);
@@ -401,18 +401,11 @@ public class ConfigMappingGenerator {
     private static void addProperties(
             final ClassVisitor cv,
             final MethodVisitor ctor,
-            final Set<String> visited,
-            final ConfigMappingInterface mapping,
-            final String className) {
+            final ConfigMappingInterface mapping) {
 
         for (Property property : mapping.getProperties()) {
             Method method = property.getMethod();
             String memberName = method.getName();
-
-            // skip super members with overrides
-            if (!visited.add(memberName)) {
-                continue;
-            }
 
             // Field Declaration
             String fieldType = getInternalName(method.getReturnType());
@@ -422,7 +415,7 @@ public class ConfigMappingGenerator {
             // Getter
             MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, memberName, "()" + fieldDesc, null, null);
             mv.visitVarInsn(ALOAD, V_THIS);
-            mv.visitFieldInsn(GETFIELD, className, memberName, fieldDesc);
+            mv.visitFieldInsn(GETFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
             mv.visitInsn(getReturnInstruction(property));
             mv.visitEnd();
             mv.visitMaxs(0, 0);
@@ -451,7 +444,7 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitTypeInsn(CHECKCAST, fieldType);
             }
-            ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
+            ctor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
             ctor.visitJumpInsn(GOTO, _continue);
 
             // catch
@@ -479,7 +472,7 @@ public class ConfigMappingGenerator {
                 ctor.visitVarInsn(ALOAD, V_THIS);
                 ctor.visitMethodInsn(INVOKESTATIC, getInternalName(defaultMethod.getDeclaringClass()), defaultMethod.getName(),
                         "(" + getType(mapping.getInterfaceType()) + ")" + fieldDesc, false);
-                ctor.visitFieldInsn(PUTFIELD, className, memberName, fieldDesc);
+                ctor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
             }
         }
     }
@@ -487,18 +480,30 @@ public class ConfigMappingGenerator {
     private static void generateProperty(final MethodVisitor ctor, final Property property) {
         appendPropertyName(ctor, property);
 
-        if (property.isLeaf() && !property.isOptional() || property.isPrimitive()) {
+        if (property.isPrimitive()) {
             toStringPropertyName(ctor);
-            ctor.visitLdcInsn(Type
-                    .getType(property.isLeaf() ? property.asLeaf().getValueRawType() : property.asPrimitive().getBoxType()));
-            if (property.hasConvertWith() || property.isLeaf() && property.asLeaf().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(
-                        property.isLeaf() ? property.asLeaf().getConvertWith() : property.asPrimitive().getConvertWith()));
+            PrimitiveProperty propertyPrimitive = property.asPrimitive();
+            ctor.visitLdcInsn(Type.getType(propertyPrimitive.getBoxType()));
+            if (property.hasConvertWith()) {
+                ctor.visitLdcInsn(getType(propertyPrimitive.getConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "value",
                     "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT + ";",
+                    false);
+        } else if (property.isLeaf() && !property.isOptional()) {
+            toStringPropertyName(ctor);
+            LeafProperty leafProperty = property.asLeaf();
+            ctor.visitLdcInsn(Type.getType(leafProperty.getValueRawType()));
+            if (leafProperty.hasConvertWith()) {
+                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+            } else {
+                ctor.visitInsn(ACONST_NULL);
+            }
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, leafProperty.isSecret() ? "secretValue" : "value",
+                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L"
+                            + (leafProperty.isSecret() ? I_SECRET : I_OBJECT) + ";",
                     false);
         } else if (property.isOptional() && property.isLeaf()) {
             toStringPropertyName(ctor);
@@ -509,23 +514,23 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "optionalValue",
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
+                    optionalProperty.isSecret() ? "optionalSecretValue" : "optionalValue",
                     "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";",
                     false);
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
             toStringPropertyName(ctor);
             MapProperty mapProperty = property.asMap();
-            Property valueProperty = mapProperty.getValueProperty();
+            LeafProperty valueProperty = mapProperty.getValueProperty().asLeaf();
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
             if (mapProperty.hasKeyConvertWith()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
-            LeafProperty leafProperty = valueProperty.asLeaf();
-            ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
-            if (leafProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+            ctor.visitLdcInsn(getType(valueProperty.getValueRawType()));
+            if (valueProperty.hasConvertWith()) {
+                ctor.visitLdcInsn(getType(valueProperty.getConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
@@ -539,7 +544,7 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "values",
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, valueProperty.isSecret() ? "secretValues" : "values",
                     "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";L"
                             + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
                     false);
@@ -554,10 +559,10 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
-            LeafProperty leafProperty = valueProperty.asCollection().getElement().asLeaf();
-            ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
-            if (leafProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+            LeafProperty elementProperty = valueProperty.asCollection().getElement().asLeaf();
+            ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
+            if (elementProperty.hasConvertWith()) {
+                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
@@ -572,35 +577,42 @@ public class ConfigMappingGenerator {
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "values",
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
                     "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";L"
                             + I_CLASS + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
                     false);
         } else if (property.isCollection() && property.asCollection().getElement().isLeaf()) {
             toStringPropertyName(ctor);
             CollectionProperty collectionProperty = property.asCollection();
-            ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getValueRawType()));
+            LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+            ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
             if (collectionProperty.getElement().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getConvertWith()));
+                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "values", "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L"
-                    + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";", false);
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
+                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L"
+                            + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";",
+                    false);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isCollection()
                 && property.asOptional().getNestedProperty().asCollection().getElement().isLeaf()) {
             toStringPropertyName(ctor);
             CollectionProperty collectionProperty = property.asOptional().getNestedProperty().asCollection();
-            ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getValueRawType()));
+            LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+            ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
             if (collectionProperty.getElement().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getConvertWith()));
+                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
             } else {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "optionalValues", "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING
-                    + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";", false);
+            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
+                    elementProperty.isSecret() ? "optionalSecretValues" : "optionalValues",
+                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING
+                            + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";",
+                    false);
         } else {
             ctor.visitTypeInsn(NEW, I_OBJECT_CREATOR);
             ctor.visitInsn(DUP);
@@ -899,6 +911,12 @@ public class ConfigMappingGenerator {
         Property[] properties = mapping.getProperties();
         for (int i = 0, propertiesLength = properties.length; i < propertiesLength; i++) {
             Property property = properties[i];
+
+            // Exclude Secrets from toString
+            if (isSecret(property)) {
+                continue;
+            }
+
             if (property.isDefaultMethod()) {
                 property = property.asDefaultMethod().getDefaultProperty();
             }
@@ -1059,15 +1077,18 @@ public class ConfigMappingGenerator {
         hc.visitEnd();
     }
 
-    private static void generateProperties(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
+    private static void generateStaticInit(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
         Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping).get(mapping.getInterfaceType())
                 .get("");
 
-        FieldVisitor fieldVisitor = classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES",
-                "Ljava/util/Map;", "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
-        fieldVisitor.visitEnd();
+        classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES", "Ljava/util/Map;",
+                "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null).visitEnd();
+        classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "SECRETS", "Ljava/util/Set;",
+                "Ljava/util/Set<Ljava/lang/String;>;", null).visitEnd();
 
         MethodVisitor clinit = classVisitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+
+        // PROPERTIES
         clinit.visitTypeInsn(NEW, "java/util/HashMap");
         clinit.visitInsn(DUP);
         if (properties.size() < 3) {
@@ -1078,6 +1099,30 @@ public class ConfigMappingGenerator {
         clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "(I)V", false);
         clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
 
+        // SECRETS
+        Map<String, Property> secrets = new HashMap<>();
+        for (Map.Entry<String, Property> entry : properties.entrySet()) {
+            if (isSecret(entry.getValue())) {
+                secrets.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (secrets.isEmpty()) {
+            clinit.visitMethodInsn(INVOKESTATIC, "java/util/Collections", "emptySet", "()Ljava/util/Set;", false);
+        } else if (secrets.size() < 3) {
+            clinit.visitTypeInsn(NEW, "java/util/HashSet");
+            clinit.visitInsn(DUP);
+            clinit.visitIntInsn(BIPUSH, secrets.size() + 1);
+            clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V", false);
+        } else {
+            clinit.visitTypeInsn(NEW, "java/util/HashSet");
+            clinit.visitInsn(DUP);
+            clinit.visitIntInsn(SIPUSH, (int) ((float) secrets.size() / 0.75f + 1.0f));
+            clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V", false);
+        }
+        clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
+
+        // PROPERTIES
         for (Map.Entry<String, Property> entry : properties.entrySet()) {
             clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
             clinit.visitLdcInsn(entry.getKey());
@@ -1096,13 +1141,30 @@ public class ConfigMappingGenerator {
             clinit.visitInsn(POP);
         }
 
+        // SECRETS
+        for (Entry<String, Property> entry : secrets.entrySet()) {
+            clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
+            clinit.visitLdcInsn(entry.getKey());
+            clinit.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
+            clinit.visitInsn(POP);
+        }
+
         clinit.visitInsn(RETURN);
         clinit.visitMaxs(0, 0);
         clinit.visitEnd();
 
-        MethodVisitor mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getProperties", "()Ljava/util/Map;",
+        MethodVisitor mv;
+        mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getProperties", "()Ljava/util/Map;",
                 "()Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null);
         mv.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        mv = classVisitor.visitMethod(ACC_PUBLIC | ACC_STATIC, "getSecrets", "()Ljava/util/Set;",
+                "()Ljava/util/Set<Ljava/lang/String;>;",
+                null);
+        mv.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "SECRETS", "Ljava/util/Set;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -1122,6 +1184,19 @@ public class ConfigMappingGenerator {
         }
 
         return !klass.isPrimitive() || !(value instanceof Character) || !value.equals(0);
+    }
+
+    private static boolean isSecret(final Property property) {
+        if (property.isLeaf()) {
+            return property.isSecret();
+        } else if (property.isOptional()) {
+            return isSecret(property.asOptional().getNestedProperty());
+        } else if (property.isCollection()) {
+            return isSecret(property.asCollection().getElement());
+        } else if (property.isMap()) {
+            return isSecret(property.asMap().getValueProperty());
+        }
+        return false;
     }
 
     static final class Debugging {
