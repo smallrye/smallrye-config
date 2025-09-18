@@ -842,6 +842,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Secrets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tostring-equals-hashcode" class="md-nav__link">
     <span class="md-ellipsis">
       toString, equals, hashcode
@@ -1730,6 +1739,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Secrets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tostring-equals-hashcode" class="md-nav__link">
     <span class="md-ellipsis">
       toString, equals, hashcode
@@ -2245,6 +2263,25 @@ and the size is <code>1</code>.</p>
 <li>A mapping can wrap any complex type with an <code>Optional</code></li>
 <li><code>Optional</code> mappings do not require the configuration path and value to be present</li>
 </ul>
+<h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">#</a></h2>
+<ul>
+<li>A mapping can mark a member type as a secret with <code>Secret&lt;T&gt;</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;credentials&quot;</span><span class="p">)</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Credentials</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">username</span><span class="p">();</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">    </span><span class="n">Secret</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">password</span><span class="p">();</span>
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>A <code>Secret</code> value modifies the behaviour of the config system by:</p>
+<ul>
+<li>Omitting the name of the secret in <code>SmallRyeConfig#getPropertyNames()</code></li>
+<li>Omitting the name and value of the secret in the mapping <code>toString</code> method</li>
+<li>Throwing a <code>SecurityException</code> when trying to retrieve the value via <code>SmallRyeConfig</code> programmatic API</li>
+</ul>
+<p>A Secret can be of any type that can be converted by a registered <code>org.eclipse.microprofile.config.spi.Converter</code> of 
+the same type.</p>
 <h2 id="tostring-equals-hashcode">toString, equals, hashcode<a class="headerlink" href="#tostring-equals-hashcode" title="Permanent link">#</a></h2>
 <p>If the config mapping contains a <code>toString</code> method declaration, the config mapping instance will include a proper
 implementation of the <code>toString</code> method. The <code>equals</code> and <code>hashcode</code> methods are included automatically.</p>
@@ -2255,14 +2292,14 @@ implementation of the <code>toString</code> method. The <code>equals</code> and 
 <h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">#</a></h2>
 <p>A config mapping may combine annotations from <a href="https://beanvalidation.org/">Bean Validation</a> to validate configuration 
 properties values.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="nd">@Size</span><span class="p">(</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">    </span><span class="nd">@Max</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">port</span><span class="p">();</span>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">    </span><span class="nd">@Size</span><span class="p">(</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">    </span><span class="nd">@Max</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">port</span><span class="p">();</span>
+<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="p">}</span>
 </code></pre></div>
 <p>The application startup fails with a <code>io.smallrye.config.ConfigValidationException</code> if the configuration properties 
 values do not follow the contraints defined in <code>Server</code>. </p>
