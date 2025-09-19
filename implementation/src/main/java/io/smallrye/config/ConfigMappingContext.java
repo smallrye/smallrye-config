@@ -1,12 +1,12 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigInstanceBuilderImpl.createCollectionFactory;
 import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
-import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.ConfigInstanceBuilderImpl.MapWithDefault;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
@@ -406,9 +407,9 @@ public final class ConfigMappingContext {
         public <V, C extends Collection<V>> ObjectCreator<T> collection(
                 final Class<C> collectionRawType) {
             List<Consumer<Function<String, Object>>> nestedCreators = new ArrayList<>();
-            IntFunction<Collection<?>> collectionFactory = createCollectionFactory(collectionRawType);
+            IntFunction<? extends Collection<V>> collectionFactory = createCollectionFactory(collectionRawType);
             for (Consumer<Function<String, Object>> creator : this.creators) {
-                Collection<V> collection = (Collection<V>) collectionFactory.apply(0);
+                Collection<V> collection = collectionFactory.apply(0);
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
@@ -432,9 +433,9 @@ public final class ConfigMappingContext {
         public <V, C extends Collection<V>> ObjectCreator<T> optionalCollection(
                 final Class<C> collectionRawType) {
             List<Consumer<Function<String, Object>>> nestedCreators = new ArrayList<>();
-            IntFunction<Collection<?>> collectionFactory = createCollectionFactory(collectionRawType);
+            IntFunction<? extends Collection<V>> collectionFactory = createCollectionFactory(collectionRawType);
             for (Consumer<Function<String, Object>> creator : this.creators) {
-                Collection<V> collection = (Collection<V>) collectionFactory.apply(0);
+                Collection<V> collection = collectionFactory.apply(0);
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
@@ -921,37 +922,10 @@ public final class ConfigMappingContext {
             return convertWith == null ? context.config.requireConverter(rawType) : context.getConverterInstance(convertWith);
         }
 
-        private static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
-            if (type == List.class) {
-                return ArrayList::new;
-            }
-
-            if (type == Set.class) {
-                return HashSet::new;
-            }
-
-            throw new IllegalArgumentException();
-        }
-
         private static String quoted(final String key) {
             NameIterator keyIterator = new NameIterator(key);
             keyIterator.next();
             return keyIterator.hasNext() ? "\"" + key + "\"" : key;
-        }
-    }
-
-    static class MapWithDefault<K, V> extends HashMap<K, V> {
-        @Serial
-        private static final long serialVersionUID = 1390928078837140814L;
-        private final V defaultValue;
-
-        MapWithDefault(final V defaultValue) {
-            this.defaultValue = defaultValue;
-        }
-
-        @Override
-        public V get(final Object key) {
-            return getOrDefault(key, defaultValue);
         }
     }
 }
