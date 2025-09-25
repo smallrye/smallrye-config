@@ -171,6 +171,6 @@ public interface ConfigMessages {
     @Message(id = 50, value = "%s in %s does not map to any root")
     IllegalStateException propertyDoesNotMapToAnyRoot(String name, String location);
 
-    @Message(id = 51, value = "Could not generate ConfigMapping")
-    IllegalStateException couldNotGenerateMapping(@Cause Throwable throwable);
+    @Message(id = 51, value = "Could not generate ConfigMapping %s")
+    IllegalStateException couldNotGenerateMapping(@Cause Throwable throwable, String mapping);
 }

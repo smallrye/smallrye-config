@@ -192,7 +192,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         try {
             return ConfigMappingGenerator.generate(this);
         } catch (Throwable e) {
-            throw ConfigMessages.msg.couldNotGenerateMapping(e);
+            throw ConfigMessages.msg.couldNotGenerateMapping(e, className);
         }
     }
 
