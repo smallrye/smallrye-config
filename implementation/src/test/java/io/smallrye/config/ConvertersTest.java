@@ -513,6 +513,11 @@ class ConvertersTest {
         assertEquals("CharSequence", config.getValue("cs", CharSequence.class));
     }
 
+    @Test
+    void implicit() {
+        assertEquals(Converters.BOOLEAN_CONVERTER, Converters.getImplicitConverter(Boolean.class));
+    }
+
     @SafeVarargs
     private static <T> T[] array(T... items) {
         return items;
@@ -520,7 +525,6 @@ class ConvertersTest {
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
         return new SmallRyeConfigBuilder()
-                .addDefaultSources()
                 .withSources(KeyValuesConfigSource.config(keyValues))
                 .build();
     }

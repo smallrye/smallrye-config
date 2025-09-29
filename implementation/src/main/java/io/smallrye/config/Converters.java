@@ -282,8 +282,7 @@ public final class Converters {
         }
 
         for (Type type : clazz.getGenericInterfaces()) {
-            if (type instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType) type;
+            if (type instanceof ParameterizedType pt) {
                 if (pt.getRawType().equals(Converter.class)) {
                     Type[] typeArguments = pt.getActualTypeArguments();
                     if (typeArguments.length != 1) {
@@ -304,8 +303,9 @@ public final class Converters {
      * @param <T> the type
      * @return the implicit converter for the given type class, or {@code null} if none exists
      */
+    @SuppressWarnings("unchecked")
     public static <T> Converter<T> getImplicitConverter(Class<? extends T> type) {
-        return Implicit.getConverter(type);
+        return (Converter<T>) ALL_CONVERTERS.getOrDefault(type, Implicit.getConverter(type));
     }
 
     /**
