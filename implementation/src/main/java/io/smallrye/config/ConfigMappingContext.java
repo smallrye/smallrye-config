@@ -69,6 +69,10 @@ public final class ConfigMappingContext {
         }
     }
 
+    Map<Class<?>, Map<String, Object>> getMappings() {
+        return mappings;
+    }
+
     @SuppressWarnings("unchecked")
     <T> T constructMapping(Class<T> interfaceType, String prefix) {
         int problemsCount = problems.size();
@@ -89,17 +93,19 @@ public final class ConfigMappingContext {
         return (T) mappingObject;
     }
 
-    public <T> T constructGroup(Class<T> interfaceType) {
+    <T> T constructGroup(Class<T> interfaceType) {
+        // Save the current naming / style, because the nested / child element may override it
         NamingStrategy namingStrategy = this.namingStrategy;
         boolean beanStyleGetters = this.beanStyleGetters;
         T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
+        // restore the naming / style
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
         return mappingObject;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Converter<T> getConverterInstance(Class<? extends Converter<? extends T>> converterType) {
+    <T> Converter<T> getConverterInstance(Class<? extends Converter<? extends T>> converterType) {
         return (Converter<T>) converterInstances.computeIfAbsent(converterType, t -> {
             try {
                 return (Converter<T>) t.getConstructor().newInstance();
@@ -149,12 +155,32 @@ public final class ConfigMappingContext {
         }
     };
 
-    public Function<String, String> propertyName() {
+    private Function<String, String> namingStrategy() {
         return beanStyleGetters ? BEAN_STYLE_GETTERS.andThen(namingStrategy) : namingStrategy;
     }
 
-    public StringBuilder getNameBuilder() {
-        return nameBuilder;
+    private String toPropertyName(final String name, final boolean applyNamingStrategy) {
+        if (name.isEmpty()) {
+            return nameBuilder.toString();
+        }
+
+        int length = nameBuilder.length();
+        if (!nameBuilder.isEmpty()) {
+            nameBuilder.append('.');
+        }
+
+        if (applyNamingStrategy) {
+            nameBuilder.append(namingStrategy().apply(name));
+        } else {
+            nameBuilder.append(name);
+        }
+        String propertyName = nameBuilder.toString();
+        nameBuilder.setLength(length);
+        return propertyName;
+    }
+
+    private <V> Converter<V> getConverter(final Class<V> rawType, final Class<? extends Converter<V>> convertWith) {
+        return convertWith == null ? config.requireConverter(rawType) : getConverterInstance(convertWith);
     }
 
     @SuppressWarnings("unused")
@@ -164,10 +190,6 @@ public final class ConfigMappingContext {
 
     List<Problem> getProblems() {
         return problems;
-    }
-
-    Map<Class<?>, Map<String, Object>> getMappings() {
-        return mappings;
     }
 
     void reportUnknown(final Set<String> ignoredPaths) {
@@ -245,10 +267,26 @@ public final class ConfigMappingContext {
         private List<Consumer<Function<String, Object>>> creators;
 
         public ObjectCreator(final String path) {
+            this(path, true);
+        }
+
+        public ObjectCreator(final String path, final boolean applyNamingStrategy) {
             this.creators = List.of(new Consumer<Function<String, Object>>() {
                 @Override
                 public void accept(Function<String, Object> get) {
-                    root = (T) get.apply(path);
+                    int length = nameBuilder.length();
+                    if (!path.isEmpty()) {
+                        if (!nameBuilder.isEmpty()) {
+                            nameBuilder.append('.');
+                        }
+                        if (applyNamingStrategy) {
+                            nameBuilder.append(namingStrategy().apply(path));
+                        } else {
+                            nameBuilder.append(path);
+                        }
+                    }
+                    root = (T) get.apply(nameBuilder.toString());
+                    nameBuilder.setLength(length);
                 }
             });
         }
@@ -392,9 +430,7 @@ public final class ConfigMappingContext {
                                     }
                                 }
                             });
-
                         }
-
                         return map;
                     }
                 });
@@ -403,17 +439,17 @@ public final class ConfigMappingContext {
             return this;
         }
 
-        public <V, C extends Collection<V>> ObjectCreator<T> collection(
-                final Class<C> collectionRawType) {
+        public <V, C extends Collection<V>> ObjectCreator<T> collection(final Class<C> collectionRawType) {
             List<Consumer<Function<String, Object>>> nestedCreators = new ArrayList<>();
-            IntFunction<Collection<?>> collectionFactory = createCollectionFactory(collectionRawType);
+            IntFunction<? extends Collection<V>> collectionFactory = createCollectionFactory(collectionRawType);
             for (Consumer<Function<String, Object>> creator : this.creators) {
-                Collection<V> collection = (Collection<V>) collectionFactory.apply(0);
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
                         // This is ordered, so it shouldn't require a set by index
-                        for (Integer index : config.getIndexedPropertiesIndexes(path)) {
+                        List<Integer> indexes = config.getIndexedPropertiesIndexes(path);
+                        Collection<V> collection = collectionFactory.apply(indexes.size());
+                        for (Integer index : indexes) {
                             nestedCreators.add(new Consumer<Function<String, Object>>() {
                                 @Override
                                 public void accept(final Function<String, Object> get) {
@@ -432,14 +468,14 @@ public final class ConfigMappingContext {
         public <V, C extends Collection<V>> ObjectCreator<T> optionalCollection(
                 final Class<C> collectionRawType) {
             List<Consumer<Function<String, Object>>> nestedCreators = new ArrayList<>();
-            IntFunction<Collection<?>> collectionFactory = createCollectionFactory(collectionRawType);
+            IntFunction<? extends Collection<V>> collectionFactory = createCollectionFactory(collectionRawType);
             for (Consumer<Function<String, Object>> creator : this.creators) {
-                Collection<V> collection = (Collection<V>) collectionFactory.apply(0);
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
                         // This is ordered, so it shouldn't require a set by index
                         List<Integer> indexes = config.getIndexedPropertiesIndexes(path);
+                        Collection<V> collection = collectionFactory.apply(0);
                         for (Integer index : indexes) {
                             nestedCreators.add(new Consumer<Function<String, Object>>() {
                                 @Override
@@ -461,8 +497,10 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public G apply(final String path) {
-                        StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
+                        StringBuilder sb = ConfigMappingContext.this.nameBuilder;
                         int length = sb.length();
+                        // we either append or keep it because this can be a standalone group (append),
+                        // or a map group, which uses the key as the path to the group
                         sb.append(path, length, path.length());
                         G group = constructGroup(groupType);
                         sb.setLength(length);
@@ -479,8 +517,10 @@ public final class ConfigMappingContext {
                     @Override
                     public G apply(final String path) {
                         if (createRequired(groupType, path)) {
-                            StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
+                            StringBuilder sb = ConfigMappingContext.this.nameBuilder;
                             int length = sb.length();
+                            // we either append or keep it because this can be a standalone group (append),
+                            // or a map group, which uses the key as the path to the group
                             sb.append(path, length, path.length());
                             G group = constructGroup(groupType);
                             sb.setLength(length);
@@ -500,8 +540,10 @@ public final class ConfigMappingContext {
                     @Override
                     public Optional<G> apply(final String path) {
                         if (createRequired(groupType, path)) {
-                            StringBuilder sb = ConfigMappingContext.this.getNameBuilder();
+                            StringBuilder sb = ConfigMappingContext.this.nameBuilder;
                             int length = sb.length();
+                            // we either append or keep it because this can be a standalone group (append),
+                            // or a map group, which uses the key as the path to the group
                             sb.append(path, length, path.length());
                             G group = constructGroup(groupType);
                             sb.setLength(length);
@@ -517,20 +559,25 @@ public final class ConfigMappingContext {
 
         public static <V> V value(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
-            return convertValue(context, propertyName, getConverter(context, valueRawType, valueConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<V> converter = context.getConverter(valueRawType, valueConvertWith);
+            return convertValue(context, propertyName, converter);
         }
 
         @SuppressWarnings("unused")
         public static <V> Secret<V> secretValue(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
-            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
-            return convertValue(context, propertyName, valueConverter);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<Secret<V>> converter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
+            return convertValue(context, propertyName, converter);
         }
 
         private static <V> V convertValue(
@@ -548,7 +595,9 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        return value(ConfigMappingContext.this, propertyName, valueRawType, valueConvertWith);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<T> converter = context.getConverter(valueRawType, valueConvertWith);
+                        return convertValue(context, propertyName, converter);
                     }
                 });
             }
@@ -557,21 +606,25 @@ public final class ConfigMappingContext {
 
         public static <V> Optional<V> optionalValue(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
-            return convertOptionalValue(context, propertyName, getConverter(context, valueRawType, valueConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<V> converter = context.getConverter(valueRawType, valueConvertWith);
+            return convertOptionalValue(context, propertyName, converter);
         }
 
         @SuppressWarnings("unused")
         public static <V> Optional<Secret<V>> optionalSecretValue(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
-            Converter<Optional<Secret<V>>> valueConverter = Converters
-                    .newOptionalConverter(newSecretConverter(getConverter(context, valueRawType, valueConvertWith)));
-            return convertValue(context, propertyName, valueConverter);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<Secret<V>> converter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
+            return convertOptionalValue(context, propertyName, converter);
         }
 
         private static <V> Optional<V> convertOptionalValue(
@@ -589,7 +642,9 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Optional<V> apply(final String propertyName) {
-                        return optionalValue(ConfigMappingContext.this, propertyName, valueRawType, valueConvertWith);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<V> converter = context.getConverter(valueRawType, valueConvertWith);
+                        return convertOptionalValue(context, propertyName, converter);
                     }
                 });
             }
@@ -598,26 +653,30 @@ public final class ConfigMappingContext {
 
         public static <V, C extends Collection<V>> C values(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
-            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<V> itemConverter = context.getConverter(itemRawType, itemConvertWith);
             return convertValues(context, propertyName, itemConverter, collectionRawType);
         }
 
         @SuppressWarnings("unused")
         public static <V, C extends Collection<Secret<V>>> C secretValues(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
-            Converter<Secret<V>> itemConverter = newSecretConverter(getConverter(context, itemRawType, itemConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<Secret<V>> itemConverter = newSecretConverter(context.getConverter(itemRawType, itemConvertWith));
             return convertValues(context, propertyName, itemConverter, collectionRawType);
         }
 
-        public static <V, C extends Collection<V>> C convertValues(
+        private static <V, C extends Collection<V>> C convertValues(
                 final ConfigMappingContext context,
                 final String propertyName,
                 final Converter<V> itemConverter,
@@ -636,7 +695,9 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        return values(ConfigMappingContext.this, propertyName, itemRawType, itemConvertWith, collectionRawType);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<V> itemConverter = context.getConverter(itemRawType, itemConvertWith);
+                        return convertValues(context, propertyName, itemConverter, collectionRawType);
                     }
                 });
             }
@@ -645,22 +706,26 @@ public final class ConfigMappingContext {
 
         public static <V, C extends Collection<V>> Optional<C> optionalValues(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
-            Converter<V> itemConverter = getConverter(context, itemRawType, itemConvertWith);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<V> itemConverter = context.getConverter(itemRawType, itemConvertWith);
             return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
         }
 
         @SuppressWarnings("unused")
         public static <V, C extends Collection<Secret<V>>> Optional<C> optionalSecretValues(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<V> itemRawType,
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
-            Converter<Secret<V>> itemConverter = newSecretConverter(getConverter(context, itemRawType, itemConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<Secret<V>> itemConverter = newSecretConverter(context.getConverter(itemRawType, itemConvertWith));
             return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
         }
 
@@ -683,8 +748,9 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        return optionalValues(ConfigMappingContext.this, propertyName, itemRawType, itemConvertWith,
-                                collectionRawType);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<V> itemConverter = context.getConverter(itemRawType, itemConvertWith);
+                        return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
                     }
                 });
             }
@@ -693,30 +759,34 @@ public final class ConfigMappingContext {
 
         public static <K, V> Map<K, V> values(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Iterable<String> keys,
                 final String defaultValue) {
-            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
-            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+            Converter<V> valueConverter = context.getConverter(valueRawType, valueConvertWith);
             return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
         }
 
         @SuppressWarnings("unused")
         public static <K, V> Map<K, Secret<V>> secretValues(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Iterable<String> keys,
                 final String defaultValue) {
-            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
-            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+            Converter<Secret<V>> valueConverter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
         }
 
@@ -771,8 +841,10 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        return values(ConfigMappingContext.this, propertyName, keyRawType, keyConvertWith, valueRawType,
-                                valueConvertWith, keys, defaultValue);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+                        Converter<V> valueConverter = context.getConverter(valueRawType, valueConvertWith);
+                        return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
                     }
                 });
             }
@@ -781,7 +853,8 @@ public final class ConfigMappingContext {
 
         public static <K, V, C extends Collection<V>> Map<K, C> values(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final Class<V> valueRawType,
@@ -789,14 +862,16 @@ public final class ConfigMappingContext {
                 final Class<C> collectionRawType,
                 final Iterable<String> keys,
                 final String defaultValue) {
-            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
-            Converter<V> valueConverter = getConverter(context, valueRawType, valueConvertWith);
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+            Converter<V> valueConverter = context.getConverter(valueRawType, valueConvertWith);
             return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys, defaultValue);
         }
 
         public static <K, V, C extends Collection<Secret<V>>> Map<K, C> secretValues(
                 final ConfigMappingContext context,
-                final String propertyName,
+                final boolean applyNamingStrategy,
+                final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final Class<V> valueRawType,
@@ -804,8 +879,9 @@ public final class ConfigMappingContext {
                 final Class<C> collectionRawType,
                 final Iterable<String> keys,
                 final String defaultValue) {
-            Converter<K> keyConverter = getConverter(context, keyRawType, keyConvertWith);
-            Converter<Secret<V>> valueConverter = newSecretConverter(getConverter(context, valueRawType, valueConvertWith));
+            String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+            Converter<Secret<V>> valueConverter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys, defaultValue);
         }
 
@@ -867,8 +943,11 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String propertyName) {
-                        return values(ConfigMappingContext.this, propertyName, keyRawType, keyConvertWith, valueRawType,
-                                valueConvertWith, collectionRawType, keys, defaultValue);
+                        ConfigMappingContext context = ConfigMappingContext.this;
+                        Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
+                        Converter<V> valueConverter = context.getConverter(valueRawType, valueConvertWith);
+                        return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys,
+                                defaultValue);
                     }
                 });
             }
@@ -916,17 +995,13 @@ public final class ConfigMappingContext {
             return false;
         }
 
-        private static <V> Converter<V> getConverter(final ConfigMappingContext context, final Class<V> rawType,
-                final Class<? extends Converter<V>> convertWith) {
-            return convertWith == null ? context.config.requireConverter(rawType) : context.getConverterInstance(convertWith);
-        }
-
-        private static IntFunction<Collection<?>> createCollectionFactory(final Class<?> type) {
-            if (type == List.class) {
+        public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
+                final Class<C> type) {
+            if (type.equals(List.class)) {
                 return ArrayList::new;
             }
 
-            if (type == Set.class) {
+            if (type.equals(Set.class)) {
                 return HashSet::new;
             }
 
