@@ -15,7 +15,9 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingContext.MapWithDefault;
+import io.smallrye.config.ConfigMappingContext.ObjectCreator;
 
 public class ObjectCreatorTest {
     @Test
@@ -125,81 +127,60 @@ public class ObjectCreatorTest {
 
         @SuppressWarnings("unchecked")
         public ObjectCreatorImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getNameBuilder();
-            int length = sb.length();
-            ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
+            context.applyNamingStrategy(NamingStrategy.KEBAB_CASE);
+            context.applyBeanStyleGetters(false);
 
-            sb.append(ns.apply("unnamed"));
-            ConfigMappingContext.ObjectCreator<Map<String, Nested>> unnamed = context.new ObjectCreator<Map<String, Nested>>(
-                    sb.toString())
+            this.unnamed = context.new ObjectCreator<Map<String, Nested>>("unnamed", true)
                     .map(String.class, null, "unnamed", null)
-                    .lazyGroup(Nested.class);
-            this.unnamed = unnamed.get();
-            sb.setLength(length);
+                    .lazyGroup(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("list-map"));
-            ConfigMappingContext.ObjectCreator<List<Map<String, String>>> listMap = context.new ObjectCreator<List<Map<String, String>>>(
-                    sb.toString()).collection(List.class).values(String.class, null, String.class, null, emptyList(), null);
-            this.listMap = listMap.get();
-            sb.setLength(length);
+            this.listMap = (List<Map<String, String>>) context.new ObjectCreator<List<Map<String, String>>>("list-map")
+                    .collection(List.class)
+                    .values(String.class, null, String.class, null, emptyList(), null)
+                    .get();
 
-            sb.append(ns.apply("list-group"));
-            ConfigMappingContext.ObjectCreator<List<Nested>> listGroup = context.new ObjectCreator<List<Nested>>(sb.toString())
-                    .collection(List.class).group(Nested.class);
-            this.listGroup = listGroup.get();
-            sb.setLength(length);
+            this.listGroup = (List<Nested>) context.new ObjectCreator<List<Nested>>("list-group")
+                    .collection(List.class)
+                    .group(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("map-group"));
-            ConfigMappingContext.ObjectCreator<Map<String, Nested>> mapGroup = context.new ObjectCreator<Map<String, Nested>>(
-                    sb.toString()).map(String.class, null).lazyGroup(Nested.class);
-            this.mapGroup = mapGroup.get();
-            sb.setLength(length);
+            this.mapGroup = context.new ObjectCreator<Map<String, Nested>>("map-group").map(String.class, null)
+                    .lazyGroup(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("optional-group"));
-            ConfigMappingContext.ObjectCreator<Optional<Nested>> optionalGroup = context.new ObjectCreator<Optional<Nested>>(
-                    sb.toString()).optionalGroup(Nested.class);
-            this.optionalGroup = optionalGroup.get();
-            sb.setLength(length);
+            this.optionalGroup = context.new ObjectCreator<Optional<Nested>>("optional-group")
+                    .optionalGroup(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("optional-group-missing"));
-            ConfigMappingContext.ObjectCreator<Optional<Nested>> optionalGroupMissing = context.new ObjectCreator<Optional<Nested>>(
-                    sb.toString()).optionalGroup(Nested.class);
-            this.optionalGroupMissing = optionalGroupMissing.get();
-            sb.setLength(length);
+            this.optionalGroupMissing = context.new ObjectCreator<Optional<Nested>>("optional-group-missing")
+                    .optionalGroup(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("group"));
-            ConfigMappingContext.ObjectCreator<Nested> group = context.new ObjectCreator<Nested>(sb.toString())
-                    .group(Nested.class);
-            this.group = group.get();
-            sb.setLength(length);
+            this.group = context.new ObjectCreator<Nested>("group")
+                    .group(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("value"));
-            this.value = ConfigMappingContext.ObjectCreator.value(context, sb.toString(), String.class, null);
-            sb.setLength(length);
+            this.value = ConfigMappingContext.ObjectCreator.value(context, false, "value", String.class, null);
 
-            sb.append(ns.apply("optional-value"));
-            ConfigMappingContext.ObjectCreator<Optional<String>> optionalValue = context.new ObjectCreator<Optional<String>>(
-                    sb.toString()).optionalValue(String.class, null);
-            this.optionalValue = optionalValue.get();
-            sb.setLength(length);
+            this.optionalValue = context.new ObjectCreator<Optional<String>>("optional-value")
+                    .optionalValue(String.class, null)
+                    .get();
 
-            sb.append(ns.apply("optional-value"));
-            ConfigMappingContext.ObjectCreator<Optional<List<String>>> optionalList = context.new ObjectCreator<Optional<List<String>>>(
-                    sb.toString()).optionalValues(String.class, null, List.class);
-            this.optionalList = optionalList.get();
-            sb.setLength(length);
+            this.optionalList = (Optional<List<String>>) context.new ObjectCreator<Optional<List<String>>>("optional-value")
+                    .optionalValues(String.class, null, List.class)
+                    .get();
 
-            sb.append(ns.apply("optional-list-group"));
-            ConfigMappingContext.ObjectCreator<Optional<List<Nested>>> optionalListGroup = context.new ObjectCreator<Optional<List<Nested>>>(
-                    sb.toString()).optionalCollection(List.class).group(Nested.class);
-            this.optionalListGroup = optionalListGroup.get();
-            sb.setLength(length);
+            this.optionalListGroup = (Optional<List<Nested>>) context.new ObjectCreator<Optional<List<Nested>>>(
+                    "optional-list-group")
+                    .optionalCollection(List.class).group(Nested.class)
+                    .get();
 
-            sb.append(ns.apply("optional-list-group-missing"));
-            ConfigMappingContext.ObjectCreator<Optional<List<Nested>>> optionalListGroupMissing = context.new ObjectCreator<Optional<List<Nested>>>(
-                    sb.toString()).optionalCollection(List.class).group(Nested.class);
-            this.optionalListGroupMissing = optionalListGroupMissing.get();
-            sb.setLength(length);
+            this.optionalListGroupMissing = (Optional<List<Nested>>) context.new ObjectCreator<Optional<List<Nested>>>(
+                    "optional-list-group-missing")
+                    .optionalCollection(List.class)
+                    .group(Nested.class)
+                    .get();
         }
 
         @Override
@@ -295,21 +276,11 @@ public class ObjectCreatorTest {
         Optional<Nested> empty;
 
         public OptionalGroupImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getNameBuilder();
-            int length = sb.length();
-            ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
+            context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
+            context.applyBeanStyleGetters(false);
 
-            sb.append(ns.apply("optional"));
-            ConfigMappingContext.ObjectCreator<Optional<Nested>> optional = context.new ObjectCreator<Optional<Nested>>(
-                    sb.toString()).optionalGroup(Nested.class);
-            this.optional = optional.get();
-            sb.setLength(length);
-
-            sb.append(ns.apply("empty"));
-            ConfigMappingContext.ObjectCreator<Optional<Nested>> empty = context.new ObjectCreator<Optional<Nested>>(
-                    sb.toString()).optionalGroup(Nested.class);
-            this.empty = empty.get();
-            sb.setLength(length);
+            this.optional = context.new ObjectCreator<Optional<Nested>>("optional").optionalGroup(Nested.class).get();
+            this.empty = context.new ObjectCreator<Optional<Nested>>("empty").optionalGroup(Nested.class).get();
         }
 
         @Override
@@ -361,15 +332,13 @@ public class ObjectCreatorTest {
         Map<String, Nested> map;
 
         public UnnamedKeysImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getNameBuilder();
-            int length = sb.length();
+            context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
+            context.applyBeanStyleGetters(false);
 
-            ConfigMappingContext.ObjectCreator<Map<String, Nested>> map = context.new ObjectCreator<Map<String, Nested>>(
-                    sb.toString())
+            this.map = context.new ObjectCreator<Map<String, Nested>>("")
                     .map(String.class, null, "", null)
-                    .lazyGroup(Nested.class);
-            this.map = map.get();
-            sb.setLength(length);
+                    .lazyGroup(Nested.class)
+                    .get();
         }
 
         @Override
@@ -438,44 +407,32 @@ public class ObjectCreatorTest {
         Map<String, List<Nested>> defaultsList;
 
         public MapDefaultsImpl(ConfigMappingContext context) {
-            StringBuilder sb = context.getNameBuilder();
-            int length = sb.length();
-            ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.KEBAB_CASE;
+            context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
+            context.applyBeanStyleGetters(false);
 
-            sb.append(".");
-            sb.append(ns.apply("defaults"));
-            ConfigMappingContext.ObjectCreator<Map<String, String>> defaults = context.new ObjectCreator<Map<String, String>>(
-                    sb.toString())
-                    .values(String.class, null, String.class, null, emptyList(), "default");
-            this.defaults = defaults.get();
-            sb.setLength(length);
+            this.defaults = context.new ObjectCreator<Map<String, String>>("defaults")
+                    .values(String.class, null, String.class, null, emptyList(), "default")
+                    .get();
 
-            sb.append(".");
-            sb.append(ns.apply("defaults-nested"));
-            ConfigMappingContext.ObjectCreator<Map<String, Nested>> defaultsNested = context.new ObjectCreator<Map<String, Nested>>(
-                    sb.toString())
+            this.defaultsNested = context.new ObjectCreator<Map<String, Nested>>("defaults-nested")
                     .map(String.class, null, null, null, new Supplier<Nested>() {
                         @Override
                         public Nested get() {
-                            sb.append(".*");
+                            context.applyPrefix("map.defaults-nested.*");
                             Nested nested = context.constructGroup(Nested.class);
-                            sb.setLength(length);
+                            context.applyPrefix("map.defaults-nested");
                             return nested;
                         }
                     })
-                    .lazyGroup(Nested.class);
-            this.defaultsNested = defaultsNested.get();
-            sb.setLength(length);
+                    .lazyGroup(Nested.class)
+                    .get();
 
-            sb.append(".");
-            sb.append(ns.apply("defaults-list"));
-            ConfigMappingContext.ObjectCreator<Map<String, List<Nested>>> defaultsList = context.new ObjectCreator<Map<String, List<Nested>>>(
-                    sb.toString())
+            this.defaultsList = (Map<String, List<Nested>>) context.new ObjectCreator<Map<String, List<Nested>>>(
+                    "defaults-list")
                     .map(String.class, null)
                     .collection(List.class)
-                    .lazyGroup(Nested.class);
-            this.defaultsList = defaultsList.get();
-            sb.setLength(length);
+                    .lazyGroup(Nested.class)
+                    .get();
         }
 
         @Override
@@ -523,16 +480,10 @@ public class ObjectCreatorTest {
         Nested nestedValue;
 
         public NamingImpl(ConfigMappingContext context) {
-            ConfigMapping.NamingStrategy ns = ConfigMapping.NamingStrategy.SNAKE_CASE;
-            StringBuilder sb = context.getNameBuilder();
-            int length = sb.length();
+            context.applyNamingStrategy(NamingStrategy.SNAKE_CASE);
+            context.applyBeanStyleGetters(false);
 
-            sb.append(".");
-            sb.append(ns.apply("nestedValue"));
-            ConfigMappingContext.ObjectCreator<Nested> nestedValue = context.new ObjectCreator<Nested>(sb.toString())
-                    .group(Nested.class);
-            this.nestedValue = nestedValue.get();
-            sb.setLength(length);
+            this.nestedValue = context.new ObjectCreator<Nested>("nestedValue").group(Nested.class).get();
         }
 
         @Override

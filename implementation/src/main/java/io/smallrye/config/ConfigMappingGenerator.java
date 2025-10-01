@@ -24,7 +24,6 @@ import static org.objectweb.asm.Opcodes.F_SAME;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
-import static org.objectweb.asm.Opcodes.I2C;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.IFEQ;
@@ -33,13 +32,11 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static org.objectweb.asm.Opcodes.IF_ICMPNE;
-import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
-import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.LCMP;
 import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.NEW;
@@ -65,7 +62,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -118,9 +114,6 @@ public class ConfigMappingGenerator {
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
-    private static final int V_STRING_BUILDER = 2;
-    private static final int V_LENGTH = 3;
-    private static final int V_NAMING_FUNCTION = 4;
 
     /**
      * Generates the backing implementation of an interface annotated with the {@link ConfigMapping} annotation.
@@ -147,32 +140,9 @@ public class ConfigMappingGenerator {
         MethodVisitor ctor = visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
         ctor.visitParameter("context", ACC_FINAL);
         Label ctorStart = new Label();
-        Label ctorEnd = new Label();
         ctor.visitLabel(ctorStart);
-        // stack: -
         ctor.visitVarInsn(ALOAD, V_THIS);
-        // stack: this
         ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
-        // stack: -
-        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-        // stack: ctxt
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "getNameBuilder", "()L" + I_STRING_BUILDER + ';',
-                false);
-        // stack: sb
-        ctor.visitInsn(DUP);
-        // stack: sb sb
-        Label ctorSbStart = new Label();
-        ctor.visitLabel(ctorSbStart);
-        ctor.visitVarInsn(ASTORE, V_STRING_BUILDER);
-        // stack: sb
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
-        // stack: len
-        Label ctorLenStart = new Label();
-        ctor.visitLabel(ctorLenStart);
-        ctor.visitVarInsn(ISTORE, V_LENGTH);
-
-        Label ctorNfStart = new Label();
-        ctor.visitLabel(ctorNfStart);
 
         if (mapping.hasConfigMapping()) {
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
@@ -187,18 +157,12 @@ public class ConfigMappingGenerator {
             ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyBeanStyleGetters", "(Ljava/lang/Boolean;)V", false);
         }
 
-        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "propertyName", "()Ljava/util/function/Function;", false);
-        ctor.visitVarInsn(ASTORE, V_NAMING_FUNCTION);
-
         addProperties(visitor, ctor, mapping);
 
         ctor.visitInsn(RETURN);
+        Label ctorEnd = new Label();
         ctor.visitLabel(ctorEnd);
         ctor.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, ctorStart, ctorEnd, V_MAPPING_CONTEXT);
-        ctor.visitLocalVariable("sb", 'L' + I_STRING_BUILDER + ';', null, ctorSbStart, ctorEnd, V_STRING_BUILDER);
-        ctor.visitLocalVariable("len", "I", null, ctorLenStart, ctorEnd, V_LENGTH);
-        ctor.visitLocalVariable("nf", "Ljava/util/function/Function;", null, ctorNfStart, ctorEnd, V_NAMING_FUNCTION);
         ctor.visitEnd();
         ctor.visitMaxs(0, 0);
         visitor.visitEnd();
@@ -455,8 +419,6 @@ public class ConfigMappingGenerator {
             ctor.visitJumpInsn(GOTO, _continue);
 
             ctor.visitLabel(_continue);
-
-            restoreLength(ctor);
         }
 
         // We don't know the order in the constructor and the default method may require call to other
@@ -478,11 +440,11 @@ public class ConfigMappingGenerator {
     }
 
     private static void generateProperty(final MethodVisitor ctor, final Property property) {
-        appendPropertyName(ctor, property);
-
         if (property.isPrimitive()) {
-            toStringPropertyName(ctor);
             PrimitiveProperty propertyPrimitive = property.asPrimitive();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(Type.getType(propertyPrimitive.getBoxType()));
             if (property.hasConvertWith()) {
                 ctor.visitLdcInsn(getType(propertyPrimitive.getConvertWith()));
@@ -490,11 +452,14 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "value",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT + ";",
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT
+                            + ";",
                     false);
         } else if (property.isLeaf() && !property.isOptional()) {
-            toStringPropertyName(ctor);
             LeafProperty leafProperty = property.asLeaf();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(Type.getType(leafProperty.getValueRawType()));
             if (leafProperty.hasConvertWith()) {
                 ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
@@ -502,12 +467,14 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, leafProperty.isSecret() ? "secretValue" : "value",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L"
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L"
                             + (leafProperty.isSecret() ? I_SECRET : I_OBJECT) + ";",
                     false);
         } else if (property.isOptional() && property.isLeaf()) {
-            toStringPropertyName(ctor);
             LeafProperty optionalProperty = property.asLeaf();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(Type.getType(optionalProperty.getValueRawType()));
             if (optionalProperty.hasConvertWith()) {
                 ctor.visitLdcInsn(getType(optionalProperty.getConvertWith()));
@@ -516,12 +483,15 @@ public class ConfigMappingGenerator {
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
                     optionalProperty.isSecret() ? "optionalSecretValue" : "optionalValue",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";",
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL
+                            + ";",
                     false);
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
-            toStringPropertyName(ctor);
             MapProperty mapProperty = property.asMap();
             LeafProperty valueProperty = mapProperty.getValueProperty().asLeaf();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
             if (mapProperty.hasKeyConvertWith()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
@@ -545,14 +515,17 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, valueProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";L"
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
+                            + ";L"
                             + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
                     false);
         } else if (property.isMap() && property.asMap().getValueProperty().isCollection()
                 && property.asMap().getValueProperty().asCollection().getElement().isLeaf()) {
-            toStringPropertyName(ctor);
             MapProperty mapProperty = property.asMap();
             Property valueProperty = mapProperty.getValueProperty();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
             if (mapProperty.hasKeyConvertWith()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
@@ -578,13 +551,16 @@ public class ConfigMappingGenerator {
                 ctor.visitInsn(ACONST_NULL);
             }
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";L"
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
+                            + ";L"
                             + I_CLASS + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
                     false);
         } else if (property.isCollection() && property.asCollection().getElement().isLeaf()) {
-            toStringPropertyName(ctor);
             CollectionProperty collectionProperty = property.asCollection();
             LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
             if (collectionProperty.getElement().hasConvertWith()) {
                 ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
@@ -593,14 +569,16 @@ public class ConfigMappingGenerator {
             }
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";L"
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L"
                             + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";",
                     false);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isCollection()
                 && property.asOptional().getNestedProperty().asCollection().getElement().isLeaf()) {
-            toStringPropertyName(ctor);
             CollectionProperty collectionProperty = property.asOptional().getNestedProperty().asCollection();
             LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
             if (collectionProperty.getElement().hasConvertWith()) {
                 ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
@@ -610,16 +588,17 @@ public class ConfigMappingGenerator {
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
             ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
                     elementProperty.isSecret() ? "optionalSecretValues" : "optionalValues",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING
+                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING
                             + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";",
                     false);
         } else {
             ctor.visitTypeInsn(NEW, I_OBJECT_CREATOR);
             ctor.visitInsn(DUP);
-            toStringPropertyName(ctor);
-            ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>", "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";)V",
-                    false);
-
+            ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>",
+                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";" + "Z" + ")V", false);
             generateNestedProperty(ctor, property);
         }
     }
@@ -810,51 +789,6 @@ public class ConfigMappingGenerator {
         ctor.visitInsn(DUP);
         ctor.visitMethodInsn(INVOKESPECIAL, provider, "<init>", "()V", false);
         ctor.visitMethodInsn(INVOKEVIRTUAL, provider, "get", "()L" + I_ITERABLE + ";", false);
-    }
-
-    private static void appendPropertyName(final MethodVisitor ctor, final Property property) {
-        if (property.isParentPropertyName()) {
-            return;
-        }
-
-        Label _continue = new Label();
-        ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "length", "()I", false);
-        ctor.visitJumpInsn(IFEQ, _continue);
-
-        ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-        ctor.visitLdcInsn('.');
-        ctor.visitInsn(I2C);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(C)L" + I_STRING_BUILDER + ';', false);
-        ctor.visitInsn(POP);
-        ctor.visitLabel(_continue);
-
-        ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-        if (property.hasPropertyName()) {
-            ctor.visitLdcInsn(property.getPropertyName());
-        } else {
-            ctor.visitVarInsn(ALOAD, V_NAMING_FUNCTION);
-            ctor.visitLdcInsn(property.getPropertyName());
-            ctor.visitMethodInsn(INVOKEINTERFACE, getInternalName(Function.class), "apply",
-                    "(L" + I_OBJECT + ";)L" + I_OBJECT + ";", true);
-            ctor.visitTypeInsn(CHECKCAST, "java/lang/String");
-        }
-
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "append", "(L" + I_STRING + ";)L" + I_STRING_BUILDER + ';',
-                false);
-        ctor.visitInsn(POP);
-    }
-
-    private static void toStringPropertyName(final MethodVisitor ctor) {
-        ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-        ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "toString", "()L" + I_STRING + ';', false);
-    }
-
-    private static void restoreLength(final MethodVisitor ctor) {
-        ctor.visitVarInsn(ALOAD, V_STRING_BUILDER);
-        ctor.visitVarInsn(ILOAD, V_LENGTH);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, I_STRING_BUILDER, "setLength", "(I)V", false);
     }
 
     private static int getReturnInstruction(Property property) {
