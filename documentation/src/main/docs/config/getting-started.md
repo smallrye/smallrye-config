@@ -131,9 +131,9 @@ SmallRyeConfig config = new SmallRyeConfigBuilder().build();
 
 A few notable APIs provided by `io.smallrye.config.SmallRyeConfig` allow to:
 
-- Retrive multiple values into a specified `Collection`
-- Retrive [Indexed Values](indexed-properties.md)
-- Retrive [Config Mappings](mappings.md) instances
+- Retrieve multiple values into a specified `Collection`
+- Retrieve [Indexed Values](indexed-properties.md)
+- Retrieve [Config Mappings](mappings.md) instances
 - Retrieve the raw value of a configuration
 - Check if a property is present
 - Retrieve a `Converter`
