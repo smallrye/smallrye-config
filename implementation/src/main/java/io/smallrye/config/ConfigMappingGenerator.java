@@ -62,7 +62,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
@@ -73,9 +72,11 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
+import io.smallrye.config.ConfigMappingContext.ObjectCreator;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.LeafProperty;
 import io.smallrye.config.ConfigMappingInterface.MapProperty;
@@ -106,11 +107,7 @@ public class ConfigMappingGenerator {
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_STRING = getInternalName(String.class);
-    private static final String I_OPTIONAL = getInternalName(Optional.class);
-    private static final String I_COLLECTION = getInternalName(Collection.class);
-    private static final String I_MAP = getInternalName(Map.class);
     private static final String I_ITERABLE = getInternalName(Iterable.class);
-    private static final String I_SECRET = getInternalName(Secret.class);
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
@@ -137,7 +134,8 @@ public class ConfigMappingGenerator {
         noArgsCtor.visitEnd();
         noArgsCtor.visitMaxs(0, 0);
 
-        MethodVisitor ctor = visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null);
+        ObjectCreatorMethodVisitor ctor = new ObjectCreatorMethodVisitor(
+                visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null));
         ctor.visitParameter("context", ACC_FINAL);
         Label ctorStart = new Label();
         ctor.visitLabel(ctorStart);
@@ -364,7 +362,7 @@ public class ConfigMappingGenerator {
 
     private static void addProperties(
             final ClassVisitor cv,
-            final MethodVisitor ctor,
+            final ObjectCreatorMethodVisitor ctor,
             final ConfigMappingInterface mapping) {
 
         for (Property property : mapping.getProperties()) {
@@ -400,14 +398,7 @@ public class ConfigMappingGenerator {
             ctor.visitVarInsn(ALOAD, V_THIS);
             generateProperty(ctor, property);
 
-            if (property.isPrimitive()) {
-                PrimitiveProperty primitive = property.asPrimitive();
-                ctor.visitTypeInsn(CHECKCAST, getInternalName(primitive.getBoxType()));
-                ctor.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitive.getBoxType()), primitive.getUnboxMethodName(),
-                        primitive.getUnboxMethodDescriptor(), false);
-            } else {
-                ctor.visitTypeInsn(CHECKCAST, fieldType);
-            }
+            ctor.visitCast(property, fieldType);
             ctor.visitFieldInsn(PUTFIELD, mapping.getClassInternalName(), memberName, fieldDesc);
             ctor.visitJumpInsn(GOTO, _continue);
 
@@ -415,7 +406,7 @@ public class ConfigMappingGenerator {
             ctor.visitLabel(_catch);
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
             ctor.visitInsn(SWAP);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "reportProblem", "(L" + I_RUNTIME_EXCEPTION + ";)V", false);
+            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "problem", "(L" + I_RUNTIME_EXCEPTION + ";)V", false);
             ctor.visitJumpInsn(GOTO, _continue);
 
             ctor.visitLabel(_continue);
@@ -439,289 +430,166 @@ public class ConfigMappingGenerator {
         }
     }
 
-    private static void generateProperty(final MethodVisitor ctor, final Property property) {
+    private static void generateProperty(final ObjectCreatorMethodVisitor ctor, final Property property) {
         if (property.isPrimitive()) {
-            PrimitiveProperty propertyPrimitive = property.asPrimitive();
+            PrimitiveProperty primitiveProperty = property.asPrimitive();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
-            ctor.visitLdcInsn(Type.getType(propertyPrimitive.getBoxType()));
-            if (property.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(propertyPrimitive.getConvertWith()));
+            ctor.visitPropertyName(property);
+            if (!primitiveProperty.hasConvertWith() && primitiveProperty.getPrimitiveType() == int.class) {
+                ctor.visitMethod(PrimitiveMethodInvocation.intValue);
+            } else if (!primitiveProperty.hasConvertWith() && primitiveProperty.getPrimitiveType() == boolean.class) {
+                ctor.visitMethod(PrimitiveMethodInvocation.boolValue);
             } else {
-                ctor.visitInsn(ACONST_NULL);
+                ctor.visitLdcInsn(Type.getType(primitiveProperty.getBoxType()));
+                ctor.visitConverter(primitiveProperty);
+                ctor.visitMethod(PrimitiveMethodInvocation.value);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, "value",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT
-                            + ";",
-                    false);
         } else if (property.isLeaf() && !property.isOptional()) {
             LeafProperty leafProperty = property.asLeaf();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
-            ctor.visitLdcInsn(Type.getType(leafProperty.getValueRawType()));
-            if (leafProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
+            ctor.visitPropertyName(property);
+            if (!leafProperty.hasConvertWith() && leafProperty.getValueType() == String.class) {
+                ctor.visitMethod(ObjectMethodInvocation.stringValue);
+            } else if (!leafProperty.hasConvertWith() && leafProperty.getValueRawType() == Integer.class) {
+                ctor.visitMethod(ObjectMethodInvocation.integerValue);
+            } else if (!leafProperty.hasConvertWith() && leafProperty.getValueRawType() == Boolean.class) {
+                ctor.visitMethod(ObjectMethodInvocation.booleanValue);
             } else {
-                ctor.visitInsn(ACONST_NULL);
+                ctor.visitLdcInsn(Type.getType(leafProperty.getValueRawType()));
+                ctor.visitConverter(leafProperty);
+                ctor.visitMethod(property.isSecret() ? ObjectMethodInvocation.secretValue : ObjectMethodInvocation.value);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, leafProperty.isSecret() ? "secretValue" : "value",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L"
-                            + (leafProperty.isSecret() ? I_SECRET : I_OBJECT) + ";",
-                    false);
         } else if (property.isOptional() && property.isLeaf()) {
             LeafProperty optionalProperty = property.asLeaf();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
-            ctor.visitLdcInsn(Type.getType(optionalProperty.getValueRawType()));
-            if (optionalProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(optionalProperty.getConvertWith()));
+            ctor.visitPropertyName(property);
+            if (!optionalProperty.hasConvertWith() && !optionalProperty.isSecret()
+                    && optionalProperty.getValueRawType() == String.class) {
+                ctor.visitMethod(ObjectMethodInvocation.optionalStringValue);
             } else {
-                ctor.visitInsn(ACONST_NULL);
+                ctor.visitLdcInsn(Type.getType(optionalProperty.getValueRawType()));
+                ctor.visitConverter(optionalProperty);
+                ctor.visitMethod(optionalProperty.isSecret() ? ObjectMethodInvocation.optionalSecretValue
+                        : ObjectMethodInvocation.optionalValue);
             }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
-                    optionalProperty.isSecret() ? "optionalSecretValue" : "optionalValue",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL
-                            + ";",
-                    false);
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
             MapProperty mapProperty = property.asMap();
             LeafProperty valueProperty = mapProperty.getValueProperty().asLeaf();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitPropertyName(property);
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-            if (mapProperty.hasKeyConvertWith()) {
-                ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitKeyConverter(mapProperty);
             ctor.visitLdcInsn(getType(valueProperty.getValueRawType()));
-            if (valueProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(valueProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasKeyProvider()) {
-                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasDefaultValue() && mapProperty.getDefaultValue() != null) {
-                ctor.visitLdcInsn(mapProperty.getDefaultValue());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, valueProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                            + ";L"
-                            + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
-                    false);
+            ctor.visitConverter(valueProperty);
+            ctor.visitKeyProvider(mapProperty);
+            ctor.visitDefault(mapProperty);
+            ctor.visitMethod(valueProperty.isSecret() ? MapMethodInvocation.secretValues : MapMethodInvocation.values);
         } else if (property.isMap() && property.asMap().getValueProperty().isCollection()
                 && property.asMap().getValueProperty().asCollection().getElement().isLeaf()) {
             MapProperty mapProperty = property.asMap();
             Property valueProperty = mapProperty.getValueProperty();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitPropertyName(property);
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-            if (mapProperty.hasKeyConvertWith()) {
-                ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitKeyConverter(mapProperty);
             LeafProperty elementProperty = valueProperty.asCollection().getElement().asLeaf();
             ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
-            if (elementProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitConverter(elementProperty);
             ctor.visitLdcInsn(getType(valueProperty.asCollection().getCollectionRawType()));
-            if (mapProperty.hasKeyProvider()) {
-                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasDefaultValue()) {
-                ctor.visitLdcInsn(mapProperty.getDefaultValue());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                            + ";L"
-                            + I_CLASS + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_MAP + ";",
-                    false);
+            ctor.visitKeyProvider(mapProperty);
+            ctor.visitDefault(mapProperty);
+            ctor.visitMethod(
+                    elementProperty.isSecret() ? MapCollectionInvocation.secretValues : MapCollectionInvocation.values);
         } else if (property.isCollection() && property.asCollection().getElement().isLeaf()) {
             CollectionProperty collectionProperty = property.asCollection();
             LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitPropertyName(property);
             ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
-            if (collectionProperty.getElement().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitConverter(elementProperty);
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR, elementProperty.isSecret() ? "secretValues" : "values",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING + ";L"
-                            + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_COLLECTION + ";",
-                    false);
+            ctor.visitMethod(
+                    elementProperty.isSecret() ? CollectionMethodInvocation.secretValues : CollectionMethodInvocation.values);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isCollection()
                 && property.asOptional().getNestedProperty().asCollection().getElement().isLeaf()) {
             CollectionProperty collectionProperty = property.asOptional().getNestedProperty().asCollection();
             LeafProperty elementProperty = collectionProperty.getElement().asLeaf();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitLdcInsn(property.getPropertyName());
+            ctor.visitPropertyName(property);
             ctor.visitLdcInsn(getType(elementProperty.getValueRawType()));
-            if (collectionProperty.getElement().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(elementProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitConverter(elementProperty);
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKESTATIC, I_OBJECT_CREATOR,
-                    elementProperty.isSecret() ? "optionalSecretValues" : "optionalValues",
-                    "(L" + I_MAPPING_CONTEXT + ";" + "Z" + "L" + I_STRING
-                            + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OPTIONAL + ";",
-                    false);
+            ctor.visitMethod(elementProperty.isSecret() ? CollectionMethodInvocation.optionalSecretValues
+                    : CollectionMethodInvocation.optionalValues);
         } else {
             ctor.visitTypeInsn(NEW, I_OBJECT_CREATOR);
             ctor.visitInsn(DUP);
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
             ctor.visitLdcInsn(property.getPropertyName());
             ctor.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
-            ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>",
-                    "(L" + I_MAPPING_CONTEXT + ";L" + I_STRING + ";" + "Z" + ")V", false);
+            ctor.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR, "<init>", "(" + D_MAPPING_CONTEXT + D_STRING + "Z" + ")V",
+                    false);
             generateNestedProperty(ctor, property);
         }
     }
 
-    private static void generateNestedProperty(final MethodVisitor ctor, final Property property) {
+    private static void generateNestedProperty(final ObjectCreatorMethodVisitor ctor, final Property property) {
         if (property.isGroup()) {
             ctor.visitLdcInsn(getType(property.asGroup().getGroupType().getInterfaceType()));
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "group",
-                    "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";",
-                    false);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+            ctor.visitMethod(ObjectCreatorInvocation.group);
+            ctor.visitMethod(ObjectCreatorInvocation.get);
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
             MapProperty mapProperty = property.asMap();
             Property valueProperty = mapProperty.getValueProperty();
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-            if (mapProperty.hasKeyConvertWith()) {
-                ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitKeyConverter(mapProperty);
             LeafProperty leafProperty = valueProperty.asLeaf();
             ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
-            if (leafProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasKeyProvider()) {
-                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasDefaultValue() && mapProperty.getDefaultValue() != null) {
-                ctor.visitLdcInsn(mapProperty.getDefaultValue());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "values", "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                    + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";", false);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+            ctor.visitConverter(leafProperty);
+            ctor.visitKeyProvider(mapProperty);
+            ctor.visitDefault(mapProperty);
+            ctor.visitMethod(ObjectCreatorMapInvocation.values);
+            ctor.visitMethod(ObjectCreatorInvocation.get);
         } else if (property.isMap() && property.asMap().getValueProperty().isCollection()
                 && property.asMap().getValueProperty().asCollection().getElement().isLeaf()) {
             MapProperty mapProperty = property.asMap();
             Property valueProperty = mapProperty.getValueProperty();
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-            if (mapProperty.hasKeyConvertWith()) {
-                ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitKeyConverter(mapProperty);
             LeafProperty leafProperty = valueProperty.asCollection().getElement().asLeaf();
             ctor.visitLdcInsn(getType(leafProperty.getValueRawType()));
-            if (leafProperty.hasConvertWith()) {
-                ctor.visitLdcInsn(getType(leafProperty.getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitConverter(leafProperty);
             ctor.visitLdcInsn(getType(valueProperty.asCollection().getCollectionRawType()));
-            if (mapProperty.hasKeyProvider()) {
-                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasDefaultValue()) {
-                ctor.visitLdcInsn(mapProperty.getDefaultValue());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "values", "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS
-                    + ";L" + I_CLASS + ";L" + I_CLASS + ";L" + I_ITERABLE + ";L" + I_STRING + ";)L" + I_OBJECT_CREATOR + ";",
-                    false);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+            ctor.visitKeyProvider(mapProperty);
+            ctor.visitDefault(mapProperty);
+            ctor.visitMethod(ObjectCreatorInvocation.values);
+            ctor.visitMethod(ObjectCreatorInvocation.get);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isCollection()
                 && property.asOptional().getNestedProperty().asCollection().getElement().isLeaf()) {
             CollectionProperty collectionProperty = property.asOptional().getNestedProperty().asCollection();
             ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getValueRawType()));
-            if (collectionProperty.getElement().hasConvertWith()) {
-                ctor.visitLdcInsn(getType(collectionProperty.getElement().asLeaf().getConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
+            ctor.visitConverter(collectionProperty.getElement().asLeaf());
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "optionalValues",
-                    "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+            ctor.visitMethod(ObjectCreatorInvocation.optionalValues);
+            ctor.visitMethod(ObjectCreatorInvocation.get);
         } else if (property.isMap()) {
             MapProperty mapProperty = property.asMap();
             Property valueProperty = mapProperty.getValueProperty();
             if (valueProperty.isGroup()) {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-                if (mapProperty.hasKeyConvertWith()) {
-                    ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-                } else {
-                    ctor.visitInsn(ACONST_NULL);
-                }
-                if (mapProperty.hasKeyUnnamed()) {
-                    ctor.visitLdcInsn(mapProperty.getKeyUnnamed());
-                } else {
-                    ctor.visitInsn(ACONST_NULL);
-                }
-                if (mapProperty.hasKeyProvider()) {
-                    generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-                } else {
-                    ctor.visitInsn(ACONST_NULL);
-                }
+                ctor.visitKeyConverter(mapProperty);
+                ctor.visitKeyUnnamed(mapProperty);
+                ctor.visitKeyProvider(mapProperty);
                 if (mapProperty.hasDefaultValue()) {
                     ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "map",
-                        "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_ITERABLE + ";L" + I_CLASS + ";)L"
-                                + I_OBJECT_CREATOR + ";",
-                        false);
+                ctor.visitMethod(ObjectCreatorMapGroupInvocation.map);
                 ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
-                if (mapProperty.hasKeyProvider()) {
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "group",
-                            "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
-                } else {
-                    ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "lazyGroup",
-                            "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
-                }
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+                ctor.visitMethod(
+                        mapProperty.hasKeyProvider() ? ObjectCreatorInvocation.group : ObjectCreatorInvocation.lazyGroup);
+                ctor.visitMethod(ObjectCreatorInvocation.get);
             } else {
                 unwrapNestedProperty(ctor, property);
             }
@@ -731,14 +599,12 @@ public class ConfigMappingGenerator {
             final MayBeOptionalProperty nestedProperty = property.asOptional().getNestedProperty();
             if (nestedProperty.isGroup()) {
                 ctor.visitLdcInsn(getType(nestedProperty.asGroup().getGroupType().getInterfaceType()));
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "optionalGroup",
-                        "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "get", "()L" + I_OBJECT + ";", false);
+                ctor.visitMethod(ObjectCreatorInvocation.optionalGroup);
+                ctor.visitMethod(ObjectCreatorInvocation.get);
             } else if (nestedProperty.isCollection()) {
                 CollectionProperty collectionProperty = nestedProperty.asCollection();
                 ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-                ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "optionalCollection",
-                        "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";", false);
+                ctor.visitMethod(ObjectCreatorInvocation.optionalCollection);
                 generateNestedProperty(ctor, collectionProperty.getElement());
             } else {
                 throw new UnsupportedOperationException();
@@ -748,47 +614,23 @@ public class ConfigMappingGenerator {
         }
     }
 
-    private static void unwrapNestedProperty(final MethodVisitor ctor, final Property property) {
+    private static void unwrapNestedProperty(final ObjectCreatorMethodVisitor ctor, final Property property) {
         if (property.isMap()) {
             MapProperty mapProperty = property.asMap();
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
-            if (mapProperty.hasKeyConvertWith()) {
-                ctor.visitLdcInsn(getType(mapProperty.getKeyConvertWith()));
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasKeyUnnamed()) {
-                ctor.visitLdcInsn(mapProperty.getKeyUnnamed());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            if (mapProperty.hasKeyProvider()) {
-                generateMapKeysProvider(ctor, mapProperty.getKeysProvider());
-            } else {
-                ctor.visitInsn(ACONST_NULL);
-            }
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "map",
-                    "(L" + I_CLASS + ";L" + I_CLASS + ";L" + I_STRING + ";L" + I_ITERABLE + ";)L" + I_OBJECT_CREATOR + ";",
-                    false);
+            ctor.visitKeyConverter(mapProperty);
+            ctor.visitKeyUnnamed(mapProperty);
+            ctor.visitKeyProvider(mapProperty);
+            ctor.visitMethod(ObjectCreatorInvocation.map);
             generateNestedProperty(ctor, mapProperty.getValueProperty());
         } else if (property.isCollection()) {
             CollectionProperty collectionProperty = property.asCollection();
             ctor.visitLdcInsn(getType(collectionProperty.getCollectionRawType()));
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT_CREATOR, "collection", "(L" + I_CLASS + ";)L" + I_OBJECT_CREATOR + ";",
-                    false);
+            ctor.visitMethod(ObjectCreatorInvocation.collection);
             generateNestedProperty(ctor, collectionProperty.getElement());
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private static void generateMapKeysProvider(final MethodVisitor ctor,
-            final Class<? extends Supplier<Iterable<String>>> mapKeysProvider) {
-        String provider = getInternalName(mapKeysProvider);
-        ctor.visitTypeInsn(NEW, provider);
-        ctor.visitInsn(DUP);
-        ctor.visitMethodInsn(INVOKESPECIAL, provider, "<init>", "()V", false);
-        ctor.visitMethodInsn(INVOKEVIRTUAL, provider, "get", "()L" + I_ITERABLE + ";", false);
     }
 
     private static int getReturnInstruction(Property property) {
@@ -1131,6 +973,325 @@ public class ConfigMappingGenerator {
             return isSecret(property.asMap().getValueProperty());
         }
         return false;
+    }
+
+    private static class ObjectCreatorMethodVisitor extends MethodVisitor {
+        protected ObjectCreatorMethodVisitor(MethodVisitor methodVisitor) {
+            super(Opcodes.ASM9, methodVisitor);
+        }
+
+        void visitCast(Property property, String fieldType) {
+            if (property.isPrimitive()) {
+                PrimitiveProperty primitive = property.asPrimitive();
+                if (!property.hasConvertWith() && primitive.getPrimitiveType() == int.class) {
+                    // No cast needed!
+                } else if (!property.hasConvertWith() && primitive.getPrimitiveType() == boolean.class) {
+                    // No cast needed!
+                } else {
+                    this.visitTypeInsn(CHECKCAST, getInternalName(primitive.getBoxType()));
+                    this.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitive.getBoxType()), primitive.getUnboxMethodName(),
+                            primitive.getUnboxMethodDescriptor(), false);
+                }
+            } else {
+                this.visitTypeInsn(CHECKCAST, fieldType);
+            }
+        }
+
+        void visitPropertyName(Property property) {
+            this.visitInsn(property.hasPropertyName() ? ICONST_0 : ICONST_1);
+            this.visitLdcInsn(property.getPropertyName());
+        }
+
+        void visitConverter(PrimitiveProperty property) {
+            if (property.hasConvertWith()) {
+                this.visitLdcInsn(getType(property.getConvertWith()));
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitConverter(LeafProperty property) {
+            if (property.hasConvertWith()) {
+                this.visitLdcInsn(getType(property.getConvertWith()));
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitKeyConverter(MapProperty property) {
+            if (property.hasKeyConvertWith()) {
+                this.visitLdcInsn(getType(property.getKeyConvertWith()));
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitKeyUnnamed(MapProperty property) {
+            if (property.hasKeyUnnamed()) {
+                this.visitLdcInsn(property.getKeyUnnamed());
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitKeyProvider(MapProperty property) {
+            if (property.hasKeyProvider()) {
+                String provider = getInternalName(property.getKeysProvider());
+                visitTypeInsn(NEW, provider);
+                visitInsn(DUP);
+                visitMethodInsn(INVOKESPECIAL, provider, "<init>", "()V", false);
+                visitMethodInsn(INVOKEVIRTUAL, provider, "get", "()L" + I_ITERABLE + ";", false);
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitDefault(MapProperty property) {
+            if (property.hasDefaultValue() && property.getDefaultValue() != null) {
+                this.visitLdcInsn(property.getDefaultValue());
+            } else {
+                this.visitInsn(ACONST_NULL);
+            }
+        }
+
+        void visitMethod(MethodInvocation methodInvocation) {
+            methodInvocation.invoke(this);
+        }
+    }
+
+    private interface MethodInvocation {
+        default void invoke(final MethodVisitor mv) {
+            mv.visitMethodInsn(opcode(), I_OBJECT_CREATOR, name(), desc(), false);
+        }
+
+        int opcode();
+
+        String name();
+
+        String desc();
+    }
+
+    private static final String D_MAPPING_CONTEXT = getDescriptor(ConfigMappingContext.class);
+    private static final String D_OBJECT_CREATOR = getDescriptor(ObjectCreator.class);
+    private static final String D_CLASS = getDescriptor(Class.class);
+    private static final String D_OBJECT = getDescriptor(Object.class);
+    private static final String D_STRING = getDescriptor(String.class);
+    private static final String D_INTEGER = getDescriptor(Integer.class);
+    private static final String D_BOOLEAN = getDescriptor(Boolean.class);
+    private static final String D_OPTIONAL = getDescriptor(Optional.class);
+    private static final String D_MAP = getDescriptor(Map.class);
+    private static final String D_COLLECTION = getDescriptor(Collection.class);
+    private static final String D_ITERABLE = getDescriptor(Iterable.class);
+    private static final String D_SECRET = getDescriptor(Secret.class);
+
+    private enum PrimitiveMethodInvocation implements MethodInvocation {
+        value(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + ")" + D_OBJECT),
+        intValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + "I"),
+        boolValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + "Z"),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        PrimitiveMethodInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum ObjectMethodInvocation implements MethodInvocation {
+        value(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + ")" + D_OBJECT),
+        secretValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + ")" + D_SECRET),
+        optionalValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + ")" + D_OPTIONAL),
+        optionalSecretValue(INVOKESTATIC, optionalValue.desc),
+        stringValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + D_STRING),
+        integerValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + D_INTEGER),
+        booleanValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + D_BOOLEAN),
+        optionalStringValue(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + ")" + D_OPTIONAL),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        ObjectMethodInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum MapMethodInvocation implements MethodInvocation {
+        values(INVOKESTATIC,
+                "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_ITERABLE + D_STRING + ")"
+                        + D_MAP),
+        secretValues(INVOKESTATIC, values.desc),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        MapMethodInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum CollectionMethodInvocation implements MethodInvocation {
+        values(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + D_CLASS + ")" + D_COLLECTION),
+        secretValues(INVOKESTATIC, values.desc),
+        optionalValues(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + D_CLASS + ")" + D_OPTIONAL),
+        optionalSecretValues(INVOKESTATIC, optionalValues.desc),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        CollectionMethodInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum MapCollectionInvocation implements MethodInvocation {
+        values(INVOKESTATIC,
+                "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_ITERABLE
+                        + D_STRING + ")" + D_MAP),
+        secretValues(INVOKESTATIC, values.desc),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        MapCollectionInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum ObjectCreatorInvocation implements MethodInvocation {
+        get(INVOKEVIRTUAL, "()" + D_OBJECT),
+        group(INVOKEVIRTUAL, "(" + D_CLASS + ")" + D_OBJECT_CREATOR),
+        lazyGroup(INVOKEVIRTUAL, group.desc),
+        optionalGroup(INVOKEVIRTUAL, group.desc),
+        collection(INVOKEVIRTUAL, "(" + D_CLASS + ")" + D_OBJECT_CREATOR),
+        optionalCollection(INVOKEVIRTUAL, collection.desc),
+        map(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + ")" + D_OBJECT_CREATOR),
+        values(INVOKEVIRTUAL,
+                "(" + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_ITERABLE + D_STRING + ")" + D_OBJECT_CREATOR),
+        optionalValues(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_CLASS + ")" + D_OBJECT_CREATOR),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        ObjectCreatorInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum ObjectCreatorMapInvocation implements MethodInvocation {
+        values(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_ITERABLE + D_STRING + ")" + D_OBJECT_CREATOR),
+        ;
+
+        private final int opcode;
+        private final String desc;
+
+        ObjectCreatorMapInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
+    }
+
+    private enum ObjectCreatorMapGroupInvocation implements MethodInvocation {
+        map(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + D_CLASS + ")" + D_OBJECT_CREATOR);
+
+        private final int opcode;
+        private final String desc;
+
+        ObjectCreatorMapGroupInvocation(int opcode, String desc) {
+            this.opcode = opcode;
+            this.desc = desc;
+        }
+
+        @Override
+        public int opcode() {
+            return opcode;
+        }
+
+        @Override
+        public String desc() {
+            return desc;
+        }
     }
 
     static final class Debugging {

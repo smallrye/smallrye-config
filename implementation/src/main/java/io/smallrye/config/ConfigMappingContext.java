@@ -184,7 +184,7 @@ public final class ConfigMappingContext {
     }
 
     @SuppressWarnings("unused")
-    public void reportProblem(RuntimeException problem) {
+    public void problem(RuntimeException problem) {
         problems.add(new Problem(problem.toString()));
     }
 
@@ -568,6 +568,41 @@ public final class ConfigMappingContext {
             return convertValue(context, propertyName, converter);
         }
 
+        public static String stringValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return value(context, applyNamingStrategy, propertyName, String.class, null);
+        }
+
+        public static Integer integerValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return value(context, applyNamingStrategy, propertyName, Integer.class, null);
+        }
+
+        public static int intValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return value(context, applyNamingStrategy, propertyName, int.class, null);
+        }
+
+        public static Boolean booleanValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return value(context, applyNamingStrategy, propertyName, Boolean.class, null);
+        }
+
+        public static boolean boolValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return value(context, applyNamingStrategy, propertyName, boolean.class, null);
+        }
+
         @SuppressWarnings("unused")
         public static <V> Secret<V> secretValue(
                 final ConfigMappingContext context,
@@ -613,6 +648,13 @@ public final class ConfigMappingContext {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
             Converter<V> converter = context.getConverter(valueRawType, valueConvertWith);
             return convertOptionalValue(context, propertyName, converter);
+        }
+
+        public static Optional<String> optionalStringValue(
+                final ConfigMappingContext context,
+                final boolean applyNamingStrategy,
+                final String propertyName) {
+            return optionalValue(context, applyNamingStrategy, propertyName, String.class, null);
         }
 
         @SuppressWarnings("unused")
