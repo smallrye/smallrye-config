@@ -41,7 +41,7 @@ jobs:
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         name: tck-report
         with:
           name: tck-report-java-${{matrix.java}}
