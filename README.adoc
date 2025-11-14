@@ -39,7 +39,6 @@ mkdocs serve
 
 * link:cdi[] - CDI Extension
 * link:common[] - A set of reusable components to extend SmallRye Config
-* link:converters[] - Additional Converters
 * link:documentation[] - Project documentation
 * link:examples[] - Examples projects to demonstrate SmallRye Config features
 * link:implementation[] - Implementation of SmallRye Config
