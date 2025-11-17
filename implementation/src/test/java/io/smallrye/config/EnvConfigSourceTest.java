@@ -277,6 +277,20 @@ class EnvConfigSourceTest {
         assertTrue(EnvName.equals("test.language.\"de.etr\"", new String("TEST_LANGUAGE__DE_ETR__")));
         assertEquals(new EnvName("TEST_LANGUAGE__DE_ETR_").hashCode(), new EnvName("test.language.\"de.etr\"").hashCode());
 
+        assertTrue(EnvName.equals("_", new String("_")));
+        assertTrue(EnvName.equals("__", new String("__")));
+        assertTrue(EnvName.equals("_", new String("\"")));
+        assertTrue(EnvName.equals("___", new String("\"\"")));
+        assertTrue(EnvName.equals("____", new String("\"\"")));
+        assertTrue(EnvName.equals("FOO_BAR__12_34_", new String("foo.bar.\"12.34\"")));
+        assertTrue(EnvName.equals("FOO_BAR__12_34__", new String("foo.bar.\"12.34\"")));
+        assertFalse(EnvName.equals("FOO_BAR__12_34___", new String("foo.bar.\"12.34\"")));
+        assertTrue(EnvName.equals("foo.bar.\"12.34\"", new String("FOO_BAR__12_34_")));
+        assertTrue(EnvName.equals("foo.bar.\"12.34\"", new String("FOO_BAR__12_34__")));
+        assertFalse(EnvName.equals("foo.bar.\"12.34\"", new String("FOO_BAR__12_34___")));
+        assertFalse(EnvName.equals("FOO_BAR_12_34_", new String("foo.\"12.34\".bar")));
+        assertFalse(EnvName.equals("foo.\"12.34\".bar", new String("FOO_BAR_12_34_")));
+
         assertTrue(envSourceEquals("SMALLRYE_MP_CONFIG_PROP", new String("smallrye/mp/config/prop")));
         assertTrue(envSourceEquals("__SMALLRYE", new String("$$smallrye")));
         assertTrue(envSourceEquals("$$smallrye", new String("__SMALLRYE")));

@@ -4,8 +4,8 @@ Environment Variable names follow the conversion rules specified by [MicroProfil
 
 SmallRye Config specifies additional conversion rules:
 
-- A property with double quotes `foo."bar".baz`, replace each character that is neither alphanumeric nor `_` 
-with `_`: `FOO__BAR__BAZ`
+- A property with double quotes `foo."bar".baz` or `foo.bar."baz"`, replace each character that is neither alphanumeric 
+nor `_` with `_`: `FOO__BAR__BAZ` or `FOO_BAR__BAZ_` ;
 - A property with dashes `foo.bar-baz`, replace each character that is neither alphanumeric nor `_`
   with `_`: `FOO_BAR_BAZ`
 - An indexed property `foo.bar[0]` or `foo.bar[0].baz`, replace each character that is neither alphanumeric nor `_`
