@@ -1334,8 +1334,8 @@
 <p>Environment Variable names follow the conversion rules specified by <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources">MicroProfile Config</a>.</p>
 <p>SmallRye Config specifies additional conversion rules:</p>
 <ul>
-<li>A property with double quotes <code>foo."bar".baz</code>, replace each character that is neither alphanumeric nor <code>_</code> 
-with <code>_</code>: <code>FOO__BAR__BAZ</code></li>
+<li>A property with double quotes <code>foo."bar".baz</code> or <code>foo.bar."baz"</code>, replace each character that is neither alphanumeric 
+nor <code>_</code> with <code>_</code>: <code>FOO__BAR__BAZ</code> or <code>FOO_BAR__BAZ_</code> ;</li>
 <li>A property with dashes <code>foo.bar-baz</code>, replace each character that is neither alphanumeric nor <code>_</code>
   with <code>_</code>: <code>FOO_BAR_BAZ</code></li>
 <li>An indexed property <code>foo.bar[0]</code> or <code>foo.bar[0].baz</code>, replace each character that is neither alphanumeric nor <code>_</code>
