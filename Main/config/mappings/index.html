@@ -2180,9 +2180,11 @@ capable <code>ConfigSource</code>.</p>
 <p>For collection types, the key requires the indexed format. The configuration name <code>server.aliases.localhost[0].name</code> 
 maps to the <code>Map&lt;String, List&lt;Alias&gt;&gt; aliases()</code> member, where <code>localhost</code> is the <code>Map</code> key, <code>[0]</code> is the index of the 
 <code>List&lt;Alias&gt;</code> collection where the <code>Alias</code> element will be stored, containing the name <code>prod</code>.</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>They <code>Map</code> key part in the configuration property name may require quotes to delimit the key.</p>
+<div class="admonition tip map quoted keys requirement">
+<p class="admonition-title">Tip</p>
+<p>They <code>Map</code> key part in the configuration property name may require quotes to delimit the key if the key contains
+a dot, otherwise they are optional. If the key name is delimted by quotes, all configuration property names related 
+with the same name must use the quoted format across all sources, including Environment Variables.</p>
 </div>
 <h3 id="withunnamedkey"><code>@WithUnnamedKey</code><a class="headerlink" href="#withunnamedkey" title="Permanent link">#</a></h3>
 <p>The <code>io.smallrye.config.WithUnnamedKey</code> annotation allows to omit a single map key in the configuration path:</p>
