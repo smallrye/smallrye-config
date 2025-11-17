@@ -493,10 +493,9 @@ public class EnvConfigSource extends AbstractConfigSource {
                 } else if (o == '"') {
                     if (n != '"' && n != '_') {
                         return false;
-                    } else if (n == '_' && name.length() - 1 == matchPosition) {
-                        matchPosition = name.lastIndexOf("_", matchPosition - 1);
-                        if (matchPosition == -1) {
-                            return false;
+                    } else if (n == '_' && name.length() - 1 == matchPosition && name.length() > 1) {
+                        if (name.charAt(matchPosition - 1) == '_') {
+                            matchPosition--;
                         }
                     }
                 } else if (o == ']') {
@@ -519,16 +518,14 @@ public class EnvConfigSource extends AbstractConfigSource {
                 } else if (o == '_') {
                     if (isAsciiLetterOrDigit(n)) {
                         return false;
-                    } else if (n == '"' && other.length() - 1 == i) {
-                        i = other.lastIndexOf("_", i - 1);
-                        if (i == -1) {
-                            return false;
+                    } else if (n == '"' && other.length() - 1 == i && other.length() > 1) {
+                        if (other.charAt(i - 1) == '_') {
+                            i--;
                         }
                     }
                 } else if (!isAsciiLetterOrDigit(o)) {
                     if (o != n && n != '_') {
                         return false;
-
                     }
                 } else if (toLowerCase(o) != toLowerCase(n)) {
                     return false;
