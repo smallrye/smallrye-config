@@ -207,17 +207,6 @@
       </modules>
     </profile>
     <profile>
-      <id>release</id>
-      <activation>
-        <property>
-          <name>!release.maven.bug.always.be.active</name>
-        </property>
-      </activation>
-      <modules>
-        <module>release</module>
-      </modules>
-    </profile>
-    <profile>
       <id>coverage</id>
       <properties>
         <argLine>@{jacocoArgLine}</argLine>
