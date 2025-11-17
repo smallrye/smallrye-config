@@ -2747,4 +2747,44 @@ class ConfigMappingInterfaceTest {
             String value();
         }
     }
+
+    @Test
+    void selfReference() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(SelfReferenceGroup.class).build());
+        assertThrows(IllegalArgumentException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(SelfReferenceOptional.class).build());
+        assertThrows(IllegalArgumentException.class,
+                () -> new SmallRyeConfigBuilder().withMapping(SelfReferenceList.class).build());
+    }
+
+    @ConfigMapping
+    interface SelfReferenceGroup {
+        @WithParentName
+        Self self();
+
+        interface Self {
+            Self self();
+        }
+    }
+
+    @ConfigMapping
+    interface SelfReferenceOptional {
+        @WithParentName
+        Optional<Self> self();
+
+        interface Self {
+            Optional<Self> self();
+        }
+    }
+
+    @ConfigMapping
+    interface SelfReferenceList {
+        @WithParentName
+        List<Self> self();
+
+        interface Self {
+            List<Self> self();
+        }
+    }
 }
