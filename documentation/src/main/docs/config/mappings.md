@@ -15,9 +15,9 @@ A complex object type uses the following rules to map configuration values to th
 - A configuration path is built by taking the object type prefix (or namespace) and the mapping member name
 - The member name is converted to its kebab-case format
 - If the member name is represented as a getter, the member name is taken from its property name equivalent, and then
-  converted to its kebab-case format.
+  converted to its kebab-case format
 - The configuration value is automatically converted to the member type
-- The configuration path is required to exist with a valid configuration value or the mapping will fail.
+- The configuration path is required to exist with a valid configuration value or the mapping will fail
 
 !!! info
 
@@ -43,6 +43,13 @@ method name with `.` (dot) as the separator.
 
     If a mapping fails to match a configuration property the config system throws a `NoSuchElementException`, unless 
     the mapped element is an `Optional`.
+
+The `@ConfigMapping` interface must obey the following rules:
+
+- A mapping method cannot accept parameters
+- A mapping method return type cannot be void
+- A mapping cannot use self-reference types
+- `default` methods are allowed
 
 ## Registration
 

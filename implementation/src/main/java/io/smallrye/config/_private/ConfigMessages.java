@@ -173,4 +173,13 @@ public interface ConfigMessages {
 
     @Message(id = 51, value = "Could not generate ConfigMapping %s")
     IllegalStateException couldNotGenerateMapping(@Cause Throwable throwable, String mapping);
+
+    @Message(id = 52, value = "@ConfigMapping methods cannot accept parameters: %s")
+    IllegalArgumentException mappingMethodsCannotAcceptParameters(String method);
+
+    @Message(id = 53, value = "@ConfigMapping methods cannot be void: %s")
+    IllegalArgumentException mappingMethodsCannotBeVoid(String method);
+
+    @Message(id = 54, value = "@ConfigMapping cannot use self-reference types: %s")
+    IllegalArgumentException mappingCannotUseSelfReferenceTypes(String type);
 }

@@ -133,7 +133,8 @@ class ConfigMappingLoaderTest {
                 OptionalCollection.class.getDeclaredMethod("optional"),
                 OptionalCollection.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(OptionalCollection.class, methods,
+                0, 0);
         ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollection.class,
                 new ConfigMappingInterface[] {}, properties);
 
@@ -159,11 +160,12 @@ class ConfigMappingLoaderTest {
                 OptionalCollectionPrimitive.class.getDeclaredMethod("optional"),
                 OptionalCollectionPrimitive.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(OptionalCollectionPrimitive.class,
+                methods, 0, 0);
         ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollectionPrimitive.class,
                 new ConfigMappingInterface[] {}, properties);
 
-        loadClass(OptionalCollection.class, configMappingInterface);
+        loadClass(OptionalCollectionPrimitive.class, configMappingInterface);
 
         Class<?> implementationClass = ensureLoaded(OptionalCollectionPrimitive.class).implementation();
         // If the bytecode has an issue this will throw a VerifyError
@@ -188,12 +190,13 @@ class ConfigMappingLoaderTest {
                 MappingCollection.class.getDeclaredMethod("collection"),
                 MappingCollection.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(methods, 0, 0);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(MappingCollection.class, methods, 0,
+                0);
         ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(MappingCollection.class,
                 new ConfigMappingInterface[] {}, properties);
 
-        loadClass(OptionalCollection.class, getConfigurationInterface(MappingCollectionGroup.class));
-        loadClass(OptionalCollection.class, configMappingInterface);
+        loadClass(MappingCollection.class, getConfigurationInterface(MappingCollectionGroup.class));
+        loadClass(MappingCollection.class, configMappingInterface);
 
         Class<?> implementationClass = ensureLoaded(MappingCollection.class).implementation();
         // If the bytecode has an issue this will throw a VerifyError
