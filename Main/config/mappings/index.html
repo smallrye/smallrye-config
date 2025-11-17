@@ -1799,9 +1799,9 @@ share the same prefix (or namespace). It supports the following set of features:
 <li>A configuration path is built by taking the object type prefix (or namespace) and the mapping member name</li>
 <li>The member name is converted to its kebab-case format</li>
 <li>If the member name is represented as a getter, the member name is taken from its property name equivalent, and then
-  converted to its kebab-case format.</li>
+  converted to its kebab-case format</li>
 <li>The configuration value is automatically converted to the member type</li>
-<li>The configuration path is required to exist with a valid configuration value or the mapping will fail.</li>
+<li>The configuration path is required to exist with a valid configuration value or the mapping will fail</li>
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -1824,6 +1824,13 @@ method name with <code>.</code> (dot) as the separator.</p>
 <p>If a mapping fails to match a configuration property the config system throws a <code>NoSuchElementException</code>, unless 
 the mapped element is an <code>Optional</code>.</p>
 </div>
+<p>The <code>@ConfigMapping</code> interface must obey the following rules:</p>
+<ul>
+<li>A mapping method cannot accept parameters</li>
+<li>A mapping method return type cannot be void</li>
+<li>A mapping cannot use self-reference types</li>
+<li><code>default</code> methods are allowed</li>
+</ul>
 <h2 id="registration">Registration<a class="headerlink" href="#registration" title="Permanent link">#</a></h2>
 <p>Registration of Config Mappings is automatic in CDI aware environments with the <code>@ConfigMapping</code> annotation. </p>
 <p>In non-CDI environments, the Config Mapping can be registered via <code>SmallRyeConfigBuilder#withMapping</code>. In this case, 
