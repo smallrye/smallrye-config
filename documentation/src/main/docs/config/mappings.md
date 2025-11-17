@@ -487,7 +487,7 @@ For collection types, the key requires the indexed format. The configuration nam
 maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is the `Map` key, `[0]` is the index of the 
 `List<Alias>` collection where the `Alias` element will be stored, containing the name `prod`.
 
-!!! tip Map quoted keys requirement 
+!!! tip "Map quoted keys requirement" 
 
     They `Map` key part in the configuration property name may require quotes to delimit the key if the key contains
     a dot, otherwise they are optional. If the key name is delimted by quotes, all configuration property names related 
