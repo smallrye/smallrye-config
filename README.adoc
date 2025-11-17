@@ -32,7 +32,8 @@ Generate the documentation (from the `documentation` folder):
 [source,bash]
 ----
 mvn package
-mkdocs serve
+pipenv install
+pipenv run mkdocs serve
 ----
 
 === Project structure
