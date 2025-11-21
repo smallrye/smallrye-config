@@ -17,7 +17,7 @@ jobs:
         java: [ 17, 21 ]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         name: checkout ${{inputs.version}}
         with:
           ref: ${{inputs.version}}
