@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-parent</artifactId>
-    <version>47</version>
+    <version>48</version>
   </parent>
 
   <groupId>io.smallrye.config</groupId>
@@ -34,10 +34,6 @@
   <url>https://smallrye.io</url>
 
   <properties>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.release>17</maven.compiler.release>
-
     <version.sundrio>0.230.2</version.sundrio>
 
     <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
@@ -88,27 +84,6 @@
 
   <build>
     <plugins>
-      <!-- Override plugin to support Java 17, because we are not enforcing 17 yet at the parent level -->
-      <plugin>
-        <groupId>net.revelc.code</groupId>
-        <artifactId>impsort-maven-plugin</artifactId>
-        <version>1.12.0</version>
-        <configuration>
-          <groups>java.,javax.,jakarta.,org.,com.</groups>
-          <staticGroups>*</staticGroups>
-          <skip>${format.skip}</skip>
-          <removeUnused>true</removeUnused>
-          <compliance>17</compliance>
-        </configuration>
-        <executions>
-          <execution>
-            <id>sort-imports</id>
-            <goals>
-              <goal>sort</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>io.sundr</groupId>
         <artifactId>sundr-maven-plugin</artifactId>
