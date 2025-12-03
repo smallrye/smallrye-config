@@ -86,6 +86,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private boolean addDiscoveredInterceptors = false;
     private boolean addDiscoveredSecretKeysHandlers = false;
     private boolean addDiscoveredValidator = false;
+    private boolean cachePropertyNames = true;
 
     public SmallRyeConfigBuilder addDiscoveredCustomizers() {
         addDiscoveredCustomizers = true;
@@ -708,6 +709,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return addDiscoveredValidator;
     }
 
+    public boolean isCachePropertyNames() {
+        return cachePropertyNames;
+    }
+
     public SmallRyeConfigBuilder setAddDefaultSources(final boolean addDefaultSources) {
         this.addDefaultSources = addDefaultSources;
         return this;
@@ -750,6 +755,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder setAddDiscoveredValidator(final boolean addDiscoveredValidator) {
         this.addDiscoveredValidator = addDiscoveredValidator;
+        return this;
+    }
+
+    public SmallRyeConfigBuilder setCachePropertyNames(boolean cachePropertyNames) {
+        this.cachePropertyNames = cachePropertyNames;
         return this;
     }
 

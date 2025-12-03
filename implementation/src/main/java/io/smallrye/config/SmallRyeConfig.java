@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -1617,10 +1618,12 @@ public class SmallRyeConfig implements Config, Serializable {
      * {@inheritDoc}
      *
      * This implementation caches the list of property names collected when {@link SmallRyeConfig} is built via
-     * {@link SmallRyeConfigBuilder#build()}.
+     * {@link SmallRyeConfigBuilder#build()}. The cache may be disabled with
+     * {@link SmallRyeConfigBuilder#isCachePropertyNames()}.
      *
      * @return the cached names of all configured keys of the underlying configuration
      * @see SmallRyeConfig#getLatestPropertyNames()
+     * @see SmallRyeConfigBuilder#isCachePropertyNames()
      */
     @Override
     public Iterable<String> getPropertyNames() {
@@ -1936,7 +1939,7 @@ public class SmallRyeConfig implements Config, Serializable {
             this.sources = configSources;
             this.defaultValues = defaultValues;
             this.interceptorChain = current;
-            this.propertyNames = new PropertyNames(current, builder.getSecretKeys());
+            this.propertyNames = new PropertyNames(current, builder.getSecretKeys(), builder.isCachePropertyNames());
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
@@ -2118,33 +2121,36 @@ public class SmallRyeConfig implements Config, Serializable {
 
             private final SmallRyeConfigSourceInterceptorContext interceptorChain;
             private final Set<PropertyName> secretKeys;
+            private final boolean cachePropertyNames;
 
-            private final Set<String> names = new HashSet<>();
-            private final Set<String> secretNames = new HashSet<>();
-            private final Map<String, Map<Integer, String>> indexed = new HashMap<>();
+            private final AtomicReference<Names> names = new AtomicReference<>(Names.empty());
 
-            public PropertyNames(final SmallRyeConfigSourceInterceptorContext interceptorChain,
-                    final Set<PropertyName> secretKeys) {
+            public PropertyNames(
+                    final SmallRyeConfigSourceInterceptorContext interceptorChain,
+                    final Set<PropertyName> secretKeys,
+                    final boolean cachePropertyNames) {
                 this.interceptorChain = interceptorChain;
                 this.secretKeys = secretKeys;
+                this.cachePropertyNames = cachePropertyNames;
             }
 
             Iterable<String> get() {
-                if (names.isEmpty() && secretNames.isEmpty()) {
+                if (!cachePropertyNames || names.get().isEmpty()) {
                     return latest();
                 }
-                return new Names();
+                return new NamesIterable(names.get());
             }
 
             Map<String, Map<Integer, String>> indexed() {
                 // ensure populated
                 get();
-                return indexed;
+                return names.get().indexed();
             }
 
             Iterable<String> latest() {
-                names.clear();
-                secretNames.clear();
+                Set<String> names = new HashSet<>();
+                Set<String> secretNames = new HashSet<>();
+                Map<String, Map<Integer, String>> indexed = new HashMap<>();
                 Iterator<String> namesIterator = interceptorChain.iterateNames();
                 while (namesIterator.hasNext()) {
                     String name = namesIterator.next();
@@ -2179,32 +2185,53 @@ public class SmallRyeConfig implements Config, Serializable {
                     }
                 }
                 names.remove(ConfigSource.CONFIG_ORDINAL);
-                return new Names();
+                Names all = new Names(names, secretNames, indexed);
+                if (cachePropertyNames) {
+                    this.names.compareAndSet(this.names.get(), all);
+                    return new NamesIterable(this.names.get());
+                } else {
+                    return new NamesIterable(all);
+                }
             }
 
-            private class Names implements Iterable<String> {
-                private final Iterator<Set<String>> names;
+            private record Names(
+                    Set<String> names,
+                    Set<String> secretNames,
+                    Map<String, Map<Integer, String>> indexed) {
 
-                public Names() {
+                boolean isEmpty() {
+                    return names.isEmpty() && secretNames.isEmpty() && indexed.isEmpty();
+                }
+
+                static Names empty() {
+                    return new Names(Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
+                }
+            }
+
+            private static class NamesIterable implements Iterable<String> {
+                private final Iterator<Set<String>> namesIterators;
+
+                public NamesIterable(final Names names) {
                     if (SecretKeys.isLocked()) {
-                        this.names = List.of(PropertyNames.this.names).iterator();
+                        this.namesIterators = List.of(names.names()).iterator();
                     } else {
-                        this.names = List.of(PropertyNames.this.names, PropertyNames.this.secretNames).iterator();
+                        this.namesIterators = List.of(names.names(), names.secretNames()).iterator();
                     }
                 }
 
                 @Override
+                @SuppressWarnings("NullableProblems")
                 public Iterator<String> iterator() {
                     return new Iterator<>() {
-                        Iterator<String> current = names.next().iterator();
+                        Iterator<String> current = namesIterators.next().iterator();
 
                         @Override
                         public boolean hasNext() {
                             if (current.hasNext()) {
                                 return true;
                             } else {
-                                if (names.hasNext()) {
-                                    current = names.next().iterator();
+                                if (namesIterators.hasNext()) {
+                                    current = namesIterators.next().iterator();
                                     return current.hasNext();
                                 } else {
                                     return false;
