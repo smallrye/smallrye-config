@@ -805,4 +805,55 @@ class SmallRyeConfigTest {
         assertEquals("1234", wrappedConfig.getConfigValue("my.prop").getValue());
         assertEquals("1234", wrappedConfig.getConfigValue("%prod.my.prop").getValue());
     }
+
+    @Test
+    void propertyNames() {
+        Map<String, String> configSource = new HashMap<>();
+        configSource.put("one", "1");
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new MapBackedConfigSource("map", configSource) {
+                })
+                .build();
+
+        Set<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(1, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+
+        configSource.put("two", "2");
+        propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(1, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+        assertEquals("2", config.getConfigValue("two").getValue());
+
+        propertyNames = stream(config.getLatestPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(2, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+        assertTrue(propertyNames.contains("two"));
+
+        propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(2, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+        assertTrue(propertyNames.contains("two"));
+    }
+
+    @Test
+    void propertyNamesNoCache() {
+        Map<String, String> configSource = new HashMap<>();
+        configSource.put("one", "1");
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .setCachePropertyNames(false)
+                .withSources(new MapBackedConfigSource("map", configSource) {
+                })
+                .build();
+
+        Set<String> propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(1, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+
+        configSource.put("two", "2");
+        propertyNames = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertEquals(2, propertyNames.size());
+        assertTrue(propertyNames.contains("one"));
+        assertTrue(propertyNames.contains("two"));
+    }
 }
