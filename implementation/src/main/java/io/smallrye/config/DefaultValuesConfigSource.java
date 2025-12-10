@@ -4,7 +4,9 @@ import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.AbstractConfigSource;
 
 public final class DefaultValuesConfigSource extends AbstractConfigSource {
@@ -18,12 +20,24 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     private final Map<PropertyName, String> wildcards;
     private final boolean hasProfiledName;
 
-    public DefaultValuesConfigSource(final Map<String, String> properties) {
-        this(properties, NAME, ORDINAL);
+    DefaultValuesConfigSource(final Map<String, String> properties) {
+        this(properties, () -> NAME, ORDINAL);
     }
 
     public DefaultValuesConfigSource(final Map<String, String> properties, final String name, final int ordinal) {
-        super(name, ordinal);
+        this(properties, new Supplier<String>() {
+            @Override
+            public String get() {
+                if (NAME.equals(name)) {
+                    throw ConfigMessages.msg.defaultValuesConfigSourceNameReserved(name);
+                }
+                return name;
+            }
+        }, ordinal);
+    }
+
+    private DefaultValuesConfigSource(final Map<String, String> properties, final Supplier<String> name, final int ordinal) {
+        super(name.get(), ordinal);
         this.properties = new HashMap<>();
         this.wildcards = new HashMap<>();
         boolean hasProfiledName = false;
