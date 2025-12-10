@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.DefaultValuesConfigSource.NAME;
+import static io.smallrye.config.DefaultValuesConfigSource.ORDINAL;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -68,6 +70,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public String getProfile() {
         return profile;
+    }
+
+    public boolean isDefault() {
+        return configSourceOrdinal == ORDINAL && NAME.equals(configSourceName);
     }
 
     @Override

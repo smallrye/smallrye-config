@@ -182,4 +182,7 @@ public interface ConfigMessages {
 
     @Message(id = 54, value = "@ConfigMapping cannot use self-reference types: %s")
     IllegalArgumentException mappingCannotUseSelfReferenceTypes(String type);
+
+    @Message(id = 55, value = "The name %s used for the DefaultValuesConfigSource is reserved")
+    IllegalArgumentException defaultValuesConfigSourceNameReserved(String name);
 }

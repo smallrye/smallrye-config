@@ -2,7 +2,10 @@ package io.smallrye.config;
 
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,7 @@ class DefaultValuesTest {
 
         assertEquals("1234", config.getConfigValue("my.prop").getValue());
         assertEquals("1234", config.getConfigValue("my.prop.default").getValue());
+        assertTrue(config.getConfigValue("my.prop.default").isDefault());
     }
 
     @Test
@@ -27,7 +31,6 @@ class DefaultValuesTest {
                 .withSources(config("my.value", "5678"))
                 .withDefaultValues(Map.of(
                         "my.value", "1234",
-                        "my.default-value", "1234",
                         "my.list", "1234",
                         "my.map.key", "1234",
                         "my.list-nested[0].value", "1234",
@@ -39,9 +42,11 @@ class DefaultValuesTest {
 
         assertEquals("5678", config.getConfigValue("my.value").getValue());
         assertEquals("1234", config.getConfigValue("my.default-value").getValue());
+        assertTrue(config.getConfigValue("my.default-value").isDefault());
         assertEquals("5678", mapping.value());
         assertEquals("1234", mapping.defaultValue());
         assertEquals("1234", mapping.list().get(0));
+        assertTrue(config.getConfigValue("my.list").isDefault());
         assertEquals("1234", mapping.map().get("key"));
         assertEquals("1234", mapping.listNested().get(0).value());
         assertEquals("1234", mapping.mapNested().get("key").value());
@@ -51,6 +56,7 @@ class DefaultValuesTest {
     interface DefaultValues {
         String value();
 
+        @WithDefault("1234")
         String defaultValue();
 
         List<String> list();
@@ -64,5 +70,11 @@ class DefaultValuesTest {
         interface Nested {
             String value();
         }
+    }
+
+    @Test
+    void defaultValuesConfigSourceNameReserved() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new DefaultValuesConfigSource(Collections.emptyMap(), "DefaultValuesConfigSource", 10));
     }
 }
