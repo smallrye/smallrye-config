@@ -1065,4 +1065,22 @@ public class ConfigMappingCollectionsTest {
         //@WithUnnamedKey
         Map<String, String> leaf();
     }
+
+    @Test
+    void mapWithOptionalValues() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapWithOptionalValues.class)
+                .withDefaultValue("map.values.key", "value")
+                .withDefaultValue("map.values.novalue", "")
+                .build();
+
+        MapWithOptionalValues mapping = config.getConfigMapping(MapWithOptionalValues.class);
+        assertEquals("value", mapping.values().get("key").orElseThrow(IllegalArgumentException::new));
+        assertFalse(mapping.values().get("novalue").isPresent());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapWithOptionalValues {
+        Map<String, Optional<String>> values();
+    }
 }

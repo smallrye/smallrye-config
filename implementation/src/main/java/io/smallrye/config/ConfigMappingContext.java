@@ -3,6 +3,7 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
+import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
@@ -805,6 +806,7 @@ public final class ConfigMappingContext {
                 final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
+                final boolean valueOptional,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Iterable<String> keys,
@@ -812,6 +814,7 @@ public final class ConfigMappingContext {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
             Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
             Converter<V> valueConverter = context.getConverter(valueRawType, valueConvertWith);
+            valueConverter = valueOptional ? (Converter<V>) newOptionalConverter(valueConverter) : valueConverter;
             return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
         }
 
@@ -822,6 +825,7 @@ public final class ConfigMappingContext {
                 final String name,
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
+                final boolean valueOptional,
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith,
                 final Iterable<String> keys,
