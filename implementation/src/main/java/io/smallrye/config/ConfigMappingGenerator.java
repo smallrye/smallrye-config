@@ -474,13 +474,14 @@ public class ConfigMappingGenerator {
             }
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
             MapProperty mapProperty = property.asMap();
-            LeafProperty valueProperty = mapProperty.getValueProperty().asLeaf();
+            Property valueProperty = mapProperty.getValueProperty();
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
             ctor.visitPropertyName(property);
             ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
             ctor.visitKeyConverter(mapProperty);
-            ctor.visitLdcInsn(getType(valueProperty.getValueRawType()));
-            ctor.visitConverter(valueProperty);
+            ctor.visitInsn(valueProperty.isOptional() ? ICONST_1 : ICONST_0);
+            ctor.visitLdcInsn(getType(valueProperty.asLeaf().getValueRawType()));
+            ctor.visitConverter(valueProperty.asLeaf());
             ctor.visitKeyProvider(mapProperty);
             ctor.visitDefault(mapProperty);
             ctor.visitMethod(valueProperty.isSecret() ? MapMethodInvocation.secretValues : MapMethodInvocation.values);
@@ -1141,7 +1142,8 @@ public class ConfigMappingGenerator {
 
     private enum MapMethodInvocation implements MethodInvocation {
         values(INVOKESTATIC,
-                "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + D_CLASS + D_CLASS + D_ITERABLE + D_STRING + ")"
+                "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + "Z" + D_CLASS + D_CLASS + D_ITERABLE + D_STRING
+                        + ")"
                         + D_MAP),
         secretValues(INVOKESTATIC, values.desc),
         ;

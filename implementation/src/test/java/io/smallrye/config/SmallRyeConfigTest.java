@@ -505,6 +505,14 @@ class SmallRyeConfigTest {
         assertInstanceOf(TreeMap.class, optionalTreeMap.get());
 
         assertTrue(config.getOptionalValues("my.optional", String.class, String.class).isEmpty());
+
+        Map<String, Optional<String>> valuesOptional = config.getValues("my.prop", stringConverter,
+                Converters.newOptionalConverter(stringConverter));
+        assertEquals(4, valuesOptional.size());
+        assertEquals("value", valuesOptional.get("key").orElse(null));
+        assertEquals("value", valuesOptional.get("key.nested").orElse(null));
+        assertEquals("value", valuesOptional.get("key.quoted").orElse(null));
+        assertEquals("value", valuesOptional.get("key.indexed[0]").orElse(null));
     }
 
     @Test
