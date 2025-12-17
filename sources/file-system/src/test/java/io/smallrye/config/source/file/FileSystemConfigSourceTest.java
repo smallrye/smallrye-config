@@ -71,4 +71,24 @@ class FileSystemConfigSourceTest {
 
         assertEquals("line1\nline2", configSource.getValue("multilineKey"));
     }
+
+    @Test
+    void testTrailingNewline(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("trailingNewlineKey");
+        Files.write(file, "line1\nline2\n".getBytes());
+
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+
+        assertEquals("line1\nline2\n", configSource.getValue("trailingNewlineKey"));
+    }
+
+    @Test
+    void testEmptyLines(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("emptyLinesKey");
+        Files.write(file, "line1\n\nline3".getBytes());
+
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+
+        assertEquals("line1\n\nline3", configSource.getValue("emptyLinesKey"));
+    }
 }
