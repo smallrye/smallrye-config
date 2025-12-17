@@ -19,11 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
@@ -56,5 +60,15 @@ class FileSystemConfigSourceTest {
         assertNull(configSource.getValue("myservice/mp-rest/url"));
         // you can't rewrite the key, only the file name
         assertNull(configSource.getValue("MYSERVICE_MP_REST_URL"));
+    }
+
+    @Test
+    void testMultiline(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("multilineKey");
+        Files.write(file, "line1\nline2".getBytes());
+
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+
+        assertEquals("line1\nline2", configSource.getValue("multilineKey"));
     }
 }
