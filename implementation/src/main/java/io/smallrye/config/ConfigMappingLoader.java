@@ -158,6 +158,7 @@ public final class ConfigMappingLoader {
     }
 
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
+        ConfigMappingLoader.class.getModule().addReads(parent.getModule());
         // acquire a lock on the class name to prevent race conditions in multithreaded use cases
         synchronized (getClassLoaderLock(configMappingMetadata.getClassName())) {
             // Check if the interface implementation was already loaded. If not we will load it.
@@ -202,6 +203,8 @@ public final class ConfigMappingLoader {
         ConfigMappingImplementation(final Class<?> implementation) {
             try {
                 this.implementation = implementation;
+                // ensure modular access
+                ConfigMappingImplementation.class.getModule().addReads(implementation.getModule());
                 MethodHandle constructor = LOOKUP.findConstructor(implementation,
                         methodType(void.class, ConfigMappingContext.class));
                 this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
