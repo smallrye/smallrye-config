@@ -776,6 +776,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     private static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
+        ConfigMappingInterface.class.getModule().addReads(interfaceType.getModule());
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
         }
