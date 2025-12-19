@@ -99,4 +99,39 @@ class PropertyNameTest {
         assertNotEquals(name("indexed[123]"), name(new String("indexed[x]")));
         assertNotEquals(name("indexed[0]"), name(new String("indexed[xyz]")));
     }
+
+    @Test
+    void greedyMap() {
+        assertEquals(name("*"), name("greedy"));
+        assertEquals(name("greedy"), name("*"));
+        assertEquals(name("*"), name("greedy.one.two"));
+        assertEquals(name("greedy.one.two"), name("*"));
+
+        assertEquals(name("greedy.*.map.*"), name(new String("greedy.key.map.key")));
+        assertEquals(name("greedy.key.map.key"), name(new String("greedy.*.map.*")));
+        assertEquals(name("greedy.*.map.*"), name(new String("greedy.key.map.one.two")));
+        assertEquals(name("greedy.key.map.one.two"), name(new String("greedy.*.map.*")));
+        assertEquals(name("greedy.*.map.*"), name(new String("greedy.key.map.one.two.three")));
+        assertEquals(name("greedy.key.map.one.two.three"), name(new String("greedy.*.map.*")));
+
+        assertNotEquals(name("greedy.*.map.*"), name(new String("greedy.one.two.map.key")));
+        assertNotEquals(name("greedy.one.two.map.key"), name(new String("greedy.*.map.*")));
+        assertNotEquals(name("greedy.*.map.*"), name(new String("greedy.one.two.map.one.two")));
+        assertNotEquals(name("greedy.one.two.map.one.two"), name(new String("greedy.*.map.*")));
+
+        assertEquals(name("greedy.*.map-list.*[*]"), name(new String("greedy.key.map-list.key[0]")));
+        assertEquals(name("greedy.key.map-list.key[0]"), name(new String("greedy.*.map-list.*[*]")));
+        assertEquals(name("greedy.*.map-list.*[*]"), name(new String("greedy.key.map-list.one.two[0]")));
+        assertEquals(name("greedy.key.map-list.one.two[0]"), name(new String("greedy.*.map-list.*[*]")));
+
+        assertNotEquals(name("greedy.*.map-list.*[*]"), name(new String("greedy.one.two.map-list.key[0]")));
+        assertNotEquals(name("greedy.one.two.map-list.key[0]"), name(new String("greedy.*.map-list.*[*]")));
+        assertNotEquals(name("greedy.*.map-list.*[*]"), name(new String("greedy.one.two.map-list.one.two[0]")));
+        assertNotEquals(name("greedy.one.two.map-list.one.two[0]"), name(new String("greedy.*.map-list.*[*]")));
+
+        assertEquals(name("greedy.*.map.*").hashCode(), name(("greedy.key.map.key")).hashCode());
+        assertEquals(name("greedy.*.map.*").hashCode(), name(("greedy.key.map.one.two")).hashCode());
+        assertEquals(name("greedy.*.map-list.*[*]").hashCode(), name(("greedy.one.two.map-list.key[0]")).hashCode());
+        assertEquals(name("greedy.*.map-list.*[*]").hashCode(), name(("greedy.one.two.map-list.one.two[0]")).hashCode());
+    }
 }
