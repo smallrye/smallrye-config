@@ -22,7 +22,7 @@ public class PropertyName {
 
     public PropertyName(final String name) {
         this.name = name;
-        this.hashCode = buildHashCode();
+        this.hashCode = hashCode(name);
     }
 
     public String getName() {
@@ -111,6 +111,15 @@ public class PropertyName {
                     } else {
                         i = 0;
                     }
+                    // greedy map - match any ending segments if a last segment is a *
+                    if (matchPosition + 1 == len) {
+                        // try to match by removing the * and the last segment
+                        if (equalsInternal(name, offset, matchPosition, other, ooffset, olen - (ooffset + olen - i))) {
+                            return true;
+                        }
+                        // try to match by keeping the original * and removing the last segment
+                        return equalsInternal(name, offset, len, other, ooffset, olen - (ooffset + olen - i) - 1);
+                    }
                 }
             } else if (o == ']' && n == ']') {
                 int otherBeginIndexed = other.lastIndexOf('[', i);
@@ -119,25 +128,29 @@ public class PropertyName {
                     if (other.charAt(otherBeginIndexed + 1) == '*' && name.charAt(nameBeginIndexed + 1) == '*') {
                         i = i - 2;
                         matchPosition = matchPosition - 3;
-                        continue;
-                    } else if (other.charAt(otherBeginIndexed + 1) == '*'
-                            && isNumeric(name, nameBeginIndexed + 1, matchPosition - nameBeginIndexed - 1)) {
-                        i = i - 2;
-                        matchPosition = nameBeginIndexed - 1;
-                        continue;
                     } else if (name.charAt(nameBeginIndexed + 1) == '*'
                             && isNumeric(other, otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
                         i = otherBeginIndexed;
                         matchPosition = matchPosition - 3;
-                        continue;
+                        // greedy map - match any ending segments if a last segment is a *[*]
+                        if (matchPosition + 4 == len) {
+                            // try to match by removing the * and the last segment
+                            if (equalsInternal(name, offset, matchPosition + 1,
+                                    other, ooffset, olen - (ooffset + olen - i)))
+                                return true;
+                            // try to match by keeping the original * and removing the last segment plus the brackets
+                            return equalsInternal(name, offset, nameBeginIndexed, other,
+                                    ooffset, olen - (ooffset + olen - otherBeginIndexed));
+                        }
                     } else if (isNumericEquals(name, nameBeginIndexed + 1, matchPosition - nameBeginIndexed - 1, other,
                             otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
                         i = otherBeginIndexed;
                         matchPosition = nameBeginIndexed - 1;
-                        continue;
+                    } else {
+                        return false;
                     }
+                    continue;
                 }
-                return false;
             } else if (o != n) {
                 return false;
             }
@@ -146,12 +159,20 @@ public class PropertyName {
         return matchPosition < offset;
     }
 
+    /**
+     * Calculate the hash code for the configuration name.
+     * <p>
+     * Due to the equality rules, the hash function is not suitable for use in structures that require an even
+     * distribution of keys.
+     *
+     * @return a hash code value for this object.
+     */
     @Override
     public int hashCode() {
         return hashCode;
     }
 
-    private int buildHashCode() {
+    private static int hashCode(final String name) {
         int h = 0;
         int length = name.length();
         boolean quotesOpen = false;
@@ -165,7 +186,7 @@ public class PropertyName {
             } else if (c == '"') {
                 quotesOpen = true;
                 continue;
-            } else if (c != '.' && c != '[' && c != ']') {
+            } else if (c != '[' && c != ']') {
                 continue;
             }
             h = 31 * h + c;

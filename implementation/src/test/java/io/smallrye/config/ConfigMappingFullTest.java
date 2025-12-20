@@ -1,9 +1,12 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -64,6 +67,25 @@ public class ConfigMappingFullTest {
 
         assertTrue(
                 config.getConfigMapping(DataSourcesRuntimeConfig.class).dataSources().get("postgresql").password().isPresent());
+    }
+
+    @Test
+    void propertyNamesMatcher() {
+        PropertyNamesMatcher matcher = ConfigMappings.propertyNamesMatcher(
+                List.of(configClass(DataSourcesJdbcBuildTimeConfig.class, "datasource.build"),
+                        configClass(DataSourcesJdbcRuntimeConfig.class, "datasource.runtime"),
+                        configClass(DataSourcesBuildTimeConfig.class, "datasource.build"),
+                        configClass(DataSourcesRuntimeConfig.class, "datasource.runtime")));
+
+        assertTrue(matcher.matches("datasource.build.jdbc"));
+        assertTrue(matcher.matches("datasource.build", "jdbc"));
+        assertFalse(matcher.matches("datasource.build.jdbc-unknown"));
+        assertTrue(matcher.matches("datasource.build.named.jdbc"));
+        assertFalse(matcher.matches("datasource.build.named.jdbc.unknown"));
+
+        assertTrue(matcher.matches("datasource.build.devservices.container-env.key"));
+        assertTrue(matcher.matches("datasource.build.devservices.container-env.one.two"));
+        assertTrue(matcher.matches("datasource.build.devservices.container-env.one.three"));
     }
 
     @ConfigMapping(prefix = "datasource")
@@ -212,7 +234,7 @@ public class ConfigMappingFullTest {
     interface DataSourcesJdbcBuildTimeConfig {
         @WithParentName
         @WithDefaults
-        @WithUnnamedKey("<ddefault>")
+        @WithUnnamedKey("<default>")
         Map<String, DataSourceJdbcOuterNamedBuildTimeConfig> dataSources();
 
         interface DataSourceJdbcOuterNamedBuildTimeConfig {

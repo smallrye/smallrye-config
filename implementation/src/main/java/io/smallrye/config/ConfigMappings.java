@@ -2,11 +2,14 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
@@ -63,7 +66,7 @@ public final class ConfigMappings {
      *
      * @param configClass the {@link ConfigMapping} annotated class and <code>String</code> prefix
      * @see ConfigMappingInterface#getProperties(ConfigMappingInterface)
-     * @return a <code>Map</code> with all mapping class {@link Property}.
+     * @return a <code>Map</code> with all mapping class {@link Property}
      */
     public static Map<String, Property> getProperties(final ConfigClass configClass) {
         Map<String, Property> properties = new HashMap<>();
@@ -75,6 +78,35 @@ public final class ConfigMappings {
             properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
         }
         return properties;
+    }
+
+    /**
+     * Constructs a {@link PropertyNamesMatcher} with all the property names mapped by the specified list of mapping
+     * classes.
+     *
+     * @param configClasses a list of {@link ConfigMapping} annotated classes
+     * @return a {@link PropertyNamesMatcher} to match names mapped by the mapping classes
+     */
+    public static PropertyNamesMatcher propertyNamesMatcher(final List<ConfigClass> configClasses) {
+        Map<String, List<PropertyName>> prefixesAndNames = new HashMap<>();
+        for (ConfigClass configClass : configClasses) {
+            ConfigMappingInterface configMapping = ConfigMappingLoader.getConfigMapping(configClass.getType());
+            Map<String, Property> properties = ConfigMappingInterface.getProperties(configMapping).get(configClass.getType())
+                    .get("");
+            String prefix = configClass.getPrefix();
+            Set<String> names = properties.keySet();
+            prefixesAndNames.merge(prefix, names.stream().map(PropertyName::new).toList(),
+                    new BiFunction<List<PropertyName>, List<PropertyName>, List<PropertyName>>() {
+                        @Override
+                        public List<PropertyName> apply(List<PropertyName> current, List<PropertyName> additional) {
+                            List<PropertyName> list = new ArrayList<>(current.size() + additional.size());
+                            list.addAll(current);
+                            list.addAll(additional);
+                            return list;
+                        }
+                    });
+        }
+        return PropertyNamesMatcher.matcher(prefixesAndNames);
     }
 
     private static void mapConfiguration(
