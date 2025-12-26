@@ -24,9 +24,10 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
     SmallRyeConfigSources(final List<ConfigSourceWithPriority> configSourcesWithPriorities, boolean negative) {
         this.negative = negative;
         List<ConfigValueConfigSource> configSources = new ArrayList<>();
-        for (ConfigSourceWithPriority configSource : configSourcesWithPriorities) {
+        for (int i = 0; i < configSourcesWithPriorities.size(); i++) {
+            ConfigSourceWithPriority configSource = configSourcesWithPriorities.get(i);
             if ((configSource.priority() < 0) == negative) {
-                configSources.add(ConfigValueConfigSourceWrapper.wrap(configSource.getSource()));
+                configSources.add(new ConfigValueConfigSourceWrapper(configSource.getSource(), i));
             }
         }
         this.configSources = configSources;
@@ -34,11 +35,10 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        for (int i = 0, configSourcesSize = configSources.size(); i < configSourcesSize; i++) {
-            final ConfigValueConfigSource configSource = configSources.get(i);
-            final ConfigValue configValue = configSource.getConfigValue(name);
+        for (ConfigValueConfigSource configSource : configSources) {
+            ConfigValue configValue = configSource.getConfigValue(name);
             if (configValue != null) {
-                return configValue.from().withConfigSourcePosition(i).build();
+                return configValue;
             }
         }
         return context.proceed(name);
@@ -92,13 +92,27 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
         private static final long serialVersionUID = -1109094614437147326L;
 
         private final ConfigSource configSource;
+        private final int position;
 
-        private ConfigValueConfigSourceWrapper(final ConfigSource configSource) {
+        ConfigValueConfigSourceWrapper(final ConfigSource configSource) {
+            this(configSource, -1);
+        }
+
+        ConfigValueConfigSourceWrapper(final ConfigSource configSource, final int position) {
             this.configSource = configSource;
+            this.position = position;
         }
 
         @Override
         public ConfigValue getConfigValue(final String propertyName) {
+            if (configSource instanceof ConfigValueConfigSource) {
+                ConfigValue configValue = ((ConfigValueConfigSource) configSource).getConfigValue(propertyName);
+                if (configValue != null) {
+                    return configValue.from().withConfigSourcePosition(position).build();
+                }
+                return null;
+            }
+
             String value = configSource.getValue(propertyName);
             if (value != null) {
                 return ConfigValue.builder()
@@ -107,15 +121,19 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
                         .withRawValue(value)
                         .withConfigSourceName(getName())
                         .withConfigSourceOrdinal(getOrdinal())
+                        .withConfigSourcePosition(position)
                         .build();
             }
-
             return null;
         }
 
         @Override
         public Map<String, ConfigValue> getConfigValueProperties() {
-            return new ConfigValueMapStringView(configSource.getProperties(),
+            if (configSource instanceof ConfigValueConfigSource) {
+                return ((ConfigValueConfigSource) configSource).getConfigValueProperties();
+            }
+            return new ConfigValueMapStringView(
+                    configSource.getProperties(),
                     configSource.getName(),
                     configSource.getOrdinal());
         }
@@ -143,14 +161,6 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
         @Override
         public int getOrdinal() {
             return configSource.getOrdinal();
-        }
-
-        static ConfigValueConfigSource wrap(final ConfigSource configSource) {
-            if (configSource instanceof ConfigValueConfigSource) {
-                return (ConfigValueConfigSource) configSource;
-            } else {
-                return new ConfigValueConfigSourceWrapper(configSource);
-            }
         }
     }
 }

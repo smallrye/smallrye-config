@@ -7,6 +7,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.SmallRyeConfigSources.ConfigValueConfigSourceWrapper;
+
 class ConfigValueConfigSourceWrapperTest {
     @Test
     void getConfigValue() {
@@ -54,6 +56,6 @@ class ConfigValueConfigSourceWrapperTest {
     }
 
     private static ConfigValueConfigSource config() {
-        return SmallRyeConfigSources.ConfigValueConfigSourceWrapper.wrap(KeyValuesConfigSource.config("my.prop", "1234"));
+        return new ConfigValueConfigSourceWrapper(KeyValuesConfigSource.config("my.prop", "1234"));
     }
 }
