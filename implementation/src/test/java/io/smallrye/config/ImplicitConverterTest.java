@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
@@ -208,7 +209,10 @@ class ImplicitConverterTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("sdf", "yyyy-MM-dd"))
                 .build();
+
         SimpleDateFormat sdf = config.getValue("sdf", SimpleDateFormat.class);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         assertEquals("1970-01-01", sdf.format(Date.from(Instant.EPOCH)));
     }
 
