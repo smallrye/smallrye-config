@@ -63,6 +63,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         return value;
     }
 
+    public String getValueOrDefault(final String defaultValue) {
+        return value != null ? value : defaultValue;
+    }
+
     @Override
     public String getRawValue() {
         return rawValue;
