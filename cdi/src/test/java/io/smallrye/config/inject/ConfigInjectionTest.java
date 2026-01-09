@@ -19,8 +19,6 @@ import java.util.function.Supplier;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -32,9 +30,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 @ExtendWith(WeldJunit5Extension.class)
 class ConfigInjectionTest {
@@ -331,7 +331,8 @@ class ConfigInjectionTest {
 
     @AfterAll
     static void afterAll() {
-        ConfigProviderResolver.instance().releaseConfig(ConfigProvider.getConfig());
+        SmallRyeConfigProviderResolver resolver = ((SmallRyeConfigProviderResolver) ConfigProviderResolver.instance());
+        resolver.releaseConfig(Thread.currentThread().getContextClassLoader());
     }
 
     static class Version {

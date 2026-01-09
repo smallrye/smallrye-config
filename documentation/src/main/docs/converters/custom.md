@@ -53,10 +53,10 @@ org.acme.config.CustomValue
 
 The `CustomValueConverter` converts the configuration value to the `CustomValue` type automatically.
 
-````java
-Config config = ConfigProvider.getConfig();
+```java
+Config config = Config.getOrCreate();
 CustomValue value = config.getValue("custom.value", CustomValue.class);
-````
+```
 
 The `jakarta.annotation.Priority` annotation overrides the `Converter` priority and change converters precedence to fine 
 tune the execution order. By default, if no `@Priority` is specified by the `Converter`, the converter is registered 

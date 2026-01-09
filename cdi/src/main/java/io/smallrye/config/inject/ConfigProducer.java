@@ -26,10 +26,9 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
@@ -42,7 +41,7 @@ import io.smallrye.config.SmallRyeConfig;
 public class ConfigProducer {
     @Produces
     protected SmallRyeConfig getConfig() {
-        return ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        return Config.get(getContextClassLoader()).unwrap(SmallRyeConfig.class);
     }
 
     @Dependent

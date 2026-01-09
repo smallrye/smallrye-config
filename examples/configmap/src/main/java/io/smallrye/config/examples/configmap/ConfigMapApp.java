@@ -3,15 +3,15 @@ package io.smallrye.config.examples.configmap;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import com.sun.net.httpserver.HttpServer;
 
+import io.smallrye.config.Config;
+
 public class ConfigMapApp {
     public static void main(String[] args) throws Exception {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.getOrCreate();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         server.createContext("/configMap", exchange -> {

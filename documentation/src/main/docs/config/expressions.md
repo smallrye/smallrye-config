@@ -23,8 +23,6 @@ If an expression cannot be expanded and no default is supplied a `NoSuchElementE
 Expression expansion may be selectively disabled with `io.smallrye.config.Expressions`:
 
 ```java
-Config config = ConfigProvider.getConfig();
-
-String url = Expressions.withoutExpansion(() -> 
-    config.getValue("callable.url", String.class));
+Config config = Config.getOrCreate();
+String url = Expressions.withoutExpansion(() -> config.getValue("callable.url", String.class));
 ```

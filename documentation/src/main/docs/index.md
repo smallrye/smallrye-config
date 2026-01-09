@@ -50,7 +50,7 @@ Add the _dependency_ to your project using your preferred build tool:
 And retrieve a `SmallRyeConfig` instance with:
 
 ```java
-SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+Config config = io.smallrye.config.Config.getOrCreate();
 ```
 
 !!! info
@@ -66,4 +66,4 @@ SmallRyeConfig config = new SmallRyeConfigBuilder().build();
 
 !!! info
 
-    `SmallRyeConfig` is the entry point to all the config capabilities provided by SmallRye Config. 
+    `io.smallrye.config.Config` is the entry point to all the config capabilities provided by SmallRye Config. 
