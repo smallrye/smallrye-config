@@ -128,7 +128,13 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         // todo: see https://github.com/eclipse/microprofile-config/issues/471
         final Map<ClassLoader, Config> configsForClassLoader = this.configsForClassLoader;
         synchronized (configsForClassLoader) {
-            configsForClassLoader.values().removeIf(v -> v == config);
+            // let's avoid a lambda here as it is called on startup
+            Iterator<Map.Entry<ClassLoader, Config>> it = configsForClassLoader.entrySet().iterator();
+            while (it.hasNext()) {
+                if (it.next().getValue() == config) {
+                    it.remove();
+                }
+            }
         }
     }
 
