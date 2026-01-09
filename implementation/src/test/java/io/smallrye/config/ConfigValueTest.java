@@ -71,6 +71,17 @@ class ConfigValueTest {
         assertEquals(3, config.getConfigValue("four").getConfigSourcePosition());
     }
 
+    @Test
+    void configValueOrDefault() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(KeyValuesConfigSource.config("one", "one", "two", ""))
+                .build();
+
+        assertEquals("one", config.getConfigValue("one").getValueOrDefault(""));
+        assertEquals("", config.getConfigValue("two").getValueOrDefault("two"));
+        assertEquals("three", config.getConfigValue("three").getValueOrDefault("three"));
+    }
+
     public static class ConfigValueConfigSource implements ConfigSource {
         private final Map<String, String> properties;
 
