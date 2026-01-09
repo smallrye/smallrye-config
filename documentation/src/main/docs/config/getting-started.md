@@ -55,18 +55,18 @@ It is also possible to create a [Custom ConfigSource](../config-sources/custom.m
 
 ### Programmatically
 
-The `org.eclipse.microprofile.config.ConfigProvider.getConfig()` API allows to access the 
-`org.eclipse.microprofile.config.Config` API programmatically.
+The `io.smallrye.config.SmallRyeConfig#getOrCreate()` API allows to access the `io.smallrye.config.SmallRyeConfig` API 
+programmatically:
 
 ```java
-Config config = ConfigProvider.getConfig();
+SmallRyeConfig config = SmallRyeConfig.getOrCreate();
 
 String message = config.getValue("greeting.message", String.class);
 ```
 
 The `Config` instance will be created and registered to the current context class loader if no such configuration is 
-already created and registered. This means that subsequent calls to `ConfigProvider.getConfig()` will return the same 
-`Config` instance if the context class loader is the same.
+already created and registered. This means that subsequent calls to `SmallRyeConfig.getOrCreate()` or 
+`SmallRyeConfig.get()` will return the same `SmallRyeConfig` instance if the context class loader is the same.
 
 To obtain a detached instanced, use the `io.smallrye.config.SmallRyeConfigBuilder`:
 
@@ -109,7 +109,7 @@ value for it.
 
 ## Override Config
 
-It is possible to override `Config` default initialization `ConfigProvider.getConfig()`, by extending 
+It is possible to override `SmallRyeConfig` default initialization `SmallRyeConfig.getOrCreate()`, by extending 
 `io.smallrye.config.SmallRyeConfigFactory` and registering the implementation with the `ServiceLoader` mechanism.  
 
 ## Config vs SmallRyeConfig
@@ -123,10 +123,10 @@ Config config = ConfigProvider.getConfig();
 SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
 ```
 
-Or if using the builder it can be obtained directly:
+Or obtained directly:
 
 ```java
-SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+SmallRyeConfig config = SmallRyeConfig.getOrCreate();
 ```
 
 A few notable APIs provided by `io.smallrye.config.SmallRyeConfig` allow to:

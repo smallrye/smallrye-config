@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
+import io.smallrye.config.SmallRyeConfigFactory.Default;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -87,6 +88,19 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         return config;
     }
 
+    SmallRyeConfig get() {
+        return get(getContextClassLoader());
+    }
+
+    SmallRyeConfig get(ClassLoader classLoader) {
+        ClassLoader realClassLoader = getRealClassLoader(classLoader);
+        Config config = configsForClassLoader.get(realClassLoader);
+        if (config == null) {
+            throw ConfigMessages.msg.noConfigForClassloader();
+        }
+        return ((SmallRyeConfig) config);
+    }
+
     SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader, final boolean privileged) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null && !privileged) {
@@ -99,7 +113,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         }
         final ServiceLoader<SmallRyeConfigFactory> serviceLoader = ServiceLoader.load(SmallRyeConfigFactory.class, classLoader);
         final Iterator<SmallRyeConfigFactory> iterator = serviceLoader.iterator();
-        return iterator.hasNext() ? iterator.next() : SmallRyeConfigFactory.Default.INSTANCE;
+        return iterator.hasNext() ? iterator.next() : Default.INSTANCE;
     }
 
     @Override
