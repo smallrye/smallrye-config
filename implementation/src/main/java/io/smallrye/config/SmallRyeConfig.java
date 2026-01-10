@@ -55,6 +55,7 @@ import java.util.function.Supplier;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -1801,6 +1802,62 @@ public class SmallRyeConfig implements Config, Serializable {
      */
     public List<String> getProfiles() {
         return configSources.getProfiles();
+    }
+
+    /**
+     * Get a {@link SmallRyeConfig} instance for the current {@link Thread#getContextClassLoader()}.
+     *
+     * @return the {@link SmallRyeConfig} instance for the thread context class loader
+     * @throws IllegalArgumentException if the config is not registered for the thread context class loader
+     * @throws IllegalArgumentException if the registered config is not a {@link SmallRyeConfig}
+     */
+    public static SmallRyeConfig get() {
+        if (ConfigProviderResolver.instance() instanceof SmallRyeConfigProviderResolver resolver) {
+            return resolver.get();
+        }
+        throw ConfigMessages.msg.incompatibleConfigProvider(
+                SmallRyeConfigProviderResolver.class.getName(), ConfigProviderResolver.instance().getClass().getName());
+    }
+
+    /**
+     * Get or Create a {@link SmallRyeConfig} instance for the current {@link Thread#getContextClassLoader()}.
+     * <p>
+     * The {@link SmallRyeConfig} instance will be created and registered to the context classloader if no such
+     * configuration is already created and registered.
+     *
+     * @return the {@link SmallRyeConfig} instance for the thread context class loader
+     * @throws IllegalArgumentException if the registered config is not a {@link SmallRyeConfig}
+     */
+    public static SmallRyeConfig getOrCreate() {
+        return ConfigProviderResolver.instance().getConfig().unwrap(SmallRyeConfig.class);
+    }
+
+    /**
+     * Get a {@link SmallRyeConfig} instance for the specified {@link ClassLoader}.
+     *
+     * @return the {@link SmallRyeConfig} instance for the specified class loader
+     * @throws IllegalArgumentException if the config is not registered for the thread context class loader
+     * @throws IllegalArgumentException if the registered config is not a {@link SmallRyeConfig}
+     */
+    public static SmallRyeConfig get(ClassLoader classLoader) {
+        if (ConfigProviderResolver.instance() instanceof SmallRyeConfigProviderResolver resolver) {
+            return resolver.get(classLoader);
+        }
+        throw ConfigMessages.msg.incompatibleConfigProvider(
+                SmallRyeConfigProviderResolver.class.getName(), ConfigProviderResolver.instance().getClass().getName());
+    }
+
+    /**
+     * Get or Create a {@link SmallRyeConfig} instance for the specified {@link ClassLoader}.
+     * <p>
+     * The {@link SmallRyeConfig} instance will be created and registered to the specified class loader if no such
+     * configuration is already created and registered.
+     *
+     * @return the {@link SmallRyeConfig} instance for the specified class loader
+     * @throws IllegalArgumentException if the registered config is not a {@link SmallRyeConfig}
+     */
+    public static SmallRyeConfig getOrCreate(ClassLoader classLoader) {
+        return ConfigProviderResolver.instance().getConfig(classLoader).unwrap(SmallRyeConfig.class);
     }
 
     private static class ConfigSources implements Serializable {

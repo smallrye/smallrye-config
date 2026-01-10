@@ -84,7 +84,7 @@ In non-CDI environments, use the API `io.smallrye.config.SmallRyeConfig#getConfi
 mapping instance:
 
 ```java
-SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+SmallRyeConfig config = SmallRyeConfig.getOrCreate();
 Server server = config.getConfigMapping(Server.class);
 ```
 
