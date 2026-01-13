@@ -72,83 +72,25 @@ public final class Converters {
 
     static final Converter<ConfigValue> CONFIG_VALUE_CONVERTER = new ConfigValueConverter();
 
-    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(value -> value));
+    static final Converter<String> STRING_CONVERTER = BuiltInConverter.of(0, newEmptyValueConverter(new StringConverter()));
 
-    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1, newTrimmingConverter(newEmptyValueConverter(
-            new Converter<Boolean>() {
-                @Override
-                public Boolean convert(final String value) throws IllegalArgumentException, NullPointerException {
-                    if ("TRUE".equalsIgnoreCase(value)
-                            || "1".equalsIgnoreCase(value)
-                            || "YES".equalsIgnoreCase(value)
-                            || "Y".equalsIgnoreCase(value)
-                            || "ON".equalsIgnoreCase(value)
-                            || "JA".equalsIgnoreCase(value)
-                            || "J".equalsIgnoreCase(value)
-                            || "SI".equalsIgnoreCase(value)
-                            || "SIM".equalsIgnoreCase(value)
-                            || "OUI".equalsIgnoreCase(value)) {
-                        return Boolean.TRUE;
-                    } else if ("FALSE".equalsIgnoreCase(value)
-                            || "0".equalsIgnoreCase(value)
-                            || "NO".equalsIgnoreCase(value)
-                            || "N".equalsIgnoreCase(value)
-                            || "OFF".equalsIgnoreCase(value)
-                            || "NEIN".equalsIgnoreCase(value)
-                            || "NÃO".equalsIgnoreCase(value)
-                            || "NON".equalsIgnoreCase(value)) {
-                        return Boolean.FALSE;
-                    } else {
-                        ConfigLogging.log.booleanConversionFalse(value);
-                        return Boolean.FALSE;
-                    }
-                }
-            })));
+    static final Converter<Boolean> BOOLEAN_CONVERTER = BuiltInConverter.of(1,
+            newTrimmingConverter(newEmptyValueConverter(new BooleanConverter())));
 
     static final Converter<Double> DOUBLE_CONVERTER = BuiltInConverter.of(2,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Double.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.doubleExpected(value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new DoubleConverter())));
 
     static final Converter<Float> FLOAT_CONVERTER = BuiltInConverter.of(3,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Float.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.floatExpected(value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new FloatConverter())));
 
     static final Converter<Long> LONG_CONVERTER = BuiltInConverter.of(4,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Long.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.longExpected(value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new LongConverter())));
 
     static final Converter<Integer> INTEGER_CONVERTER = BuiltInConverter.of(5,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Integer.valueOf(value);
-                } catch (NumberFormatException nfe) {
-                    throw ConfigMessages.msg.integerExpected(value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new IntegerConverter())));
 
     static final Converter<Class<?>> CLASS_CONVERTER = BuiltInConverter.of(6,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return Class.forName(value, true, SecuritySupport.getContextClassLoader());
-                } catch (ClassNotFoundException e) {
-                    throw ConfigMessages.msg.classConverterNotFound(e, value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new ClassConverter())));
 
     static final Converter<OptionalInt> OPTIONAL_INT_CONVERTER = BuiltInConverter.of(7,
             newOptionalIntConverter(INTEGER_CONVERTER));
@@ -160,66 +102,41 @@ public final class Converters {
             newOptionalDoubleConverter(DOUBLE_CONVERTER));
 
     static final Converter<InetAddress> INET_ADDRESS_CONVERTER = BuiltInConverter.of(10,
-            newTrimmingConverter(newEmptyValueConverter(value -> {
-                try {
-                    return InetAddress.getByName(value);
-                } catch (UnknownHostException e) {
-                    throw ConfigMessages.msg.unknownHost(e, value);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new InetAddressConverter())));
 
-    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11, newEmptyValueConverter(value -> {
-        if (value.length() == 1) {
-            return value.charAt(0);
-        }
-        throw ConfigMessages.msg.failedCharacterConversion(value);
-    }));
+    static final Converter<Character> CHARACTER_CONVERTER = BuiltInConverter.of(11,
+            newEmptyValueConverter(new CharacterConverter()));
 
     static final Converter<Short> SHORT_CONVERTER = BuiltInConverter.of(12,
-            newTrimmingConverter(newEmptyValueConverter(Short::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(new ShortConverter())));
 
     static final Converter<Byte> BYTE_CONVERTER = BuiltInConverter.of(13,
-            newTrimmingConverter(newEmptyValueConverter(Byte::valueOf)));
+            newTrimmingConverter(newEmptyValueConverter(new ByteConverter())));
 
     static final Converter<UUID> UUID_CONVERTER = BuiltInConverter.of(14,
-            newTrimmingConverter(newEmptyValueConverter((s) -> {
-                try {
-                    return UUID.fromString(s);
-                } catch (IllegalArgumentException e) {
-                    throw ConfigMessages.msg.malformedUUID(e, s);
-                }
-            })));
+            newTrimmingConverter(newEmptyValueConverter(new UUIDConverter())));
 
     static final Converter<Currency> CURRENCY_CONVERTER = BuiltInConverter.of(15,
-            newTrimmingConverter(newEmptyValueConverter((s) -> Currency.getInstance(s))));
+            newTrimmingConverter(newEmptyValueConverter(new CurrencyConverter())));
 
     static final Converter<BitSet> BITSET_CONVERTER = BuiltInConverter.of(16,
-            newTrimmingConverter(newTrimmingConverter((s) -> {
-                int len = s.length();
-                byte[] data = new byte[len / 2];
-                for (int i = 0; i < len; i += 2) {
-                    data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                            + Character.digit(s.charAt(i + 1), 16));
-                }
-                return BitSet.valueOf(data);
-            })));
+            newTrimmingConverter(newTrimmingConverter(new BitSetConverter())));
 
     static final Converter<Pattern> PATTERN_CONVERTER = BuiltInConverter.of(17,
-            newTrimmingConverter(newEmptyValueConverter(Pattern::compile)));
+            newTrimmingConverter(newEmptyValueConverter(new PatternConverter())));
 
-    static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18,
-            newEmptyValueConverter(Path::of));
+    static final Converter<Path> PATH_CONVERTER = BuiltInConverter.of(18, newEmptyValueConverter(new PathConverter()));
 
-    static final Converter<File> FILE_CONVERTER = BuiltInConverter.of(19, newEmptyValueConverter(File::new));
+    static final Converter<File> FILE_CONVERTER = BuiltInConverter.of(19, newEmptyValueConverter(new FileConverter()));
 
     static final Converter<URI> URI_CONVERTER = BuiltInConverter.of(20,
-            newTrimmingConverter(newEmptyValueConverter(URI::create)));
+            newTrimmingConverter(newEmptyValueConverter(new URIConverter())));
 
     static final Converter<DateTimeFormatter> DATE_TIME_FORMATTER_CONVERTER = BuiltInConverter.of(21,
-            newTrimmingConverter(newEmptyValueConverter(DateTimeFormatter::ofPattern)));
+            newTrimmingConverter(newEmptyValueConverter(new DateTimeFormatterConverter())));
 
     static final Converter<CharSequence> CHAR_SEQUENCE_CONVERTER = BuiltInConverter.of(22,
-            newTrimmingConverter(newEmptyValueConverter(Object::toString)));
+            newTrimmingConverter(newEmptyValueConverter(new CharSequenceConverter())));
 
     static final Map<Class<?>, Class<?>> PRIMITIVE_TYPES;
 
@@ -685,6 +602,206 @@ public final class Converters {
         }
     }
 
+    static final class StringConverter implements Converter<String> {
+        @Override
+        public String convert(String value) throws IllegalArgumentException, NullPointerException {
+            return value;
+        }
+    }
+
+    static final class BooleanConverter implements Converter<Boolean> {
+        @Override
+        public Boolean convert(final String value) throws IllegalArgumentException, NullPointerException {
+            if ("TRUE".equalsIgnoreCase(value)
+                    || "1".equalsIgnoreCase(value)
+                    || "YES".equalsIgnoreCase(value)
+                    || "Y".equalsIgnoreCase(value)
+                    || "ON".equalsIgnoreCase(value)
+                    || "JA".equalsIgnoreCase(value)
+                    || "J".equalsIgnoreCase(value)
+                    || "SI".equalsIgnoreCase(value)
+                    || "SIM".equalsIgnoreCase(value)
+                    || "OUI".equalsIgnoreCase(value)) {
+                return Boolean.TRUE;
+            } else if ("FALSE".equalsIgnoreCase(value)
+                    || "0".equalsIgnoreCase(value)
+                    || "NO".equalsIgnoreCase(value)
+                    || "N".equalsIgnoreCase(value)
+                    || "OFF".equalsIgnoreCase(value)
+                    || "NEIN".equalsIgnoreCase(value)
+                    || "NÃO".equalsIgnoreCase(value)
+                    || "NON".equalsIgnoreCase(value)) {
+                return Boolean.FALSE;
+            } else {
+                ConfigLogging.log.booleanConversionFalse(value);
+                return Boolean.FALSE;
+            }
+        }
+    }
+
+    static final class DoubleConverter implements Converter<Double> {
+        @Override
+        public Double convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return Double.valueOf(value);
+            } catch (NumberFormatException nfe) {
+                throw ConfigMessages.msg.doubleExpected(value);
+            }
+        }
+    }
+
+    static final class FloatConverter implements Converter<Float> {
+        @Override
+        public Float convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return Float.valueOf(value);
+            } catch (NumberFormatException nfe) {
+                throw ConfigMessages.msg.floatExpected(value);
+            }
+        }
+    }
+
+    static final class LongConverter implements Converter<Long> {
+        @Override
+        public Long convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return Long.valueOf(value);
+            } catch (NumberFormatException nfe) {
+                throw ConfigMessages.msg.longExpected(value);
+            }
+        }
+    }
+
+    static final class IntegerConverter implements Converter<Integer> {
+        @Override
+        public Integer convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return Integer.valueOf(value);
+            } catch (NumberFormatException nfe) {
+                throw ConfigMessages.msg.integerExpected(value);
+            }
+        }
+    }
+
+    static final class ClassConverter implements Converter<Class<?>> {
+        @Override
+        public Class<?> convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return Class.forName(value, true, SecuritySupport.getContextClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw ConfigMessages.msg.classConverterNotFound(e, value);
+            }
+        }
+    }
+
+    static final class InetAddressConverter implements Converter<InetAddress> {
+        @Override
+        public InetAddress convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return InetAddress.getByName(value);
+            } catch (UnknownHostException e) {
+                throw ConfigMessages.msg.unknownHost(e, value);
+            }
+        }
+    }
+
+    static final class CharacterConverter implements Converter<Character> {
+        @Override
+        public Character convert(String value) throws IllegalArgumentException, NullPointerException {
+            if (value.length() == 1) {
+                return value.charAt(0);
+            }
+            throw ConfigMessages.msg.failedCharacterConversion(value);
+        }
+    }
+
+    static final class ShortConverter implements Converter<Short> {
+        @Override
+        public Short convert(String value) throws IllegalArgumentException, NullPointerException {
+            return Short.valueOf(value);
+        }
+    }
+
+    static final class ByteConverter implements Converter<Byte> {
+        @Override
+        public Byte convert(String value) throws IllegalArgumentException, NullPointerException {
+            return Byte.valueOf(value);
+        }
+    }
+
+    static final class UUIDConverter implements Converter<UUID> {
+        @Override
+        public UUID convert(String value) throws IllegalArgumentException, NullPointerException {
+            try {
+                return UUID.fromString(value);
+            } catch (IllegalArgumentException e) {
+                throw ConfigMessages.msg.malformedUUID(e, value);
+            }
+        }
+    }
+
+    static final class CurrencyConverter implements Converter<Currency> {
+        @Override
+        public Currency convert(String value) throws IllegalArgumentException, NullPointerException {
+            return Currency.getInstance(value);
+        }
+    }
+
+    static final class BitSetConverter implements Converter<BitSet> {
+        @Override
+        public BitSet convert(String value) throws IllegalArgumentException, NullPointerException {
+            int len = value.length();
+            byte[] data = new byte[len / 2];
+            for (int i = 0; i < len; i += 2) {
+                data[i / 2] = (byte) ((Character.digit(value.charAt(i), 16) << 4)
+                        + Character.digit(value.charAt(i + 1), 16));
+            }
+            return BitSet.valueOf(data);
+        }
+    }
+
+    static final class PatternConverter implements Converter<Pattern> {
+        @Override
+        public Pattern convert(String value) throws IllegalArgumentException, NullPointerException {
+            return Pattern.compile(value);
+        }
+    }
+
+    static final class PathConverter implements Converter<Path> {
+        @Override
+        public Path convert(String value) throws IllegalArgumentException, NullPointerException {
+            return Path.of(value);
+        }
+    }
+
+    static final class FileConverter implements Converter<File> {
+        @Override
+        public File convert(String value) throws IllegalArgumentException, NullPointerException {
+            return new File(value);
+        }
+    }
+
+    static final class URIConverter implements Converter<URI> {
+        @Override
+        public URI convert(String value) throws IllegalArgumentException, NullPointerException {
+            return URI.create(value);
+        }
+    }
+
+    static final class DateTimeFormatterConverter implements Converter<DateTimeFormatter> {
+        @Override
+        public DateTimeFormatter convert(String value) throws IllegalArgumentException, NullPointerException {
+            return DateTimeFormatter.ofPattern(value);
+        }
+    }
+
+    static final class CharSequenceConverter implements Converter<CharSequence> {
+        @Override
+        public CharSequence convert(String value) throws IllegalArgumentException, NullPointerException {
+            return value;
+        }
+    }
+
     static final class PatternCheckConverter<T> implements Converter<T>, Serializable {
         @Serial
         private static final long serialVersionUID = 358813973126582008L;
@@ -780,10 +897,6 @@ public final class Converters {
             this.collectionFactory = collectionFactory;
         }
 
-        Converter<C> create(final Converter<? extends T> newDelegate) {
-            return new CollectionConverter<>(newDelegate, collectionFactory);
-        }
-
         public C convert(final String str) {
             if (str.isEmpty()) {
                 // empty collection
@@ -812,10 +925,6 @@ public final class Converters {
         ArrayConverter(final Converter<? extends T> delegate, final Class<A> arrayType) {
             super(delegate);
             this.arrayType = arrayType;
-        }
-
-        ArrayConverter<T, A> create(final Converter<? extends T> newDelegate) {
-            return new ArrayConverter<>(newDelegate, arrayType);
         }
 
         public A convert(final String str) {
@@ -870,10 +979,6 @@ public final class Converters {
             super(delegate);
         }
 
-        OptionalConverter<T> create(final Converter<? extends T> newDelegate) {
-            return new OptionalConverter<>(newDelegate);
-        }
-
         public Optional<T> convert(final String value) {
             if (value.isEmpty()) {
                 try {
@@ -895,10 +1000,6 @@ public final class Converters {
             super(delegate);
         }
 
-        OptionalIntConverter create(final Converter<? extends Integer> newDelegate) {
-            return new OptionalIntConverter(newDelegate);
-        }
-
         public OptionalInt convert(final String value) {
             if (value.isEmpty()) {
                 return OptionalInt.empty();
@@ -917,10 +1018,6 @@ public final class Converters {
             super(delegate);
         }
 
-        OptionalLongConverter create(final Converter<? extends Long> newDelegate) {
-            return new OptionalLongConverter(newDelegate);
-        }
-
         public OptionalLong convert(final String value) {
             if (value.isEmpty()) {
                 return OptionalLong.empty();
@@ -937,10 +1034,6 @@ public final class Converters {
 
         OptionalDoubleConverter(final Converter<? extends Double> delegate) {
             super(delegate);
-        }
-
-        OptionalDoubleConverter create(final Converter<? extends Double> newDelegate) {
-            return new OptionalDoubleConverter(newDelegate);
         }
 
         public OptionalDouble convert(final String value) {
@@ -1037,7 +1130,7 @@ public final class Converters {
         }
     }
 
-    static class EmptyValueConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+    static final class EmptyValueConverter<T> extends AbstractSimpleDelegatingConverter<T> {
         @Serial
         private static final long serialVersionUID = 5607979836385662739L;
 
@@ -1046,10 +1139,6 @@ public final class Converters {
         EmptyValueConverter(final Converter<? extends T> delegate, final T emptyValue) {
             super(delegate);
             this.emptyValue = emptyValue;
-        }
-
-        protected EmptyValueConverter<T> create(final Converter<? extends T> newDelegate) {
-            return new EmptyValueConverter<>(newDelegate, emptyValue);
         }
 
         public T convert(final String value) {
@@ -1065,16 +1154,12 @@ public final class Converters {
         }
     }
 
-    static class TrimmingConverter<T> extends AbstractSimpleDelegatingConverter<T> {
+    static final class TrimmingConverter<T> extends AbstractSimpleDelegatingConverter<T> {
         @Serial
         private static final long serialVersionUID = 3241445721544473135L;
 
         TrimmingConverter(final Converter<? extends T> delegate) {
             super(delegate);
-        }
-
-        protected TrimmingConverter<T> create(final Converter<? extends T> newDelegate) {
-            return new TrimmingConverter<>(newDelegate);
         }
 
         public T convert(final String value) {
@@ -1097,7 +1182,7 @@ public final class Converters {
      * @param <K> The type of the key
      * @param <V> The type of the value
      */
-    static class MapConverter<K, V> extends AbstractConverter<Map<K, V>> {
+    static final class MapConverter<K, V> extends AbstractConverter<Map<K, V>> {
         @Serial
         private static final long serialVersionUID = 4343545736186221103L;
 
@@ -1185,7 +1270,7 @@ public final class Converters {
         }
     }
 
-    static class Implicit {
+    static final class Implicit {
 
         @SuppressWarnings("unchecked")
         static <T> Converter<T> getConverter(Class<? extends T> clazz) {
@@ -1256,7 +1341,7 @@ public final class Converters {
                     e.isAccessible();
         }
 
-        static class StaticMethodConverter<T> implements Converter<T>, Serializable {
+        static final class StaticMethodConverter<T> implements Converter<T>, Serializable {
             @Serial
             private static final long serialVersionUID = 3350265927359848883L;
 
@@ -1309,7 +1394,7 @@ public final class Converters {
             }
         }
 
-        static class ConstructorConverter<T> implements Converter<T>, Serializable {
+        static final class ConstructorConverter<T> implements Converter<T>, Serializable {
             @Serial
             private static final long serialVersionUID = 3350265927359848883L;
 
@@ -1356,7 +1441,7 @@ public final class Converters {
             }
         }
 
-        static class HyphenateEnumConverter<E extends Enum<E>> implements Converter<E>, Serializable {
+        static final class HyphenateEnumConverter<E extends Enum<E>> implements Converter<E>, Serializable {
             @Serial
             private static final long serialVersionUID = -8298320652413719873L;
 
