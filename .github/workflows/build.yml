@@ -21,53 +21,53 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [17, 21, 25]
-    name: build with jdk ${{matrix.java}}
+    name: build (linux)
 
     steps:
       - uses: actions/checkout@v6
         name: checkout
 
       - uses: actions/setup-java@v5
-        name: set up jdk ${{matrix.java}}
+        name: set up jdk
         with:
           distribution: 'temurin'
-          java-version: ${{matrix.java}}
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
+          java-version: |
+            17
+            21
+            25
 
       - name: build with maven
-        run: mvn -B formatter:validate verify --file pom.xml
+        run: mvn -B formatter:validate verify --file pom.xml "-Djava17.home=${{env.JAVA_HOME_17_X64}}" "-Djava21.home=${{env.JAVA_HOME_21_X64}}" "-Djava25.home=${{env.JAVA_HOME_25_X64}}"
 
       - uses: actions/upload-artifact@v6
         name: tck-report
         with:
-          name: tck-report-java-${{matrix.java}}
+          name: tck-report
           path: testsuite/tck/target/surefire-reports
 
   build-windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        java: [17, 21, 25]
-    name: build with jdk ${{matrix.java}} windows
+    name: build (windows)
 
     steps:
       - uses: actions/checkout@v6
         name: checkout
 
       - uses: actions/setup-java@v5
-        name: set up jdk ${{matrix.java}}
+        name: set up jdk
         with:
           distribution: 'temurin'
-          java-version: ${{matrix.java}}
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
+          java-version: |
+            17
+            21
+            25
 
       - name: build with maven
-        run: mvn -B formatter:validate verify --file pom.xml
+        run: mvn -B formatter:validate verify --file pom.xml "-Djava17.home=${{env.JAVA_HOME_17_X64}}" "-Djava21.home=${{env.JAVA_HOME_21_X64}}" "-Djava25.home=${{env.JAVA_HOME_25_X64}}"
 
   docs:
     needs: [build]
@@ -82,7 +82,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 25
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
 
@@ -117,7 +117,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 25
           cache: 'maven'
           cache-dependency-path: '**/pom.xml'
 

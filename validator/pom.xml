@@ -28,10 +28,10 @@
     <name>SmallRye Config: Validator</name>
 
     <properties>
-        <version.jakarta.validation>3.0.1</version.jakarta.validation>
+        <version.jakarta.validation>3.0.2</version.jakarta.validation>
 
         <!-- Test -->
-        <version.hibernate.validator>8.0.0.Final</version.hibernate.validator>
+        <version.hibernate.validator>9.1.0.Final</version.hibernate.validator>
         <version.glassfish.expressly>5.0.0</version.glassfish.expressly>
     </properties>
 
@@ -76,6 +76,10 @@
                         <user.language>en</user.language>
                         <user.region>US</user.region>
                     </systemPropertyVariables>
+                    <!-- https://github.com/smallrye/smallrye-config/issues/1456 -->
+                    <argLine>
+                        --add-opens=io.smallrye.config.validator/io.smallrye.config.validator=io.smallrye.config,org.hibernate.validator
+                        --add-opens=io.smallrye.config.validator/io.smallrye.config.validator.external=io.smallrye.config,org.hibernate.validator</argLine>
                 </configuration>
             </plugin>
         </plugins>

@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>io.smallrye.config</groupId>
-            <artifactId>smallrye-config</artifactId>
+            <artifactId>smallrye-config-core</artifactId>
         </dependency>
 
         <!-- Test -->
