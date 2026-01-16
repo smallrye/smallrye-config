@@ -37,4 +37,15 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- https://github.com/smallrye/smallrye-config/issues/1456 -->
+                    <argLine>--add-opens=io.smallrye.config.source.hocon/io.smallrye.config.source.hocon=io.smallrye.config</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
