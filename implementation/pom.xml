@@ -94,6 +94,17 @@
             <compilerArgument>-XDstringConcat=inline</compilerArgument>
           </compilerArgs>
         </configuration>
+        <executions>
+          <execution>
+            <id>default-testCompile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>--add-modules=jdk.httpserver</arg>
+                <arg>--add-reads=io.smallrye.config=jdk.httpserver,java.logging</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -110,6 +121,9 @@
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <enableAssertions>true</enableAssertions>
           <trimStackTrace>false</trimStackTrace>
+          <!-- TODO: the test submodule defines new service providers, which surefire cannot support -->
+          <!-- So run our unit tests in classpath mode until we can relocate all tests to a new JPMS module -->
+          <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
       <plugin>
