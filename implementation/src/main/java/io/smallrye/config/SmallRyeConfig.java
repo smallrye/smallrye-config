@@ -1980,11 +1980,15 @@ public class SmallRyeConfig implements Config, Serializable {
             return interceptors;
         }
 
-        private static List<ConfigSourceWithPriority> mapSources(final List<ConfigSource> sources) {
+        @SafeVarargs
+        private static List<ConfigSourceWithPriority> mapSources(final List<ConfigSource>... sources) {
             List<ConfigSourceWithPriority> sourcesWithPriority = new ArrayList<>();
-            for (ConfigSource source : sources) {
-                if (!(source instanceof ConfigurableConfigSource)) {
-                    sourcesWithPriority.add(new ConfigSourceWithPriority(source));
+            for (List<ConfigSource> list : sources) {
+                for (int i = 0, sourcesSize = list.size(); i < sourcesSize; i++) {
+                    ConfigSource source = list.get(i);
+                    if (!(source instanceof ConfigurableConfigSource)) {
+                        sourcesWithPriority.add(new ConfigSourceWithPriority(source, i));
+                    }
                 }
             }
             sourcesWithPriority.sort(null);
@@ -2009,9 +2013,6 @@ public class SmallRyeConfig implements Config, Serializable {
                 final List<String> profiles,
                 final SmallRyeConfigBuilder builder) {
 
-            ConfigSourceWithPriority.resetLoadPriority();
-            List<ConfigSourceWithPriority> currentSources = new ArrayList<>();
-
             // Init all profile sources first
             List<ConfigSource> profileSources = new ArrayList<>();
             ConfigSourceContext mainContext = new SmallRyeConfigSourceContext(current, profiles, sources);
@@ -2022,21 +2023,18 @@ public class SmallRyeConfig implements Config, Serializable {
             }
 
             // Sort the profiles sources with the main sources
-            currentSources.addAll(mapSources(profileSources));
-            currentSources.addAll(mapSources(sources));
-            currentSources.sort(null);
-            Collections.reverse(currentSources);
+            List<ConfigSourceWithPriority> currentSources = mapSources(sources, profileSources);
 
             // Rebuild the chain with the profiles sources, so profiles values are also available in factories
             SmallRyeConfigSourceInterceptorContext.InterceptorChain chain = new SmallRyeConfigSourceInterceptorContext.InterceptorChain();
             ConfigSourceInterceptorContext context = new SmallRyeConfigSourceInterceptorContext(EMPTY, null, chain);
-            context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources, true), context,
-                    chain);
+            context = new SmallRyeConfigSourceInterceptorContext(
+                    new SmallRyeConfigSources(currentSources, true), context, chain);
             for (ConfigSourceInterceptor interceptor : negativeInterceptors) {
                 context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, chain);
             }
-            context = new SmallRyeConfigSourceInterceptorContext(new SmallRyeConfigSources(currentSources, false), context,
-                    chain);
+            context = new SmallRyeConfigSourceInterceptorContext(
+                    new SmallRyeConfigSources(currentSources, false), context, chain);
             for (ConfigSourceInterceptor interceptor : positiveInterceptors) {
                 context = new SmallRyeConfigSourceInterceptorContext(interceptor, context, chain);
             }
@@ -2066,14 +2064,7 @@ public class SmallRyeConfig implements Config, Serializable {
             }
 
             // Sort the final sources
-            currentSources.clear();
-            currentSources.addAll(mapSources(lateSources));
-            currentSources.addAll(mapSources(profileSources));
-            currentSources.addAll(mapSources(sources));
-            currentSources.sort(null);
-            Collections.reverse(currentSources);
-
-            return currentSources;
+            return mapSources(sources, profileSources, lateSources);
         }
 
         private static List<ConfigSource> getSources(final List<ConfigSourceWithPriority> sourceWithPriorities) {
@@ -2255,11 +2246,12 @@ public class SmallRyeConfig implements Config, Serializable {
 
         private final ConfigSource source;
         private final int priority;
-        private final int loadPriority = loadPrioritySequence++;
+        private final int loadPriority;
 
-        ConfigSourceWithPriority(final ConfigSource source) {
+        ConfigSourceWithPriority(final ConfigSource source, final int loadPriority) {
             this.source = source;
             this.priority = source.getOrdinal();
+            this.loadPriority = loadPriority;
         }
 
         ConfigSource getSource() {
@@ -2274,12 +2266,6 @@ public class SmallRyeConfig implements Config, Serializable {
         public int compareTo(final ConfigSourceWithPriority other) {
             int res = Integer.compare(this.priority, other.priority);
             return res != 0 ? res : Integer.compare(other.loadPriority, this.loadPriority);
-        }
-
-        private static int loadPrioritySequence = 0;
-
-        static void resetLoadPriority() {
-            loadPrioritySequence = 0;
         }
     }
 
