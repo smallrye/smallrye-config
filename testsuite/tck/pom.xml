@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.smallrye.config</groupId>
     <artifactId>smallrye-config-testsuite</artifactId>
-    <version>3.15.1-SNAPSHOT</version>
+    <version>3.15.1</version>
   </parent>
 
   <artifactId>smallrye-config-tck</artifactId>
@@ -156,4 +156,8 @@
     </dependency>
 
   </dependencies>
+
+  <scm>
+    <tag>3.15.1</tag>
+  </scm>
 </project>
