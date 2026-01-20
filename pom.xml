@@ -36,12 +36,13 @@
   <properties>
     <version.sundrio>0.230.2</version.sundrio>
 
-    <version.eclipse.microprofile.config>3.1</version.eclipse.microprofile.config>
+    <version.eclipse.microprofile.config>3.1.1-RC1</version.eclipse.microprofile.config>
     <version.smallrye.common>2.15.0</version.smallrye.common>
     <version.asm>9.9.1</version.asm>
 
-    <version.smallrye.testing>2.4.1</version.smallrye.testing>
+    <version.smallrye.testing>2.5.0</version.smallrye.testing>
 
+    <version.module-services-plugin>1.2</version.module-services-plugin>
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
   </properties>
@@ -111,6 +112,31 @@
                 </bom>
               </boms>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.jboss.logging</groupId>
+              <artifactId>jboss-logging-processor</artifactId>
+              <version>${version.org.jboss.logging-processor}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>io.github.dmlloyd.maven</groupId>
+        <artifactId>module-services-plugin</artifactId>
+        <version>${version.module-services-plugin}</version>
+        <executions>
+          <execution>
+            <id>generate-services</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
