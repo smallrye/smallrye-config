@@ -48,7 +48,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -1874,62 +1873,11 @@ public class SmallRyeConfig implements Config, Serializable {
                 current = new SmallRyeConfigSourceInterceptorContext(interceptor, current, chain);
             }
 
+            // Do it once here do we don't have to recalculate on each EnvSource
+            List<Entry<String, Supplier<Iterator<String>>>> properties = buildPropertiesForEnvMatching(builder, sources,
+                    profiles);
             // Adjust the EnvSources to look for names with dashes instead of dots
-            List<Entry<String, Supplier<Iterator<String>>>> properties = new ArrayList<>(
-                    builder.getMappingsBuilder().getMappings().size());
-
-            // Match dotted properties from other sources with Env with the same semantic meaning
-            properties.add(Map.entry("", new Supplier<>() {
-                private final List<String> names = new ArrayList<>();
-                {
-                    // Filter out some sources that do not contribute to the matching
-                    for (ConfigSource configSource : configSources) {
-                        if (!(configSource instanceof EnvConfigSource) && configSource != defaultValues) {
-                            Set<String> propertyNames = configSource.getPropertyNames();
-                            if (propertyNames != null) {
-                                names.addAll(propertyNames.stream().map(new Function<String, String>() {
-                                    @Override
-                                    public String apply(final String name) {
-                                        return activeName(name, profiles);
-                                    }
-                                }).toList());
-                            }
-                        }
-                    }
-                }
-
-                @Override
-                public Iterator<String> get() {
-                    return names.iterator();
-                }
-            }));
-            // Match mappings properties with Env
-            for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
-                Class<?> type = getConfigMappingClass(mapping.getType());
-                properties.add(Map.entry(mapping.getPrefix(), new Supplier<>() {
-                    private final List<String> names = new ArrayList<>(configMappingProperties(type).keySet());
-                    {
-                        // Sort by most specific key search to avoid clashing with map keys
-                        names.sort(new Comparator<String>() {
-                            @Override
-                            public int compare(String o1, String o2) {
-                                if (PropertyName.equals(o1, o2)) {
-                                    // A name containing a star is always smaller
-                                    return Integer.compare(o1.length(), o2.length()) * -1;
-                                } else {
-                                    return o1.compareTo(o2);
-                                }
-                            }
-                        });
-                    }
-
-                    @Override
-                    public Iterator<String> get() {
-                        return names.iterator();
-                    }
-                }));
-            }
-            for (ConfigSource source : sources) {
+            for (ConfigSource source : configSources) {
                 if (source instanceof EnvConfigSource) {
                     ((EnvConfigSource) source).matchEnvWithProperties(properties, profiles);
                 }
@@ -2088,6 +2036,78 @@ public class SmallRyeConfig implements Config, Serializable {
             }
             configurableConfigSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal).reversed());
             return Collections.unmodifiableList(configurableConfigSources);
+        }
+
+        private static List<Entry<String, Supplier<Iterator<String>>>> buildPropertiesForEnvMatching(
+                final SmallRyeConfigBuilder builder,
+                final List<ConfigSource> sources,
+                final List<String> profiles) {
+
+            List<Entry<String, Supplier<Iterator<String>>>> properties = new ArrayList<>(
+                    builder.getMappingsBuilder().getMappings().size());
+
+            // Match dotted properties from other sources with Env with the same semantic meaning
+            properties.add(Map.entry("", new Supplier<>() {
+                final List<String> names = new ArrayList<>();
+                {
+                    // Filter out some sources that do not contribute to the matching
+                    for (ConfigSource configSource : sources) {
+                        if (!(configSource instanceof EnvConfigSource)
+                                // consider these system sources from SR, like defaults, to exclude generated things
+                                && configSource.getOrdinal() > Integer.MIN_VALUE + 1000
+                                && configSource.getOrdinal() < Integer.MAX_VALUE - 1000) {
+
+                            for (String propertyName : Optional.ofNullable(configSource.getPropertyNames())
+                                    .orElse(Collections.emptySet())) {
+                                if (EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
+                                    names.add(activeName(propertyName, profiles));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public Iterator<String> get() {
+                    return names.iterator();
+                }
+            }));
+
+            // Match mappings properties with Env
+            for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
+                Class<?> type = getConfigMappingClass(mapping.getType());
+                // if the prefix contains dashes we must always check for matches
+                boolean prefixHasDashes = mapping.getPrefix().indexOf('-') != -1;
+                properties.add(Map.entry(mapping.getPrefix(), new Supplier<>() {
+                    final List<String> names = new ArrayList<>();
+                    {
+                        for (String propertyName : configMappingProperties(type).keySet()) {
+                            if (prefixHasDashes || EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
+                                names.add(propertyName);
+                            }
+                        }
+
+                        // Sort by most specific key search to avoid clashing with map keys
+                        names.sort(new Comparator<String>() {
+                            @Override
+                            public int compare(String o1, String o2) {
+                                if (PropertyName.equals(o1, o2)) {
+                                    // A name containing a star is always smaller
+                                    return Integer.compare(o1.length(), o2.length()) * -1;
+                                } else {
+                                    return o1.compareTo(o2);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public Iterator<String> get() {
+                        return names.iterator();
+                    }
+                }));
+            }
+            return properties;
         }
 
         List<String> getProfiles() {

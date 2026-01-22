@@ -295,34 +295,31 @@ public class StringUtil {
             return true;
         }
 
-        if (name.equals(path)) {
+        // if path is less than the root no way to match
+        if (name.length() < path.length()) {
             return false;
         }
 
-        // if property is less than the root no way to match
-        if (name.length() <= path.length()) {
-            return false;
+        // The next char must either be a dot or an index
+        if (name.length() > path.length() && path.charAt(path.length() - 1) != '.') {
+            if (name.charAt(path.length()) != '.' && name.charAt(path.length()) != '[') {
+                return false;
+            }
         }
 
-        // foo.bar
-        // foo.bar."baz"
-        // foo.bar[0]
-        char e = name.charAt(path.length());
-        if ((e == '.') || e == '[') {
-            for (int i = 0; i < path.length(); i++) {
-                char r = path.charAt(i);
-                e = name.charAt(i);
-                if (r == '-') {
-                    if (e != '.' && e != '-') {
-                        return false;
-                    }
-                } else if (r != e) {
+        for (int i = path.length() - 1; i >= 0; i--) {
+            char p = path.charAt(i);
+            char n = name.charAt(i);
+            if (p == '-') {
+                if (n != '.' && n != '-') {
                     return false;
                 }
+            } else if (p != n) {
+                return false;
             }
-            return true;
         }
-        return false;
+
+        return true;
     }
 
     public static boolean isNumeric(final CharSequence digits) {

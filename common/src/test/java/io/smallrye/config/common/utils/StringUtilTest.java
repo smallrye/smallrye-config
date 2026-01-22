@@ -241,4 +241,31 @@ class StringUtilTest {
         assertEquals("my.prop[", StringUtil.unindexed("my.prop["));
         assertEquals("my.prop]", StringUtil.unindexed("my.prop]"));
     }
+
+    @Test
+    void isInPath() {
+        assertTrue(StringUtil.isInPath("foo", "foo"));
+        assertTrue(StringUtil.isInPath("foo", "foo."));
+        assertTrue(StringUtil.isInPath("foo", "foo.bar"));
+        assertTrue(StringUtil.isInPath("foo.bar", "foo.bar"));
+        assertTrue(StringUtil.isInPath("foo.bar", "foo.bar.baz"));
+        assertTrue(StringUtil.isInPath("foo", "foo.bar.baz"));
+        assertTrue(StringUtil.isInPath("foo.bar", "foo.bar.baz"));
+
+        assertFalse(StringUtil.isInPath("foo", "foobar"));
+        assertTrue(StringUtil.isInPath("foo.", "foo.bar.baz"));
+        assertTrue(StringUtil.isInPath("", ""));
+        assertTrue(StringUtil.isInPath("", "foo"));
+        assertTrue(StringUtil.isInPath("", "foo.bar.baz"));
+        assertFalse(StringUtil.isInPath("foo", ""));
+        assertTrue(StringUtil.isInPath("foo", "foo[]"));
+
+        assertFalse(StringUtil.isInPath("foo", "bar"));
+        assertFalse(StringUtil.isInPath("bar", "foo.bar"));
+        assertFalse(StringUtil.isInPath("bar.baz", "foo.bar.baz"));
+
+        assertTrue(StringUtil.isInPath("dashed-env-names", "dashed.env.names.value"));
+        assertTrue(StringUtil.isInPath("dashed-env-names", "dashed-env.names.value"));
+        assertTrue(StringUtil.isInPath("dashed-env-names", "dashed-env-names.value"));
+    }
 }
