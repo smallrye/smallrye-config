@@ -20,11 +20,11 @@ import static io.smallrye.config.Converters.STRING_CONVERTER;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,8 +95,7 @@ class EnvConfigSourceTest {
     void empty() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().addDefaultSources().build();
         assertThrows(NoSuchElementException.class, () -> config.getValue("SMALLRYE_MP_CONFIG_EMPTY", String.class));
-        assertTrue(
-                stream(config.getPropertyNames().spliterator(), false).collect(toList()).contains("SMALLRYE_MP_CONFIG_EMPTY"));
+        assertTrue(stream(config.getPropertyNames().spliterator(), false).toList().contains("SMALLRYE_MP_CONFIG_EMPTY"));
 
         Optional<ConfigSource> envConfigSource = config.getConfigSource("EnvConfigSource");
 
@@ -109,7 +108,7 @@ class EnvConfigSourceTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(new EnvConfigSource()).build();
         ConfigSource configSource = config.getConfigSources().iterator().next();
 
-        assertTrue(configSource instanceof EnvConfigSource);
+        assertInstanceOf(EnvConfigSource.class, configSource);
         assertEquals(301, configSource.getOrdinal());
     }
 
@@ -865,7 +864,7 @@ class EnvConfigSourceTest {
         assertEquals("value", mapping.map().get("key"));
     }
 
-    @ConfigMapping(prefix = "")
+    @ConfigMapping()
     interface MatchEnvVarWithFactory {
         Map<String, String> map();
     }

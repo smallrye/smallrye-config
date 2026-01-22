@@ -30,7 +30,6 @@ import static java.security.AccessController.doPrivileged;
 import java.io.Serial;
 import java.io.Serializable;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,7 +145,12 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     void matchEnvWithProperties(final List<Map.Entry<String, Supplier<Iterator<String>>>> properties,
             final List<String> profiles) {
-        for (String envName : new ArrayList<>(envVars.getNames())) {
+        for (String envName : envVars.getLowerCaseAndDottedNames()) {
+            // single word, no need to match
+            if (envName.indexOf('.') == -1) {
+                continue;
+            }
+
             // Convert to the active key, since sources do not know which keys are active based on the profile
             String activeEnvName = activeName(envName, profiles);
             match: for (Map.Entry<String, Supplier<Iterator<String>>> property : properties) {
@@ -163,7 +167,7 @@ public class EnvConfigSource extends AbstractConfigSource {
         }
     }
 
-    private boolean matchEnvWithProperty(final String prefix, final String property, final String envName,
+    boolean matchEnvWithProperty(final String prefix, final String property, final String envName,
             final String activeEnvName) {
         int[] prefixDashes = indexOfDashes(prefix, 0, prefix.length(), activeEnvName, 0, prefix.length());
         if (prefixDashes[0] == -1) {
@@ -211,6 +215,36 @@ public class EnvConfigSource extends AbstractConfigSource {
             envVars.getNames().remove(envName);
             envVars.getNames().add(dashedEnvName);
             return true;
+        }
+        return false;
+    }
+
+    /**
+     * Evaluates if a property name is a candidate for Environment Variable Matching. A matching is required when the
+     * property name contains:
+     *
+     * <ul>
+     * <li>a {@code -}, because the default is to convert {@code _} to {@code .}</li>
+     * <li>a {@code *}, because it represents any segment of the key, which is used for Maps</li>
+     * <li>uppercases, because a Map key name may be in uppercases, and we have to retain the format</li>
+     * </ul>
+     *
+     * @param propertyName the property name.
+     * @return {@code true }if the property name should be matched with Environment Variable, {@code false} otherwise
+     */
+    static boolean isCandidateForEnvMatching(String propertyName) {
+        for (int i = propertyName.length() - 1; i >= 0; i--) {
+            char c = propertyName.charAt(i);
+            if (c == '-') {
+                return true;
+            }
+            if (c == '*') {
+                return true;
+            }
+            // poor man uppercase, but for property names it should be fine
+            if ('A' <= c && c <= 'Z') {
+                return true;
+            }
         }
         return false;
     }
@@ -339,10 +373,12 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         private final Map<EnvName, EnvEntry> env;
         private final Set<String> names;
+        private final Set<String> lowerCaseAndDottedNames;
 
         public EnvVars(final Map<String, String> properties) {
             this.env = new HashMap<>(properties.size());
             this.names = new HashSet<>(properties.size() * 2);
+            this.lowerCaseAndDottedNames = new HashSet<>(properties.size());
             properties.forEach(new BiConsumer<>() {
                 @Override
                 public void accept(String key, String value) {
@@ -354,7 +390,9 @@ public class EnvConfigSource extends AbstractConfigSource {
                         envEntry.add(key, value);
                     }
                     EnvVars.this.names.add(key);
-                    EnvVars.this.names.add(toLowerCaseAndDotted(key));
+                    String lowerCaseAndDotted = toLowerCaseAndDotted(key);
+                    EnvVars.this.names.add(lowerCaseAndDotted);
+                    EnvVars.this.lowerCaseAndDottedNames.add(lowerCaseAndDotted);
                 }
             });
         }
@@ -389,6 +427,10 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         public Set<String> getNames() {
             return names;
+        }
+
+        public Set<String> getLowerCaseAndDottedNames() {
+            return lowerCaseAndDottedNames;
         }
     }
 
