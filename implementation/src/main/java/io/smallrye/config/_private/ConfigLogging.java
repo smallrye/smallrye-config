@@ -1,6 +1,7 @@
 package io.smallrye.config._private;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Locale;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -11,7 +12,10 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 public interface ConfigLogging extends BasicLogger {
-    ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class, "io.smallrye.config");
+
+    // if we add message localization one day, we must drop the Locale.ROOT argument
+    // we must also do it in ConfigMessages
+    ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class, "io.smallrye.config", Locale.ROOT);
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1000, value = "Unable to get context classloader instance")
