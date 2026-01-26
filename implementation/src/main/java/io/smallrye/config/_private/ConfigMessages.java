@@ -3,6 +3,7 @@ package io.smallrye.config._private;
 import java.io.InvalidObjectException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
@@ -14,7 +15,9 @@ import org.jboss.logging.annotations.MessageBundle;
 
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface ConfigMessages {
-    ConfigMessages msg = Messages.getBundle(MethodHandles.lookup(), ConfigMessages.class);
+    // if we add message localization one day, we must drop the Locale.ROOT argument
+    // we must also do it in ConfigLogging
+    ConfigMessages msg = Messages.getBundle(MethodHandles.lookup(), ConfigMessages.class, Locale.ROOT);
 
     @Message(id = 0, value = "The file %s was not found")
     IllegalStateException fileNotFound(String fileName);
