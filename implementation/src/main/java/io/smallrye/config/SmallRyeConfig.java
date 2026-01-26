@@ -2007,6 +2007,12 @@ public class SmallRyeConfig implements Config, Serializable {
                         countSourcesFromLocations = countSourcesFromLocations + configSources.size();
                     }
 
+                    List<ConfigSourceWithPriority> updatedCurrentSources = mapSources(profileContext.getConfigSources(),
+                            configSources);
+                    profileContext.getConfigSources().clear();
+                    profileContext.getConfigSources()
+                            .addAll(updatedCurrentSources.stream().map(ConfigSourceWithPriority::getSource).toList());
+
                     lateSources.addAll(configSources);
                 }
             }
