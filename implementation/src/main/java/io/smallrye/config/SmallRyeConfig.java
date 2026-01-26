@@ -1806,6 +1806,13 @@ public class SmallRyeConfig implements Config, Serializable {
         @Serial
         private static final long serialVersionUID = 3483018375584151712L;
 
+        private static final Comparator<ConfigurableConfigSource> CONFIGURABLE_CONFIG_SOURCE_COMPARATOR = new Comparator<>() {
+            @Override
+            public int compare(ConfigurableConfigSource o1, ConfigurableConfigSource o2) {
+                return Integer.compare(o2.getOrdinal(), o1.getOrdinal());
+            }
+        };
+
         private final List<String> profiles;
         private final List<ConfigSource> sources;
         private final DefaultValuesConfigSource defaultValues;
@@ -2034,12 +2041,7 @@ public class SmallRyeConfig implements Config, Serializable {
                     configurableConfigSources.add((ConfigurableConfigSource) source);
                 }
             }
-            configurableConfigSources.sort(new Comparator<>() {
-                @Override
-                public int compare(ConfigurableConfigSource o1, ConfigurableConfigSource o2) {
-                    return Integer.compare(o2.getOrdinal(), o1.getOrdinal());
-                }
-            });
+            configurableConfigSources.sort(CONFIGURABLE_CONFIG_SOURCE_COMPARATOR);
             return Collections.unmodifiableList(configurableConfigSources);
         }
 
