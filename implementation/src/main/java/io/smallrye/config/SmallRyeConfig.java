@@ -2034,7 +2034,12 @@ public class SmallRyeConfig implements Config, Serializable {
                     configurableConfigSources.add((ConfigurableConfigSource) source);
                 }
             }
-            configurableConfigSources.sort(Comparator.comparingInt(ConfigurableConfigSource::getOrdinal).reversed());
+            configurableConfigSources.sort(new Comparator<>() {
+                @Override
+                public int compare(ConfigurableConfigSource o1, ConfigurableConfigSource o2) {
+                    return Integer.compare(o2.getOrdinal(), o1.getOrdinal());
+                }
+            });
             return Collections.unmodifiableList(configurableConfigSources);
         }
 
