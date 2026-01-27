@@ -123,6 +123,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <systemPropertyVariables>
+            <smallrye.config.secret-handler.jasypt.enabled>true</smallrye.config.secret-handler.jasypt.enabled>
             <smallrye.config.secret-handler.jasypt.password>dummy</smallrye.config.secret-handler.jasypt.password>
             <smallrye.config.secret-handler.jasypt.algorithm>PBEWithHMACSHA512AndAES_256</smallrye.config.secret-handler.jasypt.algorithm>
           </systemPropertyVariables>

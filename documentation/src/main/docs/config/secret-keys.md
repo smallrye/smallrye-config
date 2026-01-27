@@ -67,6 +67,13 @@ the following dependency:
 
 ### Jasypt
 
+!!! danger
+
+[Jasypt](https://github.com/jasypt/jasypt) is no longer maintained, and the project has been archived. The SmallRye 
+Config Jasypt SecretHandler is deprecated and will be removed in a future version. Its usage will throw an 
+`UnsupportedOperationException`, and it can be re-enabled by setting the configuration 
+`smallrye.config.secret-handler.jasypt.enabled=true`.
+
 [Jasypt](http://www.jasypt.org) is a java library which allows the developer to add basic encryption capabilities. Add 
 the following dependency in your project to use it:
 
