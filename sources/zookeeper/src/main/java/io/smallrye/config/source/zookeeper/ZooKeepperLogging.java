@@ -1,6 +1,7 @@
 package io.smallrye.config.source.zookeeper;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Locale;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -11,8 +12,10 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 interface ZooKeepperLogging extends BasicLogger {
+
+    // if we add message localization one day, we must drop the Locale.ROOT argument
     ZooKeepperLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ZooKeepperLogging.class,
-            ZooKeepperLogging.class.getPackage().getName());
+            ZooKeepperLogging.class.getPackage().getName(), Locale.ROOT);
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 4500, value = "Failed to retrieve property names from ZooKeeperConfigSource")
