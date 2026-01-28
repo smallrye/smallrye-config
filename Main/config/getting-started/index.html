@@ -1633,15 +1633,16 @@ standard convention for <code>properties</code> files.</p>
 <p>It is also possible to create a <a href="../../config-sources/custom/">Custom ConfigSource</a>.</p>
 <h2 id="retrieving-the-configuration">Retrieving the Configuration<a class="headerlink" href="#retrieving-the-configuration" title="Permanent link">#</a></h2>
 <h3 id="programmatically">Programmatically<a class="headerlink" href="#programmatically" title="Permanent link">#</a></h3>
-<p>The <code>org.eclipse.microprofile.config.ConfigProvider.getConfig()</code> API allows to access the 
-<code>org.eclipse.microprofile.config.Config</code> API programmatically.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">();</span>
+<p>The <code>io.smallrye.config.Config#getOrCreate()</code> API allows to access the <code>io.smallrye.config.Config</code> API 
+programmatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.Config</span><span class="p">;</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">String</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;greeting.message&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Config</span><span class="p">.</span><span class="na">getOrCreate</span><span class="p">();</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">String</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;greeting.message&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
 <p>The <code>Config</code> instance will be created and registered to the current context class loader if no such configuration is 
-already created and registered. This means that subsequent calls to <code>ConfigProvider.getConfig()</code> will return the same 
-<code>Config</code> instance if the context class loader is the same.</p>
+already created and registered. This means that subsequent calls to <code>Config.getOrCreate()</code> or 
+<code>Config.get()</code> will return the same <code>Config</code> instance if the context class loader is the same.</p>
 <p>To obtain a detached instanced, use the <code>io.smallrye.config.SmallRyeConfigBuilder</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SmallRyeConfigBuilder</span><span class="p">()</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">addDefaultInterceptors</span><span class="p">()</span>
@@ -1676,19 +1677,23 @@ the <code>org.eclipse.microprofile.config.inject.ConfigProperty</code> qualifier
 value for it.</li>
 </ul>
 <h2 id="override-config">Override Config<a class="headerlink" href="#override-config" title="Permanent link">#</a></h2>
-<p>It is possible to override <code>Config</code> default initialization <code>ConfigProvider.getConfig()</code>, by extending 
+<p>It is possible to override <code>Config</code> default initialization <code>Config.getOrCreate()</code>, by extending 
 <code>io.smallrye.config.SmallRyeConfigFactory</code> and registering the implementation with the <code>ServiceLoader</code> mechanism.  </p>
 <h2 id="config-vs-smallryeconfig">Config vs SmallRyeConfig<a class="headerlink" href="#config-vs-smallryeconfig" title="Permanent link">#</a></h2>
-<p>The <code>io.smallrye.config.SmallRyeConfig</code> is an implementation of <code>org.eclipse.microprofile.config.Config</code> and provides 
+<p>The <code>io.smallrye.config.Config</code> is an extension of <code>org.eclipse.microprofile.config.Config</code> and provides 
 additional APIs and helper methods not available in <code>org.eclipse.microprofile.config.Config</code>. To obtain an instance of 
-<code>io.smallrye.config.SmallRyeConfig</code>, the original <code>org.eclipse.microprofile.config.Config</code> can be unwrapped:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">smallRyeConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">unwrap</span><span class="p">(</span><span class="n">SmallRyeConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<code>io.smallrye.config.Config</code>, the original <code>org.eclipse.microprofile.config.Config</code> can be unwrapped:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.SmallRyeConfig</span><span class="p">;</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.eclipse.microprofile.config.Config</span><span class="p">;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.eclipse.microprofile.config.ConfigProvider</span><span class="p">;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">();</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">smallRyeConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">unwrap</span><span class="p">(</span><span class="n">SmallRyeConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
-<p>Or if using the builder it can be obtained directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SmallRyeConfigBuilder</span><span class="p">().</span><span class="na">build</span><span class="p">();</span>
+<p>Or obtained directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Config</span><span class="p">.</span><span class="na">getOrCreate</span><span class="p">();</span>
 </code></pre></div>
-<p>A few notable APIs provided by <code>io.smallrye.config.SmallRyeConfig</code> allow to:</p>
+<p>A few notable APIs provided by <code>io.smallrye.config.Config</code> allow to:</p>
 <ul>
 <li>Retrieve multiple values into a specified <code>Collection</code></li>
 <li>Retrieve <a href="../indexed-properties/">Indexed Values</a></li>

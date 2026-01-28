@@ -1373,7 +1373,7 @@ requires registration via the <code>ServiceLoader</code> mechanism in the
 abstract.</p>
 </div>
 <p>The <code>CustomValueConverter</code> converts the configuration value to the <code>CustomValue</code> type automatically.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigProvider</span><span class="p">.</span><span class="na">getConfig</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Config</span><span class="p">.</span><span class="na">getOrCreate</span><span class="p">();</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">CustomValue</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;custom.value&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">CustomValue</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
 <p>The <code>jakarta.annotation.Priority</code> annotation overrides the <code>Converter</code> priority and change converters precedence to fine 
