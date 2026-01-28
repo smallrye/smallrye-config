@@ -1523,6 +1523,13 @@ used by the <code>aes-gcm-nopaddin</code> handler.</p>
 </tbody>
 </table>
 <h3 id="jasypt">Jasypt<a class="headerlink" href="#jasypt" title="Permanent link">#</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+</div>
+<p><a href="https://github.com/jasypt/jasypt">Jasypt</a> is no longer maintained, and the project has been archived. The SmallRye 
+Config Jasypt SecretHandler is deprecated and will be removed in a future version. Its usage will throw an 
+<code>UnsupportedOperationException</code>, and it can be re-enabled by setting the configuration 
+<code>smallrye.config.secret-handler.jasypt.enabled=true</code>.</p>
 <p><a href="http://www.jasypt.org">Jasypt</a> is a java library which allows the developer to add basic encryption capabilities. Add 
 the following dependency in your project to use it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">&lt;dependency&gt;</span>
