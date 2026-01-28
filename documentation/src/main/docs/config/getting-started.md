@@ -55,18 +55,19 @@ It is also possible to create a [Custom ConfigSource](../config-sources/custom.m
 
 ### Programmatically
 
-The `org.eclipse.microprofile.config.ConfigProvider.getConfig()` API allows to access the 
-`org.eclipse.microprofile.config.Config` API programmatically.
+The `io.smallrye.config.Config#getOrCreate()` API allows to access the `io.smallrye.config.Config` API 
+programmatically:
 
 ```java
-Config config = ConfigProvider.getConfig();
+import io.smallrye.config.Config;
 
+Config config = Config.getOrCreate();
 String message = config.getValue("greeting.message", String.class);
 ```
 
 The `Config` instance will be created and registered to the current context class loader if no such configuration is 
-already created and registered. This means that subsequent calls to `ConfigProvider.getConfig()` will return the same 
-`Config` instance if the context class loader is the same.
+already created and registered. This means that subsequent calls to `Config.getOrCreate()` or 
+`Config.get()` will return the same `Config` instance if the context class loader is the same.
 
 To obtain a detached instanced, use the `io.smallrye.config.SmallRyeConfigBuilder`:
 
@@ -109,27 +110,31 @@ value for it.
 
 ## Override Config
 
-It is possible to override `Config` default initialization `ConfigProvider.getConfig()`, by extending 
+It is possible to override `Config` default initialization `Config.getOrCreate()`, by extending 
 `io.smallrye.config.SmallRyeConfigFactory` and registering the implementation with the `ServiceLoader` mechanism.  
 
 ## Config vs SmallRyeConfig
 
-The `io.smallrye.config.SmallRyeConfig` is an implementation of `org.eclipse.microprofile.config.Config` and provides 
+The `io.smallrye.config.Config` is an extension of `org.eclipse.microprofile.config.Config` and provides 
 additional APIs and helper methods not available in `org.eclipse.microprofile.config.Config`. To obtain an instance of 
-`io.smallrye.config.SmallRyeConfig`, the original `org.eclipse.microprofile.config.Config` can be unwrapped:
+`io.smallrye.config.Config`, the original `org.eclipse.microprofile.config.Config` can be unwrapped:
 
 ```java
+import io.smallrye.config.SmallRyeConfig;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+
 Config config = ConfigProvider.getConfig();
 SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
 ```
 
-Or if using the builder it can be obtained directly:
+Or obtained directly:
 
 ```java
-SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+Config config = Config.getOrCreate();
 ```
 
-A few notable APIs provided by `io.smallrye.config.SmallRyeConfig` allow to:
+A few notable APIs provided by `io.smallrye.config.Config` allow to:
 
 - Retrieve multiple values into a specified `Collection`
 - Retrieve [Indexed Values](indexed-properties.md)

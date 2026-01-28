@@ -1,7 +1,5 @@
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -12,11 +10,10 @@ import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigMappings.ConfigClass;
-import io.smallrye.config.SmallRyeConfig;
 
 public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
     private final ConfigClass configClass;
@@ -47,8 +44,7 @@ public class ConfigPropertiesInjectionBean<T> implements Bean<T> {
             }
         }
 
-        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
-        return config.getConfigMapping(getBeanClass(), prefix);
+        return Config.get().getConfigMapping(getBeanClass(), prefix);
     }
 
     @Override

@@ -460,7 +460,7 @@ class ConvertersTest {
 
     @Test
     void nulls() {
-        final Config config = ConfigProvider.getConfig();
+        Config config = ConfigProvider.getConfig();
         assertThrows(NullPointerException.class, () -> convertNull(config, Boolean.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, Byte.class));
         assertThrows(NullPointerException.class, () -> convertNull(config, Short.class));

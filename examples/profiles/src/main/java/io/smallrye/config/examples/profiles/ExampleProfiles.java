@@ -1,9 +1,9 @@
 package io.smallrye.config.examples.profiles;
 
-import org.eclipse.microprofile.config.ConfigProvider;
+import io.smallrye.config.Config;
 
 public class ExampleProfiles {
     public static String getMyProp() {
-        return ConfigProvider.getConfig().getValue("my.prop", String.class);
+        return Config.getOrCreate().getValue("my.prop", String.class);
     }
 }

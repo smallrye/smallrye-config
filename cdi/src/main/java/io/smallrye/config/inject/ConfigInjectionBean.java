@@ -35,7 +35,6 @@ import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Provider;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -110,7 +109,7 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
 
     public Config getConfig() {
         if (_config == null) {
-            _config = ConfigProvider.getConfig();
+            _config = io.smallrye.config.Config.get();
         }
         return _config;
     }

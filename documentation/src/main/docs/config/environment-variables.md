@@ -19,7 +19,8 @@ The lookup of configuration values from Environment Variables will always use th
 instance, the lookup of the Environment Variable `FOO_BAR` value, requires the property name `foo.bar`:
 
 ```java
-ConfigProvider.getConfig().getValue("foo.bar", String.class);
+Config config = Config.getOrCreate();
+String value = config.getValue("foo.bar", String.class);
 ```
 
 When SmallRyeConfig performs the lookup on the Environment Variables Config Source, it applies the conversion rules to 

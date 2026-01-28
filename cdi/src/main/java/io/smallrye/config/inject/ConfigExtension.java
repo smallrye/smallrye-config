@@ -51,10 +51,10 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.Nonbinding;
 import jakarta.inject.Provider;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.ConfigValidationException;
@@ -184,7 +184,7 @@ public class ConfigExtension implements Extension {
     }
 
     protected void validate(@Observes AfterDeploymentValidation adv) {
-        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
+        SmallRyeConfig config = Config.getOrCreate(getContextClassLoader()).unwrap(SmallRyeConfig.class);
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();

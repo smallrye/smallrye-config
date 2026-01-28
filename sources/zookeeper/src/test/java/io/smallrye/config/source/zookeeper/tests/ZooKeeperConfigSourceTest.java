@@ -23,7 +23,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 import io.smallrye.config.inject.ConfigExtension;
 
 /**
@@ -88,11 +87,12 @@ class ZooKeeperConfigSourceTest {
         testServer.stop();
     }
 
+    @Inject
+    Config config;
+
     @Test
     void testGettingProperty() {
         logger.info("ZooKeeperConfigSourceTest.testGettingProperty");
-
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
 
         //Check that the ZK ConfigSource will work
         assertNotNull(config.getValue("io.smallrye.configsource.zookeeper.url", String.class));

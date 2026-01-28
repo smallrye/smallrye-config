@@ -14,11 +14,9 @@ import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappings.ConfigClass;
-import io.smallrye.config.SmallRyeConfig;
 
 public class ConfigMappingInjectionBean<T> implements Bean<T> {
     private final BeanManager bm;
@@ -52,8 +50,7 @@ public class ConfigMappingInjectionBean<T> implements Bean<T> {
             }
         }
 
-        SmallRyeConfig config = ConfigProvider.getConfig(getContextClassLoader()).unwrap(SmallRyeConfig.class);
-        return config.getConfigMapping(getBeanClass(), prefix);
+        return Config.get(getContextClassLoader()).getConfigMapping(getBeanClass(), prefix);
     }
 
     @Override

@@ -19,9 +19,19 @@ public interface ConfigMessages {
     // we must also do it in ConfigLogging
     ConfigMessages msg = Messages.getBundle(MethodHandles.lookup(), ConfigMessages.class, Locale.ROOT);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     @Message(id = 0, value = "The file %s was not found")
     IllegalStateException fileNotFound(String fileName);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     @Message(id = 1, value = "Failure while loading microprofile-config.properties files")
     IllegalStateException failedToLoadConfig(@Cause Throwable throwable);
 
@@ -66,7 +76,7 @@ public interface ConfigMessages {
     String propertyNotFound(String name);
 
     @Message(id = 15, value = "No configuration is available for this class loader")
-    IllegalStateException noConfigForClassloader();
+    IllegalArgumentException noConfigForClassloader();
 
     @Message(id = 16, value = "config cannot be null")
     IllegalArgumentException configIsNull();
@@ -162,9 +172,19 @@ public interface ConfigMessages {
     @Message(id = 46, value = "Could not find a secret key handler for %s")
     NoSuchElementException secretKeyHandlerNotFound(String handler);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     @Message(id = 47, value = "The ConfigMapping path %s is ambiguous. It is mapped by %s and %s")
     IllegalStateException ambiguousMapping(String path, String amb1, String amb2);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     @Message(id = 48, value = "The config property %s explicitly defined the key %s, but the key is marked as unnamed")
     IllegalArgumentException explicitNameInUnnamed(String name, String key);
 
@@ -188,4 +208,7 @@ public interface ConfigMessages {
 
     @Message(id = 55, value = "The name %s used for the DefaultValuesConfigSource is reserved")
     IllegalArgumentException defaultValuesConfigSourceNameReserved(String name);
+
+    @Message(id = 56, value = "Incompatible ConfigProviderResolver type: Expected %s, but found %s")
+    IllegalStateException incompatibleConfigProvider(String expected, String actual);
 }

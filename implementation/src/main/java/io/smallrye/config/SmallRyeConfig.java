@@ -51,8 +51,6 @@ import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -177,144 +175,23 @@ public class SmallRyeConfig implements Config, Serializable {
         return context.getMappings();
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code List} converted to their specified property type. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in a {@code List} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code List} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param propertyType The type into which the resolved property values are converted
-     * @return the resolved property values as a {@code List} of instances of the property type
-     * @param <T> the item type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
     @Override
     public <T> List<T> getValues(final String name, final Class<T> propertyType) {
         return getValues(name, propertyType, ArrayList::new);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code Collection} converted to their specified property type. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Collection} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code Collection} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param itemClass The type into which the resolved property values are converted
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Collection} of instances of the property type
-     * @param <T> the item type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
-    public <T, C extends Collection<T>> C getValues(final String name, final Class<T> itemClass,
+    @Override
+    public <T, C extends Collection<T>> C getValues(
+            final String name,
+            final Class<T> itemClass,
             final IntFunction<C> collectionFactory) {
         return getValues(name, requireConverter(itemClass), collectionFactory);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code Collection} converted by the specified {@link Converter}. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Collection} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code Collection} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the {@link Converter} to convert the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param converter The {@link Converter} to use to convert the resolved property values
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Collection} of instances of the property type
-     * @param <T> the item type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Class)
-     * @see SmallRyeConfig#getValues(String, Class IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
-    public <T, C extends Collection<T>> C getValues(final String name, final Converter<T> converter,
+    @Override
+    public <T, C extends Collection<T>> C getValues(
+            final String name,
+            final Converter<T> converter,
             final IntFunction<C> collectionFactory) {
         List<String> indexedProperties = getIndexedProperties(name);
         if (indexedProperties.isEmpty()) {
@@ -372,107 +249,12 @@ public class SmallRyeConfig implements Config, Serializable {
         return indexedProperties == null ? Collections.emptyList() : indexedProperties.keySet().stream().toList();
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Map} converting both the key and value to their specified types.
-     * The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
-     * considering the configuration name as {@code server.reasons}, the key type as {@code Integer} and the
-     * property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons}, the key type as {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyClass The type into which the resolved property keys are converted
-     * @param valueClass The type into which the resolved property values are converted
-     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
-     *         type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Map<K, V> getValues(final String name, final Class<K> keyClass, final Class<V> valueClass) {
         return getValues(name, requireConverter(keyClass), requireConverter(valueClass));
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Map} converting both the key and value using the specified {@linkplain Converters Converters}.
-     * The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
-     * considering the configuration name as {@code server.reasons} and {@linkplain Converters Converters} to
-     * convert the key type as an {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
-     * {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
-     *         type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Class, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Map<K, V> getValues(
             final String name,
             final Converter<K> keyConverter,
@@ -480,56 +262,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValues(name, keyConverter, valueConverter, HashMap::new);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Map} converting both the key and value using the specified {@linkplain Converters Converters}.
-     * The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Map} with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND},
-     * considering the configuration name as {@code server.reasons} and {@linkplain Converters Converters} to
-     * convert the key type as an {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Map}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
-     * {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
-     * @return the resolved property values as a {@code Map} of keys of the property name and values of the property
-     *         type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Class, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Map<K, V> getValues(
             final String name,
             final Converter<K> keyConverter,
@@ -545,58 +278,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getMapValues(keys, keyConverter, valueConverter, mapFactory);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
-     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
-     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
-     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
-     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
-     * a single entry in the returning {@code Map}, and single element in the {@code Collection} value, converting both
-     * the key and value to their specified types. The following configuration:
-     * <ul>
-     * <li>server.env.prod[0]=alpha</li>
-     * <li>server.env.prod[1]=beta</li>
-     * <li>server.env.dev[0]=local</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Map} with the entry key {@code prod} and entry value {@code Collection} with the values
-     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
-     * {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String}, and
-     * the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
-     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
-     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a {@code Map} with
-     * the entry key {@code prod} and entry value {@code Collection} with the values {@code alpha} and {@code beta},
-     * and the entry key {@code dev} and entry value {@code Collection} with the value {@code local}, considering the
-     * configuration name as {@code server.env}, the key type as a {@code String}, and the property type as a
-     * {@code String}.
-     * <p>
-     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyClass The type into which the resolved property keys are converted
-     * @param valueClass The type into which the resolved property values are converted
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Map} of keys of the property name and values as a
-     *         {@code Collections} of instances of the property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
-     */
+    @Override
     public <K, V, C extends Collection<V>> Map<K, C> getValues(
             final String name,
             final Class<K> keyClass,
@@ -605,59 +287,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValues(name, requireConverter(keyClass), requireConverter(valueClass), HashMap::new, collectionFactory);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
-     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
-     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
-     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
-     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
-     * a single entry in the returning {@code Map}, and single element in the {@code Collection} value, converting both
-     * the key and value using the specified {@linkplain Converters Converters}. The following configuration:
-     * <ul>
-     * <li>server.env.prod[0]=alpha</li>
-     * <li>server.env.prod[1]=beta</li>
-     * <li>server.env.dev[0]=local</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Map} with the entry key {@code prod} and entry value {@code Collection} with the values
-     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
-     * {@code local}, considering the configuration name as {@code server.env} and {@linkplain Converters Converters}
-     * to convert the key type as a {@code String} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
-     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
-     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a {@code Map} with
-     * the entry key {@code prod} and entry value {@code Collection} with the values {@code alpha} and {@code beta},
-     * and the entry key {@code dev} and entry value {@code Collection} with the value {@code local}, considering the
-     * configuration name as {@code server.env}, and {@linkplain Converters Converters} to convert the key type as a
-     * {@code String} and the property type as a {@code String}.
-     * <p>
-     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Map} of keys of the property name and values as a
-     *         {@code Collections} of instances of the property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Class, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
-     */
+    @Override
     public <K, V, C extends Collection<V>> Map<K, C> getValues(
             final String name,
             final Converter<K> keyConverter,
@@ -737,46 +367,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return map;
     }
 
-    /**
-     * Returns the value for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * If the requested type is a type array, the lookup to the configuration will first query
-     * {@link SmallRyeConfig#getPropertyNames()} for indexed properties. An indexed property uses the original property
-     * name with square brackets and an index in between, as {@code my.property[0]}. All indexed properties are
-     * queried for their value, which represents a single element in the returning type array converted to their
-     * specified property type. The following configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in an array with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in an array with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param propertyType The type into which the resolved property value is converted
-     * @return the resolved property value as an instance of the property type
-     * @param <T> the property type
-     *
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValue(String, Converter)
-     * @see SmallRyeConfig#getOptionalValue(String, Class)
-     * @see SmallRyeConfig#getOptionalValue(String, Converter)
-     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getValue(final String name, final Class<T> propertyType) {
@@ -810,48 +400,8 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, requireConverter(propertyType));
     }
 
-    /**
-     * Returns the value for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * If the requested type is a type array, the lookup to the configuration will first query
-     * {@link SmallRyeConfig#getPropertyNames()} for indexed properties. An indexed property uses the original property
-     * name with square brackets and an index in between, as {@code my.property[0]}. All indexed properties are
-     * queried for their value, which represents a single element in the returning type array converted by the
-     * specified {@link Converter}. The following configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in an array with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the {@link Converter} to convert the property
-     * type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in an array with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the {@link Converter} to convert the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param converter The {@link Converter} to use to convert the resolved property value
-     * @return the resolved property value as an instance of the property type
-     * @param <T> the property type
-     *
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getValue(String, Class)
-     * @see SmallRyeConfig#getOptionalValue(String, Class)
-     * @see SmallRyeConfig#getOptionalValue(String, Converter)
-     */
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T getValue(final String name, final Converter<T> converter) {
         ConfigValue configValue = getConfigValue(name);
         if (Converters.CONFIG_VALUE_CONVERTER.equals(converter)) {
@@ -868,6 +418,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return convertValue(configValue, converter);
     }
 
+    @Override
     public <T> T convertValue(ConfigValue configValue, Converter<T> converter) {
         if (configValue.hasProblems()) {
             if (Converters.isOptionalConverter(converter)) {
@@ -913,20 +464,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return converted;
     }
 
-    /**
-     * Returns the {@link ConfigValue} for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup of the configuration is performed immediately, meaning that calls to {@link ConfigValue} will always
-     * yield the same results.
-     * <p>
-     * A {@link ConfigValue} is always returned even if a property name cannot be found. In this case, every method in
-     * {@link ConfigValue} returns {@code null}, or the default value for primitive types, except for
-     * {@link ConfigValue#getName()}, which includes the original property name being looked up.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @return the resolved property value as a {@link ConfigValue}
-     */
     @Override
     public ConfigValue getConfigValue(final String name) {
         final ConfigValue configValue = configSources.getInterceptorChain().proceed(name);
@@ -939,44 +476,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configValue != null ? configValue.getValue() : null;
     }
 
-    /**
-     * Returns the value for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * If the requested type is a type array, the lookup to the configuration will first query
-     * {@link SmallRyeConfig#getPropertyNames()} for indexed properties. An indexed property uses the original property
-     * name with square brackets and an index in between, as {@code my.property[0]}. All indexed properties are
-     * queried for their value, which represents a single element in the returning type array converted to their
-     * specified property type. The following configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in an array with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in an array with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param propertyType The type into which the resolved property value is converted
-     * @return the resolved property value as a {@code Optional} instance of the property type
-     * @param <T> the property type
-     *
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     *
-     * @see SmallRyeConfig#getOptionalValue(String, Converter)
-     * @see SmallRyeConfig#getValue(String, Class)
-     * @see SmallRyeConfig#getValue(String, Converter)
-     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> Optional<T> getOptionalValue(String name, Class<T> propertyType) {
@@ -1010,184 +509,23 @@ public class SmallRyeConfig implements Config, Serializable {
         return getValue(name, getOptionalConverter(propertyType));
     }
 
-    /**
-     * Returns the value for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * If the requested type is a type array, the lookup to the configuration will first query
-     * {@link SmallRyeConfig#getPropertyNames()} for indexed properties. An indexed property uses the original property
-     * name with square brackets and an index in between, as {@code my.property[0]}. All indexed properties are
-     * queried for their value, which represents a single element in the returning type array converted by the
-     * specified {@link Converter}. The following configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in an array with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the {@link Converter} to convert the property
-     * type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in an array with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the {@link Converter} to convert the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param converter The {@link Converter} to use to convert the resolved property value
-     * @return the resolved property value as a {@code Optional} instance of the property type
-     * @param <T> the property type
-     *
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     *
-     * @see SmallRyeConfig#getValue(String, Class)
-     * @see SmallRyeConfig#getOptionalValue(String, Class)
-     * @see SmallRyeConfig#getOptionalValue(String, Converter)
-     */
+    @Override
     public <T> Optional<T> getOptionalValue(final String name, final Converter<T> converter) {
         return getValue(name, newOptionalConverter(converter));
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code Optional<List>} converted to their specified property type. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in an {@code Optional<List>} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code Optional<List>} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param propertyType The type into which the resolved property values are converted
-     * @return the resolved property values as a {@code Optional<List>} of instances of the property type
-     * @param <T> the item type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class)
-     * @see SmallRyeConfig#getValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, IntFunction)
-     */
     @Override
     public <T> Optional<List<T>> getOptionalValues(final String name, final Class<T> propertyType) {
         return getOptionalValues(name, propertyType, ArrayList::new);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code Optional<Collection>} converted to their specified property type. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Collection>} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code Optional<Collection>} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param itemClass The type into which the resolved property values are converted
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Optional<Collection>} of instances of the property type
-     * @param <T> the item type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class)
-     * @see SmallRyeConfig#getValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, IntFunction)
-     */
+    @Override
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(final String name, final Class<T> itemClass,
             final IntFunction<C> collectionFactory) {
         return getOptionalValues(name, requireConverter(itemClass), collectionFactory);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for indexed
-     * properties. An indexed property uses the original property name with square brackets and an index in between, as
-     * {@code my.property[0]}. All indexed properties are queried for their value, which represents a single
-     * element in the returning {@code Optional<Collection>} converted by the specified {@link Converter}. The following
-     * configuration:
-     * <ul>
-     * <li>my.property[0]=dog</li>
-     * <li>my.property[1]=cat</li>
-     * <li>my.property[2]=turtle</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Collection>} with the elements {@code dog}, {@code cat}, and {@code turtle},
-     * considering the configuration name as {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element that a comma-separated string ({@code ,}) can represent,
-     * and split into multiple elements with the backslash ({@code \}) as the escape character.
-     * A configuration of {@code my.property=dog,cat,turtle} results in a {@code Optional<Collection>} with the elements
-     * {@code dog}, {@code cat}, and {@code turtle}, considering the configuration name as
-     * {@code my.property} and the property type as a {@code String}.
-     * <p>
-     * The indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param converter The {@link Converter} to use to convert the resolved property values
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Optional<Collection>} of instances of the property type
-     * @param <T> the item type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property values cannot be converted to the specified type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Class IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class)
-     * @see SmallRyeConfig#getValues(String, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, IntFunction)
-     */
+    @Override
     public <T, C extends Collection<T>> Optional<C> getOptionalValues(final String name, final Converter<T> converter,
             final IntFunction<C> collectionFactory) {
         List<String> indexedProperties = getIndexedProperties(name);
@@ -1233,54 +571,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Optional<Map>} converting both the key and value to their specified types.
-     * The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
-     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons}, the key type as
-     * {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons}, the key type as {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyClass The type into which the resolved property keys are converted
-     * @param valueClass The type into which the resolved property values are converted
-     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
-     *         property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Optional<Map<K, V>> getOptionalValues(
             final String name,
             final Class<K> keyClass,
@@ -1288,56 +579,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getOptionalValues(name, requireConverter(keyClass), requireConverter(valueClass));
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Optional<Map>} converting both the key and value using the specified
-     * {@linkplain Converters Converters}. The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
-     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons} and
-     * {@linkplain Converters Converters} to convert the key type as an {@code Integer} and the property type as a
-     * {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
-     * {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
-     *         property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Class, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Optional<Map<K, V>> getOptionalValues(
             final String name,
             final Converter<K> keyConverter,
@@ -1345,57 +587,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getOptionalValues(name, keyConverter, valueConverter, HashMap::new);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed
-     * properties. A keyed property uses the original property name plus an additional dotted segment to represent
-     * a {@code Map} key, as {@code my.property.key}, where {@code my.property} is the property name and {@code key}
-     * is the {@code Map} key. All keyed properties are queried for their values, which represent a single entry in the
-     * returning {@code Optional<Map>} converting both the key and value using the specified
-     * {@linkplain Converters Converters}. The following configuration:
-     * <ul>
-     * <li>server.reasons.200=OK</li>
-     * <li>server.reasons.201=CREATED</li>
-     * <li>server.reasons.404=NOT_FOUND</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Map>} with the entries {@code 200=OK}, {@code 201=CREATED}, and
-     * {@code 404=NOT_FOUND}, considering the configuration name as {@code server.reasons} and
-     * {@linkplain Converters Converters} to convert the key type as an {@code Integer} and the property type as a
-     * {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} with the backslash ({@code \}) as
-     * the escape character.
-     * A configuration of {@code server.reasons=200=OK;201=CREATED;404=NOT_FOUND} results in a {@code Optional<Map>}
-     * with the entries {@code 200=OK}, {@code 201=CREATED}, and {@code 404=NOT_FOUND}, considering the configuration
-     * name as {@code server.reasons} and {@linkplain Converters Converters} to convert the key type as an
-     * {@code Integer} and the property type as a {@code String}.
-     * <p>
-     * The keyed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
-     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values of the
-     *         property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     * @throws java.util.NoSuchElementException if the property isn't present in the configuration or is defined as
-     *         an empty string, or the converter returns {@code null}
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Class, Class)
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getValues(String, Class, Class)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction)
-     */
+    @Override
     public <K, V> Optional<Map<K, V>> getOptionalValues(
             final String name,
             final Converter<K> keyConverter,
@@ -1411,56 +603,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return Optional.of(getMapValues(keys, keyConverter, valueConverter, mapFactory));
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
-     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
-     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
-     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
-     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
-     * a single entry in the returning {@code Optional<Map>}, and single element in the {@code Collection} value,
-     * converting both the key and value to their specified types. The following configuration:
-     * <ul>
-     * <li>server.env.prod[0]=alpha</li>
-     * <li>server.env.prod[1]=beta</li>
-     * <li>server.env.dev[0]=local</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the
-     * values {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the
-     * value {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String},
-     * and the property type as a {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
-     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
-     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a
-     * {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the values
-     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
-     * {@code local}, considering the configuration name as {@code server.env}, the key type as a {@code String}, and
-     * the property type as a {@code String}.
-     * <p>
-     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyClass The type into which the resolved property keys are converted
-     * @param valueClass The type into which the resolved property values are converted
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values as a
-     *         {@code Collections} of instances of the property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
-     */
+    @Override
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
             final String name,
             final Class<K> keyClass,
@@ -1470,59 +613,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 collectionFactory);
     }
 
-    /**
-     * Returns the values for the specified configuration name from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * The lookup to the configuration will first query {@link SmallRyeConfig#getPropertyNames()} for keyed indexed
-     * properties. A keyed indexed property uses the original property name plus an additional dotted segment to
-     * represent a {@code Map} key followed by square brackets and an index in between, as {@code my.property.key[0]},
-     * where {@code my.property} is the property name, {@code key} is the {@code Map} key and {code [0]} the index of
-     * the {@code Collection} element. All keyed indexed properties are queried for their value, which represent
-     * a single entry in the returning {@code Optional<Map>}, and single element in the {@code Collection} value,
-     * converting both the key and value using the specified {@linkplain Converters Converters}. The following
-     * configuration:
-     * <ul>
-     * <li>server.env.prod[0]=alpha</li>
-     * <li>server.env.prod[1]=beta</li>
-     * <li>server.env.dev[0]=local</li>
-     * </ul>
-     * <p>
-     * Results in a {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the
-     * values {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the
-     * value {@code local}, considering the configuration name as {@code server.env} and
-     * {@linkplain Converters Converters} to convert the key type as a {@code String} and the property type as a
-     * {@code String}.
-     * <p>
-     * Otherwise, the configuration value is a single element represented by key value pairs as
-     * {@code <key1>=<value1>;<key2>=<value2>...} separated by a semicolon {@code ;} and value as a comma-separated
-     * string ({@code ,}) can represent, and split into multiple elements with the backslash ({@code \}) as the
-     * escape character. A configuration of {@code server.env=prod=alpha,beta;dev=local} results in a
-     * {@code Optional<Map>} with the entry key {@code prod} and entry value {@code Collection} with the values
-     * {@code alpha} and {@code beta}, and the entry key {@code dev} and entry value {@code Collection} with the value
-     * {@code local}, considering the configuration name as {@code server.env}, and {@linkplain Converters Converters}
-     * to convert the key type as a {@code String} and the property type as a {@code String}.
-     * <p>
-     * The keyed indexed property format has priority when both styles are found in the same configuration source. When
-     * available in multiple sources, the higher ordinal source wins, like any other configuration lookup.
-     *
-     * @param name The configuration property name to look for in the configuration
-     * @param keyConverter The {@link Converter} to use to convert the resolved property keys
-     * @param valueConverter The {@link Converter} to use to convert the resolved property values
-     * @param mapFactory the resulting instance of a {@code Map} to return the property keys and values
-     * @param collectionFactory the resulting instance of a {@code Collection} to return the property values
-     * @return the resolved property values as a {@code Optional<Map>} of keys of the property name and values as a
-     *         {@code Collections} of instances of the property type
-     * @param <K> the key type
-     * @param <V> the value type
-     * @param <C> the collection type
-     * @throws java.lang.IllegalArgumentException if the property keys or values cannot be converted to the specified
-     *         type
-     *
-     * @see SmallRyeConfig#getOptionalValues(String, Converter, Converter, IntFunction, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Class, Class, IntFunction)
-     * @see SmallRyeConfig#getValues(String, Converter, Converter, IntFunction, IntFunction)
-     */
+    @Override
     public <K, V, C extends Collection<V>> Optional<Map<K, C>> getOptionalValues(
             final String name,
             final Converter<K> keyConverter,
@@ -1548,23 +639,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return mappings;
     }
 
-    /**
-     * Returns an instance of a {@link ConfigMapping} annotated type, mapping all the configuration names matching the
-     * {@link ConfigMapping#prefix()} and the {@link ConfigMapping} members to values from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * {@linkplain ConfigMapping ConfigMapping} instances are cached. They are populated when the
-     * {@link SmallRyeConfig} instance is initialized and their values are not updated on
-     * {@linkplain ConfigSource configuration sources} changes.
-     *
-     * @param type an interface annotated with {@link ConfigMapping}
-     * @return an instance of a {@link ConfigMapping} annotated type
-     * @param <T> the type of the {@link ConfigMapping}
-     * @throws ConfigValidationException if the mapping names or values cannot be converter to the specified types, if
-     *         the properties values are not present, defined as an empty string, or the conversion returns {@code null}
-     *
-     * @see SmallRyeConfig#getConfigMapping(Class, String)
-     */
+    @Override
     public <T> T getConfigMapping(final Class<T> type) {
         String prefix;
         if (type.isInterface()) {
@@ -1577,24 +652,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return getConfigMapping(type, prefix);
     }
 
-    /**
-     * Returns an instance of a {@link ConfigMapping} annotated type, mapping all the configuration names matching the
-     * prefix and the {@link ConfigMapping} members to values from the underlying
-     * {@linkplain ConfigSource configuration sources}.
-     * <p>
-     * {@linkplain ConfigMapping ConfigMapping} instances are cached. They are populated when the
-     * {@link SmallRyeConfig} instance is initialized and their values are not updated on
-     * {@linkplain ConfigSource configuration sources} changes.
-     *
-     * @param type an interface annotated with {@link ConfigMapping}
-     * @param prefix the prefix to override {@link ConfigMapping#prefix()}
-     * @return an instance of a {@link ConfigMapping} annotated type
-     * @param <T> the type of the {@link ConfigMapping}
-     * @throws ConfigValidationException if the mapping names or values cannot be converter to the specified types, if
-     *         the properties values are not present, defined as an empty string, or the conversion returns {@code null}
-     *
-     * @see SmallRyeConfig#getConfigMapping(Class)
-     */
+    @Override
     public <T> T getConfigMapping(final Class<T> type, final String prefix) {
         if (prefix == null) {
             return getConfigMapping(type);
@@ -1613,43 +671,17 @@ public class SmallRyeConfig implements Config, Serializable {
         return type.cast(configMappingObject);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * This implementation caches the list of property names collected when {@link SmallRyeConfig} is built via
-     * {@link SmallRyeConfigBuilder#build()}. The cache may be disabled with
-     * {@link SmallRyeConfigBuilder#isCachePropertyNames()}.
-     *
-     * @return the cached names of all configured keys of the underlying configuration
-     * @see SmallRyeConfig#getLatestPropertyNames()
-     * @see SmallRyeConfigBuilder#isCachePropertyNames()
-     */
     @Override
     public Iterable<String> getPropertyNames() {
         return configSources.getPropertyNames().get();
     }
 
-    /**
-     * Provides a way to retrieve an updated list of all property names. The updated list replaces the cached list
-     * returned by {@link SmallRyeConfig#getPropertyNames()}.
-     *
-     * @return the names of all configured keys of the underlying configuration
-     */
+    @Override
     public Iterable<String> getLatestPropertyNames() {
         return configSources.getPropertyNames().latest();
     }
 
-    /**
-     * Checks if a property is present in the {@link Config} instance.
-     * <br>
-     * Because {@link ConfigSource#getPropertyNames()} may not include all available properties, it is not possible to
-     * reliably determine if the property is present in the properties list. The property needs to be retrieved to make
-     * sure it exists. The lookup is done without expression expansion, because the expansion value may not be
-     * available, and it is not relevant for the final check.
-     *
-     * @param name the property name.
-     * @return true if the property is present or false otherwise.
-     */
+    @Override
     public boolean isPropertyPresent(String name) {
         return Expressions.withoutExpansion(() -> {
             ConfigValue configValue = SmallRyeConfig.this.getConfigValue(name);
@@ -1657,25 +689,12 @@ public class SmallRyeConfig implements Config, Serializable {
         });
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Iterable<ConfigSource> getConfigSources() {
         return configSources.getSources();
     }
 
-    /**
-     * Return the currently registered {@linkplain ConfigSource configuration sources} in {@link SmallRyeConfig} that
-     * match the specified type
-     * <p>
-     * The returned sources will be sorted by descending ordinal value and name, which can be iterated in a thread-safe
-     * manner. The {@link Iterable} contains a fixed number of {@linkplain ConfigSource configuration
-     * sources}, determined at configuration initialization, and the config sources themselves may be static or dynamic.
-     *
-     * @param type The type of the {@link ConfigSource} to look for in the configuration
-     * @return an {@link Iterable} of {@linkplain ConfigSource configuration sources}
-     */
+    @Override
     public Iterable<ConfigSource> getConfigSources(final Class<?> type) {
         final List<ConfigSource> configSourcesByType = new ArrayList<>();
         for (ConfigSource configSource : getConfigSources()) {
@@ -1686,15 +705,7 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSourcesByType;
     }
 
-    /**
-     * Return the first registered {@linkplain ConfigSource configuration sources} in {@link SmallRyeConfig} that
-     * match the specified name, sorted by descending ordinal value and name.
-     * <p>
-     *
-     * @param name the {{@linkplain ConfigSource} name to look for in the configuration
-     * @return an {@link Optional} of a {@linkplain ConfigSource}, or an empty {@link Optional} if no
-     *         {@linkplain ConfigSource} matches the specified name.
-     */
+    @Override
     public Optional<ConfigSource> getConfigSource(final String name) {
         for (ConfigSource configSource : getConfigSources()) {
             final String configSourceName = configSource.getName();
@@ -1737,22 +748,11 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     // @Override // in MP Config 2.0+
-    /**
-     * {@inheritDoc}
-     */
     public <T> Optional<Converter<T>> getConverter(Class<T> asType) {
         return Optional.ofNullable(getConverterOrNull(asType));
     }
 
-    /**
-     * Return the {@link Converter} used by this instance to produce instances of the specified type from
-     * {@code String} values.
-     *
-     * @param asType the type to be produced by the converter
-     * @return an instance of the {@link Converter} the specified type
-     * @param <T> the conversion type
-     * @throws java.lang.IllegalArgumentException if no {@link Converter} is registered for the specified type
-     */
+    @Override
     public <T> Converter<T> requireConverter(final Class<T> asType) {
         final Converter<T> conv = getConverterOrNull(asType);
         if (conv == null) {
@@ -1777,9 +777,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return (Converter<T>) converters.computeIfAbsent(asType, clazz -> Converters.Implicit.getConverter((Class<?>) clazz));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T unwrap(final Class<T> type) {
         if (Config.class.isAssignableFrom(type)) {
@@ -1789,15 +786,7 @@ public class SmallRyeConfig implements Config, Serializable {
         throw ConfigMessages.msg.getTypeNotSupportedForUnwrapping(type);
     }
 
-    /**
-     * Returns a {@code List} of the active profiles in {@link SmallRyeConfig}.
-     * <p>
-     * Profiles are sorted in reverse order according to how they were set in
-     * {@link SmallRyeConfig#SMALLRYE_CONFIG_PROFILE}, as the last profile overrides the previous one until there are
-     * no profiles left in the list.
-     *
-     * @return a {@code List} of the active profiles
-     */
+    @Override
     public List<String> getProfiles() {
         return configSources.getProfiles();
     }
@@ -2424,7 +1413,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
         @Serial
         private Object readResolve() throws ObjectStreamException {
-            return ConfigProvider.getConfig();
+            return Config.get();
         }
     }
 }
