@@ -16,6 +16,7 @@ class JasyptSecretKeysHandlerTest {
     @Test
     void jasypt() {
         Map<String, String> properties = Map.of(
+                "smallrye.config.secret-handler.jasypt.enabled", "true",
                 "smallrye.config.secret-handler.jasypt.password", "jasypt",
                 "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",
                 "my.secret", "${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}");
@@ -35,6 +36,7 @@ class JasyptSecretKeysHandlerTest {
                 .addDefaultInterceptors()
                 .addDiscoveredSecretKeysHandlers()
                 .withSources(new EnvConfigSource(Map.of(
+                        "SMALLRYE_CONFIG_SECRET_HANDLER_JASYPT_ENABLED", "true",
                         "SMALLRYE_CONFIG_SECRET_HANDLER_JASYPT_PASSWORD", "jasypt",
                         "SMALLRYE_CONFIG_SECRET_HANDLER_JASYPT_ALGORITHM", "PBEWithHMACSHA512AndAES_256"), ORDINAL))
                 .withSources(new PropertiesConfigSource(
@@ -48,6 +50,7 @@ class JasyptSecretKeysHandlerTest {
     @Test
     void expression() {
         Map<String, String> properties = Map.of(
+                "smallrye.config.secret-handler.jasypt.enabled", "true",
                 "smallrye.config.secret-handler.jasypt.password", "jasypt",
                 "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",
                 "my.secret", "${my.expression}",
@@ -60,5 +63,20 @@ class JasyptSecretKeysHandlerTest {
                 .build();
 
         assertEquals("12345678", config.getConfigValue("my.secret").getValue());
+    }
+
+    @Test
+    void deprecatedException() {
+        Map<String, String> properties = Map.of(
+                "smallrye.config.secret-handler.jasypt.password", "jasypt",
+                "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",
+                "my.secret", "${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}");
+
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSecretKeysHandlers()
+                .withSources(new PropertiesConfigSource(properties, "", 0));
+
+        assertThrows(UnsupportedOperationException.class, builder::build);
     }
 }

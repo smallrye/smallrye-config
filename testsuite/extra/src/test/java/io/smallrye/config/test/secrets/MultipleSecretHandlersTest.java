@@ -18,6 +18,7 @@ class MultipleSecretHandlersTest {
                 "c29tZWFyYml0cmFyeWNyYXp5c3RyaW5ndGhhdGRvZXNub3RtYXR0ZXI",
                 "smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode", "true",
                 "aes-gcm-nopadding.secret", "${aes-gcm-nopadding::DJNrZ6LfpupFv6QbXyXhvzD8eVDnDa_kTliQBpuzTobDZxlg}",
+                "smallrye.config.secret-handler.jasypt.enabled", "true",
                 "smallrye.config.secret-handler.jasypt.password", "jasypt",
                 "smallrye.config.secret-handler.jasypt.algorithm", "PBEWithHMACSHA512AndAES_256",
                 "jasypt.secret", "${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}");
