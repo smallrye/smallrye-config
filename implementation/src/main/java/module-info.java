@@ -13,7 +13,7 @@ module io.smallrye.config {
     requires org.jboss.logging;
     requires static org.jboss.logging.annotations;
 
-    requires org.objectweb.asm;
+    requires static org.objectweb.asm;
 
     exports io.smallrye.config;
     exports io.smallrye.config._private to
