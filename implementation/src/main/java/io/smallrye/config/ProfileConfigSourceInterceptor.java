@@ -33,7 +33,7 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public ProfileConfigSourceInterceptor(final List<String> profiles) {
         List<String> reverseProfiles = new ArrayList<>(profiles);
         Collections.reverse(reverseProfiles);
-        this.profiles = reverseProfiles;
+        this.profiles = Collections.unmodifiableList(reverseProfiles);
         this.prefixProfiles = new ArrayList<>();
         for (String profile : this.profiles) {
             this.prefixProfiles.add("%" + profile + ".");

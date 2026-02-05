@@ -3,7 +3,6 @@ package io.smallrye.config;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.eclipse.microprofile.config.Config.PROFILE;
@@ -15,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,19 +110,10 @@ class ProfileConfigSourceInterceptorTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withProfile("prof")
+                .withSources(new MapBackedConfigSource("higher", Map.of("%prof.my.prop", "higher-profile"), 200) {
+                })
                 .withSources(
-                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
-                            {
-                                put("%prof.my.prop", "higher-profile");
-                            }
-                        }, 200) {
-                        },
-                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
-                            {
-                                put("my.prop", "lower");
-                                put("%prof.my.prop", "lower-profile");
-                            }
-                        }, 100) {
+                        new MapBackedConfigSource("lower", Map.of("my.prop", "lower", "%prof.my.prop", "lower-profile"), 100) {
                         })
                 .build();
 
@@ -133,19 +124,10 @@ class ProfileConfigSourceInterceptorTest {
     void priorityOverrideProfile() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
+                .withSources(new MapBackedConfigSource("higher", Map.of("my.prop", "higher"), 200) {
+                })
                 .withSources(
-                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
-                            {
-                                put("my.prop", "higher");
-                            }
-                        }, 200) {
-                        },
-                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
-                            {
-                                put("my.prop", "lower");
-                                put("%prof.my.prop", "lower-profile");
-                            }
-                        }, 100) {
+                        new MapBackedConfigSource("lower", Map.of("my.prop", "lower", "%prof.my.prop", "lower-profile"), 100) {
                         })
                 .build();
 
@@ -157,20 +139,11 @@ class ProfileConfigSourceInterceptorTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withProfile("prof")
+                .withSources(new MapBackedConfigSource("higher", Map.of("my.prop", "higher", "%prof.my.prop", "higher-profile"),
+                        200) {
+                })
                 .withSources(
-                        new MapBackedConfigSource("higher", new HashMap<String, String>() {
-                            {
-                                put("my.prop", "higher");
-                                put("%prof.my.prop", "higher-profile");
-                            }
-                        }, 200) {
-                        },
-                        new MapBackedConfigSource("lower", new HashMap<String, String>() {
-                            {
-                                put("my.prop", "lower");
-                                put("%prof.my.prop", "lower-profile");
-                            }
-                        }, 100) {
+                        new MapBackedConfigSource("lower", Map.of("my.prop", "lower", "%prof.my.prop", "lower-profile"), 100) {
                         })
                 .build();
 
@@ -189,7 +162,7 @@ class ProfileConfigSourceInterceptorTest {
         assertEquals("2", config.getConfigValue("my.prop").getValue());
         assertEquals("1", config.getConfigValue("prof.only").getValue());
 
-        List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        List<String> properties = stream(config.getPropertyNames().spliterator(), false).toList();
         assertFalse(properties.contains("%prof.my.prop"));
         assertTrue(properties.contains("my.prop"));
         assertTrue(properties.contains("prof.only"));
@@ -201,7 +174,7 @@ class ProfileConfigSourceInterceptorTest {
     void excludePropertiesFromInactiveProfiles() {
         SmallRyeConfig config = buildConfig("%prof.my.prop", "1", "%foo.another", "2");
 
-        List<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toList());
+        List<String> properties = stream(config.getPropertyNames().spliterator(), false).toList();
         assertTrue(properties.contains("my.prop"));
         assertFalse(properties.contains("another"));
     }
@@ -546,6 +519,17 @@ class ProfileConfigSourceInterceptorTest {
     void profilesLongerThanPropDoNotOverflowString() {
         String name = ProfileConfigSourceInterceptor.activeName("%a,b.c.d", List.of("test-with-native-agent"));
         assertEquals("%a,b.c.d", name);
+    }
+
+    @Test
+    void immutableProfiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(config(SMALLRYE_CONFIG_PROFILE, "one,two"))
+                .build();
+
+        assertThrows(UnsupportedOperationException.class, () -> Collections.reverse(config.getProfiles()));
+        assertThrows(UnsupportedOperationException.class, () -> config.getProfiles().clear());
     }
 
     private static SmallRyeConfig buildConfig(String... keyValues) {
