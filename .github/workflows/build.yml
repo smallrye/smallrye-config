@@ -41,7 +41,7 @@ jobs:
       - name: build with maven
         run: mvn -B formatter:validate verify --file pom.xml "-Djava17.home=${{env.JAVA_HOME_17_X64}}" "-Djava21.home=${{env.JAVA_HOME_21_X64}}" "-Djava25.home=${{env.JAVA_HOME_25_X64}}"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         name: tck-report
         with:
           name: tck-report
