@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,19 +143,18 @@ public final class ConfigMappingLoader {
             if (type.isAssignableFrom(implementationClass)) {
                 return implementationClass;
             }
-
-            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-            if (mappingMetadata == null) {
-                throw ConfigMessages.msg.classIsNotAMapping(type);
-            }
-            return loadClass(type, mappingMetadata);
-        } catch (ClassNotFoundException e) {
-            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-            if (mappingMetadata == null) {
-                throw ConfigMessages.msg.classIsNotAMapping(type);
-            }
-            return loadClass(type, mappingMetadata);
+            return loadMapping(type);
+        } catch (final ClassNotFoundException e) {
+            return loadMapping(type);
         }
+    }
+
+    static <T> Class<?> loadMapping(final Class<T> type) {
+        ConfigMappingInterface mappingInterface = ConfigMappingInterface.getConfigurationInterface(type);
+        if (mappingInterface == null) {
+            throw ConfigMessages.msg.classIsNotAMapping(type);
+        }
+        return loadClass(type, mappingInterface);
     }
 
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
@@ -172,11 +172,20 @@ public final class ConfigMappingLoader {
                 if (configMappingMetadata instanceof ConfigMappingClass) {
                     return klass;
                 }
-                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+
+                return loadClass(parent, configMappingMetadata, configMappingMetadata.getAuxiliaryClasses());
             } catch (ClassNotFoundException e) {
-                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+                return loadClass(parent, configMappingMetadata, configMappingMetadata.getAuxiliaryClasses());
             }
         }
+    }
+
+    private static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMapping,
+            List<ConfigMappingMetadata> auxiliaryClasses) {
+        for (ConfigMappingMetadata auxiliaryClass : auxiliaryClasses) {
+            defineClass(parent, auxiliaryClass.getClassName(), auxiliaryClass.getClassBytes());
+        }
+        return defineClass(parent, configMapping.getClassName(), configMapping.getClassBytes());
     }
 
     /**
@@ -295,6 +304,11 @@ public final class ConfigMappingLoader {
         @Override
         public byte[] getClassBytes() {
             return ConfigMappingGenerator.generate(classType, interfaceName);
+        }
+
+        @Override
+        public List<ConfigMappingMetadata> getAuxiliaryClasses() {
+            return Collections.emptyList();
         }
     }
 }

@@ -20,6 +20,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMappingDefaultsTest.DataSourcesJdbcBuildTimeConfig.DataSourceJdbcOuterNamedBuildTimeConfig;
+import io.smallrye.config.ConfigMappingDefaultsTest.Defaults.Child;
+import io.smallrye.config.ConfigMappingDefaultsTest.Defaults.Parent;
 
 public class ConfigMappingDefaultsTest {
     @Test
@@ -210,6 +212,64 @@ public class ConfigMappingDefaultsTest {
         assertEquals(10, mapping.parent().child().mapNested().get("default").optionalPrimitive().getAsInt());
         assertIterableEquals(List.of("one", "two"), mapping.parent().child().mapNested().get("default").list());
         assertEquals("value", mapping.parent().child().mapNested().get("default").map().get("default"));
+    }
+
+    @Test
+    void builder() {
+        Defaults defaults = ConfigInstanceBuilder.forInterface(Defaults.class)
+                .with(Defaults::listNested, List.<Defaults.Nested> of())
+                .with(Defaults::parent, ConfigInstanceBuilder.forInterface(Defaults.Parent.class)
+                        .with(Defaults.Parent::child, ConfigInstanceBuilder.forInterface(Defaults.Child.class)
+                                .with(Defaults.Child::listNested, List.<Defaults.Nested> of())
+                                .build())
+                        .build())
+                .build();
+
+        assertNotNull(defaults);
+        assertEquals("value", defaults.value());
+        assertEquals(10, defaults.primitive());
+        assertTrue(defaults.optional().isPresent());
+        assertEquals("value", defaults.optional().get());
+        assertTrue(defaults.optionalPrimitive().isPresent());
+        assertEquals(10, defaults.optionalPrimitive().getAsInt());
+        assertIterableEquals(List.of("one", "two"), defaults.list());
+        assertEquals("value", defaults.map().get("default"));
+        assertNotNull(defaults.nested());
+        assertEquals("value", defaults.nested().value());
+        assertEquals(10, defaults.nested().primitive());
+        assertTrue(defaults.nested().optional().isPresent());
+        assertEquals("value", defaults.nested().optional().get());
+        assertTrue(defaults.nested().optionalPrimitive().isPresent());
+        assertEquals(10, defaults.nested().optionalPrimitive().getAsInt());
+        assertIterableEquals(List.of("one", "two"), defaults.nested().list());
+        assertEquals("value", defaults.nested().map().get("default"));
+        assertTrue(defaults.optionalNested().isEmpty());
+        assertTrue(defaults.listNested().isEmpty());
+        assertEquals("value", defaults.mapNested().get("default").value());
+        assertEquals(10, defaults.mapNested().get("default").primitive());
+        assertTrue(defaults.mapNested().get("default").optional().isPresent());
+        assertEquals("value", defaults.mapNested().get("default").optional().get());
+        assertTrue(defaults.mapNested().get("default").optionalPrimitive().isPresent());
+        assertEquals(10, defaults.mapNested().get("default").optionalPrimitive().getAsInt());
+        assertIterableEquals(List.of("one", "two"), defaults.mapNested().get("default").list());
+        assertEquals("value", defaults.mapNested().get("default").map().get("default"));
+        assertEquals("value", defaults.parent().child().nested().value());
+        assertEquals(10, defaults.parent().child().nested().primitive());
+        assertTrue(defaults.parent().child().nested().optional().isPresent());
+        assertEquals("value", defaults.parent().child().nested().optional().get());
+        assertTrue(defaults.parent().child().nested().optionalPrimitive().isPresent());
+        assertEquals(10, defaults.parent().child().nested().optionalPrimitive().getAsInt());
+        assertIterableEquals(List.of("one", "two"), defaults.parent().child().nested().list());
+        assertEquals("value", defaults.parent().child().nested().map().get("default"));
+        assertTrue(defaults.parent().child().optionalNested().isEmpty());
+        assertTrue(defaults.parent().child().listNested().isEmpty());
+        assertEquals("value", defaults.parent().child().mapNested().get("default").value());
+        assertEquals(10, defaults.parent().child().mapNested().get("default").primitive());
+        assertTrue(defaults.parent().child().mapNested().get("default").optional().isPresent());
+        assertEquals("value", defaults.parent().child().mapNested().get("default").optional().get());
+        assertTrue(defaults.parent().child().mapNested().get("default").optionalPrimitive().isPresent());
+        assertIterableEquals(List.of("one", "two"), defaults.parent().child().mapNested().get("default").list());
+        assertEquals("value", defaults.parent().child().mapNested().get("default").map().get("default"));
     }
 
     @ConfigMapping(prefix = "defaults")

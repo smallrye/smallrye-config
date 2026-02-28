@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigInstanceBuilderImpl.createCollectionFactory;
 import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigValidationException.Problem;
@@ -7,7 +8,6 @@ import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
 
-import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.ConfigInstanceBuilderImpl.MapWithDefault;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
@@ -1058,21 +1059,6 @@ public final class ConfigMappingContext {
             NameIterator keyIterator = new NameIterator(key);
             keyIterator.next();
             return keyIterator.hasNext() ? "\"" + key + "\"" : key;
-        }
-    }
-
-    static class MapWithDefault<K, V> extends HashMap<K, V> {
-        @Serial
-        private static final long serialVersionUID = 1390928078837140814L;
-        private final V defaultValue;
-
-        MapWithDefault(final V defaultValue) {
-            this.defaultValue = defaultValue;
-        }
-
-        @Override
-        public V get(final Object key) {
-            return getOrDefault(key, defaultValue);
         }
     }
 }

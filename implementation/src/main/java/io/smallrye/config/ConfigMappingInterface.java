@@ -48,6 +48,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
     private final ToStringMethod toStringMethod;
+    private final List<ConfigMappingMetadata> auxiliaryClasses;
 
     ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
             final Property[] properties) {
@@ -69,6 +70,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         filteredProperties.sort(PropertyComparator.INSTANCE);
         this.properties = collectFullHierarchyProperties(this, filteredProperties.toArray(Property[]::new));
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
+        this.auxiliaryClasses = List.of(new ConfigMappingBuilder());
     }
 
     static String getImplementationClassName(Class<?> type) {
@@ -128,6 +130,18 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      */
     public Property[] getProperties() {
         return properties;
+    }
+
+    /**
+     * Get a {@code List} of {@link io.smallrye.config.ConfigMappingMetadata} of auxiliary classes to load for this
+     * {@link io.smallrye.config.ConfigMappingInterface}, like dedicated builders for the mapping.
+     *
+     * @return a {@code List} of {@link io.smallrye.config.ConfigMappingMetadata} of auxiliary classes
+     *
+     * @see io.smallrye.config.ConfigMappingInterface.ConfigMappingBuilder
+     */
+    public List<ConfigMappingMetadata> getAuxiliaryClasses() {
+        return auxiliaryClasses;
     }
 
     private static Property[] collectFullHierarchyProperties(final ConfigMappingInterface type, final Property[] properties) {
@@ -193,6 +207,38 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return ConfigMappingGenerator.generate(this);
         } catch (Throwable e) {
             throw ConfigMessages.msg.couldNotGenerateMapping(e, className);
+        }
+    }
+
+    class ConfigMappingBuilder implements ConfigMappingMetadata {
+        private final String builderClassName;
+
+        ConfigMappingBuilder() {
+            this.builderClassName = getBuilderClassName(ConfigMappingInterface.this.interfaceType);
+        }
+
+        @Override
+        public Class<?> getInterfaceType() {
+            return ConfigMappingInterface.this.interfaceType;
+        }
+
+        @Override
+        public String getClassName() {
+            return builderClassName;
+        }
+
+        @Override
+        public byte[] getClassBytes() {
+            return ConfigMappingGenerator.generateBuilder(ConfigMappingInterface.this, builderClassName.replace('.', '/'));
+        }
+
+        @Override
+        public List<ConfigMappingMetadata> getAuxiliaryClasses() {
+            return Collections.emptyList();
+        }
+
+        static String getBuilderClassName(Class<?> type) {
+            return new StringBuilder(type.getName().length() + 11).append(type.getName()).append("$$CMBuilder").toString();
         }
     }
 
