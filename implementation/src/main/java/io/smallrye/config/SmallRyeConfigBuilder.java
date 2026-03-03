@@ -252,8 +252,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             private List<String> getProfiles(final ConfigSourceInterceptorContext context, final String propertyName) {
                 List<String> profiles = new ArrayList<>();
                 ConfigValue profileValue = context.proceed(propertyName);
-                if (profileValue != null) {
-                    final List<String> convertProfiles = convertProfile(profileValue.getValue());
+                if (profileValue != null && profileValue.getValue() != null) {
+                    List<String> convertProfiles = convertProfile(profileValue.getValue());
                     for (String profile : convertProfiles) {
                         profiles.addAll(getProfiles(context, "%" + profile + "." + SMALLRYE_CONFIG_PROFILE_PARENT));
                         profiles.add(profile);
