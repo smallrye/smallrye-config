@@ -42,7 +42,7 @@
 
     <version.smallrye.testing>2.5.0</version.smallrye.testing>
 
-    <version.module-services-plugin>1.2</version.module-services-plugin>
+    <version.module-services-plugin>1.3</version.module-services-plugin>
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
   </properties>
