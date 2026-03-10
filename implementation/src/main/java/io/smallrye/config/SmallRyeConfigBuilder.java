@@ -569,6 +569,24 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     /**
+     * Ignores a specified prefix when analyzing the unknown properties to report.
+     * <p>
+     * <code>foo</code> - ignores all configuration names under <code>foo</code>.
+     * <p>
+     * It is equivalent to <code>foo.**</code> when using {@link #withMappingIgnore(String)}.
+     * <p>
+     * This method is more optimized when ignoring a full tree under a given prefix.
+     *
+     * @param prefix the configuration prefix to ignore
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withValidateUnknown(boolean)
+     */
+    public SmallRyeConfigBuilder withMappingIgnorePrefix(String prefix) {
+        mappingsBuilder.ignoredPrefix(prefix.concat("."));
+        return this;
+    }
+
+    /**
      * Enable or disable the Config Mapping requirement to match every configuration path available in the Config
      * system. By default, the validation is <b>enabled</b>.
      *
@@ -789,6 +807,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final Set<ConfigClass> mappings = new HashSet<>();
         private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
         private final Set<String> ignoredPaths = new HashSet<>();
+        private final Set<String> ignoredPrefixes = new HashSet<>();
 
         public void mapping(ConfigClass configClass) {
             Assert.checkNotNullParam("configClass", configClass);
@@ -812,6 +831,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             ignoredPaths.add(ignoredPath);
         }
 
+        public void ignoredPrefix(String ignoredPrefix) {
+            Assert.checkNotNullParam("ignoredPrefix", ignoredPrefix);
+            ignoredPrefixes.add(ignoredPrefix);
+        }
+
         public Set<ConfigClass> getMappings() {
             return mappings;
         }
@@ -822,6 +846,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         public Set<String> getIgnoredPaths() {
             return ignoredPaths;
+        }
+
+        public Set<String> getIgnoredPrefixes() {
+            return ignoredPrefixes;
         }
 
         boolean isEmpty() {
