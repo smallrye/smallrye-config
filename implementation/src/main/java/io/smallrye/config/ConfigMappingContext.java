@@ -48,11 +48,16 @@ public final class ConfigMappingContext {
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
 
+    private final Map<String, Set<String>> propertyPrefixIndex = new HashMap<>();
+
     public ConfigMappingContext(
             final SmallRyeConfig config,
             final MappingBuilder mappingBuilder) {
 
         this.config = config;
+
+        // we create an index of property prefixes that will be used in createRequired
+        buildPropertyPrefixIndex();
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
             Class<?> type = getConfigMappingClass(entry.getKey().getType());
@@ -144,6 +149,39 @@ public final class ConfigMappingContext {
         }
     }
 
+    private void buildPropertyPrefixIndex() {
+        for (String propertyName : config.getPropertyNames()) {
+            // Index by all prefixes: "foo.bar.baz" -> index under "foo", "foo.bar", "foo.bar.baz"
+            // Also handle indexed properties: "foo.bar[0]" -> index under "foo", "foo.bar"
+            int dotIndex = 0;
+            int lastDotIndex = -1;
+            while (dotIndex < propertyName.length()) {
+                dotIndex = propertyName.indexOf('.', dotIndex);
+                if (dotIndex == -1) {
+                    // No more dots - check if there's a bracket in the last segment
+                    int searchStart = lastDotIndex + 1;
+                    int bracketIndex = propertyName.indexOf('[', searchStart);
+                    if (bracketIndex != -1) {
+                        // Index under the part before the bracket: "foo.bar[0]" -> index under "foo.bar"
+                        String prefixBeforeBracket = propertyName.substring(0, bracketIndex);
+                        propertyPrefixIndex.computeIfAbsent(prefixBeforeBracket, k -> new HashSet<>())
+                                .add(propertyName);
+                    } else {
+                        // No bracket in last segment - index under the full property name
+                        propertyPrefixIndex.computeIfAbsent(propertyName, k -> new HashSet<>())
+                                .add(propertyName);
+                    }
+                    break;
+                }
+                String prefix = propertyName.substring(0, dotIndex);
+                propertyPrefixIndex.computeIfAbsent(prefix, k -> new HashSet<>())
+                        .add(propertyName);
+                lastDotIndex = dotIndex;
+                dotIndex++;
+            }
+        }
+    }
+
     private static final Function<String, String> BEAN_STYLE_GETTERS = new Function<String, String>() {
         @Override
         public String apply(final String name) {
@@ -193,19 +231,33 @@ public final class ConfigMappingContext {
         return problems;
     }
 
-    void reportUnknown(final Set<String> ignoredPaths) {
-        Set<PropertyName> ignoredNames = new HashSet<>();
-        Set<String> ignoredPrefixes = new HashSet<>();
-        for (String ignoredPath : ignoredPaths) {
+    void reportUnknown(final Set<String> ignoredPrefixes, final Set<String> ignoredPaths) {
+        // we use a pattern with a Set for the exact matches and a List for the wildcards,
+        // as the hashCode() for PropertyName is not designed to be used in a HashSet
+        // using a HashSet for both would lead to a lot of collisions, and basically scanning the whole set
+        // we presize the Set to make sure we avoid resizing, it's going to be slightly larger than
+        // strictly necessary as we will have a few wildcards but it's fine
+        Set<String> exactIgnoredNames = new HashSet<>();
+        List<String> wildcardIgnoredNames = new ArrayList<>();
+        ignoredPaths: for (String ignoredPath : ignoredPaths) {
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (ignoredPath.startsWith(ignoredPrefix)) {
+                    continue ignoredPaths;
+                }
+            }
+
             if (ignoredPath.endsWith(".**")) {
-                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 3));
+                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 2));
+            } else if (PropertyName.hasWildcardOrIndexed(ignoredPath)) {
+                wildcardIgnoredNames.add(ignoredPath);
             } else {
-                ignoredNames.add(new PropertyName(ignoredPath));
+                exactIgnoredNames.add(ignoredPath);
             }
         }
 
         Set<String> prefixes = new HashSet<>();
         for (Map<String, Object> value : this.mappings.values()) {
+            // we could also filter prefixes here but it doesn't seem necessary considering the cardinality
             prefixes.addAll(value.keySet());
         }
         if (prefixes.contains("")) {
@@ -213,12 +265,20 @@ public final class ConfigMappingContext {
         }
 
         propertyNames: for (String propertyName : config.getPropertyNames()) {
-            if (usedProperties.contains(propertyName)) {
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (propertyName.startsWith(ignoredPrefix)) {
+                    continue propertyNames;
+                }
+            }
+
+            if (exactIgnoredNames.contains(propertyName) || usedProperties.contains(propertyName)) {
                 continue;
             }
 
-            if (ignoredNames.contains(new PropertyName(propertyName))) {
-                continue;
+            for (String wildcardPattern : wildcardIgnoredNames) {
+                if (PropertyName.equals(propertyName, wildcardPattern)) {
+                    continue propertyNames;
+                }
             }
 
             for (String ignoredPrefix : ignoredPrefixes) {
@@ -1013,27 +1073,29 @@ public final class ConfigMappingContext {
          * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
          */
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
+            // Use the property prefix index for fast lookup - only check relevant properties
+            Set<String> propertiesWithPrefix = propertyPrefixIndex.get(path);
+            if (propertiesWithPrefix == null || propertiesWithPrefix.isEmpty()) {
+                return false;
+            }
+
             List<String> candidates = new ArrayList<>();
-            for (String name : config.getPropertyNames()) {
-                if (name.startsWith(path)) {
-                    String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
-                            ? name.substring(path.length() + 1)
-                            : name.substring(path.length());
-                    if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
-                        candidates.add(candidate);
-                    } else {
-                        candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
-                    }
+            for (String name : propertiesWithPrefix) {
+                String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
+                        ? name.substring(path.length() + 1)
+                        : name.substring(path.length());
+                if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
+                    candidates.add(candidate);
+                } else {
+                    candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
                 }
             }
 
-            if (!candidates.isEmpty()) {
-                Map<String, String> properties = configMappingProperties(groupType);
-                for (String mappedProperty : properties.keySet()) {
-                    for (String candidate : candidates) {
-                        if (PropertyName.equals(candidate, mappedProperty)) {
-                            return true;
-                        }
+            Map<String, String> properties = configMappingProperties(groupType);
+            for (String mappedProperty : properties.keySet()) {
+                for (String candidate : candidates) {
+                    if (PropertyName.equals(candidate, mappedProperty)) {
+                        return true;
                     }
                 }
             }

@@ -50,6 +50,18 @@ public class PropertyName {
      *         otherwise.
      */
     public static boolean equals(final String name, final String other) {
+        //noinspection StringEquality
+        if (name == other) {
+            return true;
+        }
+        if (name.equals(other)) {
+            return true;
+        }
+
+        if (!hasWildcardOrIndexed(name) && !hasWildcardOrIndexed(other)) {
+            return false; // No wildcards, and already checked exact equality above
+        }
+
         return equalsInternal(name, 0, name.length(), other, 0, other.length())
                 || equalsInternal(other, 0, other.length(), name, 0, name.length());
     }
@@ -210,5 +222,9 @@ public class PropertyName {
         } else {
             return new PropertyName(name);
         }
+    }
+
+    public static boolean hasWildcardOrIndexed(final String name) {
+        return name.indexOf('*') != -1 || name.indexOf('[') != -1;
     }
 }
