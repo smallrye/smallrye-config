@@ -1161,32 +1161,34 @@ public class SmallRyeConfig implements Config, Serializable {
                 Iterator<String> namesIterator = interceptorChain.iterateNames();
                 while (namesIterator.hasNext()) {
                     String name = namesIterator.next();
-                    if (secretKeys.contains(PropertyName.unprofiled(name))) {
+                    if (!secretKeys.isEmpty() && secretKeys.contains(PropertyName.unprofiled(name))) {
                         secretNames.add(name);
                     } else {
                         names.add(name);
                     }
 
-                    for (int i = 0; i < name.length(); i++) {
-                        if (name.charAt(i) == '[') {
-                            int indexEnd = name.indexOf(']', i);
-                            if (StringUtil.isNumeric(name, i + 1, indexEnd - 1 - i)) {
-                                if (indexEnd == name.length() - 1
-                                        || (name.charAt(indexEnd + 1) == '.' && indexEnd + 2 < name.length())) {
-                                    Integer index = Integer.valueOf(name.substring(i + 1, indexEnd));
-                                    String parentKey = name.substring(0, i);
-                                    indexed.computeIfAbsent(parentKey, key -> new TreeMap<>())
-                                            .compute(index, new BiFunction<Integer, String, String>() {
-                                                @Override
-                                                public String apply(final Integer key, final String value) {
-                                                    if (value != null && indexEnd == value.length() - 1) {
-                                                        return value;
+                    if (name.indexOf('[') != -1) {
+                        for (int i = 0; i < name.length(); i++) {
+                            if (name.charAt(i) == '[') {
+                                int indexEnd = name.indexOf(']', i);
+                                if (StringUtil.isNumeric(name, i + 1, indexEnd - 1 - i)) {
+                                    if (indexEnd == name.length() - 1
+                                            || (name.charAt(indexEnd + 1) == '.' && indexEnd + 2 < name.length())) {
+                                        Integer index = Integer.valueOf(name.substring(i + 1, indexEnd));
+                                        String parentKey = name.substring(0, i);
+                                        indexed.computeIfAbsent(parentKey, key -> new TreeMap<>())
+                                                .compute(index, new BiFunction<Integer, String, String>() {
+                                                    @Override
+                                                    public String apply(final Integer key, final String value) {
+                                                        if (value != null && indexEnd == value.length() - 1) {
+                                                            return value;
+                                                        }
+                                                        return name;
                                                     }
-                                                    return name;
-                                                }
-                                            });
+                                                });
+                                    }
+                                    i = indexEnd + 1;
                                 }
-                                i = indexEnd + 1;
                             }
                         }
                     }
