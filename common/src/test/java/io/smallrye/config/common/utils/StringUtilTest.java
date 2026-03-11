@@ -35,6 +35,16 @@ class StringUtilTest {
         assertEquals("large:cheese,mushroom", split[0]);
         assertEquals("medium:chicken", split[1]);
         assertEquals("small:pepperoni", split[2]);
+
+        text = "large:cheese\\,mushroom";
+        split = StringUtil.split(text);
+        assertEquals(1, split.length);
+        assertEquals("large:cheese,mushroom", split[0]);
+
+        text = "simple";
+        split = StringUtil.split(text);
+        assertEquals(1, split.length);
+        assertEquals("simple", split[0]);
     }
 
     @Test

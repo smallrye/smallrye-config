@@ -72,6 +72,10 @@ public class StringUtil {
         if (text == null || text.isEmpty()) {
             return NO_STRINGS;
         }
+        // if no comma or backslash, we know it's a single item and we don't need complex logic
+        if (text.indexOf(',') == -1 && text.indexOf('\\') == -1) {
+            return new String[] { text };
+        }
         final Matcher matcher = ITEM_PATTERN.matcher(text);
         String item = null;
         StringBuilder b = null;
