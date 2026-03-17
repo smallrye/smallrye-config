@@ -211,4 +211,8 @@ public class PropertyName {
             return new PropertyName(name);
         }
     }
+
+    public static boolean hasWildcardOrIndexed(final String name) {
+        return name.indexOf('*') != -1 || name.indexOf('[') != -1;
+    }
 }

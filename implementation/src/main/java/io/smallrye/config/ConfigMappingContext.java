@@ -194,18 +194,27 @@ public final class ConfigMappingContext {
     }
 
     void reportUnknown(final Set<String> ignoredPaths) {
-        Set<PropertyName> ignoredNames = new HashSet<>();
+        // we use a pattern with a Set for the exact matches and a List for the wildcards,
+        // as the hashCode() for PropertyName is not designed to be used in a HashSet
+        // using a HashSet for both would lead to a lot of collisions, and basically scanning the whole set
+        // we presize the Set to make sure we avoid resizing, it's going to be slightly larger than
+        // strictly necessary as we will have a few wildcards but it's fine
+        Set<String> exactIgnoredNames = new HashSet<>();
+        List<String> wildcardIgnoredNames = new ArrayList<>();
         Set<String> ignoredPrefixes = new HashSet<>();
         for (String ignoredPath : ignoredPaths) {
             if (ignoredPath.endsWith(".**")) {
-                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 3));
+                ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 2));
+            } else if (PropertyName.hasWildcardOrIndexed(ignoredPath)) {
+                wildcardIgnoredNames.add(ignoredPath);
             } else {
-                ignoredNames.add(new PropertyName(ignoredPath));
+                exactIgnoredNames.add(ignoredPath);
             }
         }
 
         Set<String> prefixes = new HashSet<>();
         for (Map<String, Object> value : this.mappings.values()) {
+            // we could also filter prefixes here but it doesn't seem necessary considering the cardinality
             prefixes.addAll(value.keySet());
         }
         if (prefixes.contains("")) {
@@ -213,12 +222,20 @@ public final class ConfigMappingContext {
         }
 
         propertyNames: for (String propertyName : config.getPropertyNames()) {
-            if (usedProperties.contains(propertyName)) {
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (propertyName.startsWith(ignoredPrefix)) {
+                    continue propertyNames;
+                }
+            }
+
+            if (exactIgnoredNames.contains(propertyName) || usedProperties.contains(propertyName)) {
                 continue;
             }
 
-            if (ignoredNames.contains(new PropertyName(propertyName))) {
-                continue;
+            for (String wildcardPattern : wildcardIgnoredNames) {
+                if (PropertyName.equals(propertyName, wildcardPattern)) {
+                    continue propertyNames;
+                }
             }
 
             for (String ignoredPrefix : ignoredPrefixes) {
