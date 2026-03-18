@@ -48,11 +48,16 @@ public final class ConfigMappingContext {
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
 
+    private final Map<String, Set<String>> propertyPrefixIndex = new HashMap<>();
+
     public ConfigMappingContext(
             final SmallRyeConfig config,
             final MappingBuilder mappingBuilder) {
 
         this.config = config;
+
+        // we create an index of property prefixes that will be used in createRequired
+        buildPropertyPrefixIndex();
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
             Class<?> type = getConfigMappingClass(entry.getKey().getType());
@@ -141,6 +146,39 @@ public final class ConfigMappingContext {
     public void applyBeanStyleGetters(final Boolean beanStyleGetters) {
         if (beanStyleGetters != null) {
             this.beanStyleGetters = beanStyleGetters;
+        }
+    }
+
+    private void buildPropertyPrefixIndex() {
+        for (String propertyName : config.getPropertyNames()) {
+            // Index by all prefixes: "foo.bar.baz" -> index under "foo", "foo.bar", "foo.bar.baz"
+            // Also handle indexed properties: "foo.bar[0]" -> index under "foo", "foo.bar"
+            int dotIndex = 0;
+            int lastDotIndex = -1;
+            while (dotIndex < propertyName.length()) {
+                dotIndex = propertyName.indexOf('.', dotIndex);
+                if (dotIndex == -1) {
+                    // No more dots - check if there's a bracket in the last segment
+                    int searchStart = lastDotIndex + 1;
+                    int bracketIndex = propertyName.indexOf('[', searchStart);
+                    if (bracketIndex != -1) {
+                        // Index under the part before the bracket: "foo.bar[0]" -> index under "foo.bar"
+                        String prefixBeforeBracket = propertyName.substring(0, bracketIndex);
+                        propertyPrefixIndex.computeIfAbsent(prefixBeforeBracket, k -> new HashSet<>())
+                                .add(propertyName);
+                    } else {
+                        // No bracket in last segment - index under the full property name
+                        propertyPrefixIndex.computeIfAbsent(propertyName, k -> new HashSet<>())
+                                .add(propertyName);
+                    }
+                    break;
+                }
+                String prefix = propertyName.substring(0, dotIndex);
+                propertyPrefixIndex.computeIfAbsent(prefix, k -> new HashSet<>())
+                        .add(propertyName);
+                lastDotIndex = dotIndex;
+                dotIndex++;
+            }
         }
     }
 
@@ -1035,27 +1073,29 @@ public final class ConfigMappingContext {
          * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
          */
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
+            // Use the property prefix index for fast lookup - only check relevant properties
+            Set<String> propertiesWithPrefix = propertyPrefixIndex.get(path);
+            if (propertiesWithPrefix == null || propertiesWithPrefix.isEmpty()) {
+                return false;
+            }
+
             List<String> candidates = new ArrayList<>();
-            for (String name : config.getPropertyNames()) {
-                if (name.startsWith(path)) {
-                    String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
-                            ? name.substring(path.length() + 1)
-                            : name.substring(path.length());
-                    if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
-                        candidates.add(candidate);
-                    } else {
-                        candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
-                    }
+            for (String name : propertiesWithPrefix) {
+                String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
+                        ? name.substring(path.length() + 1)
+                        : name.substring(path.length());
+                if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
+                    candidates.add(candidate);
+                } else {
+                    candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
                 }
             }
 
-            if (!candidates.isEmpty()) {
-                Map<String, String> properties = configMappingProperties(groupType);
-                for (String mappedProperty : properties.keySet()) {
-                    for (String candidate : candidates) {
-                        if (PropertyName.equals(candidate, mappedProperty)) {
-                            return true;
-                        }
+            Map<String, String> properties = configMappingProperties(groupType);
+            for (String mappedProperty : properties.keySet()) {
+                for (String candidate : candidates) {
+                    if (PropertyName.equals(candidate, mappedProperty)) {
+                        return true;
                     }
                 }
             }
