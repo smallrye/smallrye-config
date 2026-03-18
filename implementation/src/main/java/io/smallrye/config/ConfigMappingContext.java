@@ -193,7 +193,7 @@ public final class ConfigMappingContext {
         return problems;
     }
 
-    void reportUnknown(final Set<String> ignoredPaths) {
+    void reportUnknown(final Set<String> ignoredPrefixes, final Set<String> ignoredPaths) {
         // we use a pattern with a Set for the exact matches and a List for the wildcards,
         // as the hashCode() for PropertyName is not designed to be used in a HashSet
         // using a HashSet for both would lead to a lot of collisions, and basically scanning the whole set
@@ -201,8 +201,13 @@ public final class ConfigMappingContext {
         // strictly necessary as we will have a few wildcards but it's fine
         Set<String> exactIgnoredNames = new HashSet<>();
         List<String> wildcardIgnoredNames = new ArrayList<>();
-        Set<String> ignoredPrefixes = new HashSet<>();
-        for (String ignoredPath : ignoredPaths) {
+        ignoredPaths: for (String ignoredPath : ignoredPaths) {
+            for (String ignoredPrefix : ignoredPrefixes) {
+                if (ignoredPath.startsWith(ignoredPrefix)) {
+                    continue ignoredPaths;
+                }
+            }
+
             if (ignoredPath.endsWith(".**")) {
                 ignoredPrefixes.add(ignoredPath.substring(0, ignoredPath.length() - 2));
             } else if (PropertyName.hasWildcardOrIndexed(ignoredPath)) {
