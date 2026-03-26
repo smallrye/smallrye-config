@@ -117,8 +117,15 @@ public class PropertyName {
                         if (equalsInternal(name, offset, matchPosition, other, ooffset, olen - (ooffset + olen - i))) {
                             return true;
                         }
-                        // try to match by keeping the original * and removing the last segment
-                        return equalsInternal(name, offset, len, other, ooffset, olen - (ooffset + olen - i) - 1);
+                        // try to match by keeping the original * and removing the last segment,
+                        // but only if the remaining other does not contain a *
+                        int newOlen = olen - (ooffset + olen - i) - 1;
+                        for (int j = ooffset; j < ooffset + newOlen; j++) {
+                            if (other.charAt(j) == '*') {
+                                return false;
+                            }
+                        }
+                        return equalsInternal(name, offset, len, other, ooffset, newOlen);
                     }
                 }
             } else if (o == ']' && n == ']') {
