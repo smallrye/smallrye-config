@@ -133,5 +133,7 @@ class PropertyNameTest {
         assertEquals(name("greedy.*.map.*").hashCode(), name(("greedy.key.map.one.two")).hashCode());
         assertEquals(name("greedy.*.map-list.*[*]").hashCode(), name(("greedy.one.two.map-list.key[0]")).hashCode());
         assertEquals(name("greedy.*.map-list.*[*]").hashCode(), name(("greedy.one.two.map-list.one.two[0]")).hashCode());
+
+        assertNotEquals(name("greedy.*"), name(("greedy.*.name")));
     }
 }
