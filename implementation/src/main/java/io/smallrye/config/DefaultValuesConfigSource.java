@@ -1,10 +1,11 @@
 package io.smallrye.config;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import io.smallrye.config._private.ConfigMessages;
 import io.smallrye.config.common.AbstractConfigSource;
@@ -17,29 +18,21 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     public static final int ORDINAL = Integer.MIN_VALUE;
 
     private final Map<String, String> properties;
-    private final Map<PropertyName, String> wildcards;
+    private final List<WildcardEntry> wildcards;
     private final boolean hasProfiledName;
 
     DefaultValuesConfigSource(final Map<String, String> properties) {
-        this(properties, () -> NAME, ORDINAL);
+        this(NAME, ORDINAL, properties);
     }
 
     public DefaultValuesConfigSource(final Map<String, String> properties, final String name, final int ordinal) {
-        this(properties, new Supplier<String>() {
-            @Override
-            public String get() {
-                if (NAME.equals(name)) {
-                    throw ConfigMessages.msg.defaultValuesConfigSourceNameReserved(name);
-                }
-                return name;
-            }
-        }, ordinal);
+        this(validateName(name), ordinal, properties);
     }
 
-    private DefaultValuesConfigSource(final Map<String, String> properties, final Supplier<String> name, final int ordinal) {
-        super(name.get(), ordinal);
+    private DefaultValuesConfigSource(final String name, final int ordinal, final Map<String, String> properties) {
+        super(name, ordinal);
         this.properties = new HashMap<>();
-        this.wildcards = new HashMap<>();
+        this.wildcards = new ArrayList<>();
         boolean hasProfiledName = false;
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             String propertyName = entry.getKey();
@@ -47,7 +40,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
             if (propertyName.indexOf('*') == -1) {
                 this.properties.put(propertyName, value);
             } else {
-                this.wildcards.put(new PropertyName(propertyName), value);
+                addWildcard(propertyName, value, false);
             }
 
             if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
@@ -66,9 +59,15 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
             return null;
         }
+
         String value = properties.get(propertyName);
         if (value == null) {
-            value = wildcards.get(new PropertyName(propertyName));
+            for (int i = 0; i < wildcards.size(); i++) {
+                WildcardEntry entry = wildcards.get(i);
+                if (PropertyName.equals(propertyName, entry.pattern)) {
+                    return entry.value;
+                }
+            }
         }
         return value;
     }
@@ -83,7 +82,34 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
         if (name.indexOf('*') == -1) {
             this.properties.putIfAbsent(name, value);
         } else {
-            this.wildcards.putIfAbsent(new PropertyName(name), value);
+            addWildcard(name, value, true);
         }
+    }
+
+    private void addWildcard(final String name, final String value, final boolean onlyIfAbsent) {
+        for (int i = 0; i < wildcards.size(); i++) {
+            if (name.equals(wildcards.get(i).pattern)) {
+                if (!onlyIfAbsent) {
+                    wildcards.set(i, new WildcardEntry(name, value));
+                }
+                return;
+            }
+        }
+        // Insert in sorted position (descending by pattern length for specificity)
+        int insertPos = 0;
+        while (insertPos < wildcards.size() && wildcards.get(insertPos).pattern.length() >= name.length()) {
+            insertPos++;
+        }
+        wildcards.add(insertPos, new WildcardEntry(name, value));
+    }
+
+    private static String validateName(final String name) {
+        if (NAME.equals(name)) {
+            throw ConfigMessages.msg.defaultValuesConfigSourceNameReserved(name);
+        }
+        return name;
+    }
+
+    private record WildcardEntry(String pattern, String value) {
     }
 }
