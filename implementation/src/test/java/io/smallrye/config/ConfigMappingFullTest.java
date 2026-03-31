@@ -71,14 +71,14 @@ public class ConfigMappingFullTest {
 
     @Test
     void propertyNamesMatcher() {
-        PropertyNamesMatcher matcher = ConfigMappings.propertyNamesMatcher(
+        PropertyNamesMatcher<?> matcher = ConfigMappings.propertyNamesMatcher(
                 List.of(configClass(DataSourcesJdbcBuildTimeConfig.class, "datasource.build"),
                         configClass(DataSourcesJdbcRuntimeConfig.class, "datasource.runtime"),
                         configClass(DataSourcesBuildTimeConfig.class, "datasource.build"),
                         configClass(DataSourcesRuntimeConfig.class, "datasource.runtime")));
 
         assertTrue(matcher.matches("datasource.build.jdbc"));
-        assertTrue(matcher.matches("datasource.build", "jdbc"));
+        assertTrue(matcher.matches("datasource.build.jdbc"));
         assertFalse(matcher.matches("datasource.build.jdbc-unknown"));
         assertTrue(matcher.matches("datasource.build.named.jdbc"));
         assertFalse(matcher.matches("datasource.build.named.jdbc.unknown"));

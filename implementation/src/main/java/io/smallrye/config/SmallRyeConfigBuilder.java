@@ -43,9 +43,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
 
@@ -57,6 +54,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappings.ConfigClass;
+import io.smallrye.config.DefaultValuesConfigSource.Defaults;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -68,12 +66,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<ConfigSource> sources = new ArrayList<>();
     private final List<ConfigSourceProvider> sourceProviders = new ArrayList<>();
     private final Map<Type, ConverterWithPriority> converters = new HashMap<>();
-    private final List<String> profiles = new ArrayList<>();
-    private final Set<PropertyName> secretKeys = new HashSet<>();
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
+    private final List<String> profiles = new ArrayList<>();
+    private final Defaults defaults = new Defaults();
+    private final PropertyNamesMatcher<?> secretKeys = new PropertyNamesMatcher<>();
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
-    private final Map<String, String> defaultValues = new HashMap<>();
     private final MappingBuilder mappingsBuilder = new MappingBuilder();
     private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
@@ -300,7 +298,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                 return OptionalInt.of(Priorities.LIBRARY + 200 - 1);
             }
 
-            class MultipleProfileProperty implements Comparable<MultipleProfileProperty> {
+            static class MultipleProfileProperty implements Comparable<MultipleProfileProperty> {
                 private final String name;
                 private final String relocateName;
                 private final List<String> profiles;
@@ -519,17 +517,19 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public SmallRyeConfigBuilder withSecretKeys(String... keys) {
-        secretKeys.addAll(Stream.of(keys).map(PropertyName::name).collect(Collectors.toSet()));
+        for (String key : keys) {
+            secretKeys.add(key);
+        }
         return this;
     }
 
     public SmallRyeConfigBuilder withDefaultValue(String name, String value) {
-        this.defaultValues.put(name, value);
+        this.defaults.put(name, value);
         return this;
     }
 
     public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
-        this.defaultValues.putAll(defaultValues);
+        this.defaults.put(defaultValues);
         return this;
     }
 
@@ -671,11 +671,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return validator;
     }
 
-    public Map<String, String> getDefaultValues() {
-        return defaultValues;
+    public Defaults getDefaults() {
+        return defaults;
     }
 
-    public Set<PropertyName> getSecretKeys() {
+    @Deprecated(forRemoval = true)
+    public Map<String, String> getDefaultValues() {
+        return defaults.getProperties();
+    }
+
+    public PropertyNamesMatcher<?> getSecretKeys() {
         return secretKeys;
     }
 
@@ -857,17 +862,9 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         private void addDefaultsAndIgnores(ConfigClass configClass) {
-            configClass.getProperties().forEach(new BiConsumer<String, String>() {
-                @Override
-                public void accept(final String propertyName, final String value) {
-                    // Do not override defaults set by the builder directly, which have priority over mapping defaults
-                    if (value != null) {
-                        defaultValues.putIfAbsent(propertyName, value);
-                    }
-                }
-            });
-
-            configClass.getSecrets().forEach(secret -> secretKeys.add(PropertyName.name(secret)));
+            // Do not override defaults set by the builder directly, which have priority over mapping defaults
+            defaults.add(configClass.getProperties());
+            secretKeys.add(configClass.getSecrets());
 
             // It is an MP ConfigProperties, so ignore unmapped properties
             if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(configClass.getType()) != null) {

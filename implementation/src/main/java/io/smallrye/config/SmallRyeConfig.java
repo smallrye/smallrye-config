@@ -817,7 +817,7 @@ public class SmallRyeConfig implements Config, Serializable {
             // Add all sources except for ConfigurableConfigSource types. These are initialized later
             List<ConfigSource> sources = buildSources(builder);
             // Add the default values sources separately, so we can keep a reference to it and add mappings defaults
-            DefaultValuesConfigSource defaultValues = new DefaultValuesConfigSource(builder.getDefaultValues());
+            DefaultValuesConfigSource defaultValues = new DefaultValuesConfigSource(builder.getDefaults());
             sources.add(defaultValues);
 
             // Add all interceptors
@@ -1127,14 +1127,14 @@ public class SmallRyeConfig implements Config, Serializable {
             private static final long serialVersionUID = 4193517748286869745L;
 
             private final SmallRyeConfigSourceInterceptorContext interceptorChain;
-            private final Set<PropertyName> secretKeys;
+            private final PropertyNamesMatcher<?> secretKeys;
             private final boolean cachePropertyNames;
 
             private final AtomicReference<Names> names = new AtomicReference<>(Names.empty());
 
             public PropertyNames(
                     final SmallRyeConfigSourceInterceptorContext interceptorChain,
-                    final Set<PropertyName> secretKeys,
+                    final PropertyNamesMatcher<?> secretKeys,
                     final boolean cachePropertyNames) {
                 this.interceptorChain = interceptorChain;
                 this.secretKeys = secretKeys;
@@ -1161,7 +1161,8 @@ public class SmallRyeConfig implements Config, Serializable {
                 Iterator<String> namesIterator = interceptorChain.iterateNames();
                 while (namesIterator.hasNext()) {
                     String name = namesIterator.next();
-                    if (!secretKeys.isEmpty() && secretKeys.contains(PropertyName.unprofiled(name))) {
+                    // separate empty check to avoid PropertyName alloc
+                    if (!secretKeys.isEmpty() && secretKeys.matches(PropertyName.unprofiled(name).getName())) {
                         secretNames.add(name);
                     } else {
                         names.add(name);

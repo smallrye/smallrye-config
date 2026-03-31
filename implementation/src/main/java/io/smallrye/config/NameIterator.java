@@ -57,6 +57,10 @@ public final class NameIterator {
         return pos;
     }
 
+    public void setPosition(final int pos) {
+        this.pos = pos;
+    }
+
     /*
      * next-iteration DFA
      * <any> → <end> ## on EOI
