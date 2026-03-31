@@ -130,9 +130,11 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(false);
 
+            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+
             this.unnamed = context.new ObjectCreator<Map<String, Nested>>("unnamed", true)
                     .map(String.class, null, "unnamed", null)
-                    .lazyGroup(Nested.class)
+                    .lazyGroup(Nested.class, nestedSupplier)
                     .get();
 
             this.listMap = (List<Map<String, String>>) context.new ObjectCreator<List<Map<String, String>>>("list-map")
@@ -142,23 +144,23 @@ public class ObjectCreatorTest {
 
             this.listGroup = (List<Nested>) context.new ObjectCreator<List<Nested>>("list-group")
                     .collection(List.class)
-                    .group(Nested.class)
+                    .group(nestedSupplier)
                     .get();
 
             this.mapGroup = context.new ObjectCreator<Map<String, Nested>>("map-group").map(String.class, null)
-                    .lazyGroup(Nested.class)
+                    .lazyGroup(Nested.class, nestedSupplier)
                     .get();
 
             this.optionalGroup = context.new ObjectCreator<Optional<Nested>>("optional-group")
-                    .optionalGroup(Nested.class)
+                    .optionalGroup(Nested.class, nestedSupplier)
                     .get();
 
             this.optionalGroupMissing = context.new ObjectCreator<Optional<Nested>>("optional-group-missing")
-                    .optionalGroup(Nested.class)
+                    .optionalGroup(Nested.class, nestedSupplier)
                     .get();
 
             this.group = context.new ObjectCreator<Nested>("group")
-                    .group(Nested.class)
+                    .group(nestedSupplier)
                     .get();
 
             this.value = ConfigMappingContext.ObjectCreator.value(context, false, "value", String.class, null);
@@ -173,13 +175,13 @@ public class ObjectCreatorTest {
 
             this.optionalListGroup = (Optional<List<Nested>>) context.new ObjectCreator<Optional<List<Nested>>>(
                     "optional-list-group")
-                    .optionalCollection(List.class).group(Nested.class)
+                    .optionalCollection(List.class).group(nestedSupplier)
                     .get();
 
             this.optionalListGroupMissing = (Optional<List<Nested>>) context.new ObjectCreator<Optional<List<Nested>>>(
                     "optional-list-group-missing")
                     .optionalCollection(List.class)
-                    .group(Nested.class)
+                    .group(nestedSupplier)
                     .get();
         }
 
@@ -279,8 +281,11 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(false);
 
-            this.optional = context.new ObjectCreator<Optional<Nested>>("optional").optionalGroup(Nested.class).get();
-            this.empty = context.new ObjectCreator<Optional<Nested>>("empty").optionalGroup(Nested.class).get();
+            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            this.optional = context.new ObjectCreator<Optional<Nested>>("optional")
+                    .optionalGroup(Nested.class, nestedSupplier).get();
+            this.empty = context.new ObjectCreator<Optional<Nested>>("empty")
+                    .optionalGroup(Nested.class, nestedSupplier).get();
         }
 
         @Override
@@ -335,9 +340,10 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(false);
 
+            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
             this.map = context.new ObjectCreator<Map<String, Nested>>("")
                     .map(String.class, null, "", null)
-                    .lazyGroup(Nested.class)
+                    .lazyGroup(Nested.class, nestedSupplier)
                     .get();
         }
 
@@ -410,28 +416,22 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(false);
 
+            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+
             this.defaults = context.new ObjectCreator<Map<String, String>>("defaults")
                     .values(String.class, null, String.class, null, emptyList(), "default")
                     .get();
 
             this.defaultsNested = context.new ObjectCreator<Map<String, Nested>>("defaults-nested")
-                    .map(String.class, null, null, null, new Supplier<Nested>() {
-                        @Override
-                        public Nested get() {
-                            context.applyPrefix("map.defaults-nested.*");
-                            Nested nested = context.constructGroup(Nested.class);
-                            context.applyPrefix("map.defaults-nested");
-                            return nested;
-                        }
-                    })
-                    .lazyGroup(Nested.class)
+                    .map(String.class, null, null, null, nestedSupplier)
+                    .lazyGroup(Nested.class, nestedSupplier)
                     .get();
 
             this.defaultsList = (Map<String, List<Nested>>) context.new ObjectCreator<Map<String, List<Nested>>>(
                     "defaults-list")
                     .map(String.class, null)
                     .collection(List.class)
-                    .lazyGroup(Nested.class)
+                    .lazyGroup(Nested.class, nestedSupplier)
                     .get();
         }
 
@@ -483,7 +483,8 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(NamingStrategy.SNAKE_CASE);
             context.applyBeanStyleGetters(false);
 
-            this.nestedValue = context.new ObjectCreator<Nested>("nestedValue").group(Nested.class).get();
+            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            this.nestedValue = context.new ObjectCreator<Nested>("nestedValue").group(nestedSupplier).get();
         }
 
         @Override

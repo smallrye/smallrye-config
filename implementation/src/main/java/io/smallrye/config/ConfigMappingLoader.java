@@ -142,19 +142,25 @@ public final class ConfigMappingLoader {
             if (type.isAssignableFrom(implementationClass)) {
                 return implementationClass;
             }
-
-            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-            if (mappingMetadata == null) {
-                throw ConfigMessages.msg.classIsNotAMapping(type);
-            }
-            return loadClass(type, mappingMetadata);
         } catch (ClassNotFoundException e) {
-            ConfigMappingMetadata mappingMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-            if (mappingMetadata == null) {
-                throw ConfigMessages.msg.classIsNotAMapping(type);
-            }
-            return loadClass(type, mappingMetadata);
+            // Load the class dynamically
         }
+
+        ConfigMappingMetadata rootMetadata = ConfigMappingInterface.getConfigurationInterface(type);
+        if (rootMetadata == null) {
+            throw ConfigMessages.msg.classIsNotAMapping(type);
+        }
+        List<ConfigMappingMetadata> mappings = getConfigMappingsMetadata(type);
+
+        Class<?> implementationClass = null;
+        String rootClassName = ConfigMappingInterface.getImplementationClassName(type);
+        for (ConfigMappingMetadata mapping : mappings) {
+            Class<?> loaded = loadClass(mapping.getInterfaceType(), mapping);
+            if (mapping.getClassName().equals(rootClassName)) {
+                implementationClass = loaded;
+            }
+        }
+        return implementationClass;
     }
 
     static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
@@ -196,25 +202,14 @@ public final class ConfigMappingLoader {
 
     public static final class ConfigMappingImplementation {
         private final Class<?> implementation;
-        private final MethodHandle constructor;
-        private final MethodHandle getProperties;
-        private final MethodHandle getSecrets;
+        private MethodHandle constructor;
+        private MethodHandle getProperties;
+        private MethodHandle getSecrets;
 
         ConfigMappingImplementation(final Class<?> implementation) {
-            try {
-                this.implementation = implementation;
-                // ensure modular access
-                ConfigMappingImplementation.class.getModule().addReads(implementation.getModule());
-                MethodHandle constructor = LOOKUP.findConstructor(implementation,
-                        methodType(void.class, ConfigMappingContext.class));
-                this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
-                this.getProperties = LOOKUP.findStatic(implementation, "getProperties", methodType(Map.class));
-                this.getSecrets = LOOKUP.findStatic(implementation, "getSecrets", methodType(Set.class));
-            } catch (NoSuchMethodException e) {
-                throw new NoSuchMethodError(e.getMessage());
-            } catch (IllegalAccessException e) {
-                throw new IllegalAccessError(e.getMessage());
-            }
+            this.implementation = implementation;
+            // ensure modular access
+            ConfigMappingImplementation.class.getModule().addReads(implementation.getModule());
         }
 
         public Class<?> implementation() {
@@ -222,14 +217,48 @@ public final class ConfigMappingLoader {
         }
 
         public MethodHandle constructor() {
-            return constructor;
+            MethodHandle constructor = this.constructor;
+            if (constructor == null) {
+                try {
+                    constructor = LOOKUP.findConstructor(implementation,
+                            methodType(void.class, ConfigMappingContext.class));
+                    this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodError(e.getMessage());
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                }
+            }
+            return this.constructor;
         }
 
         public MethodHandle getProperties() {
+            MethodHandle getProperties = this.getProperties;
+            if (getProperties == null) {
+                try {
+                    this.getProperties = getProperties = LOOKUP.findStatic(implementation, "getProperties",
+                            methodType(Map.class));
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodError(e.getMessage());
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                }
+            }
             return getProperties;
         }
 
         public MethodHandle getSecrets() {
+            MethodHandle getSecrets = this.getSecrets;
+            if (getSecrets == null) {
+                try {
+                    this.getSecrets = getSecrets = LOOKUP.findStatic(implementation, "getSecrets",
+                            methodType(Set.class));
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodError(e.getMessage());
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                }
+            }
             return getSecrets;
         }
     }
