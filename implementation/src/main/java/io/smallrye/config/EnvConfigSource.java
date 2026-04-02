@@ -91,7 +91,7 @@ public class EnvConfigSource extends AbstractConfigSource {
 
     @Override
     public Map<String, String> getProperties() {
-        Map<String, String> properties = new HashMap<>();
+        Map<String, String> properties = new HashMap<>((int) (envVars.getEnv().size() / 0.75f) + 1);
         envVars.getEnv().forEach(new BiConsumer<>() {
             @Override
             public void accept(EnvName key, EnvEntry entryValue) {
@@ -376,9 +376,9 @@ public class EnvConfigSource extends AbstractConfigSource {
         private final Set<String> lowerCaseAndDottedNames;
 
         public EnvVars(final Map<String, String> properties) {
-            this.env = new HashMap<>(properties.size());
-            this.names = new HashSet<>(properties.size() * 2);
-            this.lowerCaseAndDottedNames = new HashSet<>(properties.size());
+            this.env = new HashMap<>((int) (properties.size() / 0.75f) + 1);
+            this.names = new HashSet<>((int) (properties.size() * 2 / 0.75f) + 1);
+            this.lowerCaseAndDottedNames = new HashSet<>((int) (properties.size() / 0.75f) + 1);
             properties.forEach(new BiConsumer<>() {
                 @Override
                 public void accept(String key, String value) {
@@ -439,10 +439,12 @@ public class EnvConfigSource extends AbstractConfigSource {
         private static final long serialVersionUID = -2679716955093904512L;
 
         private final String name;
+        private final int hashCode;
 
         public EnvName(final String name) {
             assert name != null;
             this.name = name;
+            this.hashCode = buildHashCode(name);
         }
 
         public String getName() {
@@ -463,6 +465,10 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         @Override
         public int hashCode() {
+            return hashCode;
+        }
+
+        private static int buildHashCode(String name) {
             int h = 0;
             int length = name.length();
             if (length >= 2) {
@@ -474,7 +480,7 @@ public class EnvConfigSource extends AbstractConfigSource {
             for (int i = 0; i < length; i++) {
                 char c = name.charAt(i);
                 if (i == 0 && length > 1) {
-                    // The first '%' or '_' is meaninful because it represents a profiled property name
+                    // The first '%' or '_' is meaningful because it represents a profiled property name
                     if ((c == '%' || c == '_') && isAsciiLetterOrDigit(name.charAt(i + 1))) {
                         h = 31 * h + 31;
                         continue;
@@ -610,7 +616,8 @@ public class EnvConfigSource extends AbstractConfigSource {
 
         void add(String name, String value) {
             if (envEntries == null) {
-                envEntries = new HashMap<>();
+                // we don't expect many collisions so let's be conservative with the size of the map
+                envEntries = new HashMap<>(4);
                 envEntries.put(this.name, this.value);
             }
             envEntries.put(name, value);
