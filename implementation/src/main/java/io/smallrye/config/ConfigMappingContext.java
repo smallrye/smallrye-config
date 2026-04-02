@@ -95,10 +95,14 @@ public final class ConfigMappingContext {
     }
 
     <T> T constructGroup(Class<T> interfaceType) {
+        return constructGroup(() -> ConfigMappingLoader.configMappingObject(interfaceType, this));
+    }
+
+    <T> T constructGroup(Supplier<T> groupSupplier) {
         // Save the current naming / style, because the nested / child element may override it
         NamingStrategy namingStrategy = this.namingStrategy;
         boolean beanStyleGetters = this.beanStyleGetters;
-        T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
+        T mappingObject = groupSupplier.get();
         // restore the naming / style
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
@@ -325,31 +329,7 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
                 final Iterable<String> keys) {
-            return map(keyRawType, keyConvertWith, unnamedKey, keys, (Class<?>) null);
-        }
-
-        public <K, V> ObjectCreator<T> map(
-                final Class<K> keyRawType,
-                final Class<? extends Converter<K>> keyConvertWith,
-                final String unnamedKey,
-                final Iterable<String> keys,
-                final Class<V> defaultClass) {
-
-            Supplier<V> supplier = null;
-            if (defaultClass != null) {
-                supplier = new Supplier<V>() {
-                    @Override
-                    public V get() {
-                        int length = nameBuilder.length();
-                        nameBuilder.append(".*");
-                        V defaultValue = constructGroup(defaultClass);
-                        nameBuilder.setLength(length);
-                        return defaultValue;
-                    }
-                };
-            }
-
-            return map(keyRawType, keyConvertWith, unnamedKey, keys, supplier);
+            return map(keyRawType, keyConvertWith, unnamedKey, keys, null);
         }
 
         public <K, V> ObjectCreator<T> map(
@@ -365,7 +345,14 @@ public final class ConfigMappingContext {
                 creator.accept(new Function<String, Object>() {
                     @Override
                     public Object apply(final String path) {
-                        Map<K, V> map = defaultValue != null ? new MapWithDefault<>(defaultValue.get()) : new HashMap<>();
+                        V defaultInstance = null;
+                        if (defaultValue != null) {
+                            int length = nameBuilder.length();
+                            nameBuilder.append(".*");
+                            defaultInstance = constructGroup(defaultValue);
+                            nameBuilder.setLength(length);
+                        }
+                        Map<K, V> map = defaultInstance != null ? new MapWithDefault<>(defaultInstance) : new HashMap<>();
 
                         if (unnamedKey != null) {
                             nestedCreators.add(new Consumer<>() {
@@ -515,7 +502,7 @@ public final class ConfigMappingContext {
             return this;
         }
 
-        public <G> ObjectCreator<T> group(final Class<G> groupType) {
+        public <G> ObjectCreator<T> group(final Supplier<G> groupSupplier) {
             for (Consumer<Function<String, Object>> creator : this.creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
@@ -525,7 +512,7 @@ public final class ConfigMappingContext {
                         // we either append or keep it because this can be a standalone group (append),
                         // or a map group, which uses the key as the path to the group
                         sb.append(path, length, path.length());
-                        G group = constructGroup(groupType);
+                        G group = constructGroup(groupSupplier);
                         sb.setLength(length);
                         return group;
                     }
@@ -534,7 +521,7 @@ public final class ConfigMappingContext {
             return this;
         }
 
-        public <G> ObjectCreator<T> lazyGroup(final Class<G> groupType) {
+        public <G> ObjectCreator<T> lazyGroup(final Class<G> groupType, final Supplier<G> groupSupplier) {
             for (Consumer<Function<String, Object>> creator : this.creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
@@ -545,7 +532,7 @@ public final class ConfigMappingContext {
                             // we either append or keep it because this can be a standalone group (append),
                             // or a map group, which uses the key as the path to the group
                             sb.append(path, length, path.length());
-                            G group = constructGroup(groupType);
+                            G group = constructGroup(groupSupplier);
                             sb.setLength(length);
                             return group;
                         } else {
@@ -557,7 +544,7 @@ public final class ConfigMappingContext {
             return this;
         }
 
-        public <G> ObjectCreator<T> optionalGroup(final Class<G> groupType) {
+        public <G> ObjectCreator<T> optionalGroup(final Class<G> groupType, final Supplier<G> groupSupplier) {
             for (Consumer<Function<String, Object>> creator : this.creators) {
                 creator.accept(new Function<String, Object>() {
                     @Override
@@ -568,7 +555,7 @@ public final class ConfigMappingContext {
                             // we either append or keep it because this can be a standalone group (append),
                             // or a map group, which uses the key as the path to the group
                             sb.append(path, length, path.length());
-                            G group = constructGroup(groupType);
+                            G group = constructGroup(groupSupplier);
                             sb.setLength(length);
                             return Optional.of(group);
                         } else {

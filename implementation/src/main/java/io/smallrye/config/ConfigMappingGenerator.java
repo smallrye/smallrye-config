@@ -24,6 +24,7 @@ import static org.objectweb.asm.Opcodes.F_SAME;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.H_NEWINVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.IFEQ;
@@ -108,6 +109,13 @@ public class ConfigMappingGenerator {
     private static final String I_OBJECT = getInternalName(Object.class);
     private static final String I_STRING = getInternalName(String.class);
     private static final String I_ITERABLE = getInternalName(Iterable.class);
+
+    private static final Handle LAMBDA_METAFACTORY = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            "java/lang/invoke/LambdaMetafactory",
+            "metafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+            false);
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
@@ -536,7 +544,7 @@ public class ConfigMappingGenerator {
 
     private static void generateNestedProperty(final ObjectCreatorMethodVisitor ctor, final Property property) {
         if (property.isGroup()) {
-            ctor.visitLdcInsn(getType(property.asGroup().getGroupType().getInterfaceType()));
+            ctor.visitGroupSupplier(property.asGroup().getGroupType().getInterfaceType());
             ctor.visitMethod(ObjectCreatorInvocation.group);
             ctor.visitMethod(ObjectCreatorInvocation.get);
         } else if (property.isMap() && property.asMap().getValueProperty().isLeaf()) {
@@ -582,14 +590,19 @@ public class ConfigMappingGenerator {
                 ctor.visitKeyUnnamed(mapProperty);
                 ctor.visitKeyProvider(mapProperty);
                 if (mapProperty.hasDefaultValue()) {
-                    ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
+                    ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
                 ctor.visitMethod(ObjectCreatorMapGroupInvocation.map);
-                ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
-                ctor.visitMethod(
-                        mapProperty.hasKeyProvider() ? ObjectCreatorInvocation.group : ObjectCreatorInvocation.lazyGroup);
+                if (mapProperty.hasKeyProvider()) {
+                    ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
+                    ctor.visitMethod(ObjectCreatorInvocation.group);
+                } else {
+                    ctor.visitLdcInsn(getType(valueProperty.asGroup().getGroupType().getInterfaceType()));
+                    ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
+                    ctor.visitMethod(ObjectCreatorInvocation.lazyGroup);
+                }
                 ctor.visitMethod(ObjectCreatorInvocation.get);
             } else {
                 unwrapNestedProperty(ctor, property);
@@ -600,6 +613,7 @@ public class ConfigMappingGenerator {
             final MayBeOptionalProperty nestedProperty = property.asOptional().getNestedProperty();
             if (nestedProperty.isGroup()) {
                 ctor.visitLdcInsn(getType(nestedProperty.asGroup().getGroupType().getInterfaceType()));
+                ctor.visitGroupSupplier(nestedProperty.asGroup().getGroupType().getInterfaceType());
                 ctor.visitMethod(ObjectCreatorInvocation.optionalGroup);
                 ctor.visitMethod(ObjectCreatorInvocation.get);
             } else if (nestedProperty.isCollection()) {
@@ -1055,6 +1069,23 @@ public class ConfigMappingGenerator {
             }
         }
 
+        /**
+         * Emits an invokedynamic instruction that creates a Supplier which directly calls the nested $$CMImpl
+         * constructor with the ConfigMappingContext, bypassing the ConfigMappingLoader CACHE lookup and MethodHandle
+         * invocation.
+         */
+        void visitGroupSupplier(final Class<?> groupInterfaceType) {
+            String implClassName = ConfigMappingInterface.getImplementationClassName(groupInterfaceType).replace('.', '/');
+            this.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
+            this.visitInvokeDynamicInsn(
+                    "get",
+                    "(L" + I_MAPPING_CONTEXT + ";)Ljava/util/function/Supplier;",
+                    LAMBDA_METAFACTORY,
+                    Type.getType("()Ljava/lang/Object;"),
+                    new Handle(H_NEWINVOKESPECIAL, implClassName, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", false),
+                    Type.getType("()Ljava/lang/Object;"));
+        }
+
         void visitMethod(MethodInvocation methodInvocation) {
             methodInvocation.invoke(this);
         }
@@ -1062,12 +1093,16 @@ public class ConfigMappingGenerator {
 
     private interface MethodInvocation {
         default void invoke(final MethodVisitor mv) {
-            mv.visitMethodInsn(opcode(), I_OBJECT_CREATOR, name(), desc(), false);
+            mv.visitMethodInsn(opcode(), I_OBJECT_CREATOR, methodName(), desc(), false);
         }
 
         int opcode();
 
         String name();
+
+        default String methodName() {
+            return name();
+        }
 
         String desc();
     }
@@ -1084,6 +1119,7 @@ public class ConfigMappingGenerator {
     private static final String D_COLLECTION = getDescriptor(Collection.class);
     private static final String D_ITERABLE = getDescriptor(Iterable.class);
     private static final String D_SECRET = getDescriptor(Secret.class);
+    private static final String D_SUPPLIER = getDescriptor(java.util.function.Supplier.class);
 
     private enum PrimitiveMethodInvocation implements MethodInvocation {
         value(INVOKESTATIC, "(" + D_MAPPING_CONTEXT + "Z" + D_STRING + D_CLASS + D_CLASS + ")" + D_OBJECT),
@@ -1221,9 +1257,9 @@ public class ConfigMappingGenerator {
 
     private enum ObjectCreatorInvocation implements MethodInvocation {
         get(INVOKEVIRTUAL, "()" + D_OBJECT),
-        group(INVOKEVIRTUAL, "(" + D_CLASS + ")" + D_OBJECT_CREATOR),
-        lazyGroup(INVOKEVIRTUAL, group.desc),
-        optionalGroup(INVOKEVIRTUAL, group.desc),
+        group(INVOKEVIRTUAL, "(" + D_SUPPLIER + ")" + D_OBJECT_CREATOR),
+        lazyGroup(INVOKEVIRTUAL, "(" + D_CLASS + D_SUPPLIER + ")" + D_OBJECT_CREATOR),
+        optionalGroup(INVOKEVIRTUAL, "(" + D_CLASS + D_SUPPLIER + ")" + D_OBJECT_CREATOR),
         collection(INVOKEVIRTUAL, "(" + D_CLASS + ")" + D_OBJECT_CREATOR),
         optionalCollection(INVOKEVIRTUAL, collection.desc),
         map(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + ")" + D_OBJECT_CREATOR),
@@ -1275,7 +1311,7 @@ public class ConfigMappingGenerator {
     }
 
     private enum ObjectCreatorMapGroupInvocation implements MethodInvocation {
-        map(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + D_CLASS + ")" + D_OBJECT_CREATOR);
+        map(INVOKEVIRTUAL, "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + D_SUPPLIER + ")" + D_OBJECT_CREATOR);
 
         private final int opcode;
         private final String desc;
