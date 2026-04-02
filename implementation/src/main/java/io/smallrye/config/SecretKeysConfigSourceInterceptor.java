@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import java.io.Serial;
-import java.util.Set;
 
 import jakarta.annotation.Priority;
 
@@ -22,15 +21,16 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
     @Serial
     private static final long serialVersionUID = 7291982039729980590L;
 
-    private final Set<PropertyName> secrets;
+    private final PropertyNamesMatcher<?> secrets;
 
-    public SecretKeysConfigSourceInterceptor(final Set<PropertyName> secrets) {
+    public SecretKeysConfigSourceInterceptor(final PropertyNamesMatcher<?> secrets) {
         this.secrets = secrets;
     }
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        if (SecretKeys.isLocked() && secrets.contains(PropertyName.unprofiled(name))) {
+        // separate empty check to avoid PropertyName alloc
+        if (SecretKeys.isLocked() && !secrets.isEmpty() && secrets.matches(PropertyName.unprofiled(name).getName())) {
             throw ConfigMessages.msg.notAllowed(name);
         }
         return context.proceed(name);

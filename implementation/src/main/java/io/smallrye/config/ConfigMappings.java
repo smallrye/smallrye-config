@@ -2,14 +2,12 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
 
@@ -87,26 +85,12 @@ public final class ConfigMappings {
      * @param configClasses a list of {@link ConfigMapping} annotated classes
      * @return a {@link PropertyNamesMatcher} to match names mapped by the mapping classes
      */
-    public static PropertyNamesMatcher propertyNamesMatcher(final List<ConfigClass> configClasses) {
-        Map<String, List<PropertyName>> prefixesAndNames = new HashMap<>();
+    public static PropertyNamesMatcher<?> propertyNamesMatcher(final List<ConfigClass> configClasses) {
+        PropertyNamesMatcher<?> matcher = new PropertyNamesMatcher<>();
         for (ConfigClass configClass : configClasses) {
-            ConfigMappingInterface configMapping = ConfigMappingLoader.getConfigMapping(configClass.getType());
-            Map<String, Property> properties = ConfigMappingInterface.getProperties(configMapping).get(configClass.getType())
-                    .get("");
-            String prefix = configClass.getPrefix();
-            Set<String> names = properties.keySet();
-            prefixesAndNames.merge(prefix, names.stream().map(PropertyName::new).toList(),
-                    new BiFunction<List<PropertyName>, List<PropertyName>, List<PropertyName>>() {
-                        @Override
-                        public List<PropertyName> apply(List<PropertyName> current, List<PropertyName> additional) {
-                            List<PropertyName> list = new ArrayList<>(current.size() + additional.size());
-                            list.addAll(current);
-                            list.addAll(additional);
-                            return list;
-                        }
-                    });
+            matcher.add(configClass.getProperties().keySet());
         }
-        return PropertyNamesMatcher.matcher(prefixesAndNames);
+        return matcher;
     }
 
     private static void mapConfiguration(
@@ -117,7 +101,7 @@ public final class ConfigMappings {
         for (ConfigClass configClass : configClasses) {
             configBuilder.withMapping(configClass);
         }
-        config.getDefaultValues().addDefaults(configBuilder.getDefaultValues());
+        config.getDefaultValues().addDefaults(configBuilder.getDefaults());
         config.getMappings().putAll(config.buildMappings(configBuilder));
     }
 
@@ -170,17 +154,12 @@ public final class ConfigMappings {
                 } else {
                     name = sb.append(".").append(path).toString();
                 }
-                properties.put(name, property.getValue());
+                this.properties.put(name, property.getValue());
                 if (secrets.contains(property.getKey())) {
                     this.secrets.add(name);
                 }
                 sb.setLength(prefix.length());
             }
-        }
-
-        @Deprecated(forRemoval = true)
-        public Class<?> getKlass() {
-            return type;
         }
 
         public Class<?> getType() {
