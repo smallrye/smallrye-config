@@ -34,7 +34,7 @@
   <url>https://smallrye.io</url>
 
   <properties>
-    <version.sundrio>0.230.2</version.sundrio>
+    <version.sundrio>0.240.1</version.sundrio>
 
     <version.eclipse.microprofile.config>3.1.1-RC1</version.eclipse.microprofile.config>
     <version.smallrye.common>2.17.0</version.smallrye.common>
