@@ -164,7 +164,7 @@ public class SmallRyeConfig implements Config, Serializable {
         });
 
         if (getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(true)) {
-            context.reportUnknown(mappingsBuilder.getIgnoredPrefixes(), mappingsBuilder.getIgnoredPaths());
+            context.reportUnknown(mappingsBuilder.getIgnores());
         }
 
         List<ConfigValidationException.Problem> problems = context.getProblems();

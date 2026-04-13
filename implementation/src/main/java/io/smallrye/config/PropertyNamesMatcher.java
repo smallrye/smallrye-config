@@ -28,7 +28,7 @@ public class PropertyNamesMatcher<T> {
     }
 
     public boolean isEmpty() {
-        return properties.isEmpty() && wildcards.children == null && wildcards.wildcard == null;
+        return properties.isEmpty() && wildcards.children == null && wildcards.wildcard == null && !wildcards.greedy;
     }
 
     /**
@@ -52,6 +52,10 @@ public class PropertyNamesMatcher<T> {
             return current.terminal;
         }
 
+        if (current.greedy) {
+            return true;
+        }
+
         int position = ni.getPosition();
         Node<T> child = current.find(ni);
         if (child != null) {
@@ -62,7 +66,8 @@ public class PropertyNamesMatcher<T> {
         }
 
         if (current.wildcard != null) {
-            if (current.wildcard.wildcard == null && current.wildcard.children == null) {
+            if (current.wildcard.wildcard == null && current.wildcard.children == null
+                    && !current.wildcard.greedy) {
                 return true;
             }
             ni.setPosition(position);
@@ -70,7 +75,9 @@ public class PropertyNamesMatcher<T> {
             if (matches(current.wildcard, ni)) {
                 return true;
             }
-            return current.wildcard.terminal;
+            if (current.wildcard.terminal) {
+                return true;
+            }
         }
 
         return false;
@@ -94,7 +101,7 @@ public class PropertyNamesMatcher<T> {
 
     private T get(final Node<T> current, final NameIterator ni) {
         if (!ni.hasNext()) {
-            return current.value;
+            return current.terminal ? current.value : null;
         }
 
         int position = ni.getPosition();
@@ -108,7 +115,8 @@ public class PropertyNamesMatcher<T> {
         }
 
         if (current.wildcard != null) {
-            if (current.wildcard.wildcard == null && current.wildcard.children == null) {
+            if (current.wildcard.wildcard == null && current.wildcard.children == null
+                    && !current.wildcard.greedy && !current.greedy) {
                 return current.wildcard.value;
             }
             ni.setPosition(position);
@@ -117,7 +125,13 @@ public class PropertyNamesMatcher<T> {
             if (result != null) {
                 return result;
             }
-            return current.wildcard.terminal ? current.wildcard.value : null;
+            if (current.wildcard.terminal && !current.greedy) {
+                return current.wildcard.value;
+            }
+        }
+
+        if (current.greedy) {
+            return current.value;
         }
 
         return null;
@@ -146,6 +160,13 @@ public class PropertyNamesMatcher<T> {
             Node<T> current = wildcards;
             NameIterator ni = new NameIterator(name);
             while (ni.hasNext()) {
+                if (ni.nextSegmentEquals("**")) {
+                    if (!current.greedy) {
+                        current.greedy = true;
+                        current.value = value;
+                    }
+                    return;
+                }
                 current = current.findOrCreate(ni);
                 ni.next();
             }
@@ -170,6 +191,11 @@ public class PropertyNamesMatcher<T> {
             Node<T> current = wildcards;
             NameIterator ni = new NameIterator(name);
             while (ni.hasNext()) {
+                if (ni.nextSegmentEquals("**")) {
+                    current.greedy = true;
+                    current.value = value;
+                    return;
+                }
                 current = current.findOrCreate(ni);
                 ni.next();
             }
@@ -184,6 +210,7 @@ public class PropertyNamesMatcher<T> {
         Node<T>[] children;
         Node<T> wildcard;
         boolean terminal;
+        boolean greedy;
 
         @SuppressWarnings("unchecked")
         public Node<T> findOrCreate(NameIterator ni) {

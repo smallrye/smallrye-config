@@ -33,6 +33,67 @@ class PropertyNamesMatcherTest {
     }
 
     @Test
+    void doubleStarGreedy() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("foo.**", "greedy");
+
+        assertTrue(matcher.matches("foo.bar"));
+        assertTrue(matcher.matches("foo.bar.baz"));
+        assertTrue(matcher.matches("foo.bar.baz.qux"));
+        assertFalse(matcher.matches("foo"));
+        assertFalse(matcher.matches("bar.baz"));
+
+        assertEquals("greedy", matcher.get("foo.bar"));
+        assertEquals("greedy", matcher.get("foo.bar.baz"));
+        assertEquals("greedy", matcher.get("foo.bar.baz.qux"));
+        assertNull(matcher.get("foo"));
+        assertNull(matcher.get("bar.baz"));
+    }
+
+    @Test
+    void doubleStarWithSpecificMatch() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("foo.**", "greedy");
+        matcher.add("foo.bar.baz", "exact");
+
+        assertTrue(matcher.matches("foo.bar.baz"));
+        assertTrue(matcher.matches("foo.bar.qux"));
+        assertTrue(matcher.matches("foo.one.two.three"));
+
+        assertEquals("exact", matcher.get("foo.bar.baz"));
+        assertEquals("greedy", matcher.get("foo.bar.qux"));
+        assertEquals("greedy", matcher.get("foo.one.two.three"));
+    }
+
+    @Test
+    void doubleStarWithSingleStar() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("foo.*", "single");
+        matcher.add("foo.**", "greedy");
+
+        assertTrue(matcher.matches("foo.bar"));
+        assertTrue(matcher.matches("foo.bar.baz"));
+
+        assertEquals("single", matcher.get("foo.bar"));
+        assertEquals("greedy", matcher.get("foo.bar.baz"));
+    }
+
+    @Test
+    void doubleStarWithWildcardPath() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("foo.*.bar.**", "deep");
+
+        assertTrue(matcher.matches("foo.one.bar.baz"));
+        assertTrue(matcher.matches("foo.one.bar.baz.qux"));
+        assertFalse(matcher.matches("foo.one.bar"));
+        assertFalse(matcher.matches("foo.one.baz"));
+
+        assertEquals("deep", matcher.get("foo.one.bar.baz"));
+        assertEquals("deep", matcher.get("foo.one.bar.baz.qux"));
+        assertNull(matcher.get("foo.one.bar"));
+    }
+
+    @Test
     void greedyAndCollections() {
         PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
         matcher.add("map.*", "*");
@@ -41,6 +102,14 @@ class PropertyNamesMatcherTest {
         assertTrue(matcher.matches("map.one[1]"));
         assertEquals("*", matcher.get("map.one"));
         assertEquals("*[*]", matcher.get("map.one[1]"));
+    }
+
+    @Test
+    void allPaths() {
+        PropertyNamesMatcher<?> matcher = new PropertyNamesMatcher<>();
+        matcher.add("name.*");
+
+        assertTrue(matcher.matches("name.one"));
     }
 
     @ConfigMapping
