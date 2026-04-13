@@ -1,6 +1,7 @@
 package io.smallrye.config;
 
 import java.io.Serial;
+import java.util.Set;
 
 import jakarta.annotation.Priority;
 
@@ -25,6 +26,14 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
 
     public SecretKeysConfigSourceInterceptor(final PropertyNamesMatcher<?> secrets) {
         this.secrets = secrets;
+    }
+
+    @Deprecated(forRemoval = true)
+    public SecretKeysConfigSourceInterceptor(final Set<PropertyName> secrets) {
+        this.secrets = new PropertyNamesMatcher<>();
+        for (PropertyName secret : secrets) {
+            this.secrets.add(secret.getName());
+        }
     }
 
     @Override
