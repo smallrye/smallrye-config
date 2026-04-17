@@ -88,6 +88,9 @@ public class PropertyNamesMatcher<T> {
         return false;
     }
 
+    // Sentinel to distinguish "matched with null value" from "no match" in the recursive get traversal
+    private static final Object NO_MATCH = new Object();
+
     /**
      * Returns the value matching a name with any of the names contained in this matcher.
      *
@@ -100,13 +103,18 @@ public class PropertyNamesMatcher<T> {
             return result;
         }
 
+        if (properties.containsKey(name)) {
+            return null;
+        }
+
         NameIterator ni = new NameIterator(name);
-        return get(wildcards, ni);
+        result = get(wildcards, ni);
+        return result == noMatch() ? null : result;
     }
 
     private T get(final Node<T> current, final NameIterator ni) {
         if (!ni.hasNext()) {
-            return current.terminal ? current.value : null;
+            return current.terminal ? current.value : noMatch();
         }
 
         int position = ni.getPosition();
@@ -114,7 +122,7 @@ public class PropertyNamesMatcher<T> {
         if (child != null) {
             ni.next();
             T result = get(child, ni);
-            if (result != null) {
+            if (result != noMatch()) {
                 return result;
             }
         }
@@ -127,7 +135,7 @@ public class PropertyNamesMatcher<T> {
             ni.setPosition(position);
             ni.next();
             T result = get(current.wildcard, ni);
-            if (result != null) {
+            if (result != noMatch()) {
                 return result;
             }
             if (current.wildcard.terminal && !current.greedy) {
@@ -139,7 +147,7 @@ public class PropertyNamesMatcher<T> {
             return current.value;
         }
 
-        return null;
+        return noMatch();
     }
 
     protected void add(final String name) {
@@ -207,6 +215,11 @@ public class PropertyNamesMatcher<T> {
             current.value = value;
             current.terminal = true;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T noMatch() {
+        return (T) NO_MATCH;
     }
 
     public static final class Node<T> {
