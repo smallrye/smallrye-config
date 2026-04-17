@@ -9,8 +9,13 @@ import java.util.Set;
 /**
  * A matcher of configuration names.
  * <p>
- * Due to the equality rules of {@link PropertyName}, it is unsuitable to be used as is in hash-based
- * searches. Instead, this matcher splits the names by prefixes, which act as buckets, and then does a linear search.
+ * Names without wildcards are stored in a {@link HashMap} for exact lookup. Names containing {@code *} or
+ * {@code **} are stored in a trie of {@link Node} instances, where each node represents a segment separated by
+ * {@code .}. Single {@code *} segments are stored in the {@link Node#wildcard}, and {@code **} sets the
+ * {@link Node#greedy} flag to match any number of remaining segments.
+ * <p>
+ * Lookups ({@link #matches} and {@link #get}) first check the exact-match map, then traverse the wildcard trie,
+ * trying named children before falling back to wildcard nodes at each level.
  */
 public class PropertyNamesMatcher<T> {
     private final Map<String, T> properties = new HashMap<>();
@@ -249,6 +254,11 @@ public class PropertyNamesMatcher<T> {
 
             int offset = ni.getPosition() + 1;
             int len = ni.getNextEnd() - offset;
+            // A literal * segment in the input must only be handled by the wildcard node, not matched
+            // against named children via PropertyName.equals (which treats * as a wildcard bidirectionally)
+            if (len == 1 && ni.getName().charAt(offset) == '*') {
+                return null;
+            }
             for (Node<T> child : children) {
                 if (PropertyName.equals(child.path, 0, child.path.length(), ni.getName(), offset, len)) {
                     return child;
