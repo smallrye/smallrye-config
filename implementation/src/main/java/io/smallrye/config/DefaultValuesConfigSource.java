@@ -72,7 +72,7 @@ public final class DefaultValuesConfigSource extends AbstractConfigSource {
     private static Set<String> names(Map<String, String> properties) {
         Set<String> names = new HashSet<>(properties.size() / 2);
         for (Entry<String, String> entry : properties.entrySet()) {
-            if (!entry.getKey().isEmpty() && entry.getValue() != null) {
+            if (!entry.getKey().isEmpty() && entry.getValue() != null && entry.getKey().indexOf('*') == -1) {
                 names.add(entry.getKey());
             }
         }
