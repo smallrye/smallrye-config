@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ConfigMappingNamingStrategyTest {
@@ -286,7 +285,6 @@ public class ConfigMappingNamingStrategyTest {
     }
 
     @Test
-    @Disabled
     void beanStyleGetters() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config(
@@ -347,4 +345,33 @@ public class ConfigMappingNamingStrategyTest {
             }
         }
     }
+
+    @Test
+    void beanStyleGettersDefaultsNested() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(BeanStyleGettersDefaults.class)
+                .build();
+
+        BeanStyleGettersDefaults mapping = config.getConfigMapping(BeanStyleGettersDefaults.class);
+        assertEquals("value", mapping.getValue());
+        assertEquals("value", mapping.getNested().getValue());
+        assertEquals("value", mapping.getMap().get("default").getValue());
+    }
+
+    @ConfigMapping(prefix = "get", beanStyleGetters = true)
+    interface BeanStyleGettersDefaults {
+        @WithDefault("value")
+        String getValue();
+
+        Nested getNested();
+
+        @WithDefaults
+        Map<String, Nested> getMap();
+
+        interface Nested {
+            @WithDefault("value")
+            String getValue();
+        }
+    }
+
 }
