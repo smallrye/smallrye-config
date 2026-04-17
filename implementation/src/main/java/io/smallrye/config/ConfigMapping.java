@@ -94,4 +94,27 @@ public @interface ConfigMapping {
             return function.apply(name);
         }
     }
+
+    enum BeanStyleGetters implements Function<String, String> {
+        DISABLED(Function.identity()),
+        ENABLED(name -> {
+            if (name.startsWith("get") && name.length() > 3) {
+                return Character.toLowerCase(name.charAt(3)) + name.substring(4);
+            } else if (name.startsWith("is") && name.length() > 2) {
+                return Character.toLowerCase(name.charAt(2)) + name.substring(3);
+            }
+            return name;
+        });
+
+        private final Function<String, String> function;
+
+        BeanStyleGetters(final Function<String, String> function) {
+            this.function = function;
+        }
+
+        @Override
+        public String apply(final String name) {
+            return function.apply(name);
+        }
+    }
 }

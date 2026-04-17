@@ -22,11 +22,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 
@@ -178,6 +180,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return configMapping != null && configMapping.beanStyleGetters();
     }
 
+    public BeanStyleGetters getBeanStyleGetters() {
+        return isBeanStyleGetters() ? BeanStyleGetters.ENABLED : BeanStyleGetters.DISABLED;
+    }
+
     String getClassInternalName() {
         return className.replace('.', '/');
     }
@@ -216,7 +222,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return hasPropertyName() && !propertyName.isEmpty() ? propertyName : method.getName();
         }
 
-        public String getPropertyName(final NamingStrategy namingStrategy) {
+        public String getPropertyName(final Function<String, String> namingStrategy) {
             return hasPropertyName() ? getPropertyName() : namingStrategy.apply(getPropertyName());
         }
 
@@ -1119,13 +1125,15 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      */
     public static Map<Class<?>, Map<String, Map<String, Property>>> getProperties(final ConfigMappingInterface configMapping) {
         Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
-        getProperties(new GroupProperty(null, null, configMapping), configMapping.getNamingStrategy(), new Path(), properties);
+        Function<String, String> namingStrategy = configMapping.getBeanStyleGetters()
+                .andThen(configMapping.getNamingStrategy());
+        getProperties(new GroupProperty(null, null, configMapping), namingStrategy, new Path(), properties);
         return properties;
     }
 
     private static void getProperties(
             final GroupProperty groupProperty,
-            final NamingStrategy namingStrategy,
+            final Function<String, String> namingStrategy,
             final Path path,
             final Map<Class<?>, Map<String, Map<String, Property>>> properties) {
 
@@ -1139,7 +1147,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
     private static void getProperties(
             final GroupProperty groupProperty,
-            final NamingStrategy namingStrategy,
+            final Function<String, String> namingStrategy,
             final Path path,
             final Map<Class<?>, Map<String, Map<String, Property>>> properties,
             final Map<String, Property> groupProperties) {
@@ -1149,9 +1157,18 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
+    private static Function<String, String> groupNamingStrategy(
+            final GroupProperty groupProperty,
+            final Function<String, String> namingStrategy) {
+        if (groupProperty.hasNamingStrategy()) {
+            return groupProperty.getGroupType().getBeanStyleGetters().andThen(groupProperty.getNamingStrategy());
+        }
+        return namingStrategy;
+    }
+
     private static void getProperty(
             final Property property,
-            final NamingStrategy namingStrategy,
+            final Function<String, String> namingStrategy,
             final Path path,
             final Map<Class<?>, Map<String, Map<String, Property>>> properties,
             final Map<String, Property> groupProperties) {
@@ -1160,8 +1177,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             groupProperties.put(path.get(property, namingStrategy), property);
         } else if (property.isGroup()) {
             GroupProperty groupProperty = property.asGroup();
-            NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
-                    : namingStrategy;
+            Function<String, String> groupNamingStrategy = groupNamingStrategy(groupProperty, namingStrategy);
             Path groupPath = path.group(groupProperty, namingStrategy);
             getProperties(groupProperty, groupNamingStrategy, groupPath, properties);
             getProperties(groupProperty, groupNamingStrategy, groupPath, properties, groupProperties);
@@ -1174,8 +1190,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 }
             } else if (mapProperty.getValueProperty().isGroup()) {
                 GroupProperty groupProperty = mapProperty.getValueProperty().asGroup();
-                NamingStrategy groupNamingStrategy = groupProperty.hasNamingStrategy() ? groupProperty.getNamingStrategy()
-                        : namingStrategy;
+                Function<String, String> groupNamingStrategy = groupNamingStrategy(groupProperty, namingStrategy);
                 Path mapPath = path.map(mapProperty, namingStrategy);
                 getProperties(groupProperty, groupNamingStrategy, mapPath, properties);
                 getProperties(groupProperty, groupNamingStrategy, mapPath, properties, groupProperties);
@@ -1241,7 +1256,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return new Path(get(path));
         }
 
-        Path group(final Property property, final NamingStrategy namingStrategy) {
+        Path group(final Property property, final Function<String, String> namingStrategy) {
             if (property.isParentPropertyName()) {
                 return group("");
             } else {
@@ -1259,7 +1274,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return new Path(get(path));
         }
 
-        Path map(final Property property, final NamingStrategy namingStrategy) {
+        Path map(final Property property, final Function<String, String> namingStrategy) {
             if (property.isParentPropertyName()) {
                 this.elements.add(path.isEmpty() && this.elements.isEmpty() ? "*" : ".*");
                 return map("");
@@ -1283,7 +1298,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return new Path(get(path));
         }
 
-        Path unnamedMap(final Property property, final NamingStrategy namingStrategy) {
+        Path unnamedMap(final Property property, final Function<String, String> namingStrategy) {
             return unnamedMap(property.isParentPropertyName() ? "" : property.getPropertyName(namingStrategy));
         }
 
@@ -1305,7 +1320,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         }
 
-        String get(final Property property, final NamingStrategy namingStrategy) {
+        String get(final Property property, final Function<String, String> namingStrategy) {
             return get(property.isParentPropertyName() ? "" : property.getPropertyName(namingStrategy));
         }
 

@@ -128,7 +128,7 @@ public class ObjectCreatorTest {
         @SuppressWarnings("unchecked")
         public ObjectCreatorImpl(ConfigMappingContext context) {
             context.applyNamingStrategy(NamingStrategy.KEBAB_CASE);
-            context.applyBeanStyleGetters(false);
+            context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
             Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
 
@@ -279,7 +279,7 @@ public class ObjectCreatorTest {
 
         public OptionalGroupImpl(ConfigMappingContext context) {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
-            context.applyBeanStyleGetters(false);
+            context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
             Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
             this.optional = context.new ObjectCreator<Optional<Nested>>("optional")
@@ -338,7 +338,7 @@ public class ObjectCreatorTest {
 
         public UnnamedKeysImpl(ConfigMappingContext context) {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
-            context.applyBeanStyleGetters(false);
+            context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
             Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
             this.map = context.new ObjectCreator<Map<String, Nested>>("")
@@ -414,7 +414,7 @@ public class ObjectCreatorTest {
 
         public MapDefaultsImpl(ConfigMappingContext context) {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
-            context.applyBeanStyleGetters(false);
+            context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
             Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
 
@@ -481,7 +481,7 @@ public class ObjectCreatorTest {
 
         public NamingImpl(ConfigMappingContext context) {
             context.applyNamingStrategy(NamingStrategy.SNAKE_CASE);
-            context.applyBeanStyleGetters(false);
+            context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
             Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
             this.nestedValue = context.new ObjectCreator<Nested>("nestedValue").group(nestedSupplier).get();

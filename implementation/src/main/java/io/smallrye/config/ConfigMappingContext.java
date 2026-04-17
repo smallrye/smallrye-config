@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
@@ -43,7 +44,7 @@ public final class ConfigMappingContext {
     private final Map<Class<?>, Converter<?>> converterInstances = new IdentityHashMap<>();
 
     private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
-    private boolean beanStyleGetters = false;
+    private BeanStyleGetters beanStyleGetters = BeanStyleGetters.DISABLED;
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
@@ -101,7 +102,7 @@ public final class ConfigMappingContext {
     <T> T constructGroup(Supplier<T> groupSupplier) {
         // Save the current naming / style, because the nested / child element may override it
         NamingStrategy namingStrategy = this.namingStrategy;
-        boolean beanStyleGetters = this.beanStyleGetters;
+        BeanStyleGetters beanStyleGetters = this.beanStyleGetters;
         T mappingObject = groupSupplier.get();
         // restore the naming / style
         applyNamingStrategy(namingStrategy);
@@ -142,26 +143,14 @@ public final class ConfigMappingContext {
         }
     }
 
-    public void applyBeanStyleGetters(final Boolean beanStyleGetters) {
+    public void applyBeanStyleGetters(final BeanStyleGetters beanStyleGetters) {
         if (beanStyleGetters != null) {
             this.beanStyleGetters = beanStyleGetters;
         }
     }
 
-    private static final Function<String, String> BEAN_STYLE_GETTERS = new Function<String, String>() {
-        @Override
-        public String apply(final String name) {
-            if (name.startsWith("get") && name.length() > 3) {
-                return Character.toLowerCase(name.charAt(3)) + name.substring(4);
-            } else if (name.startsWith("is") && name.length() > 2) {
-                return Character.toLowerCase(name.charAt(2)) + name.substring(3);
-            }
-            return name;
-        }
-    };
-
     private Function<String, String> namingStrategy() {
-        return beanStyleGetters ? BEAN_STYLE_GETTERS.andThen(namingStrategy) : namingStrategy;
+        return beanStyleGetters.andThen(namingStrategy);
     }
 
     private String toPropertyName(final String name, final boolean applyNamingStrategy) {

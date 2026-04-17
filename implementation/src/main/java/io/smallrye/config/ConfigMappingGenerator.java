@@ -76,6 +76,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingContext.ObjectCreator;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
@@ -103,6 +104,7 @@ public class ConfigMappingGenerator {
     private static final String I_MAPPING_CONTEXT = getInternalName(ConfigMappingContext.class);
     private static final String I_OBJECT_CREATOR = getInternalName(ConfigMappingContext.ObjectCreator.class);
     private static final String I_NAMING_STRATEGY = getInternalName(NamingStrategy.class);
+    private static final String I_BEAN_STYLE_GETTERS = getInternalName(BeanStyleGetters.class);
     private static final String I_STRING_BUILDER = getInternalName(StringBuilder.class);
 
     private static final String I_RUNTIME_EXCEPTION = getInternalName(RuntimeException.class);
@@ -158,9 +160,10 @@ public class ConfigMappingGenerator {
                     false);
 
             ctor.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
-            ctor.visitInsn(mapping.isBeanStyleGetters() ? ICONST_1 : ICONST_0);
-            ctor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
-            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyBeanStyleGetters", "(Ljava/lang/Boolean;)V", false);
+            ctor.visitFieldInsn(GETSTATIC, I_BEAN_STYLE_GETTERS, mapping.getBeanStyleGetters().name(),
+                    "L" + I_BEAN_STYLE_GETTERS + ";");
+            ctor.visitMethodInsn(INVOKEVIRTUAL, I_MAPPING_CONTEXT, "applyBeanStyleGetters",
+                    "(L" + I_BEAN_STYLE_GETTERS + ";)V", false);
         }
 
         addProperties(visitor, ctor, mapping);
