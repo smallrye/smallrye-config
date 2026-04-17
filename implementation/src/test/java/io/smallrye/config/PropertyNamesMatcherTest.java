@@ -34,6 +34,10 @@ class PropertyNamesMatcherTest {
         matcher = new PropertyNamesMatcher<>();
         matcher.add(configClass(ComposedNames.class).getProperties());
         assertNull(matcher.get("map.*.*"));
+
+        matcher = new PropertyNamesMatcher<>();
+        matcher.add(configClass(WithParentNameSingle.class).getProperties());
+        assertNull(matcher.get("map.key.another"));
     }
 
     @Test
@@ -155,6 +159,19 @@ class PropertyNamesMatcherTest {
             @WithName("composed.name")
             @WithDefault("value")
             String value();
+        }
+    }
+
+    @ConfigMapping
+    interface WithParentNameSingle {
+        Map<String, Nested> map();
+
+        interface Nested {
+            @WithParentName
+            @WithDefault("value")
+            String value();
+
+            String another();
         }
     }
 }
