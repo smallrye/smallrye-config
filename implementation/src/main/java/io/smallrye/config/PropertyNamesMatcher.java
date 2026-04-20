@@ -103,10 +103,6 @@ public class PropertyNamesMatcher<T> {
             return result;
         }
 
-        if (properties.containsKey(name)) {
-            return null;
-        }
-
         NameIterator ni = new NameIterator(name);
         result = get(wildcards, ni);
         return result == noMatch() ? null : result;
