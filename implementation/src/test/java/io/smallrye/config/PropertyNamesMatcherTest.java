@@ -113,6 +113,14 @@ class PropertyNamesMatcherTest {
     }
 
     @Test
+    void fallbackWildcard() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("map.specific.key", null);
+        matcher.add("map.*.key", "wildcard");
+        assertEquals("wildcard", matcher.get("map.specific.key"));
+    }
+
+    @Test
     void allPaths() {
         PropertyNamesMatcher<?> matcher = new PropertyNamesMatcher<>();
         matcher.add("name.*");
