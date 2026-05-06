@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.ConfigMappingWithKeysTest.AdditionalKeys.KeysProvider;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -312,7 +311,7 @@ class ConfigMappingWithKeysTest {
                 .withMappingIgnore("env.**")
                 .build();
 
-        ConfigMappings.registerConfigMappings(originalConfig, Set.of(ConfigClass.configClass(EnvKeys.class)));
+        ConfigMappings.registerConfigClasses(originalConfig, Set.of(ConfigClass.configClass(EnvKeys.class)), true);
         Map<String, String> map = originalConfig.getConfigMapping(EnvKeys.class).map();
         assertEquals("value", map.get("dashed-key"));
 

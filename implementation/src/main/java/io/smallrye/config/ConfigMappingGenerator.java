@@ -65,8 +65,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -206,6 +204,7 @@ public class ConfigMappingGenerator {
     static byte[] generate(final Class<?> classType, final String interfaceName) {
         String classInternalName = getInternalName(classType);
         String interfaceInternalName = interfaceName.replace('.', '/');
+        ConfigMappingHandler configClassHandler = ConfigMappingHandler.Handlers.find(classType);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
@@ -214,10 +213,11 @@ public class ConfigMappingGenerator {
         {
             AnnotationVisitor av = writer.visitAnnotation("L" + getInternalName(ConfigMapping.class) + ";", true);
             av.visitEnum("namingStrategy", "L" + getInternalName(NamingStrategy.class) + ";",
-                    NamingStrategy.VERBATIM.toString());
+                    configClassHandler.getNamingStrategy().toString());
 
-            if (classType.isAnnotationPresent(ConfigProperties.class)) {
-                av.visit("prefix", classType.getAnnotation(ConfigProperties.class).prefix());
+            String prefix = configClassHandler.getPrefix(classType);
+            if (!prefix.isEmpty()) {
+                av.visit("prefix", prefix);
             }
 
             av.visitEnd();
@@ -236,53 +236,46 @@ public class ConfigMappingGenerator {
                     getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
                     null);
 
-            boolean hasDefault = false;
+            ConfigMappingHandler.FieldMember fieldMember = configClassHandler.processField(declaredField);
 
-            if (declaredField.isAnnotationPresent(WithName.class)) {
+            String name = declaredField.isAnnotationPresent(WithName.class)
+                    ? declaredField.getAnnotation(WithName.class).value()
+                    : fieldMember.name();
+
+            String defaultValue = declaredField.isAnnotationPresent(WithDefault.class)
+                    ? declaredField.getAnnotation(WithDefault.class).value()
+                    : fieldMember.defaultValue();
+
+            Class<? extends org.eclipse.microprofile.config.spi.Converter<?>> converter = declaredField
+                    .isAnnotationPresent(WithConverter.class)
+                            ? declaredField.getAnnotation(WithConverter.class).value()
+                            : fieldMember.converter();
+
+            if (name != null) {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
-                av.visit("value", declaredField.getAnnotation(WithName.class).value());
+                av.visit("value", name);
                 av.visitEnd();
             }
 
-            if (declaredField.isAnnotationPresent(WithDefault.class)) {
+            if (defaultValue != null) {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
-                av.visit("value", declaredField.getAnnotation(WithDefault.class).value());
+                av.visit("value", defaultValue);
                 av.visitEnd();
-                hasDefault = true;
             }
 
-            if (declaredField.isAnnotationPresent(WithConverter.class)) {
+            if (converter != null) {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithConverter.class) + ";", true);
-                av.visit("value", declaredField.getAnnotation(WithConverter.class).value());
+                av.visit("value", converter);
                 av.visitEnd();
             }
 
-            if (declaredField.isAnnotationPresent(ConfigProperty.class)) {
-                ConfigProperty configProperty = declaredField.getAnnotation(ConfigProperty.class);
-                {
-                    if (!configProperty.name().isEmpty()) {
-                        AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
-                        av.visit("value", configProperty.name());
-                        av.visitEnd();
-                    }
-                }
-                {
-                    if (!configProperty.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)) {
-                        AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
-                        av.visit("value", configProperty.defaultValue());
-                        av.visitEnd();
-                        hasDefault = true;
-                    }
-                }
-            }
-
-            if (!hasDefault) {
+            if (defaultValue == null) {
                 try {
                     declaredField.setAccessible(true);
-                    Object defaultValue = declaredField.get(classInstance);
-                    if (hasDefaultValue(declaredField.getType(), defaultValue)) {
+                    Object fieldDefault = declaredField.get(classInstance);
+                    if (hasDefaultValue(declaredField.getType(), fieldDefault)) {
                         AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithDefault.class) + ";", true);
-                        av.visit("value", defaultValue.toString());
+                        av.visit("value", fieldDefault.toString());
                         av.visitEnd();
                     }
                 } catch (IllegalAccessException e) {

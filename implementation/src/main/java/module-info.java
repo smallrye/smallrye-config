@@ -18,6 +18,7 @@ module io.smallrye.config {
     exports io.smallrye.config;
     exports io.smallrye.config._private to
         io.smallrye.config.inject,
+        io.smallrye.config.microprofile,
         io.smallrye.config.source.file,
         io.smallrye.config.source.keystore,
         io.smallrye.config.crypto;
@@ -30,6 +31,7 @@ module io.smallrye.config {
     uses io.smallrye.config.SecretKeysHandler;
     uses io.smallrye.config.SecretKeysHandlerFactory;
     uses io.smallrye.config.SmallRyeConfigBuilderCustomizer;
+    uses io.smallrye.config.ConfigMappingHandler;
 
     uses org.eclipse.microprofile.config.spi.ConfigSource;
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;

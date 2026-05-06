@@ -51,7 +51,6 @@ import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -641,14 +640,7 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T getConfigMapping(final Class<T> type) {
-        String prefix;
-        if (type.isInterface()) {
-            ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
-            prefix = configMapping != null ? configMapping.prefix() : "";
-        } else {
-            ConfigProperties configProperties = type.getAnnotation(ConfigProperties.class);
-            prefix = configProperties != null ? configProperties.prefix() : "";
-        }
+        String prefix = ConfigMappingHandler.Handlers.find(type).getPrefix(type);
         return getConfigMapping(type, prefix);
     }
 
