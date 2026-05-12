@@ -97,8 +97,8 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
     }
 
     private static String readContent(Path file) {
-        try (Stream<String> stream = Files.lines(file)) {
-            return stream.collect(Collectors.joining());
+        try {
+            return Files.readString(file);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
