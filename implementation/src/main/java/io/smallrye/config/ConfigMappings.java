@@ -192,7 +192,10 @@ public final class ConfigMappings {
 
         @Override
         public int hashCode() {
-            return Objects.hash(type, prefix);
+            // we are specifically hashing the class name here as Class doesn't implement hashCode and doesn't provide a stable hashCode implementation
+            // we want this hashCode to be stable so that order in HashMap/HashSet is preserved - if added in same order
+            // the equals implementation is still using Class so that it's ClassLoader aware
+            return Objects.hash(type.getName(), prefix);
         }
 
         public static ConfigClass configClass(final Class<?> klass, final String prefix) {
