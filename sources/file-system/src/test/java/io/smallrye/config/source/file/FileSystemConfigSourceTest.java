@@ -57,4 +57,13 @@ class FileSystemConfigSourceTest {
         // you can't rewrite the key, only the file name
         assertNull(configSource.getValue("MYSERVICE_MP_REST_URL"));
     }
+
+    @Test
+    void testMultilineValue() throws URISyntaxException {
+        URL configDirURL = this.getClass().getResource("configDir");
+        File dir = new File(configDirURL.toURI());
+
+        ConfigSource configSource = new FileSystemConfigSource(dir);
+        assertEquals("line 1\n\n   \nline with trailing spaces   \n\n", configSource.getValue("foo"));
+    }
 }
