@@ -97,7 +97,7 @@ jobs:
           cd documentation
           mvn package
           pipx install pipenv
-          pipenv install
+          pipenv install --ignore-pipfile
           git fetch origin gh-pages --depth=1
           git config --global user.name "SmallRye CI"
           git config --global user.email "smallrye@googlegroups.com"

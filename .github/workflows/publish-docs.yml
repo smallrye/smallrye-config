@@ -41,7 +41,7 @@ jobs:
           cd documentation
           mvn package
           pipx install pipenv
-          pipenv install
+          pipenv install --ignore-pipfile
           git fetch origin gh-pages --depth=1
           pipenv run mike deploy --config-file=mkdocs.yaml --push --update-aliases "${PROJECT_VERSION}" Latest
         env:
