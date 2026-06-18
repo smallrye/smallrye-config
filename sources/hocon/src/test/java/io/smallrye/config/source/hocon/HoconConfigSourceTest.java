@@ -80,6 +80,20 @@ class HoconConfigSourceTest {
         assertEquals("Fiji", mapping.countries().get(0).name());
     }
 
+    @Test
+    void renderedPropertyNamesUseSmallRyeConfigSyntax() throws Exception {
+        HoconConfigSource source = new HoconConfigSource(HoconConfigSource.class.getResource("/rendered-properties.conf"));
+
+        assertEquals("1", source.getValue("%dev.some.property"));
+        assertEquals("6", source.getValue("org.acme.CoffeeResource/coffees/Retry/maxRetries"));
+        assertEquals("dog", source.getValue("my.indexed.collection[0]"));
+        assertEquals("2", source.getValue("foo.\"bar.baz\""));
+
+        assertFalse(source.getPropertyNames().contains("\"%dev\".some.property"));
+        assertFalse(source.getPropertyNames().contains("org.acme.\"CoffeeResource/coffees/Retry/maxRetries\""));
+        assertFalse(source.getPropertyNames().contains("my.indexed.\"collection[0]\""));
+    }
+
     @ConfigMapping(prefix = "countries")
     public interface Countries {
         @WithParentName
