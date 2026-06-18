@@ -7,8 +7,9 @@ import java.io.Reader;
 import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import com.typesafe.config.Config;
@@ -56,32 +57,65 @@ public class HoconConfigSource extends MapBackedConfigSource {
 
     private static Map<String, String> configToMap(Config config) {
         final Map<String, String> properties = new TreeMap<>();
-        final Set<Map.Entry<String, ConfigValue>> entries = config.entrySet();
-        for (Map.Entry<String, ConfigValue> entry : entries) {
-            flatten(entry.getKey(), entry.getValue(), properties);
-        }
+        flattenObject(List.of(), config.root(), properties);
         return properties;
     }
 
-    private static void flatten(String path, ConfigValue value, Map<String, String> target) {
+    private static void flatten(List<String> path, ConfigValue value, Map<String, String> target) {
         if (value instanceof ConfigObject) {
             flattenObject(path, (ConfigObject) value, target);
         } else if (value instanceof ConfigList) {
             flattenList(path, (ConfigList) value, target);
         } else {
-            target.put(path, value.unwrapped().toString());
+            target.put(toPropertyName(path), value.unwrapped().toString());
         }
     }
 
-    private static void flattenObject(String path, ConfigObject value, Map<String, String> target) {
+    private static void flattenObject(List<String> path, ConfigObject value, Map<String, String> target) {
         for (Map.Entry<String, ConfigValue> entry : value.entrySet()) {
-            flatten(path + "." + entry.getKey(), entry.getValue(), target);
+            List<String> entryPath = new ArrayList<>(path);
+            entryPath.add(entry.getKey());
+            flatten(entryPath, entry.getValue(), target);
         }
     }
 
-    private static void flattenList(String path, ConfigList value, Map<String, String> target) {
+    private static void flattenList(List<String> path, ConfigList value, Map<String, String> target) {
         for (int i = 0, valueSize = value.size(); i < valueSize; i++) {
-            flatten(path + "[" + i + "]", value.get(i), target);
+            List<String> indexedPath = new ArrayList<>(path);
+            int last = indexedPath.size() - 1;
+            indexedPath.set(last, indexedPath.get(last) + "[" + i + "]");
+            flatten(indexedPath, value.get(i), target);
         }
+    }
+
+    private static String toPropertyName(List<String> path) {
+        StringBuilder propertyName = new StringBuilder();
+        for (String segment : path) {
+            if (!propertyName.isEmpty()) {
+                propertyName.append('.');
+            }
+            propertyName.append(renderSegment(segment));
+        }
+        return propertyName.toString();
+    }
+
+    private static String renderSegment(String segment) {
+        if (!needsQuotes(segment)) {
+            return segment;
+        }
+        return '"' + segment + '"';
+    }
+
+    private static boolean needsQuotes(String segment) {
+        if (segment.isEmpty()) {
+            return true;
+        }
+        for (int i = 0; i < segment.length(); i++) {
+            char c = segment.charAt(i);
+            if (c == '.' || c == '"' || Character.isWhitespace(c)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
