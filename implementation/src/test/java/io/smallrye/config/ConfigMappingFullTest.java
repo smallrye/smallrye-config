@@ -267,11 +267,50 @@ public class ConfigMappingFullTest {
                 .build();
 
         OrmConfig ormConfig = config.getConfigMapping(OrmConfig.class);
-        assertEquals(1, ormConfig.persistenceUnits().size());
+        assertEquals(0, ormConfig.persistenceUnits().size());
+        assertFalse(ormConfig.persistenceUnits().get("<default>").database().globallyQuotedIdentifiers());
         OrmRuntimeConfig ormRuntimeConfig = config.getConfigMapping(OrmRuntimeConfig.class);
         assertEquals(1, ormRuntimeConfig.persistenceUnits().size());
         assertEquals("drop-and-create",
                 ormRuntimeConfig.persistenceUnits().get("<default>").database().generation().generation());
+    }
+
+    @Test
+    void noUnnamedKeyUnlessSetByUser() {
+        SmallRyeConfig config;
+        OrmRuntimeConfig mapping;
+
+        // Nothing set by the user, so no key, but I can query a default
+        config = new SmallRyeConfigBuilder()
+                .withMapping(OrmRuntimeConfig.class)
+                .build();
+        mapping = config.getConfigMapping(OrmRuntimeConfig.class);
+        assertEquals(0, mapping.persistenceUnits().size());
+        assertEquals("none", mapping.persistenceUnits().get("<default>").database().generation().generation());
+        assertTrue(mapping.persistenceUnits().get("<default>").schemas().isEmpty());
+        assertEquals("none", mapping.persistenceUnits().get("named").database().generation().generation());
+        assertTrue(mapping.persistenceUnits().get("named").schemas().isEmpty());
+
+        // A property set by the user, so the default key must be present in the Map
+        config = new SmallRyeConfigBuilder()
+                .withSources(config("smallrye.config-orm.database.generation", "create"))
+                .withMapping(OrmRuntimeConfig.class)
+                .build();
+        mapping = config.getConfigMapping(OrmRuntimeConfig.class);
+        assertEquals(1, mapping.persistenceUnits().size());
+        assertTrue(mapping.persistenceUnits().containsKey("<default>"));
+        assertEquals("create", mapping.persistenceUnits().get("<default>").database().generation().generation());
+        assertTrue(mapping.persistenceUnits().get("<default>").schemas().isEmpty());
+
+        config = new SmallRyeConfigBuilder()
+                .withSources(config("smallrye.config-orm.schemas.version", "1"))
+                .withMapping(OrmRuntimeConfig.class)
+                .build();
+        mapping = config.getConfigMapping(OrmRuntimeConfig.class);
+        assertEquals(1, mapping.persistenceUnits().size());
+        assertTrue(mapping.persistenceUnits().containsKey("<default>"));
+        assertTrue(mapping.persistenceUnits().get("<default>").schemas().get(null).version().isPresent());
+        assertEquals("1", mapping.persistenceUnits().get("<default>").schemas().get(null).version().get());
     }
 
     @ConfigMapping(prefix = "smallrye.config-orm")
@@ -307,14 +346,26 @@ public class ConfigMappingFullTest {
         interface OrmRuntimeConfigPersistenceUnit {
             OrmConfigPersistenceUnitDatabase database();
 
+            @WithUnnamedKey
+            Map<String, OrmConfigPersistenceUnitSchema> schemas();
+
             interface OrmConfigPersistenceUnitDatabase {
                 OrmConfigPersistenceUnitDatabaseGeneration generation();
+
+                @WithDefault("true")
+                boolean log();
+
+                OptionalInt version();
+
+                interface OrmConfigPersistenceUnitDatabaseGeneration {
+                    @WithParentName
+                    @WithDefault("none")
+                    String generation();
+                }
             }
 
-            interface OrmConfigPersistenceUnitDatabaseGeneration {
-                @WithParentName
-                @WithDefault("none")
-                String generation();
+            interface OrmConfigPersistenceUnitSchema {
+                Optional<String> version();
             }
         }
     }

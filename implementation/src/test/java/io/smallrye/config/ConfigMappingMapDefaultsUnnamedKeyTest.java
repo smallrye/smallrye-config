@@ -176,6 +176,72 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("mapMappingsAndConfigGroupKeys")
+    <E> void unnamedKeyConfiguredWithSameValueAsDefault(ConfigGroupMapMapping<E> mapping, ConfigGroupKey configGroupKey) {
+        assumeTrue(mapping.hasWithUnnamedKey(), "Only applicable to mappings with @WithUnnamedKey");
+        assumeTrue(mapping.hasConfigProperty1Default(), "Only applicable to mappings with @WithDefault on configProperty1");
+        assumeTrue(configGroupKey == ConfigGroupKey.UNNAMED, "Only applicable to the unnamed key");
+
+        // Explicitly set the unnamed key's configProperty1 to the same value as the @WithDefault.
+        // Even though the value matches the default, it comes from a real config source,
+        // so the unnamed key should appear in the map.
+        String configProperty1Key = mapping.configProperty1Key(configGroupKey);
+        SmallRyeConfig config = mapping.buildConfig(configProperty1Key, "default-val");
+        Map<String, E> map = mapping.getConfigGroupMap(config);
+
+        assertTrue(map.containsKey(configGroupKey.key),
+                "containsKey should be true when the unnamed key is explicitly configured, even with the same value as @WithDefault");
+    }
+
+    // -- Case 2: leaf properties resolved, all from defaults → unnamed key excluded --
+
+    @ConfigMapping(prefix = "case2")
+    interface Case2Config {
+        @WithDefaults
+        @WithUnnamedKey("<default>")
+        Map<String, ConfigGroup> map();
+    }
+
+    @Test
+    void leafPropertiesResolvedAllFromDefaults() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Case2Config.class)
+                .build();
+
+        Map<String, ConfigGroup> map = config.getConfigMapping(Case2Config.class).map();
+
+        assertFalse(map.containsKey("<default>"),
+                "unnamed key should not appear when all leaf properties resolve from defaults only");
+
+        ConfigGroup group = map.get("<default>");
+        assertNotNull(group, "@WithDefaults should still provide a default via get()");
+        assertEquals("default-val", group.configProperty1());
+        assertEquals(Optional.empty(), group.configProperty2());
+    }
+
+    // -- Case 3: no leaf properties resolved (nested map) → unnamed key included via equals() fallback --
+
+    @ConfigMapping(prefix = "case3")
+    interface Case3Config {
+        @WithUnnamedKey("<default>")
+        Map<String, Map<String, String>> map();
+    }
+
+    @Test
+    void nestedMapNoLeafResolution() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Case3Config.class)
+                .withSources(config(
+                        "case3.map.nested-key", "value"))
+                .build();
+
+        Map<String, Map<String, String>> map = config.getConfigMapping(Case3Config.class).map();
+
+        assertTrue(map.containsKey("<default>"),
+                "unnamed key should appear for nested maps when config is provided at the unnamed path");
+    }
+
     // ============================
     // Infrastructure
     // ============================
@@ -199,6 +265,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         abstract Class<?>[] mappingClasses();
 
         abstract Map<String, E> getConfigGroupMap(SmallRyeConfig config);
+
+        abstract String namedKeyConfigProperty1Key();
+
+        abstract String unnamedKeyConfigProperty1Key();
+
+        String configProperty1Key(ConfigGroupKey configGroupKey) {
+            return configGroupKey == ConfigGroupKey.NAMED
+                    ? namedKeyConfigProperty1Key()
+                    : unnamedKeyConfigProperty1Key();
+        }
 
         abstract String namedKeyConfigProperty2Key();
 
@@ -316,6 +392,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         }
 
         @Override
+        String namedKeyConfigProperty1Key() {
+            return "plain-map.map.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return null;
+        }
+
+        @Override
         String namedKeyConfigProperty2Key() {
             return "plain-map.map.mykey.config-property2";
         }
@@ -356,6 +442,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         @Override
         Class<?>[] mappingClasses() {
             return new Class<?>[] { Config.class };
+        }
+
+        @Override
+        String namedKeyConfigProperty1Key() {
+            return "with-defaults-only.map.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return null;
         }
 
         @Override
@@ -402,6 +498,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         }
 
         @Override
+        String namedKeyConfigProperty1Key() {
+            return "with-unnamed-key-only.map.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return "with-unnamed-key-only.map.config-property1";
+        }
+
+        @Override
         String namedKeyConfigProperty2Key() {
             return "with-unnamed-key-only.map.mykey.config-property2";
         }
@@ -443,6 +549,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         @Override
         Class<?>[] mappingClasses() {
             return new Class<?>[] { Config.class };
+        }
+
+        @Override
+        String namedKeyConfigProperty1Key() {
+            return "with-defaults-and-unnamed-key.map.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return "with-defaults-and-unnamed-key.map.config-property1";
         }
 
         @Override
@@ -491,6 +607,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         }
 
         @Override
+        String namedKeyConfigProperty1Key() {
+            return "with-parent-name-defaults-and-unnamed-key.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return "with-parent-name-defaults-and-unnamed-key.config-property1";
+        }
+
+        @Override
         String namedKeyConfigProperty2Key() {
             return "with-parent-name-defaults-and-unnamed-key.mykey.config-property2";
         }
@@ -531,6 +657,16 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         @Override
         Class<?>[] mappingClasses() {
             return new Class<?>[] { Config.class };
+        }
+
+        @Override
+        String namedKeyConfigProperty1Key() {
+            return "with-unnamed-key-no-property-defaults.map.mykey.config-property1";
+        }
+
+        @Override
+        String unnamedKeyConfigProperty1Key() {
+            return "with-unnamed-key-no-property-defaults.map.config-property1";
         }
 
         @Override
