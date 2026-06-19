@@ -423,7 +423,7 @@ public class ObjectCreatorTest {
                     .get();
 
             this.defaultsNested = context.new ObjectCreator<Map<String, Nested>>("defaults-nested")
-                    .map(String.class, null, null, null, nestedSupplier)
+                    .map(String.class, null, null, null, nestedSupplier, null)
                     .lazyGroup(Nested.class, nestedSupplier)
                     .get();
 
