@@ -267,7 +267,8 @@ public class ConfigMappingFullTest {
                 .build();
 
         OrmConfig ormConfig = config.getConfigMapping(OrmConfig.class);
-        assertEquals(1, ormConfig.persistenceUnits().size());
+        assertEquals(0, ormConfig.persistenceUnits().size());
+        assertFalse(ormConfig.persistenceUnits().get("<default>").database().globallyQuotedIdentifiers());
         OrmRuntimeConfig ormRuntimeConfig = config.getConfigMapping(OrmRuntimeConfig.class);
         assertEquals(1, ormRuntimeConfig.persistenceUnits().size());
         assertEquals("drop-and-create",
