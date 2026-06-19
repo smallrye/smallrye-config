@@ -24,7 +24,7 @@ jobs:
     name: build (linux)
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         name: checkout
 
       - uses: actions/setup-java@v5
@@ -52,7 +52,7 @@ jobs:
     name: build (windows)
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         name: checkout
 
       - uses: actions/setup-java@v5
@@ -76,7 +76,7 @@ jobs:
     name: docs
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         name: checkout
 
       - uses: actions/setup-java@v5
@@ -110,7 +110,7 @@ jobs:
     name: quality
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
