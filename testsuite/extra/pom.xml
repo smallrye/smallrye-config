@@ -58,12 +58,6 @@
       <artifactId>smallrye-config-crypto</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-jasypt</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- Test Dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -122,11 +116,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <systemPropertyVariables>
-            <smallrye.config.secret-handler.jasypt.enabled>true</smallrye.config.secret-handler.jasypt.enabled>
-            <smallrye.config.secret-handler.jasypt.password>dummy</smallrye.config.secret-handler.jasypt.password>
-            <smallrye.config.secret-handler.jasypt.algorithm>PBEWithHMACSHA512AndAES_256</smallrye.config.secret-handler.jasypt.algorithm>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

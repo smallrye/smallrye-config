@@ -80,7 +80,6 @@
     <module>utils/events</module>
     <module>utils/cdi-provider</module>
     <module>utils/crypto</module>
-    <module>utils/jasypt</module>
     <module>documentation</module>
   </modules>
 

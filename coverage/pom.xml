@@ -70,12 +70,6 @@
       <artifactId>smallrye-config-crypto</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config-jasypt</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- Misc -->
     <dependency>
       <groupId>io.smallrye.config</groupId>
