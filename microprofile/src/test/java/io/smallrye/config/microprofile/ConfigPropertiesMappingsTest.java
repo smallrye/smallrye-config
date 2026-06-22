@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -154,6 +155,77 @@ class ConfigPropertiesMappingsTest {
     }
 
     @Test
+    void nestedGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerNested.class)
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.host", "localhost", "server.port", "8080",
+                        "server.log.enabled", "true"), "test"))
+                .build();
+
+        ServerNested server = config.getConfigMapping(ServerNested.class);
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.port);
+        assertTrue(server.log.enabled);
+    }
+
+    @Test
+    void nestedGroupList() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerNodes.class)
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.nodes[0].name", "main",
+                        "server.nodes[0].host", "localhost",
+                        "server.nodes[1].name", "backup",
+                        "server.nodes[1].host", "backup-host"), "test"))
+                .build();
+
+        ServerNodes server = config.getConfigMapping(ServerNodes.class);
+        assertEquals(2, server.nodes.size());
+        assertEquals("main", server.nodes.get(0).name);
+        assertEquals("localhost", server.nodes.get(0).host);
+        assertEquals("backup", server.nodes.get(1).name);
+        assertEquals("backup-host", server.nodes.get(1).host);
+    }
+
+    @Test
+    void nestedGroupMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ServerEndpoints.class)
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.endpoints.api.path", "/api",
+                        "server.endpoints.api.port", "8080",
+                        "server.endpoints.admin.path", "/admin",
+                        "server.endpoints.admin.port", "9090"), "test"))
+                .build();
+
+        ServerEndpoints server = config.getConfigMapping(ServerEndpoints.class);
+        assertEquals(2, server.endpoints.size());
+        assertEquals("/api", server.endpoints.get("api").path);
+        assertEquals(8080, server.endpoints.get("api").port);
+        assertEquals("/admin", server.endpoints.get("admin").path);
+        assertEquals(9090, server.endpoints.get("admin").port);
+    }
+
+    @Test
+    void deeplyNestedGroup() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(AppDeepNested.class)
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "app.name", "test",
+                        "app.database.host", "db-host",
+                        "app.database.pool.minSize", "5",
+                        "app.database.pool.maxSize", "20"), "test"))
+                .build();
+
+        AppDeepNested app = config.getConfigMapping(AppDeepNested.class);
+        assertEquals("test", app.name);
+        assertEquals("db-host", app.database.host);
+        assertEquals(5, app.database.pool.minSize);
+        assertEquals(20, app.database.pool.maxSize);
+    }
+
+    @Test
     void noArgsConstructorConfigProperties() {
         assertThrows(IllegalArgumentException.class,
                 () -> ConfigMappingLoader.ensureLoaded(ServerProperties.class));
@@ -202,6 +274,53 @@ class ConfigPropertiesMappingsTest {
         public String host;
         @ConfigProperty(defaultValue = "8080")
         public int port;
+    }
+
+    @ConfigProperties(prefix = "server")
+    public static class ServerNested {
+        public String host;
+        public int port;
+        public Log log;
+
+        public static class Log {
+            public boolean enabled;
+        }
+    }
+
+    @ConfigProperties(prefix = "server")
+    public static class ServerNodes {
+        public List<Node> nodes;
+
+        public static class Node {
+            public String name;
+            public String host;
+        }
+    }
+
+    @ConfigProperties(prefix = "server")
+    public static class ServerEndpoints {
+        public Map<String, Endpoint> endpoints;
+
+        public static class Endpoint {
+            public String path;
+            public int port;
+        }
+    }
+
+    @ConfigProperties(prefix = "app")
+    public static class AppDeepNested {
+        public String name;
+        public Database database;
+
+        public static class Database {
+            public String host;
+            public Pool pool;
+
+            public static class Pool {
+                public int minSize;
+                public int maxSize;
+            }
+        }
     }
 
     static class Version {

@@ -96,9 +96,17 @@ public final class ConfigMappingContext {
     }
 
     <T> T constructGroup(Class<T> interfaceType) {
-        return constructGroup(() -> ConfigMappingLoader.configMappingObject(interfaceType, this));
+        // Save the current naming / style, because the nested / child element may override it
+        NamingStrategy namingStrategy = this.namingStrategy;
+        BeanStyleGetters beanStyleGetters = this.beanStyleGetters;
+        T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
+        // restore the naming / style
+        applyNamingStrategy(namingStrategy);
+        applyBeanStyleGetters(beanStyleGetters);
+        return mappingObject;
     }
 
+    @SuppressWarnings("unchecked")
     <T> T constructGroup(Supplier<T> groupSupplier) {
         // Save the current naming / style, because the nested / child element may override it
         NamingStrategy namingStrategy = this.namingStrategy;
@@ -107,6 +115,10 @@ public final class ConfigMappingContext {
         // restore the naming / style
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
+        // Nested elements may have to be unwrapped
+        if (mappingObject instanceof ConfigMappingClassMapper) {
+            mappingObject = (T) ((ConfigMappingClassMapper) mappingObject).map();
+        }
         return mappingObject;
     }
 

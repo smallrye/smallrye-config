@@ -910,6 +910,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 if (configurationInterface != null) {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
                 }
+                configurationInterface = ConfigMappingLoader.getConfigMapping(elementClass);
+                if (configurationInterface != null) {
+                    return new CollectionProperty(rawType,
+                            new GroupProperty(method, propertyName, configurationInterface));
+                }
 
                 Class<? extends Converter<?>> converter = getConverter(elementType, method);
                 if (converter != null) {
@@ -921,6 +926,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
             if (configurationInterface != null) {
                 // it's a group
+                return new GroupProperty(method, propertyName, configurationInterface);
+            }
+            configurationInterface = ConfigMappingLoader.getConfigMapping(rawType);
+            if (configurationInterface != null) {
                 return new GroupProperty(method, propertyName, configurationInterface);
             }
             // fall out (leaf)
