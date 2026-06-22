@@ -65,64 +65,6 @@ the following dependency:
 | `smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key`<br>The encryption key to use to decode secrets encoded by the `AES/GCM/NoPadding` algorithm. 	           | String 	  | 	         |
 | `"smallrye.config.secret-handler.aes-gcm-nopadding.encryption-key-decode"`<br>Decode the encryption key in Base64, if the plain text key was used to encrypt the secret. 	 | boolean 	 | false 	   |
 
-### Jasypt
-
-!!! danger
-
-[Jasypt](https://github.com/jasypt/jasypt) is no longer maintained, and the project has been archived. The SmallRye 
-Config Jasypt SecretHandler is deprecated and will be removed in a future version. Its usage will throw an 
-`UnsupportedOperationException`, and it can be re-enabled by setting the configuration 
-`smallrye.config.secret-handler.jasypt.enabled=true`.
-
-[Jasypt](http://www.jasypt.org) is a java library which allows the developer to add basic encryption capabilities. Add 
-the following dependency in your project to use it:
-
-```xml
-<dependency>
-    <groupId>io.smallrye.config</groupId>
-    <artifactId>smallrye-config-jasypt</artifactId>
-    <version>{{attributes['version']}}</version>
-</dependency>
-```
-
-#### Jasypt `${jasypt::...}`
-
-!!! example
-
-    ```properties title="application.properties"
-    smallrye.config.secret-handler.jasypt.password=jasypt
-    smallrye.config.secret-handler.jasypt.algorithm=PBEWithHMACSHA512AndAES_256
-
-    my.secret=${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}
-    ```
-    The `${jasypt::...}` `SecretKeyHandler` requires both `smallrye.config.secret-handler.jasypt.password` and 
-    `smallrye.config.secret-handler.jasypt.algorithm` configurations to state the password and the algorithm to be
-    used by the Jasypt encryptor.
-
-    Jasypt encrypted values must be set with the handler expression as `${jasypt::ENC(value)}`. Note that the 
-    encrypted value must be generated using the proper Jasypt encryptor with the same password and algorithm set in 
-    the confguration.
-
-    A possible encrypted value for `12345678` is `ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)`
-
-    Lookups to the configuration `my.secret` will automatically decrypt the value with Jasypt and provide the original
-    `12345678` string.
-
-!!! info
-
-    It is possible to generate the encrypted secret with the following [JBang](http://jbang.dev/) script:
-    
-    ```shell  
-    jbang https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/jasypt.java -s=<secret> -p=<password>
-    ```
-
-##### Configuration
-
-| Configuration Property 	| Type 	| Default 	|
-|---	|---	|---	|
-| `smallrye.config.secret-handler.jasypt.password`<br>The Jasypt password to use 	| String 	|  	|
-| `smallrye.config.secret-handler.jasypt.algorithm`<br>The Jasypt algorithm to use 	| String 	|  	|
-
 ## Secret Keys Names
 
 When configuration properties contain passwords or other kinds of secrets, Smallrye Config can hide them to prevent 
