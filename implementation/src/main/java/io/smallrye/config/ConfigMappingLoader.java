@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -280,10 +281,22 @@ public final class ConfigMappingLoader {
         private static ConfigMappingClass createConfigurationClass(final Class<?> classType) {
             if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
                     Modifier.isAbstract(classType.getModifiers()) ||
-                    classType.isEnum()) {
+                    classType.isEnum() ||
+                    classType.isArray() ||
+                    classType.isPrimitive()) {
                 return null;
             }
-
+            if (classType.getName().startsWith("java")) {
+                return null;
+            }
+            if (Collection.class.isAssignableFrom(classType) || Map.class.isAssignableFrom(classType)) {
+                return null;
+            }
+            try {
+                classType.getDeclaredConstructor();
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
             return new ConfigMappingClass(classType);
         }
 
