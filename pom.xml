@@ -69,6 +69,7 @@
   <modules>
     <module>common</module>
     <module>implementation</module>
+    <module>microprofile</module>
     <module>cdi</module>
     <module>validator</module>
     <module>sources/hocon</module>

@@ -211,4 +211,7 @@ public interface ConfigMessages {
 
     @Message(id = 56, value = "Incompatible ConfigProviderResolver type: Expected %s, but found %s")
     IllegalStateException incompatibleConfigProvider(String expected, String actual);
+
+    @Message(id = 57, value = "Class %s is not recognized as a config class")
+    IllegalStateException classNotRecognizedAsConfigClass(Class<?> type);
 }

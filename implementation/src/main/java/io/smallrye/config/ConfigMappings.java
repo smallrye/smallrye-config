@@ -9,11 +9,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
-
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingInterface.Property;
-import io.smallrye.config._private.ConfigMessages;
 
 /**
  * Utility class for {@link ConfigMapping} annotated classes.
@@ -21,40 +19,25 @@ import io.smallrye.config._private.ConfigMessages;
 public final class ConfigMappings {
 
     /**
-     * Registers additional {@link ConfigMapping} annotated classes with a {@link SmallRyeConfig} instance.
+     * Registers additional {@link ConfigClass} classes with a {@link SmallRyeConfig} instance.
      * <p>
-     * The recommended method of registering {@link ConfigMapping} is with a
+     * The recommended method of registering {@link ConfigClass} is with a
      * {@link SmallRyeConfigBuilder#withMapping(Class)}. In certain cases, this is not possible (ex. a CDI
-     * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
+     * runtime), where config classes can only be discovered after the <code>Config</code> instance creation.
      *
      * @param config the {@link SmallRyeConfig} instance
-     * @param configClasses a <code>Set</code> of {@link ConfigMapping} annotated classes with prefixes
-     * @throws ConfigValidationException if a {@link ConfigMapping} cannot be registed with the
-     *         {@link SmallRyeConfig} instance
+     * @param configClasses a <code>Set</code> of {@link ConfigClass} classes with prefixes
+     * @param validateUnknown if <code>true</code> it will validate that all configurations in {@link SmallRyeConfig}
+     *        under the specified config classes prefixes have a matching property
+     * @throws ConfigValidationException if a {@link ConfigClass} cannot be registered with the {@link SmallRyeConfig} instance
      */
-    public static void registerConfigMappings(final SmallRyeConfig config, final Set<ConfigClass> configClasses)
+    public static void registerConfigClasses(
+            final SmallRyeConfig config,
+            final Set<ConfigClass> configClasses,
+            final boolean validateUnknown)
             throws ConfigValidationException {
         if (!configClasses.isEmpty()) {
-            mapConfiguration(config, new SmallRyeConfigBuilder(), configClasses);
-        }
-    }
-
-    /**
-     * Registers additional <code>ConfigProperties</code> annotated classes with a {@link SmallRyeConfig} instance.
-     * <p>
-     * The recommended method of registering <code>ConfigProperties</code> is with a
-     * {@link SmallRyeConfigBuilder#withMapping(Class)}. In certain cases, this is not possible (ex. a CDI
-     * runtime), where mapping classes can only be discovered after the <code>Config</code> instance creation.
-     *
-     * @param config the {@link SmallRyeConfig} instance
-     * @param configClasses a <code>Set</code> of <code>ConfigProperties</code> annotated classes with prefixes
-     * @throws ConfigValidationException if a <code>ConfigProperties</code> cannot be registed with the
-     *         {@link SmallRyeConfig} instance
-     */
-    public static void registerConfigProperties(final SmallRyeConfig config, final Set<ConfigClass> configClasses)
-            throws ConfigValidationException {
-        if (!configClasses.isEmpty()) {
-            mapConfiguration(config, new SmallRyeConfigBuilder().withValidateUnknown(false), configClasses);
+            mapConfiguration(config, new SmallRyeConfigBuilder().withValidateUnknown(validateUnknown), configClasses);
         }
     }
 
@@ -122,7 +105,7 @@ public final class ConfigMappings {
     }
 
     /**
-     * A representation of a {@link ConfigMapping} or <code>@ConfigProperties</code>.
+     * A representation of a configuration class.
      */
     public static final class ConfigClass {
         private final Class<?> type;
@@ -203,26 +186,8 @@ public final class ConfigMappings {
         }
 
         public static ConfigClass configClass(final Class<?> klass) {
-            if (!klass.isInterface() && klass.isAnnotationPresent(ConfigMapping.class)) {
-                throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(klass);
-            }
-
-            if (klass.isInterface() && klass.isAnnotationPresent(ConfigProperties.class)) {
-                throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(klass);
-            }
-
-            if (klass.isInterface()) {
-                ConfigMapping configMapping = klass.getAnnotation(ConfigMapping.class);
-                String prefix = configMapping != null ? configMapping.prefix() : "";
-                return configClass(klass, prefix);
-            } else {
-                ConfigProperties configProperties = klass.getAnnotation(ConfigProperties.class);
-                String prefix = configProperties != null ? configProperties.prefix() : "";
-                if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
-                    prefix = "";
-                }
-                return configClass(klass, prefix);
-            }
+            ConfigMappingHandler configClassHandler = Handlers.find(klass);
+            return configClass(klass, configClassHandler.getPrefix(klass));
         }
     }
 }

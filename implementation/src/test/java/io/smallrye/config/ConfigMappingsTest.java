@@ -1,6 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappings.registerConfigMappings;
+import static io.smallrye.config.ConfigMappings.registerConfigClasses;
 import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static java.util.Collections.singleton;
@@ -30,7 +30,7 @@ public class ConfigMappingsTest {
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
-        registerConfigMappings(config, singleton(configClass(Server.class, "server")));
+        registerConfigClasses(config, singleton(configClass(Server.class, "server")), true);
         Server server = config.getConfigMapping(Server.class);
 
         assertEquals("localhost", server.host());
@@ -55,7 +55,7 @@ public class ConfigMappingsTest {
                 .build();
 
         assertThrows(ConfigValidationException.class,
-                () -> registerConfigMappings(config, singleton(configClass(Server.class, "server"))),
+                () -> registerConfigClasses(config, singleton(configClass(Server.class, "server")), true),
                 "server.unmapped does not map to any root");
     }
 
@@ -63,7 +63,7 @@ public class ConfigMappingsTest {
     void validateAnnotations() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config, singleton(configClass(ServerMappingClass.class))));
+                () -> registerConfigClasses(config, singleton(configClass(ServerMappingClass.class)), true));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00043: The @ConfigMapping annotation can only be placed in interfaces"));
 

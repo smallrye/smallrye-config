@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
-
 import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config._private.ConfigMessages;
@@ -174,7 +172,7 @@ public final class ConfigMappingLoader {
                 if (parent.isAssignableFrom(klass)) {
                     return klass;
                 }
-                // ConfigProperties should not have issues with classloader and interfaces.
+                // Config classes should not have issues with classloader and interfaces.
                 if (configMappingMetadata instanceof ConfigMappingClass) {
                     return klass;
                 }
@@ -200,7 +198,7 @@ public final class ConfigMappingLoader {
         return classLoaderLocks.computeIfAbsent(className, c -> new Object());
     }
 
-    public static final class ConfigMappingImplementation {
+    static final class ConfigMappingImplementation {
         private final Class<?> implementation;
         private MethodHandle constructor;
         private MethodHandle getProperties;
@@ -212,11 +210,11 @@ public final class ConfigMappingLoader {
             ConfigMappingImplementation.class.getModule().addReads(implementation.getModule());
         }
 
-        public Class<?> implementation() {
+        Class<?> implementation() {
             return implementation;
         }
 
-        public MethodHandle constructor() {
+        MethodHandle constructor() {
             MethodHandle constructor = this.constructor;
             if (constructor == null) {
                 try {
@@ -232,7 +230,7 @@ public final class ConfigMappingLoader {
             return this.constructor;
         }
 
-        public MethodHandle getProperties() {
+        MethodHandle getProperties() {
             MethodHandle getProperties = this.getProperties;
             if (getProperties == null) {
                 try {
@@ -247,7 +245,7 @@ public final class ConfigMappingLoader {
             return getProperties;
         }
 
-        public MethodHandle getSecrets() {
+        MethodHandle getSecrets() {
             MethodHandle getSecrets = this.getSecrets;
             if (getSecrets == null) {
                 try {
@@ -264,7 +262,7 @@ public final class ConfigMappingLoader {
     }
 
     /**
-     * Implementation of {@link ConfigMappingMetadata} for MicroProfile {@link ConfigProperties}.
+     * Implementation of {@link ConfigMappingMetadata} for configuration classes.
      */
     static final class ConfigMappingClass implements ConfigMappingMetadata {
         private static final ClassValue<ConfigMappingClass> cv = new ClassValue<>() {

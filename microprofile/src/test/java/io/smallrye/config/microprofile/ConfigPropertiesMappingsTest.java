@@ -1,9 +1,7 @@
-package io.smallrye.config.inject;
+package io.smallrye.config.microprofile;
 
-import static io.smallrye.config.ConfigMappings.registerConfigMappings;
-import static io.smallrye.config.ConfigMappings.registerConfigProperties;
+import static io.smallrye.config.ConfigMappings.registerConfigClasses;
 import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
-import static io.smallrye.config.inject.KeyValuesConfigSource.config;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,11 +13,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperties;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappingLoader;
+import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithParentName;
@@ -28,15 +28,16 @@ class ConfigPropertiesMappingsTest {
     @Test
     void registerProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.host", "localhost", "server.port", "8080",
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.host", "localhost", "server.port", "8080",
                         "server.reasons.200", "OK", "server.reasons.201", "Created",
                         "server.versions.v1", "1.The version 1.2.3",
                         "server.versions.v2", "2.The version 2.0.0",
-                        "server.numbers.one", "1", "server.numbers.two", "2", "server.numbers.three", "3"))
+                        "server.numbers.one", "1", "server.numbers.two", "2", "server.numbers.three", "3"), "test"))
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
 
-        registerConfigProperties(config, singleton(configClass(ServerClass.class, "server")));
+        registerConfigClasses(config, singleton(configClass(ServerClass.class, "server")), false);
         ServerClass server = config.getConfigMapping(ServerClass.class);
 
         assertEquals("localhost", server.host);
@@ -66,10 +67,11 @@ class ConfigPropertiesMappingsTest {
     void validateProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withConverter(Version.class, 100, new VersionConverter())
-                .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"), "test"))
                 .build();
 
-        registerConfigProperties(config, singleton(configClass(ServerClass.class, "server")));
+        registerConfigClasses(config, singleton(configClass(ServerClass.class, "server")), false);
         ServerClass server = config.getConfigMapping(ServerClass.class);
 
         assertEquals("localhost", server.host);
@@ -79,7 +81,8 @@ class ConfigPropertiesMappingsTest {
     @Test
     void validateWithBuilderOrConfig() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"), "test"))
                 .withMapping(ServerClass.class)
                 .withConverter(Version.class, 100, new VersionConverter())
                 .withValidateUnknown(true)
@@ -95,7 +98,8 @@ class ConfigPropertiesMappingsTest {
     @Test
     void validateDisableOnConfigProperties() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withSources(config("server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"))
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.host", "localhost", "server.port", "8080", "server.unmapped", "unmapped"), "test"))
                 .withMapping(ServerClass.class)
                 .withConverter(Version.class, 100, new VersionConverter())
                 .build();
@@ -111,7 +115,7 @@ class ConfigPropertiesMappingsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder().build();
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> registerConfigMappings(config, singleton(configClass(ServerPropertiesInterface.class))));
+                () -> registerConfigClasses(config, singleton(configClass(ServerPropertiesInterface.class)), true));
         assertTrue(exception.getMessage()
                 .startsWith("SRCFG00044: The @ConfigProperties annotation can only be placed in classes"));
 
@@ -126,8 +130,9 @@ class ConfigPropertiesMappingsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withMapping(ConfigMappingNamingKebab.class)
                 .withMapping(ConfigPropertiesNamingVerbatim.class)
-                .withSources(config("server.theHost", "localhost"))
-                .withSources(config("server.the-host", "localhost", "server.form.login-page", "login"))
+                .withSources(new PropertiesConfigSource(Map.of("server.theHost", "localhost"), "test"))
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "server.the-host", "localhost", "server.form.login-page", "login"), "test"))
                 .build();
 
         ConfigPropertiesNamingVerbatim configProperties = config.getConfigMapping(ConfigPropertiesNamingVerbatim.class);
@@ -136,6 +141,16 @@ class ConfigPropertiesMappingsTest {
         ConfigMappingNamingKebab configMapping = config.getConfigMapping(ConfigMappingNamingKebab.class);
         assertEquals("localhost", configMapping.theHost());
         assertEquals("login", configMapping.form().get("form").loginPage());
+    }
+
+    @Test
+    void configPropertyAnnotation() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withMapping(ServerMPConfig20.class)
+                .withDefaultValue("name", "localhost")
+                .build();
+        ServerMPConfig20 server = config.getConfigMapping(ServerMPConfig20.class);
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.port);
     }
 
     @Test
@@ -178,6 +193,14 @@ class ConfigPropertiesMappingsTest {
     @ConfigProperties(prefix = "server")
     public static class ServerProperties {
         public String host;
+        public int port;
+    }
+
+    @ConfigProperties
+    public static class ServerMPConfig20 {
+        @ConfigProperty(name = "name")
+        public String host;
+        @ConfigProperty(defaultValue = "8080")
         public int port;
     }
 

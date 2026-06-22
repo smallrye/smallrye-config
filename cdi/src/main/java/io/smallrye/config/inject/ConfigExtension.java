@@ -15,8 +15,7 @@
  */
 package io.smallrye.config.inject;
 
-import static io.smallrye.config.ConfigMappings.registerConfigMappings;
-import static io.smallrye.config.ConfigMappings.registerConfigProperties;
+import static io.smallrye.config.ConfigMappings.registerConfigClasses;
 import static io.smallrye.config.inject.ConfigProducer.isClassHandledByConfigProducer;
 import static io.smallrye.config.inject.InjectionMessages.formatInjectionPoint;
 import static io.smallrye.config.inject.SecuritySupport.getContextClassLoader;
@@ -238,8 +237,8 @@ public class ConfigExtension implements Extension {
         }
 
         try {
-            registerConfigMappings(config, configMappings);
-            registerConfigProperties(config, configProperties);
+            registerConfigClasses(config, configMappings, true);
+            registerConfigClasses(config, configProperties, false);
         } catch (ConfigValidationException e) {
             adv.addDeploymentProblem(e);
         }

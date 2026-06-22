@@ -840,8 +840,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             defaults.add(configClass.getProperties());
             secretKeys.add(configClass.getSecrets());
 
-            // It is an MP ConfigProperties, so ignore unmapped properties
-            if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(configClass.getType()) != null) {
+            ConfigMappingHandler handler = ConfigMappingHandler.Handlers.find(configClass.getType());
+            if (handler.ignoreUnmappedProperties()) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
         }
