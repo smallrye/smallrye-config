@@ -796,17 +796,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#jasypt" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Jasypt
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1607,17 +1596,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#jasypt" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Jasypt
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1722,68 +1700,6 @@ used by the <code>aes-gcm-nopaddin</code> handler.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="jasypt">Jasypt<a class="headerlink" href="#jasypt" title="Permanent link">#</a></h3>
-<div class="admonition danger">
-<p class="admonition-title">Danger</p>
-</div>
-<p><a href="https://github.com/jasypt/jasypt">Jasypt</a> is no longer maintained, and the project has been archived. The SmallRye 
-Config Jasypt SecretHandler is deprecated and will be removed in a future version. Its usage will throw an 
-<code>UnsupportedOperationException</code>, and it can be re-enabled by setting the configuration 
-<code>smallrye.config.secret-handler.jasypt.enabled=true</code>.</p>
-<p><a href="http://www.jasypt.org">Jasypt</a> is a java library which allows the developer to add basic encryption capabilities. Add 
-the following dependency in your project to use it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>smallrye-config-jasypt<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>3.17.3-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nt">&lt;/dependency&gt;</span>
-</code></pre></div>
-<h4 id="jasypt-jasypt">Jasypt <code>${jasypt::...}</code><a class="headerlink" href="#jasypt-jasypt" title="Permanent link">#</a></h4>
-<div class="admonition example">
-<p class="admonition-title">Example</p>
-<p><div class="highlight"><span class="filename">application.properties</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">smallrye.config.secret-handler.jasypt.password</span><span class="o">=</span><span class="s">jasypt</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">smallrye.config.secret-handler.jasypt.algorithm</span><span class="o">=</span><span class="s">PBEWithHMACSHA512AndAES_256</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="na">my.secret</span><span class="o">=</span><span class="s">${jasypt::ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)}</span>
-</code></pre></div>
-The <code>${jasypt::...}</code> <code>SecretKeyHandler</code> requires both <code>smallrye.config.secret-handler.jasypt.password</code> and 
-<code>smallrye.config.secret-handler.jasypt.algorithm</code> configurations to state the password and the algorithm to be
-used by the Jasypt encryptor.</p>
-<p>Jasypt encrypted values must be set with the handler expression as <code>${jasypt::ENC(value)}</code>. Note that the 
-encrypted value must be generated using the proper Jasypt encryptor with the same password and algorithm set in 
-the confguration.</p>
-<p>A possible encrypted value for <code>12345678</code> is <code>ENC(wqp8zDeiCQ5JaFvwDtoAcr2WMLdlD0rjwvo8Rh0thG5qyTQVGxwJjBIiW26y0dtU)</code></p>
-<p>Lookups to the configuration <code>my.secret</code> will automatically decrypt the value with Jasypt and provide the original
-<code>12345678</code> string.</p>
-</div>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>It is possible to generate the encrypted secret with the following <a href="http://jbang.dev/">JBang</a> script:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>jbang<span class="w"> </span>https://raw.githubusercontent.com/smallrye/smallrye-config/main/documentation/src/main/docs/config/secret-handlers/jasypt.java<span class="w"> </span>-s<span class="o">=</span>&lt;secret&gt;<span class="w"> </span>-p<span class="o">=</span>&lt;password&gt;
-</code></pre></div>
-</div>
-<h5 id="configuration_1">Configuration<a class="headerlink" href="#configuration_1" title="Permanent link">#</a></h5>
-<table>
-<thead>
-<tr>
-<th>Configuration Property</th>
-<th>Type</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>smallrye.config.secret-handler.jasypt.password</code><br>The Jasypt password to use</td>
-<td>String</td>
-<td></td>
-</tr>
-<tr>
-<td><code>smallrye.config.secret-handler.jasypt.algorithm</code><br>The Jasypt algorithm to use</td>
-<td>String</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 <h2 id="secret-keys-names">Secret Keys Names<a class="headerlink" href="#secret-keys-names" title="Permanent link">#</a></h2>
 <p>When configuration properties contain passwords or other kinds of secrets, Smallrye Config can hide them to prevent 
 accidental exposure of such values.</p>
@@ -1792,12 +1708,12 @@ secrets. However, there is still the fundamental problem that passwords and secr
 strings. Secret Keys provides a way to &ldquo;lock&rdquo; the configuration so that secrets do not appear unless explicitly enabled.</p>
 <p>To mark specific keys as secrets, register an instance of <code>io.smallrye.config.SecretKeysConfigSourceInterceptor</code> by 
 using the interceptor factory as follows:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SecretKeysConfigInterceptorFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptorFactory</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="nf">getInterceptor</span><span class="p">(</span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SecretKeysConfigSourceInterceptor</span><span class="p">(</span><span class="n">Set</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;secret&quot;</span><span class="p">));</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SecretKeysConfigInterceptorFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptorFactory</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="nf">getInterceptor</span><span class="p">(</span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SecretKeysConfigSourceInterceptor</span><span class="p">(</span><span class="n">Set</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;secret&quot;</span><span class="p">));</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
 </code></pre></div>
 <p>Register the factory so that it can be found at runtime by creating a 
 <code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file that contains the fully qualified name of 
@@ -1805,9 +1721,9 @@ this factory class.</p>
 <p>From this point forward, every lookup to the configuration name <code>secret</code> will throw a <code>SecurityException</code>.</p>
 <p>Access the Secret Keys using the APIs <code>io.smallrye.config.SecretKeys#doUnlocked(java.lang.Runnable)</code> 
 and <code>io.smallrye.config.SecretKeys#doUnlocked(java.util.function.Supplier&lt;T&gt;)</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">String</span><span class="w"> </span><span class="n">secretValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SecretKeys</span><span class="p">.</span><span class="na">doUnlocked</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;secret&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">});</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">String</span><span class="w"> </span><span class="n">secretValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SecretKeys</span><span class="p">.</span><span class="na">doUnlocked</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;secret&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">});</span>
 </code></pre></div>
 <p>Secret Keys are only unlocked in the context of <code>doUnlocked</code>. Once the execution completes, the secrets become locked 
 again.</p>
