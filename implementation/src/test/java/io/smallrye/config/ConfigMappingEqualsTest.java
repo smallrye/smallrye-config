@@ -72,14 +72,6 @@ class ConfigMappingEqualsTest {
         assertNotEquals(o1.hashCode(), o2.hashCode());
     }
 
-    private static SmallRyeConfig config(final String... overrides) {
-        return new SmallRyeConfigBuilder()
-                .withMapping(MappingEquals.class)
-                .withSources(KeyValuesConfigSource.config(overrides))
-                .withSources(MappingEquals.getDefaults())
-                .build();
-    }
-
     @ConfigMapping
     interface MappingEquals {
         Primitives prim();
@@ -180,5 +172,35 @@ class ConfigMappingEqualsTest {
                     "maps.list.key[0]", "value",
                     "maps.list-nested.key[0].value", "value");
         }
+    }
+
+    @Test
+    void notEqualsMapXorTrap() {
+        SmallRyeConfig c1 = new SmallRyeConfigBuilder()
+                .withMapping(MapXorTrap.class)
+                .build();
+        SmallRyeConfig c2 = new SmallRyeConfigBuilder()
+                .withMapping(MapXorTrap.class)
+                .withSources(KeyValuesConfigSource.config("trap.users.user", "user"))
+                .build();
+        MapXorTrap o1 = c1.getConfigMapping(MapXorTrap.class);
+        MapXorTrap o2 = c2.getConfigMapping(MapXorTrap.class);
+        assertEquals(o1.getClass(), o2.getClass());
+        assertNotEquals(o1.users(), o2.users());
+        assertNotEquals(o1, o2);
+        assertNotEquals(o1.hashCode(), o2.hashCode());
+    }
+
+    @ConfigMapping(prefix = "trap")
+    interface MapXorTrap {
+        Map<String, String> users();
+    }
+
+    private static SmallRyeConfig config(final String... overrides) {
+        return new SmallRyeConfigBuilder()
+                .withMapping(MappingEquals.class)
+                .withSources(KeyValuesConfigSource.config(overrides))
+                .withSources(MappingEquals.getDefaults())
+                .build();
     }
 }
