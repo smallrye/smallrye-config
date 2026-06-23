@@ -25,6 +25,7 @@ import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.H_NEWINVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.IADD;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.IFEQ;
@@ -33,11 +34,14 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static org.objectweb.asm.Opcodes.IF_ICMPNE;
+import static org.objectweb.asm.Opcodes.ILOAD;
+import static org.objectweb.asm.Opcodes.IMUL;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.LCMP;
 import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.NEW;
@@ -852,6 +856,48 @@ public class ConfigMappingGenerator {
                         "(" + getDescriptor(primitiveProperty.getPrimitiveType()) + ")"
                                 + getDescriptor(primitiveProperty.getBoxType()),
                         false);
+            } else if (property.isMap()) {
+                // Rolling hash over map entries to avoid the XOR trap in Map.hashCode()
+                int vMap = 1, vHash = 2, vIter = 3, vEntry = 4;
+                hc.visitVarInsn(ASTORE, vMap);
+                hc.visitInsn(ICONST_0);
+                hc.visitVarInsn(ISTORE, vHash);
+                hc.visitVarInsn(ALOAD, vMap);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "entrySet", "()Ljava/util/Set;", true);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "iterator", "()Ljava/util/Iterator;", true);
+                hc.visitVarInsn(ASTORE, vIter);
+                Label loopStart = new Label();
+                Label loopEnd = new Label();
+                hc.visitLabel(loopStart);
+                hc.visitVarInsn(ALOAD, vIter);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z", true);
+                hc.visitJumpInsn(IFEQ, loopEnd);
+                hc.visitVarInsn(ALOAD, vIter);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;", true);
+                hc.visitTypeInsn(CHECKCAST, "java/util/Map$Entry");
+                hc.visitVarInsn(ASTORE, vEntry);
+                // hash = 31 * hash + entry.getKey().hashCode()
+                hc.visitIntInsn(BIPUSH, 31);
+                hc.visitVarInsn(ILOAD, vHash);
+                hc.visitInsn(IMUL);
+                hc.visitVarInsn(ALOAD, vEntry);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getKey", "()Ljava/lang/Object;", true);
+                hc.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT, "hashCode", "()I", false);
+                hc.visitInsn(IADD);
+                hc.visitVarInsn(ISTORE, vHash);
+                // hash = 31 * hash + entry.getValue().hashCode()
+                hc.visitIntInsn(BIPUSH, 31);
+                hc.visitVarInsn(ILOAD, vHash);
+                hc.visitInsn(IMUL);
+                hc.visitVarInsn(ALOAD, vEntry);
+                hc.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getValue", "()Ljava/lang/Object;", true);
+                hc.visitMethodInsn(INVOKEVIRTUAL, I_OBJECT, "hashCode", "()I", false);
+                hc.visitInsn(IADD);
+                hc.visitVarInsn(ISTORE, vHash);
+                hc.visitJumpInsn(GOTO, loopStart);
+                hc.visitLabel(loopEnd);
+                hc.visitVarInsn(ILOAD, vHash);
+                hc.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
             }
             hc.visitInsn(AASTORE);
             hc.visitInsn(DUP);
