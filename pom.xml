@@ -45,6 +45,7 @@
     <version.module-services-plugin>1.3</version.module-services-plugin>
     <!-- Sonar settings -->
     <sonar.projectName>SmallRye Config</sonar.projectName>
+    <jacocoArgLine/>
   </properties>
 
   <licenses>

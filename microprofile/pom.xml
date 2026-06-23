@@ -48,7 +48,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>
-                        --add-opens=io.smallrye.config.microprofile/io.smallrye.config.microprofile=io.smallrye.config</argLine>
+                        @{jacocoArgLine}
+                        --add-opens=io.smallrye.config.microprofile/io.smallrye.config.microprofile=io.smallrye.config
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>
