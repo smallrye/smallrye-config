@@ -2727,6 +2727,7 @@ class ConfigMappingInterfaceTest {
         GroupDefaults mapping = config.getConfigMapping(GroupDefaults.class);
         assertEquals("value", mapping.group().value());
         assertEquals("default", mapping.defaults().group().get("default").value());
+        assertEquals("default", config.getConfigValue("group-defaults.group.x.value").getValue());
     }
 
     @ConfigMapping(prefix = "group-defaults")

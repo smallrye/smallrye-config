@@ -45,6 +45,8 @@ public final class ConfigMappingContext {
 
     private NamingStrategy namingStrategy = NamingStrategy.KEBAB_CASE;
     private BeanStyleGetters beanStyleGetters = BeanStyleGetters.DISABLED;
+    private boolean resolvedNonDefault;
+
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
@@ -289,7 +291,7 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
                 final Iterable<String> keys) {
-            return map(keyRawType, keyConvertWith, unnamedKey, keys, null);
+            return map(keyRawType, keyConvertWith, unnamedKey, keys, null, null);
         }
 
         public <K, V> ObjectCreator<T> map(
@@ -297,7 +299,8 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
                 final Iterable<String> keys,
-                final Supplier<V> defaultValue) {
+                final Supplier<V> defaultValue,
+                final Supplier<V> unnamedDefaultSupplier) {
             Converter<K> keyConverter = keyConvertWith == null ? config.requireConverter(keyRawType)
                     : getConverterInstance(keyConvertWith);
             List<Consumer<Function<String, Object>>> nestedCreators = new ArrayList<>();
@@ -315,11 +318,26 @@ public final class ConfigMappingContext {
                         Map<K, V> map = defaultInstance != null ? new MapWithDefault<>(defaultInstance) : new HashMap<>();
 
                         if (unnamedKey != null) {
+                            V unnamedDefault = defaultInstance;
+                            if (unnamedDefault == null && unnamedDefaultSupplier != null) {
+                                int problemsBefore = problems.size();
+                                int length = nameBuilder.length();
+                                nameBuilder.append(".*");
+                                unnamedDefault = constructGroup(unnamedDefaultSupplier);
+                                nameBuilder.setLength(length);
+                                if (problems.size() > problemsBefore) {
+                                    problems.subList(problemsBefore, problems.size()).clear();
+                                    unnamedDefault = null;
+                                }
+                            }
+                            final V unnamedDefaultInstance = unnamedDefault;
                             nestedCreators.add(new Consumer<>() {
                                 @Override
                                 public void accept(Function<String, Object> get) {
+                                    resolvedNonDefault = false;
                                     V value = (V) get.apply(path);
-                                    if (value != null) {
+                                    if (value != null
+                                            && (resolvedNonDefault || !value.equals(unnamedDefaultInstance))) {
                                         map.put(unnamedKey.isEmpty() ? null : keyConverter.convert(unnamedKey), value);
                                     }
                                 }
@@ -590,7 +608,14 @@ public final class ConfigMappingContext {
                 final String propertyName,
                 final Converter<V> valueConverter) {
             context.usedProperties.add(propertyName);
-            return context.config.getValue(propertyName, valueConverter);
+            ConfigValue configValue = context.config.getConfigValue(propertyName);
+            if (configValue.getValue() != null && !configValue.isDefault()) {
+                context.resolvedNonDefault = true;
+            }
+            if (Converters.CONFIG_VALUE_CONVERTER.equals(valueConverter)) {
+                return (V) configValue.noProblems();
+            }
+            return context.config.convertValue(configValue, valueConverter);
         }
 
         public ObjectCreator<T> value(
@@ -644,7 +669,11 @@ public final class ConfigMappingContext {
                 final String propertyName,
                 final Converter<V> valueConverter) {
             context.usedProperties.add(propertyName);
-            return context.config.getOptionalValue(propertyName, valueConverter);
+            ConfigValue configValue = context.config.getConfigValue(propertyName);
+            if (configValue.getValue() != null && !configValue.isDefault()) {
+                context.resolvedNonDefault = true;
+            }
+            return context.config.convertValue(configValue, newOptionalConverter(valueConverter));
         }
 
         public <V> ObjectCreator<T> optionalValue(
