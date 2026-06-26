@@ -25,6 +25,7 @@ nav:
       - 'Factories': config-sources/factories.md
       - 'Locations': config-sources/locations.md
       - 'YAML': config-sources/yaml.md
+      - 'TOML': config-sources/toml.md
       - 'JSON': config-sources/json.md
       - 'FileSystem': config-sources/filesystem.md
       - 'ZooKeeper': config-sources/zookeeper.md

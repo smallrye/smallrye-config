@@ -76,6 +76,7 @@
     <module>sources/hocon</module>
     <module>sources/file-system</module>
     <module>sources/yaml</module>
+    <module>sources/toml</module>
     <module>sources/zookeeper</module>
     <module>sources/keystore</module>
     <module>utils/events</module>
