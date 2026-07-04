@@ -7,11 +7,16 @@
     ]
   },
   {
-    "version": "3.17.2",
-    "title": "3.17.2",
+    "version": "3.18.0",
+    "title": "3.18.0",
     "aliases": [
       "Latest"
     ]
+  },
+  {
+    "version": "3.17.2",
+    "title": "3.17.2",
+    "aliases": []
   },
   {
     "version": "3.17.1",
