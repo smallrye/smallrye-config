@@ -20,4 +20,12 @@ public @interface WithUnnamedKey {
      * @return the Map key
      */
     String value() default "";
+
+    /**
+     * Whether the unnamed key should be included in the {@link java.util.Map} when its values come only from defaults.
+     *
+     * @return {@code true} to always include the unnamed key, {@code false} to exclude it when only default values
+     *         are present
+     */
+    boolean eager() default true;
 }

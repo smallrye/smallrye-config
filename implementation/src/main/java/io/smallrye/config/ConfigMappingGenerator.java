@@ -588,13 +588,14 @@ public class ConfigMappingGenerator {
                 ctor.visitLdcInsn(getType(mapProperty.getKeyRawType()));
                 ctor.visitKeyConverter(mapProperty);
                 ctor.visitKeyUnnamed(mapProperty);
+                ctor.visitInsn(mapProperty.hasKeyUnnamed() && mapProperty.isKeyUnnamedEager() ? ICONST_1 : ICONST_0);
                 ctor.visitKeyProvider(mapProperty);
                 if (mapProperty.hasDefaultValue()) {
                     ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
                 } else {
                     ctor.visitInsn(ACONST_NULL);
                 }
-                if (mapProperty.hasKeyUnnamed()) {
+                if (mapProperty.hasKeyUnnamed() && !mapProperty.isKeyUnnamedEager()) {
                     ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
                 } else {
                     ctor.visitInsn(ACONST_NULL);
@@ -1359,7 +1360,7 @@ public class ConfigMappingGenerator {
 
     private enum ObjectCreatorMapGroupInvocation implements MethodInvocation {
         map(INVOKEVIRTUAL,
-                "(" + D_CLASS + D_CLASS + D_STRING + D_ITERABLE + D_SUPPLIER + D_SUPPLIER + ")" + D_OBJECT_CREATOR);
+                "(" + D_CLASS + D_CLASS + D_STRING + "Z" + D_ITERABLE + D_SUPPLIER + D_SUPPLIER + ")" + D_OBJECT_CREATOR);
 
         private final int opcode;
         private final String desc;

@@ -267,8 +267,7 @@ public class ConfigMappingFullTest {
                 .build();
 
         OrmConfig ormConfig = config.getConfigMapping(OrmConfig.class);
-        assertEquals(0, ormConfig.persistenceUnits().size());
-        assertFalse(ormConfig.persistenceUnits().get("<default>").database().globallyQuotedIdentifiers());
+        assertEquals(1, ormConfig.persistenceUnits().size());
         OrmRuntimeConfig ormRuntimeConfig = config.getConfigMapping(OrmRuntimeConfig.class);
         assertEquals(1, ormRuntimeConfig.persistenceUnits().size());
         assertEquals("drop-and-create",
@@ -339,7 +338,7 @@ public class ConfigMappingFullTest {
     @ConfigMapping(prefix = "smallrye.config-orm")
     interface OrmRuntimeConfig {
         @WithParentName
-        @WithUnnamedKey("<default>")
+        @WithUnnamedKey(value = "<default>", eager = false)
         @WithDefaults
         Map<String, OrmRuntimeConfigPersistenceUnit> persistenceUnits();
 

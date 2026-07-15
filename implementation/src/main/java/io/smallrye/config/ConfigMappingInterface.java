@@ -613,6 +613,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     public static final class MapProperty extends Property {
         private final Type keyType;
         private final String keyUnnamed;
+        private final boolean keyUnnamedEager;
         private final Class<? extends Supplier<Iterable<String>>> keysProvider;
         private final Class<? extends Converter<?>> keyConvertWith;
         private final Property valueProperty;
@@ -624,6 +625,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 final String propertyName,
                 final Type keyType,
                 final String keyUnnamed,
+                final boolean keyUnnamedEager,
                 final Class<? extends Supplier<Iterable<String>>> keysProvider,
                 final Class<? extends Converter<?>> keyConvertWith,
                 final Property valueProperty,
@@ -633,6 +635,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             super(method, propertyName);
             this.keyType = keyType;
             this.keyUnnamed = keyUnnamed;
+            this.keyUnnamedEager = keyUnnamedEager;
             this.keysProvider = keysProvider;
             this.keyConvertWith = keyConvertWith;
             this.valueProperty = valueProperty;
@@ -654,6 +657,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         public boolean hasKeyUnnamed() {
             return keyUnnamed != null;
+        }
+
+        public boolean isKeyUnnamedEager() {
+            return keyUnnamedEager;
         }
 
         public Class<? extends Supplier<Iterable<String>>> getKeysProvider() {
@@ -889,6 +896,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 return new MapProperty(method,
                         propertyName, keyType.getType(),
                         getUnnamedKey(keyType, method),
+                        getUnnamedKeyEager(keyType, method),
                         getKeysProvider(keyType, method),
                         getConverter(keyType, method),
                         getPropertyDef(interfaceType, method, valueType),
@@ -996,6 +1004,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             annotation = method.getAnnotation(WithUnnamedKey.class);
         }
         return annotation != null ? annotation.value() : null;
+    }
+
+    private static boolean getUnnamedKeyEager(final AnnotatedType type, final Method method) {
+        WithUnnamedKey annotation = type.getAnnotation(WithUnnamedKey.class);
+        if (annotation == null) {
+            annotation = method.getAnnotation(WithUnnamedKey.class);
+        }
+        return annotation == null || annotation.eager();
     }
 
     private static Class<? extends Supplier<Iterable<String>>> getKeysProvider(final AnnotatedType type, final Method method) {
