@@ -183,7 +183,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
     @ConfigMapping(prefix = "case2")
     interface Case2Config {
         @WithDefaults
-        @WithUnnamedKey("<default>")
+        @WithUnnamedKey(value = "<default>", eager = false)
         Map<String, ConfigGroup> map();
     }
 
@@ -206,7 +206,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
 
     @ConfigMapping(prefix = "case3")
     interface Case3Config {
-        @WithUnnamedKey("<default>")
+        @WithUnnamedKey(value = "<default>", eager = false)
         Map<String, Map<String, String>> map();
     }
 
@@ -222,6 +222,30 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
 
         assertTrue(map.containsKey("<default>"),
                 "unnamed key should appear for nested maps when config is provided at the unnamed path");
+    }
+
+    @ConfigMapping(prefix = "builder-default")
+    interface BuilderDefaultConfig {
+        @WithUnnamedKey(value = "<default>", eager = false)
+        Map<String, BuilderDefaultGroup> map();
+
+        interface BuilderDefaultGroup {
+            @WithDefault("mapping-default")
+            String value();
+        }
+    }
+
+    @Test
+    void builderDefaultValueWithEagerFalse() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withDefaultValue("builder-default.map.value", "mapping-default")
+                .withMapping(BuilderDefaultConfig.class)
+                .build();
+
+        Map<String, BuilderDefaultConfig.BuilderDefaultGroup> map = config.getConfigMapping(BuilderDefaultConfig.class).map();
+
+        assertFalse(map.containsKey("<default>"),
+                "unnamed key should not appear when value comes from withDefaultValue (same ordinal as mapping defaults)");
     }
 
     enum ConfigGroupKey {
@@ -450,7 +474,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
     static class WithUnnamedKeyOnlyMapping extends PropertyDefaultsConfigGroupMapMapping {
         @ConfigMapping(prefix = "with-unnamed-key-only")
         interface Config {
-            @WithUnnamedKey("<default>")
+            @WithUnnamedKey(value = "<default>", eager = false)
             Map<String, ConfigGroup> map();
         }
 
@@ -504,7 +528,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         @ConfigMapping(prefix = "with-defaults-and-unnamed-key")
         interface Config {
             @WithDefaults
-            @WithUnnamedKey("<default>")
+            @WithUnnamedKey(value = "<default>", eager = false)
             Map<String, ConfigGroup> map();
         }
 
@@ -559,7 +583,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
         interface Config {
             @WithParentName
             @WithDefaults
-            @WithUnnamedKey("<default>")
+            @WithUnnamedKey(value = "<default>", eager = false)
             Map<String, ConfigGroup> map();
         }
 
@@ -612,7 +636,7 @@ public class ConfigMappingMapDefaultsUnnamedKeyTest {
     static class WithUnnamedKeyNoPropertyDefaultsMapping extends NoPropertyDefaultsConfigGroupMapMapping {
         @ConfigMapping(prefix = "with-unnamed-key-no-property-defaults")
         interface Config {
-            @WithUnnamedKey("<default>")
+            @WithUnnamedKey(value = "<default>", eager = false)
             Map<String, ConfigGroupNoPropertyDefaults> map();
         }
 

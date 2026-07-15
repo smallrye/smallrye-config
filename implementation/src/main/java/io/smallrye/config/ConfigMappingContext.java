@@ -291,13 +291,23 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
                 final Iterable<String> keys) {
-            return map(keyRawType, keyConvertWith, unnamedKey, keys, null, null);
+            return map(keyRawType, keyConvertWith, unnamedKey, true, keys, null, null);
         }
 
         public <K, V> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith,
                 final String unnamedKey,
+                final Iterable<String> keys,
+                final Supplier<V> defaultValue) {
+            return map(keyRawType, keyConvertWith, unnamedKey, true, keys, defaultValue, null);
+        }
+
+        public <K, V> ObjectCreator<T> map(
+                final Class<K> keyRawType,
+                final Class<? extends Converter<K>> keyConvertWith,
+                final String unnamedKey,
+                final boolean unnamedEager,
                 final Iterable<String> keys,
                 final Supplier<V> defaultValue,
                 final Supplier<V> unnamedDefaultSupplier) {
@@ -318,30 +328,41 @@ public final class ConfigMappingContext {
                         Map<K, V> map = defaultInstance != null ? new MapWithDefault<>(defaultInstance) : new HashMap<>();
 
                         if (unnamedKey != null) {
-                            V unnamedDefault = defaultInstance;
-                            if (unnamedDefault == null && unnamedDefaultSupplier != null) {
-                                int problemsBefore = problems.size();
-                                int length = nameBuilder.length();
-                                nameBuilder.append(".*");
-                                unnamedDefault = constructGroup(unnamedDefaultSupplier);
-                                nameBuilder.setLength(length);
-                                if (problems.size() > problemsBefore) {
-                                    problems.subList(problemsBefore, problems.size()).clear();
-                                    unnamedDefault = null;
-                                }
-                            }
-                            final V unnamedDefaultInstance = unnamedDefault;
-                            nestedCreators.add(new Consumer<>() {
-                                @Override
-                                public void accept(Function<String, Object> get) {
-                                    resolvedNonDefault = false;
-                                    V value = (V) get.apply(path);
-                                    if (value != null
-                                            && (resolvedNonDefault || !value.equals(unnamedDefaultInstance))) {
-                                        map.put(unnamedKey.isEmpty() ? null : keyConverter.convert(unnamedKey), value);
+                            if (unnamedEager) {
+                                nestedCreators.add(new Consumer<>() {
+                                    @Override
+                                    public void accept(Function<String, Object> get) {
+                                        V value = (V) get.apply(path);
+                                        if (value != null) {
+                                            map.put(unnamedKey.isEmpty() ? null : keyConverter.convert(unnamedKey), value);
+                                        }
+                                    }
+                                });
+                            } else {
+                                V unnamedDefault = defaultInstance;
+                                if (unnamedDefault == null && unnamedDefaultSupplier != null) {
+                                    int problemsBefore = problems.size();
+                                    int length = nameBuilder.length();
+                                    nameBuilder.append(".*");
+                                    unnamedDefault = constructGroup(unnamedDefaultSupplier);
+                                    nameBuilder.setLength(length);
+                                    if (problems.size() > problemsBefore) {
+                                        problems.subList(problemsBefore, problems.size()).clear();
+                                        unnamedDefault = null;
                                     }
                                 }
-                            });
+                                final V unnamedDefaultInstance = unnamedDefault;
+                                nestedCreators.add(new Consumer<>() {
+                                    @Override
+                                    public void accept(Function<String, Object> get) {
+                                        resolvedNonDefault = false;
+                                        V value = (V) get.apply(path);
+                                        if (value != null && (resolvedNonDefault || !value.equals(unnamedDefaultInstance))) {
+                                            map.put(unnamedKey.isEmpty() ? null : keyConverter.convert(unnamedKey), value);
+                                        }
+                                    }
+                                });
+                            }
                         }
 
                         // single map key with the path plus the map key
