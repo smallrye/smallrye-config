@@ -893,13 +893,17 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 AnnotatedType keyType = typeOfParameter(type, 0);
                 AnnotatedType valueType = typeOfParameter(type, 1);
                 String defaultValue = getDefaultValue(method);
+                Property valueProperty = getPropertyDef(interfaceType, method, valueType);
+                if (valueProperty.isGroup()) {
+                    defaultValue = null;
+                }
                 return new MapProperty(method,
                         propertyName, keyType.getType(),
                         getUnnamedKey(keyType, method),
                         getUnnamedKeyEager(keyType, method),
                         getKeysProvider(keyType, method),
                         getConverter(keyType, method),
-                        getPropertyDef(interfaceType, method, valueType),
+                        valueProperty,
                         defaultValue != null || hasDefaults(method),
                         defaultValue);
             }

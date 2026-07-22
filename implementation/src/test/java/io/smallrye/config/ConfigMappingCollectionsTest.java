@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1082,5 +1083,22 @@ public class ConfigMappingCollectionsTest {
     @ConfigMapping(prefix = "map")
     interface MapWithOptionalValues {
         Map<String, Optional<String>> values();
+    }
+
+    @Test
+    void mapNestedWithDefaultIgnored() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapNestedWithDefaultIgnored.class)
+                .build();
+        assertNotNull(config.getConfigMapping(MapNestedWithDefaultIgnored.class));
+    }
+
+    interface MapNestedWithDefaultIgnored {
+        @WithDefault("something")
+        Map<String, Nested> map();
+
+        interface Nested {
+            String value();
+        }
     }
 }

@@ -1022,6 +1022,10 @@ public class ConfigMappingGenerator {
             return false;
         }
 
+        if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(klass) != null) {
+            return false;
+        }
+
         return !klass.isPrimitive() || !(value instanceof Character) || !value.equals(0);
     }
 
