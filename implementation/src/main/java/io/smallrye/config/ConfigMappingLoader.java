@@ -4,8 +4,10 @@ import static java.lang.invoke.MethodType.methodType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +45,7 @@ public final class ConfigMappingLoader {
         ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
         if (configMappingClass != null) {
             mappings.add(configMappingClass);
+            mappings.addAll(configMappingClass.getNested());
             mappings.addAll(getConfigMappingsMetadata(getConfigMapping(type).getInterfaceType()));
         }
         return List.copyOf(mappings);
@@ -335,6 +338,38 @@ public final class ConfigMappingLoader {
         @Override
         public byte[] getClassBytes() {
             return ConfigMappingGenerator.generate(classType, interfaceName);
+        }
+
+        public List<ConfigMappingClass> getNested() {
+            List<ConfigMappingClass> nested = new ArrayList<>();
+            collectNested(classType, nested);
+            return nested;
+        }
+
+        private static void collectNested(final Class<?> type, final List<ConfigMappingClass> nested) {
+            for (Field field : type.getDeclaredFields()) {
+                Class<?> fieldType = field.getType();
+                if (Collection.class.isAssignableFrom(fieldType) || Map.class.isAssignableFrom(fieldType)) {
+                    java.lang.reflect.Type genericType = field.getGenericType();
+                    if (genericType instanceof ParameterizedType parameterizedType) {
+                        for (java.lang.reflect.Type typeArg : parameterizedType.getActualTypeArguments()) {
+                            if (typeArg instanceof Class<?> argClass) {
+                                addNested(argClass, nested);
+                            }
+                        }
+                    }
+                } else {
+                    addNested(fieldType, nested);
+                }
+            }
+        }
+
+        private static void addNested(final Class<?> type, final List<ConfigMappingClass> nested) {
+            ConfigMappingClass configClass = getConfigurationClass(type);
+            if (configClass != null) {
+                nested.add(configClass);
+                collectNested(type, nested);
+            }
         }
     }
 }

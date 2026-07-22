@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Assertions;
@@ -257,6 +260,25 @@ class ConfigMappingClassTest {
         assertEquals(1, mapping.servers.size());
         assertEquals("localhost", mapping.servers.get("one").host);
         assertEquals(8080, mapping.servers.get("one").port);
+    }
+
+    @Test
+    void nestedMetadataCollection() {
+        List<ConfigMappingMetadata> metadata = ConfigMappingLoader.getConfigMappingsMetadata(MapNestedClass.class);
+        Set<String> names = metadata.stream()
+                .map(ConfigMappingMetadata::getClassName)
+                .collect(Collectors.toSet());
+
+        // ConfigMappingClass entries (generated interface names)
+        assertTrue(names
+                .contains(ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(MapNestedClass.class).getClassName()));
+        assertTrue(names.contains(
+                ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(MapNestedClass.ServerEntry.class).getClassName()));
+        // ConfigMappingInterface entries (implementation class names)
+        assertTrue(names.contains(ConfigMappingInterface.getImplementationClassName(
+                ConfigMappingLoader.getConfigMapping(MapNestedClass.class).getInterfaceType())));
+        assertTrue(names.contains(ConfigMappingInterface.getImplementationClassName(
+                ConfigMappingLoader.getConfigMapping(MapNestedClass.ServerEntry.class).getInterfaceType())));
     }
 
     static class MapNestedClass {
