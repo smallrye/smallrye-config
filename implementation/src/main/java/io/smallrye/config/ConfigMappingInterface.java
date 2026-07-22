@@ -188,7 +188,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return className.replace('.', '/');
     }
 
-    List<ConfigMappingInterface> getNested() {
+    public List<ConfigMappingInterface> getNested() {
         Set<ConfigMappingInterface> nested = new LinkedHashSet<>();
         getNested(properties, nested);
         return new ArrayList<>(nested);
