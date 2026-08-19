@@ -187,29 +187,28 @@ public class ConfigMappingGenerator {
      * class annotated with {@link org.eclipse.microprofile.config.inject.ConfigProperties}.
      * <p>
      *
-     * The generated configuration interface implements {@link ConfigMappingClassMapper} which provides the bridge
+     * The generated configuration interface implements {@link ConfigMappingClass.Mapper} which provides the bridge
      * between the instance of the configuration class and the implementation of the configuration interface provided by
      * {@link ConfigMappingGenerator#generate(ConfigMappingInterface)} to retrieve the configuration values.
      *
      * @param classType the configuration class.
-     * @param interfaceName the generated interface class name.
+     * @param generatedClassName the generated interface class name.
      * @return the class bytes representing the interface of the configuration class.
      */
-    static byte[] generate(final Class<?> classType, final String interfaceName) {
+    static byte[] generate(final Class<?> classType, final String generatedClassName, final ConfigMappingHandler handler) {
         String classInternalName = getInternalName(classType);
-        String interfaceInternalName = interfaceName.replace('.', '/');
-        ConfigMappingHandler configClassHandler = ConfigMappingHandler.Handlers.find(classType);
+        String interfaceInternalName = generatedClassName.replace('.', '/');
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
-                new String[] { getInternalName(ConfigMappingClassMapper.class) });
+                new String[] { getInternalName(ConfigMappingClass.Mapper.class) });
 
         {
             AnnotationVisitor av = writer.visitAnnotation("L" + getInternalName(ConfigMapping.class) + ";", true);
             av.visitEnum("namingStrategy", "L" + getInternalName(NamingStrategy.class) + ";",
-                    configClassHandler.getNamingStrategy().toString());
+                    handler.getNamingStrategy(classType).toString());
 
-            String prefix = configClassHandler.getPrefix(classType);
+            String prefix = handler.getPrefix(classType);
             if (!prefix.isEmpty()) {
                 av.visit("prefix", prefix);
             }
@@ -230,7 +229,7 @@ public class ConfigMappingGenerator {
                     getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
                     null);
 
-            ConfigMappingHandler.FieldMember fieldMember = configClassHandler.processField(declaredField);
+            ConfigMappingHandler.FieldMember fieldMember = handler.processField(declaredField);
 
             String name = declaredField.isAnnotationPresent(WithName.class)
                     ? declaredField.getAnnotation(WithName.class).value()
@@ -591,7 +590,7 @@ public class ConfigMappingGenerator {
                     ctor.visitInsn(ACONST_NULL);
                 }
                 ctor.visitMethod(ObjectCreatorMapGroupInvocation.map);
-                if (mapProperty.hasKeyProvider()) {
+                if (mapProperty.hasKeysProvider()) {
                     ctor.visitGroupSupplier(valueProperty.asGroup().getGroupType().getInterfaceType());
                     ctor.visitMethod(ObjectCreatorInvocation.group);
                 } else {
@@ -907,8 +906,7 @@ public class ConfigMappingGenerator {
     }
 
     private static void generateStaticInit(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
-        Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping).get(mapping.getInterfaceType())
-                .get("");
+        Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping);
 
         classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES", "Ljava/util/Map;",
                 "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null).visitEnd();
@@ -999,24 +997,26 @@ public class ConfigMappingGenerator {
         mv.visitEnd();
     }
 
-    private static boolean hasDefaultValue(final Class<?> klass, final Object value) {
+    private static boolean hasDefaultValue(final Class<?> type, final Object value) {
         if (value == null) {
             return false;
         }
 
-        if (klass.isPrimitive() && value instanceof Number && value.equals(0)) {
+        if (type.isPrimitive() && value instanceof Number && value.equals(0)) {
             return false;
         }
 
-        if (klass.isPrimitive() && value instanceof Boolean && value.equals(Boolean.FALSE)) {
+        if (type.isPrimitive() && value instanceof Boolean && value.equals(Boolean.FALSE)) {
             return false;
         }
 
-        if (ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(klass) != null) {
+        if (Collection.class.isAssignableFrom(type) ||
+                Map.class.isAssignableFrom(type) ||
+                Optional.class.isAssignableFrom(type)) {
             return false;
         }
 
-        return !klass.isPrimitive() || !(value instanceof Character) || !value.equals(0);
+        return !type.isPrimitive() || !(value instanceof Character) || !value.equals(0);
     }
 
     private static boolean isSecret(final Property property) {
@@ -1092,7 +1092,7 @@ public class ConfigMappingGenerator {
         }
 
         void visitKeyProvider(MapProperty property) {
-            if (property.hasKeyProvider()) {
+            if (property.hasKeysProvider()) {
                 String provider = getInternalName(property.getKeysProvider());
                 visitTypeInsn(NEW, provider);
                 visitInsn(DUP);
@@ -1117,7 +1117,7 @@ public class ConfigMappingGenerator {
          * invocation.
          */
         void visitGroupSupplier(final Class<?> groupInterfaceType) {
-            String implClassName = ConfigMappingInterface.getImplementationClassName(groupInterfaceType).replace('.', '/');
+            String implClassName = ConfigMappingInterface.getGeneratedClassName(groupInterfaceType).replace('.', '/');
             this.visitVarInsn(ALOAD, V_MAPPING_CONTEXT);
             this.visitInvokeDynamicInsn(
                     "get",

@@ -9,29 +9,26 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 @Execution(ExecutionMode.CONCURRENT)
 class ConfigMappingLoaderParallelTest {
     @Test
-    void testParallelThreadOne() {
-        loadTestClass();
+    void testInterfaceParallelOne() {
+        loadInterface();
     }
 
     @Test
-    void testParallelThreadTwo() {
-        loadTestClass();
+    void testInterfaceParallelTwo() {
+        loadInterface();
     }
 
     @Test
-    void testParallelThreadThree() {
-        loadTestClass();
+    void testInterfaceParallelThree() {
+        loadInterface();
     }
 
     @Test
-    void testParallelThreadFour() {
-        loadTestClass();
+    void testInterfaceParallelFour() {
+        loadInterface();
     }
 
-    private void loadTestClass() {
-        ConfigMappingLoader.ensureLoaded(ConfigMappingLoaderTest.Server.class);
-        ConfigMappingLoader.ensureLoaded(ConfigMappingLoaderTest.Server.class);
-
+    private void loadInterface() {
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080"))
                 .withMapping(ConfigMappingLoaderTest.Server.class)
@@ -40,5 +37,41 @@ class ConfigMappingLoaderParallelTest {
         ConfigMappingLoaderTest.Server server = config.getConfigMapping(ConfigMappingLoaderTest.Server.class);
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
+    }
+
+    @Test
+    void testClassParallelOne() {
+        loadClass();
+    }
+
+    @Test
+    void testClassParallelTwo() {
+        loadClass();
+    }
+
+    @Test
+    void testClassParallelThree() {
+        loadClass();
+    }
+
+    @Test
+    void testClassParallelFour() {
+        loadClass();
+    }
+
+    private void loadClass() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
+                KeyValuesConfigSource.config("host", "localhost", "port", "8080"))
+                .withMapping(ServerClass.class)
+                .build();
+
+        ServerClass server = config.getConfigMapping(ServerClass.class);
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.port);
+    }
+
+    static class ServerClass {
+        String host;
+        int port;
     }
 }

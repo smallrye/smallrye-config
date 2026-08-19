@@ -19,7 +19,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.ConfigMappingLoader;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -223,12 +222,6 @@ class ConfigPropertiesMappingsTest {
         assertEquals("db-host", app.database.host);
         assertEquals(5, app.database.pool.minSize);
         assertEquals(20, app.database.pool.maxSize);
-    }
-
-    @Test
-    void noArgsConstructorConfigProperties() {
-        assertThrows(IllegalArgumentException.class,
-                () -> ConfigMappingLoader.ensureLoaded(ServerProperties.class));
     }
 
     @ConfigProperties(prefix = "server")

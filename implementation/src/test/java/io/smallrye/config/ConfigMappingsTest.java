@@ -1,8 +1,11 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappings.getProperties;
 import static io.smallrye.config.ConfigMappings.registerConfigClasses;
 import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
+import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodHandles.privateLookupIn;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -201,6 +204,32 @@ public class ConfigMappingsTest {
         }
     }
 
+    @Test
+    void properties() throws Throwable {
+        Map<String, Property> properties = getProperties(configClass(MappedProperties.class));
+        assertEquals(3, properties.size());
+        assertTrue(properties.containsKey("mapped.nested.value"));
+        assertTrue(properties.containsKey("mapped.value"));
+        assertTrue(properties.containsKey("mapped.collection[*].value"));
+
+        Map<?, ?> cache = (Map<?, ?>) privateLookupIn(ConfigMappingInterface.class, lookup())
+                .findStaticGetter(ConfigMappingInterface.class, "CACHE", Map.class)
+                .invoke();
+        cache.clear();
+
+        getProperties(configClass(MappedProperties.class));
+        assertEquals(3, properties.size());
+        assertTrue(properties.containsKey("mapped.nested.value"));
+        assertTrue(properties.containsKey("mapped.value"));
+        assertTrue(properties.containsKey("mapped.collection[*].value"));
+
+        Map<String, Property> classProperties = getProperties(configClass(ConfigClassMappedProperties.class, "mapped"));
+        assertEquals(3, classProperties.size());
+        assertTrue(classProperties.containsKey("mapped.nested.value"));
+        assertTrue(classProperties.containsKey("mapped.value"));
+        assertTrue(classProperties.containsKey("mapped.collection[*].value"));
+    }
+
     @ConfigMapping(prefix = "mapped")
     interface MappedProperties {
         String value();
@@ -214,14 +243,16 @@ public class ConfigMappingsTest {
         }
     }
 
-    @Test
-    void properties() {
-        ConfigMappings.ConfigClass configClass = configClass(MappedProperties.class);
-        Map<String, Property> properties = ConfigMappings.getProperties(configClass);
-        assertEquals(3, properties.size());
-        assertTrue(properties.containsKey("mapped.nested.value"));
-        assertTrue(properties.containsKey("mapped.value"));
-        assertTrue(properties.containsKey("mapped.collection[*].value"));
+    static class ConfigClassMappedProperties {
+        String value;
+
+        Nested nested;
+
+        List<Nested> collection;
+
+        static class Nested {
+            String value;
+        }
     }
 
     @Test

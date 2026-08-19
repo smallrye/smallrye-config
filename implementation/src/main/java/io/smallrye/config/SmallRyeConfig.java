@@ -15,8 +15,6 @@
  */
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
 import static io.smallrye.config.ConfigSourceInterceptor.EMPTY;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
@@ -640,27 +638,31 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> T getConfigMapping(final Class<T> type) {
-        String prefix = ConfigMappingHandler.Handlers.find(type).getPrefix(type);
-        return getConfigMapping(type, prefix);
+        return getConfigMapping(type, null);
     }
 
     @Override
     public <T> T getConfigMapping(final Class<T> type, final String prefix) {
-        if (prefix == null) {
-            return getConfigMapping(type);
-        }
-
-        Map<String, Object> mappingsForType = mappings.get(getConfigMappingClass(type));
+        Map<String, Object> mappingsForType = mappings.get(type);
         if (mappingsForType == null) {
             throw ConfigMessages.msg.mappingNotFound(type.getName());
         }
 
-        Object configMappingObject = mappingsForType.get(prefix);
-        if (configMappingObject == null) {
+        if (mappingsForType.isEmpty()) {
+            throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), null);
+        }
+
+        Object mapping = mappingsForType.get(prefix);
+        if (mapping == null && prefix == null) {
+            String handlerPrefix = ConfigMappingHandler.Handlers.get(type).getPrefix(type);
+            mapping = mappingsForType.get(handlerPrefix);
+        }
+
+        if (mapping == null) {
             throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), prefix);
         }
 
-        return type.cast(configMappingObject);
+        return type.cast(mapping);
     }
 
     @Override
@@ -1063,13 +1065,12 @@ public class SmallRyeConfig implements Config, Serializable {
 
             // Match mappings properties with Env
             for (ConfigMappings.ConfigClass mapping : builder.getMappingsBuilder().getMappings()) {
-                Class<?> type = getConfigMappingClass(mapping.getType());
                 // if the prefix contains dashes we must always check for matches
                 boolean prefixHasDashes = mapping.getPrefix().indexOf('-') != -1;
                 properties.add(Map.entry(mapping.getPrefix(), new Supplier<>() {
                     final List<String> names = new ArrayList<>();
                     {
-                        for (String propertyName : configMappingProperties(type).keySet()) {
+                        for (String propertyName : mapping.getProperties().keySet()) {
                             if (prefixHasDashes || EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
                                 names.add(propertyName);
                             }
