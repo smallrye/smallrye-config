@@ -2,13 +2,15 @@ package io.smallrye.config.source.file;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.stream.StreamSupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import io.smallrye.config.ConfigSourceContext;
 import io.smallrye.config.ConfigValue;
@@ -17,23 +19,27 @@ import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 class FileSystemConfigSourceFactoryTest {
 
     @Test
-    void testSingleLocation() throws URISyntaxException {
-        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
+    void testSingleLocation(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "value");
 
-        URL configDir1URL = this.getClass().getResource("configDir");
+        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
         Iterable<ConfigSource> configSources = factory
-                .getConfigSources(newConfigSourceContext(configDir1URL.toURI().toString()));
+                .getConfigSources(newConfigSourceContext(tempDir.toUri().toString()));
         assertEquals(1, StreamSupport.stream(configSources.spliterator(), false).count());
     }
 
     @Test
-    void testMultipleLocations() throws URISyntaxException {
-        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
+    void testMultipleLocations(@TempDir Path tempDir) throws IOException {
+        Path dir1 = tempDir.resolve("dir1");
+        Path dir2 = tempDir.resolve("dir2");
+        Files.createDirectory(dir1);
+        Files.createDirectory(dir2);
+        Files.writeString(dir1.resolve("key1"), "value1");
+        Files.writeString(dir2.resolve("key2"), "value2");
 
-        URL configDir1URL = this.getClass().getResource("configDir");
-        URL configDir2URL = this.getClass().getResource("configDir2");
+        FileSystemConfigSourceFactory factory = new FileSystemConfigSourceFactory();
         Iterable<ConfigSource> configSources = factory.getConfigSources(
-                newConfigSourceContext(configDir1URL.toURI().toString() + "," + configDir2URL.toURI().toString()));
+                newConfigSourceContext(dir1.toUri().toString() + "," + dir2.toUri().toString()));
         assertEquals(2, StreamSupport.stream(configSources.spliterator(), false).count());
     }
 
