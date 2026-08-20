@@ -15,10 +15,6 @@
  */
 package io.smallrye.config;
 
-import static io.smallrye.config.SecuritySupport.getContextClassLoader;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -39,13 +35,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
     static final ClassLoader SYSTEM_CL;
 
     static {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            SYSTEM_CL = AccessController
-                    .doPrivileged((PrivilegedAction<ClassLoader>) SmallRyeConfigProviderResolver::calculateSystemClassLoader);
-        } else {
-            SYSTEM_CL = calculateSystemClassLoader();
-        }
+        SYSTEM_CL = calculateSystemClassLoader();
     }
 
     public SmallRyeConfigProviderResolver() {
@@ -63,7 +53,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig() {
-        return getConfig(getContextClassLoader());
+        return getConfig(Thread.currentThread().getContextClassLoader());
     }
 
     @Override
@@ -75,7 +65,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
             synchronized (configsForClassLoader) {
                 config = configsForClassLoader.get(realClassLoader);
                 if (config == null) {
-                    config = getFactoryFor(realClassLoader, false).getConfigFor(this, classLoader);
+                    config = getFactoryFor(realClassLoader).getConfigFor(this, classLoader);
                     // don't cache null, as that would leak class loaders
                     if (config == null) {
                         throw ConfigMessages.msg.noConfigForClassloader();
@@ -94,7 +84,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
      * @throws IllegalArgumentException if the config is not registered for the thread context class loader
      */
     public SmallRyeConfig get() {
-        return get(getContextClassLoader());
+        return get(Thread.currentThread().getContextClassLoader());
     }
 
     /**
@@ -112,16 +102,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
         return ((SmallRyeConfig) config);
     }
 
-    SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader, final boolean privileged) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null && !privileged) {
-            // run privileged so that the only things on the access control stack are us and the provider
-            return AccessController.doPrivileged(new PrivilegedAction<SmallRyeConfigFactory>() {
-                public SmallRyeConfigFactory run() {
-                    return getFactoryFor(classLoader, true);
-                }
-            });
-        }
+    SmallRyeConfigFactory getFactoryFor(final ClassLoader classLoader) {
         ServiceLoader<SmallRyeConfigFactory> serviceLoader = ServiceLoader.load(SmallRyeConfigFactory.class, classLoader);
         Iterator<SmallRyeConfigFactory> iterator = serviceLoader.iterator();
         return iterator.hasNext() ? iterator.next() : Default.INSTANCE;
@@ -174,7 +155,7 @@ public class SmallRyeConfigProviderResolver extends ConfigProviderResolver {
 
     static ClassLoader getRealClassLoader(ClassLoader classLoader) {
         if (classLoader == null) {
-            classLoader = getContextClassLoader();
+            classLoader = Thread.currentThread().getContextClassLoader();
         }
         if (classLoader == null) {
             classLoader = SYSTEM_CL;

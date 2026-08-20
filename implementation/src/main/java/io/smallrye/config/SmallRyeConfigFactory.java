@@ -5,23 +5,12 @@ package io.smallrye.config;
  * which corresponds to a given class loader. The factory will be searched for on the class loader that
  * was submitted to {@link SmallRyeConfigProviderResolver#getConfig(ClassLoader)}.
  * <p>
- * Since the factory is given access to a class loader, subclasses are checked for the {@code getClassLoader}
- * {@link RuntimePermission} on instantiation if a security manager is present.
- * <p>
  * The default implementation will create and configure a configuration with the set of discovered
  * configuration sources, the set of discovered configuration converters and the set of discoverd interceptors
  * from the given class loader.
  */
 public abstract class SmallRyeConfigFactory {
-    /**
-     * Construct a new instance. Callers will be checked for the {@code getClassLoader}
-     * {@link RuntimePermission}.
-     */
     protected SmallRyeConfigFactory() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getClassLoader"));
-        }
     }
 
     /**

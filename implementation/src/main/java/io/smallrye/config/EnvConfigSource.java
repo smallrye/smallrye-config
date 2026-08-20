@@ -25,11 +25,9 @@ import static io.smallrye.config.common.utils.StringUtil.isNumericEquals;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static io.smallrye.config.common.utils.StringUtil.toLowerCaseAndDotted;
 import static java.lang.Character.toLowerCase;
-import static java.security.AccessController.doPrivileged;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,12 +122,7 @@ public class EnvConfigSource extends AbstractConfigSource {
      * instantiated in the heap.
      */
     private static Map<String, String> getEnvProperties() {
-        return doPrivileged(new PrivilegedAction<Map<String, String>>() {
-            @Override
-            public Map<String, String> run() {
-                return new HashMap<>(System.getenv());
-            }
-        });
+        return new HashMap<>(System.getenv());
     }
 
     private static int getEnvOrdinal(final Map<String, String> properties, final int ordinal) {

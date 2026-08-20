@@ -73,7 +73,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
     private final MappingBuilder mappingsBuilder = new MappingBuilder();
-    private ClassLoader classLoader = SecuritySupport.getContextClassLoader();
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
     private boolean addDefaultSources = false;
     private boolean addSystemSources = false;

@@ -11,7 +11,6 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.ASM7;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -60,8 +59,6 @@ import static org.objectweb.asm.Type.getType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,16 +86,10 @@ import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
 
 public class ConfigMappingGenerator {
-    static final boolean usefulDebugInfo;
     /**
      * The regular expression allowing to detect arrays in a full type name.
      */
     private static final Pattern ARRAY_FORMAT_REGEX = Pattern.compile("([<;])L(.*)\\[];");
-
-    static {
-        usefulDebugInfo = Boolean.parseBoolean(AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty("io.smallrye.config.mapper.useful-debug-info")));
-    }
 
     private static final String I_CLASS = getInternalName(Class.class);
     private static final String I_FIELD = getInternalName(Field.class);
@@ -132,14 +123,13 @@ public class ConfigMappingGenerator {
      */
     static byte[] generate(final ConfigMappingInterface mapping) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        ClassVisitor visitor = usefulDebugInfo ? new Debugging.ClassVisitorImpl(writer) : writer;
 
-        visitor.visit(V1_8, ACC_PUBLIC, mapping.getClassInternalName(), null, I_OBJECT,
+        writer.visit(V1_8, ACC_PUBLIC, mapping.getClassInternalName(), null, I_OBJECT,
                 new String[] { getInternalName(mapping.getInterfaceType()) });
-        visitor.visitSource(null, null);
+        writer.visitSource(null, null);
 
         // No Args Constructor - To use for proxies
-        MethodVisitor noArgsCtor = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        MethodVisitor noArgsCtor = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         noArgsCtor.visitVarInsn(ALOAD, V_THIS);
         noArgsCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
         noArgsCtor.visitInsn(RETURN);
@@ -147,7 +137,7 @@ public class ConfigMappingGenerator {
         noArgsCtor.visitMaxs(0, 0);
 
         ObjectCreatorMethodVisitor ctor = new ObjectCreatorMethodVisitor(
-                visitor.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null));
+                writer.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAPPING_CONTEXT + ";)V", null, null));
         ctor.visitParameter("context", ACC_FINAL);
         Label ctorStart = new Label();
         ctor.visitLabel(ctorStart);
@@ -168,7 +158,7 @@ public class ConfigMappingGenerator {
                     "(L" + I_BEAN_STYLE_GETTERS + ";)V", false);
         }
 
-        addProperties(visitor, ctor, mapping);
+        addProperties(writer, ctor, mapping);
 
         ctor.visitInsn(RETURN);
         Label ctorEnd = new Label();
@@ -176,12 +166,12 @@ public class ConfigMappingGenerator {
         ctor.visitLocalVariable("mc", 'L' + I_MAPPING_CONTEXT + ';', null, ctorStart, ctorEnd, V_MAPPING_CONTEXT);
         ctor.visitEnd();
         ctor.visitMaxs(0, 0);
-        visitor.visitEnd();
+        writer.visitEnd();
 
-        generateStaticInit(visitor, mapping);
-        generateEquals(visitor, mapping);
-        generateHashCode(visitor, mapping);
-        generateToString(visitor, mapping);
+        generateStaticInit(writer, mapping);
+        generateEquals(writer, mapping);
+        generateHashCode(writer, mapping);
+        generateToString(writer, mapping);
 
         return writer.toByteArray();
     }
@@ -1382,148 +1372,6 @@ public class ConfigMappingGenerator {
         @Override
         public String desc() {
             return desc;
-        }
-    }
-
-    static final class Debugging {
-        static StackTraceElement getCaller() {
-            return new Throwable().getStackTrace()[2];
-        }
-
-        static final class MethodVisitorImpl extends MethodVisitor {
-
-            MethodVisitorImpl(final int api) {
-                super(api);
-            }
-
-            MethodVisitorImpl(final int api, final MethodVisitor methodVisitor) {
-                super(api, methodVisitor);
-            }
-
-            public void visitInsn(final int opcode) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitInsn(opcode);
-            }
-
-            public void visitIntInsn(final int opcode, final int operand) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitIntInsn(opcode, operand);
-            }
-
-            public void visitVarInsn(final int opcode, final int var) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitVarInsn(opcode, var);
-            }
-
-            public void visitTypeInsn(final int opcode, final String type) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitTypeInsn(opcode, type);
-            }
-
-            public void visitFieldInsn(final int opcode, final String owner, final String name, final String descriptor) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitFieldInsn(opcode, owner, name, descriptor);
-            }
-
-            public void visitMethodInsn(final int opcode, final String owner, final String name, final String descriptor) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitMethodInsn(opcode, owner, name, descriptor);
-            }
-
-            public void visitMethodInsn(final int opcode, final String owner, final String name, final String descriptor,
-                    final boolean isInterface) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-            }
-
-            public void visitInvokeDynamicInsn(final String name, final String descriptor, final Handle bootstrapMethodHandle,
-                    final Object... bootstrapMethodArguments) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
-            }
-
-            public void visitJumpInsn(final int opcode, final Label label) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitJumpInsn(opcode, label);
-            }
-
-            public void visitLdcInsn(final Object value) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitLdcInsn(value);
-            }
-
-            public void visitIincInsn(final int var, final int increment) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitIincInsn(var, increment);
-            }
-
-            public void visitTableSwitchInsn(final int min, final int max, final Label dflt, final Label... labels) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitTableSwitchInsn(min, max, dflt, labels);
-            }
-
-            public void visitLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitLookupSwitchInsn(dflt, keys, labels);
-            }
-
-            public void visitMultiANewArrayInsn(final String descriptor, final int numDimensions) {
-                Label l = new Label();
-                visitLabel(l);
-                visitLineNumber(getCaller().getLineNumber(), l);
-                super.visitMultiANewArrayInsn(descriptor, numDimensions);
-            }
-        }
-
-        static final class ClassVisitorImpl extends ClassVisitor {
-
-            final String sourceFile;
-
-            ClassVisitorImpl(final int api) {
-                super(api);
-                sourceFile = getCaller().getFileName();
-            }
-
-            ClassVisitorImpl(final ClassWriter cw) {
-                super(ASM7, cw);
-                sourceFile = getCaller().getFileName();
-            }
-
-            public void visitSource(final String source, final String debug) {
-                super.visitSource(sourceFile, debug);
-            }
-
-            public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
-                    final String signature,
-                    final String[] exceptions) {
-                return new MethodVisitorImpl(api, super.visitMethod(access, name, descriptor, signature, exceptions));
-            }
         }
     }
 }
