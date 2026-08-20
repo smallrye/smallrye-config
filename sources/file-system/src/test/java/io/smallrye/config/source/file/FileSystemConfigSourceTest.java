@@ -18,36 +18,37 @@ package io.smallrye.config.source.file;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 class FileSystemConfigSourceTest {
     @Test
-    void testConfigSourceFromDir() throws URISyntaxException {
-        URL configDirURL = this.getClass().getResource("configDir");
-        File dir = new File(configDirURL.toURI());
+    void testConfigSourceFromDir(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("config_ordinal"), "4567");
+        Files.writeString(tempDir.resolve("myKey1"), "myValue1");
+        Files.writeString(tempDir.resolve("myKey2"), "true");
 
-        ConfigSource configSource = new FileSystemConfigSource(dir);
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
 
         assertEquals(4567, configSource.getOrdinal());
-
         assertEquals("myValue1", configSource.getValue("myKey1"));
         assertEquals("true", configSource.getValue("myKey2"));
     }
 
     @Test
-    void testCharacterReplacement() throws URISyntaxException {
-        URL configDirURL = this.getClass().getResource("configDir");
-        File dir = new File(configDirURL.toURI());
+    void testCharacterReplacement(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("MyService_mp_rest_url"), "http://localhost:8080/my-service");
+        Files.writeString(tempDir.resolve("OTHERSERVICE_MP_REST_URL"), "http://localhost:8080/other-service");
 
-        ConfigSource configSource = new FileSystemConfigSource(dir);
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
         // the non-alphanumeric chars may be replaced by _
         assertEquals("http://localhost:8080/my-service", configSource.getValue("MyService/mp-rest/url"));
         // or the file name is uppercased
@@ -56,5 +57,47 @@ class FileSystemConfigSourceTest {
         assertNull(configSource.getValue("myservice/mp-rest/url"));
         // you can't rewrite the key, only the file name
         assertNull(configSource.getValue("MYSERVICE_MP_REST_URL"));
+    }
+
+    @Test
+    void testSingleLineNoTrailingNewline(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "value");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("value", configSource.getValue("key"));
+    }
+
+    @Test
+    void testSingleLineWithTrailingNewline(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "value\n");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("value", configSource.getValue("key"));
+    }
+
+    @Test
+    void testMultilineNoTrailingNewline(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "line1\nline2\nline3");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("line1\nline2\nline3", configSource.getValue("key"));
+    }
+
+    @Test
+    void testMultilineWithTrailingNewline(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "line1\nline2\nline3\n");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("line1\nline2\nline3", configSource.getValue("key"));
+    }
+
+    @Test
+    void testMultilineWithEmptyLines(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "line1\n\nline2\n\nline3\n");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("line1\n\nline2\n\nline3", configSource.getValue("key"));
+    }
+
+    @Test
+    void testContentWithLeadingAndTrailingSpaces(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("key"), "  value  \n");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals("  value  ", configSource.getValue("key"));
     }
 }
