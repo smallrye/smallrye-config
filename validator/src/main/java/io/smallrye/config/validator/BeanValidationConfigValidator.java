@@ -15,10 +15,10 @@ import jakarta.validation.Path;
 import jakarta.validation.Validator;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
-import io.smallrye.config.ConfigMappingInterface;
 import io.smallrye.config.ConfigMappingInterface.CollectionProperty;
 import io.smallrye.config.ConfigMappingInterface.MapProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
+import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
 import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.ConfigValidationException.Problem;
 import io.smallrye.config.ConfigValidator;
@@ -29,17 +29,23 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
 
     @Override
     default void validateMapping(
-            final Class<?> mappingClass,
-            final String prefix,
-            final Object mappingObject)
+            final GeneratedConfigClass configClass,
+            final Object configObject)
             throws ConfigValidationException {
 
-        final List<Problem> problems = new ArrayList<>();
-        final ConfigMappingInterface mappingInterface = ConfigMappingInterface.getConfigurationInterface(mappingClass);
-        if (mappingInterface != null) {
-            validateMappingInterface(mappingInterface, prefix, mappingInterface.getNamingStrategy(), mappingObject, problems);
+        List<Problem> problems = new ArrayList<>();
+        if (configClass.getParent().equals(configClass.getInterfaceType())) {
+            validateMappingInterface(
+                    configClass,
+                    configClass.getHandler().getPrefix(configClass.getInterfaceType()),
+                    configClass.getHandler().getNamingStrategy(configClass.getInterfaceType()),
+                    configObject,
+                    problems);
         } else {
-            validateMappingClass(mappingObject, problems, prefix);
+            validateMappingClass(
+                    configObject,
+                    configClass.getHandler().getPrefix(configClass.getParent()),
+                    problems);
         }
 
         if (!problems.isEmpty()) {
@@ -48,39 +54,39 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
     }
 
     default void validateMappingInterface(
-            final ConfigMappingInterface mappingInterface,
+            final GeneratedConfigClass configClass,
             final String currentPath,
             final NamingStrategy namingStrategy,
-            final Object mappingObject,
+            final Object configObject,
             final List<Problem> problems) {
 
-        for (Property property : mappingInterface.getProperties()) {
-            validateProperty(property, currentPath, namingStrategy, mappingObject, false, problems);
+        for (Property property : configClass.getProperties()) {
+            validateProperty(property, currentPath, namingStrategy, configObject, false, problems);
         }
 
-        validateMappingClass(mappingObject, problems, currentPath);
+        validateMappingClass(configObject, currentPath, problems);
     }
 
     default void validateProperty(
             final Property property,
             final String currentPath,
             final NamingStrategy namingStrategy,
-            final Object mappingObject,
+            final Object configObject,
             final boolean optional,
             final List<Problem> problems) {
 
         if (property.isOptional()) {
-            validateProperty(property.asOptional().getNestedProperty(), currentPath, namingStrategy, mappingObject, true,
+            validateProperty(property.asOptional().getNestedProperty(), currentPath, namingStrategy, configObject, true,
                     problems);
         }
 
         if ((property.isLeaf() || property.isPrimitive()) && !property.isOptional()) {
-            validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
+            validatePropertyValue(property, currentPath, namingStrategy, configObject, problems);
         }
 
         if (property.isGroup()) {
             try {
-                Object group = property.getMethod().invoke(mappingObject);
+                Object group = property.getMethod().invoke(configObject);
                 // unwrap
                 if (optional) {
                     Optional<?> optionalGroup = (Optional<?>) group;
@@ -90,7 +96,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                     group = optionalGroup.get();
                 }
 
-                validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
+                validatePropertyValue(property, currentPath, namingStrategy, configObject, problems);
                 validateMappingInterface(property.asGroup().getGroupType(), appendPropertyName(currentPath, property),
                         namingStrategy, group, problems);
             } catch (IllegalAccessException e) {
@@ -110,7 +116,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             CollectionProperty collectionProperty = property.asCollection();
             if (collectionProperty.getElement().isGroup()) {
                 try {
-                    Object object = property.getMethod().invoke(mappingObject);
+                    Object object = property.getMethod().invoke(configObject);
                     if (optional) {
                         Optional<?> optionalCollection = (Optional<?>) object;
                         if (optionalCollection.isEmpty()) {
@@ -138,14 +144,14 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                     }
                 }
             }
-            validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
+            validatePropertyValue(property, currentPath, namingStrategy, configObject, problems);
         }
 
         if (property.isMap()) {
             MapProperty mapProperty = property.asMap();
             if (mapProperty.getValueProperty().isGroup()) {
                 try {
-                    Map<?, ?> map = (Map<?, ?>) property.getMethod().invoke(mappingObject);
+                    Map<?, ?> map = (Map<?, ?>) property.getMethod().invoke(configObject);
                     for (Map.Entry<?, ?> entry : map.entrySet()) {
                         validateMappingInterface(mapProperty.getValueProperty().asGroup().getGroupType(),
                                 appendPropertyName(currentPath, property) + "." + entry.getKey(),
@@ -166,7 +172,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                 try {
                     CollectionProperty collectionProperty = mapProperty.getValueProperty().asCollection();
                     if (collectionProperty.getElement().isGroup()) {
-                        Map<?, ?> map = (Map<?, ?>) property.getMethod().invoke(mappingObject);
+                        Map<?, ?> map = (Map<?, ?>) property.getMethod().invoke(configObject);
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
                             Collection<?> elements = (Collection<?>) entry.getValue();
                             int i = 0;
@@ -190,7 +196,7 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
                     }
                 }
             }
-            validatePropertyValue(property, currentPath, namingStrategy, mappingObject, problems);
+            validatePropertyValue(property, currentPath, namingStrategy, configObject, problems);
         }
     }
 
@@ -198,24 +204,24 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
             final Property property,
             final String currentPath,
             final NamingStrategy namingStrategy,
-            final Object mappingObject,
+            final Object configObject,
             final List<Problem> problems) {
 
         try {
             Method methodToInvoke;
-            if (property.getMethod().canAccess(mappingObject)) {
+            if (property.getMethod().canAccess(configObject)) {
                 methodToInvoke = property.getMethod();
             } else {
                 try {
-                    methodToInvoke = mappingObject.getClass().getMethod(property.getMethod().getName());
+                    methodToInvoke = configObject.getClass().getMethod(property.getMethod().getName());
                 } catch (NoSuchMethodException e) {
                     // This never happens, because we generated the class, and we know the method exists
                     throw new RuntimeException(e);
                 }
             }
 
-            Set<ConstraintViolation<Object>> violations = getValidator().forExecutables().validateReturnValue(mappingObject,
-                    property.getMethod(), methodToInvoke.invoke(mappingObject));
+            Set<ConstraintViolation<Object>> violations = getValidator().forExecutables().validateReturnValue(configObject,
+                    property.getMethod(), methodToInvoke.invoke(configObject));
             for (ConstraintViolation<Object> violation : violations) {
                 problems.add(new Problem(interpolateMessage(currentPath, namingStrategy, property, violation)));
             }
@@ -233,10 +239,10 @@ public interface BeanValidationConfigValidator extends ConfigValidator {
     }
 
     default void validateMappingClass(
-            final Object mappingObject,
-            final List<Problem> problems,
-            final String currentPath) {
-        final Set<ConstraintViolation<Object>> violations = getValidator().validate(mappingObject);
+            final Object configObject,
+            final String currentPath,
+            final List<Problem> problems) {
+        final Set<ConstraintViolation<Object>> violations = getValidator().validate(configObject);
         for (ConstraintViolation<Object> violation : violations) {
             problems.add(
                     violation.getPropertyPath().toString().isEmpty() ? new Problem(currentPath + " " + violation.getMessage())

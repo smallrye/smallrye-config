@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.configMappingProperties;
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
+import static io.smallrye.config.ConfigMappingHandler.Handlers.find;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.Converters.newSecretConverter;
@@ -30,6 +29,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
+import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
 import io.smallrye.config._private.ConfigMessages;
@@ -58,17 +58,17 @@ public final class ConfigMappingContext {
         this.config = config;
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
-            Class<?> type = getConfigMappingClass(entry.getKey().getType());
+            Class<?> type = entry.getKey().getType();
             String prefix = entry.getKey().getPrefix();
             Object instance = entry.getValue();
             this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
         }
 
         for (ConfigClass configClass : mappingBuilder.getMappings()) {
-            Class<?> type = getConfigMappingClass(configClass.getType());
+            Class<?> type = configClass.getType();
             String prefix = configClass.getPrefix();
             applyPrefix(configClass.getPrefix());
-            Object instance = constructMapping(type, prefix);
+            Object instance = constructMapping(type);
             this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
         }
     }
@@ -78,18 +78,26 @@ public final class ConfigMappingContext {
     }
 
     @SuppressWarnings("unchecked")
-    <T> T constructMapping(Class<T> interfaceType, String prefix) {
+    <T> T constructMapping(Class<T> interfaceType) {
         int problemsCount = problems.size();
         Object mappingObject = constructGroup(interfaceType);
         if (problemsCount != problems.size()) {
             return (T) mappingObject;
         }
         try {
-            if (mappingObject instanceof ConfigMappingClassMapper) {
-                mappingObject = ((ConfigMappingClassMapper) mappingObject).map();
-                config.getConfigValidator().validateMapping(mappingObject.getClass(), prefix, mappingObject);
+            ConfigValidator validator = config.getConfigValidator();
+            if (mappingObject instanceof ConfigMappingClass.Mapper) {
+                mappingObject = ((ConfigMappingClass.Mapper) mappingObject).map();
+                if (!validator.equals(ConfigValidator.EMPTY)) {
+                    config.getConfigValidator()
+                            .validateMapping(ConfigMappingClass.get(mappingObject.getClass(), find(mappingObject.getClass())),
+                                    mappingObject);
+                }
             } else {
-                config.getConfigValidator().validateMapping(interfaceType, prefix, mappingObject);
+                if (!validator.equals(ConfigValidator.EMPTY)) {
+                    config.getConfigValidator()
+                            .validateMapping(ConfigMappingInterface.get(interfaceType, find(interfaceType)), mappingObject);
+                }
             }
         } catch (ConfigValidationException e) {
             problems.addAll(Arrays.asList(e.getProblems()));
@@ -101,7 +109,7 @@ public final class ConfigMappingContext {
         // Save the current naming / style, because the nested / child element may override it
         NamingStrategy namingStrategy = this.namingStrategy;
         BeanStyleGetters beanStyleGetters = this.beanStyleGetters;
-        T mappingObject = ConfigMappingLoader.configMappingObject(interfaceType, this);
+        T mappingObject = ConfigClassImplementation.get(interfaceType).newInstance(this);
         // restore the naming / style
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
@@ -118,8 +126,8 @@ public final class ConfigMappingContext {
         applyNamingStrategy(namingStrategy);
         applyBeanStyleGetters(beanStyleGetters);
         // Nested elements may have to be unwrapped
-        if (mappingObject instanceof ConfigMappingClassMapper) {
-            mappingObject = (T) ((ConfigMappingClassMapper) mappingObject).map();
+        if (mappingObject instanceof ConfigMappingClass.Mapper) {
+            mappingObject = (T) ((ConfigMappingClass.Mapper) mappingObject).map();
         }
         return mappingObject;
     }
@@ -1047,7 +1055,7 @@ public final class ConfigMappingContext {
             }
 
             if (!candidates.isEmpty()) {
-                Map<String, String> properties = configMappingProperties(groupType);
+                Map<String, String> properties = ConfigClassImplementation.get(groupType).getProperties();
                 for (String mappedProperty : properties.keySet()) {
                     for (String candidate : candidates) {
                         if (PropertyName.equals(candidate, mappedProperty)) {

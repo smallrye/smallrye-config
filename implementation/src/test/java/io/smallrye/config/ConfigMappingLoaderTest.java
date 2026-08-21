@@ -1,26 +1,29 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingInterface.getConfigurationInterface;
-import static io.smallrye.config.ConfigMappingLoader.ensureLoaded;
+import static io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
+import static io.smallrye.config.ConfigMappingLoader.getGeneratedConfigClasses;
 import static io.smallrye.config.ConfigMappingLoader.loadClass;
-import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 class ConfigMappingLoaderTest {
     @Test
     void multipleLoads() {
-        ConfigMappingLoader.ensureLoaded(Server.class);
-        ConfigMappingLoader.ensureLoaded(Server.class);
+        configClass(Server.class).implementation();
+        configClass(Server.class).implementation();
 
         SmallRyeConfig config = new SmallRyeConfigBuilder().withSources(
                 KeyValuesConfigSource.config("server.host", "localhost", "server.port", "8080"))
@@ -34,19 +37,15 @@ class ConfigMappingLoaderTest {
 
     @Test
     void loadManually() {
-        List<ConfigMappingMetadata> configMappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerManual.class);
-        configMappingsMetadata.forEach(
-                mappingMetadata -> ConfigMappingLoader.loadClass(ServerManual.class, mappingMetadata));
-        ConfigMappingLoader.ensureLoaded(ServerManual.class);
-        ConfigMappingLoader.ensureLoaded(ServerManual.class);
+        Set<GeneratedConfigClass> generatedClasses = getGeneratedConfigClasses(ServerManual.class);
+        generatedClasses.forEach(ConfigMappingLoader::loadClass);
+        assertNotNull(configClass(ServerManual.class).implementation());
     }
 
     @Test
     void discoverNested() {
-        ConfigMappingInterface mapping = ConfigMappingLoader.getConfigMapping(ServerNested.class);
-        List<ConfigMappingInterface> nested = mapping.getNested();
-        assertEquals(4, nested.size());
-        List<Class<?>> types = nested.stream().map(ConfigMappingInterface::getInterfaceType).collect(toList());
+        Set<GeneratedConfigClass> generatedClasses = getGeneratedConfigClasses(ServerNested.class);
+        Set<Class<?>> types = generatedClasses.stream().map(GeneratedConfigClass::getInterfaceType).collect(toSet());
         assertTrue(types.contains(ServerNested.Environment.class));
         assertTrue(types.contains(ServerNested.Log.class));
         assertTrue(types.contains(ServerNested.Ssl.class));
@@ -55,9 +54,10 @@ class ConfigMappingLoaderTest {
 
     @Test
     void noArgsConstructor() throws Exception {
-        assertInstanceOf(Server.class, ensureLoaded(Server.class).implementation().getDeclaredConstructor().newInstance());
+        assertInstanceOf(Server.class,
+                configClass(Server.class).implementation().getImplementation().getDeclaredConstructor().newInstance());
         assertInstanceOf(ServerNested.class,
-                ensureLoaded(ServerNested.class).implementation().getDeclaredConstructor().newInstance());
+                configClass(ServerNested.class).implementation().getImplementation().getDeclaredConstructor().newInstance());
     }
 
     @ConfigMapping(prefix = "server")
@@ -124,15 +124,21 @@ class ConfigMappingLoaderTest {
                 OptionalCollection.class.getDeclaredMethod("optional"),
                 OptionalCollection.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(OptionalCollection.class, methods,
-                0, 0);
-        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollection.class,
+        ConfigMappingHandler handler = ConfigMappingHandler.Handlers.find(OptionalCollection.class);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(handler,
+                OptionalCollection.class, methods, 0, 0);
+        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollection.class, handler,
                 new ConfigMappingInterface[] {}, properties);
 
-        loadClass(OptionalCollection.class, getConfigurationInterface(OptionalCollectionGroup.class));
-        loadClass(OptionalCollection.class, configMappingInterface);
+        Set<GeneratedConfigClass> generatedClasses = new HashSet<>();
+        generatedClasses.add(configMappingInterface);
+        generatedClasses.add(ConfigMappingInterface.get(OptionalCollectionGroup.class, handler));
+        for (GeneratedConfigClass generatedClass : generatedClasses) {
+            assertNotNull(generatedClass);
+            loadClass(generatedClass);
+        }
 
-        Class<?> implementationClass = ensureLoaded(OptionalCollection.class).implementation();
+        Class<?> implementationClass = configClass(OptionalCollection.class, handler).implementation().getImplementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
@@ -151,14 +157,16 @@ class ConfigMappingLoaderTest {
                 OptionalCollectionPrimitive.class.getDeclaredMethod("optional"),
                 OptionalCollectionPrimitive.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(OptionalCollectionPrimitive.class,
-                methods, 0, 0);
+        ConfigMappingHandler handler = ConfigMappingHandler.Handlers.find(OptionalCollectionPrimitive.class);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(handler,
+                OptionalCollectionPrimitive.class, methods, 0, 0);
         ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(OptionalCollectionPrimitive.class,
-                new ConfigMappingInterface[] {}, properties);
+                handler, new ConfigMappingInterface[] {}, properties);
 
-        loadClass(OptionalCollectionPrimitive.class, configMappingInterface);
+        loadClass(configMappingInterface);
 
-        Class<?> implementationClass = ensureLoaded(OptionalCollectionPrimitive.class).implementation();
+        Class<?> implementationClass = configClass(OptionalCollectionPrimitive.class, handler).implementation()
+                .getImplementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
@@ -181,15 +189,21 @@ class ConfigMappingLoaderTest {
                 MappingCollection.class.getDeclaredMethod("collection"),
                 MappingCollection.class.getDeclaredMethod("property")
         };
-        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(MappingCollection.class, methods, 0,
-                0);
-        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(MappingCollection.class,
+        ConfigMappingHandler handler = ConfigMappingHandler.Handlers.find(MappingCollection.class);
+        ConfigMappingInterface.Property[] properties = ConfigMappingInterface.getProperties(handler,
+                MappingCollection.class, methods, 0, 0);
+        ConfigMappingInterface configMappingInterface = new ConfigMappingInterface(MappingCollection.class, handler,
                 new ConfigMappingInterface[] {}, properties);
 
-        loadClass(MappingCollection.class, getConfigurationInterface(MappingCollectionGroup.class));
-        loadClass(MappingCollection.class, configMappingInterface);
+        Set<GeneratedConfigClass> generatedClasses = new HashSet<>();
+        generatedClasses.add(configMappingInterface);
+        generatedClasses.add(ConfigMappingInterface.get(MappingCollectionGroup.class, handler));
+        for (GeneratedConfigClass generatedClass : generatedClasses) {
+            assertNotNull(generatedClass);
+            loadClass(generatedClass);
+        }
 
-        Class<?> implementationClass = ensureLoaded(MappingCollection.class).implementation();
+        Class<?> implementationClass = configClass(MappingCollection.class, handler).implementation().getImplementation();
         // If the bytecode has an issue this will throw a VerifyError
         assertNotNull(implementationClass.getDeclaredConstructor(ConfigMappingContext.class));
     }
@@ -214,12 +228,13 @@ class ConfigMappingLoaderTest {
 
     @Test
     void parentNested() {
-        List<ConfigMappingMetadata> mappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(ServerChild.class);
-        List<Class<?>> mappings = mappingsMetadata.stream().map(ConfigMappingMetadata::getInterfaceType).collect(toList());
-        assertTrue(mappings.contains(ServerChild.class));
-        assertTrue(mappings.contains(ServerChild.ServerChildNested.class));
-        assertTrue(mappings.contains(ServerParent.class));
-        assertTrue(mappings.contains(ServerParent.ServerParentNested.class));
+        Set<GeneratedConfigClass> generatedClasses = getGeneratedConfigClasses(ServerChild.class);
+        Set<String> classNames = generatedClasses.stream().map(GeneratedConfigClass::getClassName).collect(toSet());
+        assertEquals(4, classNames.size());
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$ServerChild$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$ServerChild$ServerChildNested$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$ServerParent$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$ServerParent$ServerParentNested$$CMImpl"));
     }
 
     interface MyConfig {
@@ -242,11 +257,12 @@ class ConfigMappingLoaderTest {
 
     @Test
     void nestedParents() {
-        List<ConfigMappingMetadata> mappingsMetadata = ConfigMappingLoader.getConfigMappingsMetadata(MyConfig.class);
-        List<Class<?>> mappings = mappingsMetadata.stream().map(ConfigMappingMetadata::getInterfaceType).collect(toList());
-        assertTrue(mappings.contains(MyConfig.class));
-        assertTrue(mappings.contains(MyConfig.GlobalConfig.class));
-        assertTrue(mappings.contains(MyConfig.CommonConfig.class));
-        assertTrue(mappings.contains(MyConfig.UserConfig.class));
+        Set<String> classNames = getGeneratedConfigClasses(MyConfig.class)
+                .stream().map(GeneratedConfigClass::getClassName).collect(toSet());
+        assertEquals(4, classNames.size());
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$CommonConfig$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$GlobalConfig$$CMImpl"));
+        assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$UserConfig$$CMImpl"));
     }
 }

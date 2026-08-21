@@ -4,185 +4,100 @@ import static java.lang.invoke.MethodType.methodType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMappingHandler.Handlers;
+import io.smallrye.config.ConfigMappingInterface.Property;
 import io.smallrye.config._private.ConfigMessages;
 
+/**
+ * Loads implementation classes for configuration types.
+ * <p>
+ * Supports two kinds of user-defined configuration types: interfaces annotated with
+ * {@link ConfigMapping @ConfigMapping} (represented by {@link ConfigMappingInterface}) and concrete classes
+ * with a no-arg constructor (represented by {@link ConfigMappingClass}). For each type, bytecode for an
+ * implementation class is generated and defined into the appropriate classloader.
+ *
+ * @see GeneratedConfigClass
+ * @see ConfigMappingInterface
+ * @see ConfigMappingClass
+ */
 public final class ConfigMappingLoader {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final ConcurrentHashMap<String, Object> classLoaderLocks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Object> CLASS_LOADER_LOCKS = new ConcurrentHashMap<>();
 
-    private static final ClassValue<ConfigMappingImplementation> CACHE = new ClassValue<>() {
-        @Override
-        protected ConfigMappingImplementation computeValue(final Class<?> type) {
-            return new ConfigMappingImplementation(loadImplementation(type));
-        }
-    };
+    /**
+     * Collects all {@link GeneratedConfigClass} entries for the given type, including nested types and supertypes,
+     * discovering the handler automatically.
+     *
+     * @param type the configuration type
+     * @return an immutable Set of generated config classes
+     */
+    public static Set<GeneratedConfigClass> getGeneratedConfigClasses(final Class<?> type) {
+        return getGeneratedConfigClasses(type, Handlers.find(type));
+    }
 
-    public static List<ConfigMappingMetadata> getConfigMappingsMetadata(final Class<?> type) {
-        List<ConfigMappingMetadata> mappings = new ArrayList<>();
-        ConfigMappingInterface configurationInterface = ConfigMappingInterface.getConfigurationInterface(type);
-        if (configurationInterface != null) {
-            mappings.add(configurationInterface);
-            mappings.addAll(configurationInterface.getNested());
-            for (ConfigMappingInterface superType : configurationInterface.getSuperTypes()) {
-                mappings.add(superType);
-                mappings.addAll(superType.getNested());
+    /**
+     * Collects all {@link GeneratedConfigClass} entries for the given type, including nested types and supertypes.
+     *
+     * @param type the configuration type
+     * @param handler the handler to processing the type
+     * @return an immutable Set of generated config classes
+     */
+    public static Set<GeneratedConfigClass> getGeneratedConfigClasses(final Class<?> type, final ConfigMappingHandler handler) {
+        Assert.checkNotNullParam("type", type);
+        Assert.checkNotNullParam("handler", handler);
+
+        Set<GeneratedConfigClass> generatedClasses = new HashSet<>();
+        ConfigMappingInterface configMappingInterface = ConfigMappingInterface.get(type, handler);
+        if (configMappingInterface != null) {
+            generatedClasses.add(configMappingInterface);
+            generatedClasses.addAll(configMappingInterface.getNested());
+            for (ConfigMappingInterface superType : configMappingInterface.getSuperTypes()) {
+                generatedClasses.add(superType);
+                generatedClasses.addAll(superType.getNested());
             }
         }
-        ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
+        ConfigMappingClass configMappingClass = ConfigMappingClass.get(type, handler);
         if (configMappingClass != null) {
-            mappings.add(configMappingClass);
-            mappings.addAll(configMappingClass.getNested());
-            mappings.addAll(getConfigMappingsMetadata(getConfigMapping(type).getInterfaceType()));
+            generatedClasses.add(configMappingClass);
+            generatedClasses.addAll(configMappingClass.getNested());
+            generatedClasses.addAll(getGeneratedConfigClasses(configMappingClass.getInterfaceType(),
+                    configMappingClass.getHandler()));
         }
-        return List.copyOf(mappings);
+        return Set.copyOf(generatedClasses);
     }
 
-    public static ConfigMappingInterface getConfigMapping(final Class<?> type) {
-        return ConfigMappingInterface.getConfigurationInterface(getConfigMappingClass(type));
-    }
-
-    static Class<?> getConfigMappingClass(final Class<?> type) {
-        ConfigMappingClass configMappingClass = ConfigMappingClass.getConfigurationClass(type);
-        if (configMappingClass == null) {
-            return type;
-        } else {
-            return loadClass(type, configMappingClass);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> Map<String, String> configMappingProperties(final Class<T> interfaceType) {
-        try {
-            return (Map<String, String>) CACHE.get(interfaceType).getProperties().invoke();
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error r) {
-                throw r;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new UndeclaredThrowableException(t);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> Set<String> configMappingSecrets(final Class<T> interfaceType) {
-        try {
-            return (Set<String>) CACHE.get(interfaceType).getSecrets().invoke();
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error r) {
-                throw r;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new UndeclaredThrowableException(t);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> T configMappingObject(final Class<T> interfaceType, final ConfigMappingContext configMappingContext) {
-        try {
-            return (T) CACHE.get(interfaceType).constructor().invokeExact(configMappingContext);
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            try {
-                throw e.getCause();
-            } catch (RuntimeException | Error r) {
-                throw r;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new UndeclaredThrowableException(t);
-        }
-    }
-
-    public static ConfigMappingImplementation ensureLoaded(final Class<?> type) {
-        return CACHE.get(type);
-    }
-
-    static <T> Class<?> loadImplementation(final Class<T> type) {
-        try {
-            Class<?> implementationClass = type.getClassLoader()
-                    .loadClass(ConfigMappingInterface.getImplementationClassName(type));
-            if (type.isAssignableFrom(implementationClass)) {
-                return implementationClass;
-            }
-        } catch (ClassNotFoundException e) {
-            // Load the class dynamically
-        }
-
-        ConfigMappingMetadata rootMetadata = ConfigMappingInterface.getConfigurationInterface(type);
-        if (rootMetadata == null) {
-            throw ConfigMessages.msg.classIsNotAMapping(type);
-        }
-        List<ConfigMappingMetadata> mappings = getConfigMappingsMetadata(type);
-
-        Class<?> implementationClass = null;
-        String rootClassName = ConfigMappingInterface.getImplementationClassName(type);
-        for (ConfigMappingMetadata mapping : mappings) {
-            Class<?> loaded = loadClass(mapping.getInterfaceType(), mapping);
-            if (mapping.getClassName().equals(rootClassName)) {
-                implementationClass = loaded;
-            }
-        }
-        return implementationClass;
-    }
-
-    static Class<?> loadClass(final Class<?> parent, final ConfigMappingMetadata configMappingMetadata) {
+    // Visible for testing
+    static Class<?> loadClass(final GeneratedConfigClass generatedClass) {
+        Class<?> parent = generatedClass.getParent();
         ConfigMappingLoader.class.getModule().addReads(parent.getModule());
         // acquire a lock on the class name to prevent race conditions in multithreaded use cases
-        synchronized (getClassLoaderLock(configMappingMetadata.getClassName())) {
+        synchronized (CLASS_LOADER_LOCKS.computeIfAbsent(generatedClass.getClassName(), c -> new Object())) {
             // Check if the interface implementation was already loaded. If not we will load it.
             try {
-                Class<?> klass = parent.getClassLoader().loadClass(configMappingMetadata.getClassName());
+                Class<?> loadedClass = parent.getClassLoader().loadClass(generatedClass.getClassName());
                 // Check if this is the right classloader class. If not we will load it.
-                if (parent.isAssignableFrom(klass)) {
-                    return klass;
+                if (parent.isAssignableFrom(loadedClass)) {
+                    return loadedClass;
                 }
-                // Config classes should not have issues with classloader and interfaces.
-                if (configMappingMetadata instanceof ConfigMappingClass) {
-                    return klass;
+                // A ConfigMappingClass generates an interface, not a subclass of the parent,
+                // so isAssignableFrom is always false — but the loaded class is still correct.
+                if (generatedClass instanceof ConfigMappingClass) {
+                    return loadedClass;
                 }
-                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+                return defineClass(parent, generatedClass.getClassName(), generatedClass.generateClassBytes());
             } catch (ClassNotFoundException e) {
-                return defineClass(parent, configMappingMetadata.getClassName(), configMappingMetadata.getClassBytes());
+                return defineClass(parent, generatedClass.getClassName(), generatedClass.generateClassBytes());
+            } finally {
+                CLASS_LOADER_LOCKS.remove(generatedClass.getClassName());
             }
         }
     }
@@ -198,47 +113,166 @@ public final class ConfigMappingLoader {
         return ClassDefiner.defineClass(LOOKUP, parent, className, classBytes);
     }
 
-    private static Object getClassLoaderLock(final String className) {
-        return classLoaderLocks.computeIfAbsent(className, c -> new Object());
+    /**
+     * Represents a configuration type that requires a generated implementation class.
+     * <p>
+     * Two kinds of user-defined configuration types are supported: interfaces annotated with
+     * {@link ConfigMapping @ConfigMapping} (handled by {@link ConfigMappingInterface}) and concrete classes
+     * with a no-arg constructor (handled by {@link ConfigMappingClass}).
+     *
+     * @see ConfigMappingInterface
+     * @see ConfigMappingClass
+     */
+    public interface GeneratedConfigClass {
+        /**
+         * Returns the original user-defined type (interface or class) from which the implementation is generated.
+         *
+         * @return the source configuration type
+         */
+        Class<?> getParent();
+
+        /**
+         * Returns the interface type used internally for configuration mapping. For interface-based mappings this
+         * is the same as the parent; for class-based mappings it is the generated compatible interface.
+         *
+         * @return the interface type used for mapping
+         */
+        Class<?> getInterfaceType();
+
+        /**
+         * Returns the {@link ConfigMappingHandler} that processed this configuration type.
+         *
+         * @return the handler
+         */
+        ConfigMappingHandler getHandler();
+
+        /**
+         * Returns the fully-qualified name of the generated class.
+         *
+         * @return the generated class name
+         */
+        String getClassName();
+
+        /**
+         * Generates the bytecode for the generated class.
+         *
+         * @return the class bytes for the generated class
+         */
+        byte[] generateClassBytes();
+
+        /**
+         * Returns the property descriptors for the generated class.
+         *
+         * @return the properties
+         */
+        Property[] getProperties();
     }
 
-    static final class ConfigMappingImplementation {
-        private final Class<?> implementation;
-        private MethodHandle constructor;
-        private MethodHandle getProperties;
-        private MethodHandle getSecrets;
+    static final class ConfigClassImplementation {
+        private static final ClassValue<ConfigClassImplementation> CACHE = new ClassValue<>() {
+            @Override
+            protected ConfigClassImplementation computeValue(Class<?> type) {
+                // Try to load the implementation class of a config interface from the CL
+                try {
+                    Class<?> implementationClass = type.getClassLoader()
+                            .loadClass(ConfigMappingInterface.getGeneratedClassName(type));
+                    if (type.isAssignableFrom(implementationClass)) {
+                        return new ConfigClassImplementation(type, implementationClass);
+                    }
+                } catch (ClassNotFoundException e) {
+                    // Fall through to dynamic generation
+                }
 
-        ConfigMappingImplementation(final Class<?> implementation) {
-            this.implementation = implementation;
-            // ensure modular access
-            ConfigMappingImplementation.class.getModule().addReads(implementation.getModule());
+                // Try to load the implementation class of a class compatible config interface from the CL
+                try {
+                    Class<?> interfaceType = type.getClassLoader()
+                            .loadClass(ConfigMappingClass.getGeneratedClassName(type));
+                    Class<?> implementationClass = type.getClassLoader()
+                            .loadClass(ConfigMappingInterface.getGeneratedClassName(interfaceType));
+                    if (interfaceType.isAssignableFrom(implementationClass)) {
+                        return new ConfigClassImplementation(interfaceType, implementationClass);
+                    }
+                } catch (ClassNotFoundException e) {
+                    // Fall through to dynamic generation
+                }
+
+                // Dynamically generate and load the implementation class
+                ConfigMappingHandler handler = Handlers.get(type);
+                ConfigMappingInterface configMappingInterface = ConfigMappingInterface.get(type, handler);
+                if (configMappingInterface != null) {
+                    return new ConfigClassImplementation(type, loadImplementation(type, configMappingInterface.getHandler()));
+                }
+
+                ConfigMappingClass configMappingClass = ConfigMappingClass.get(type, handler);
+                Class<?> interfaceType = configMappingClass != null ? configMappingClass.getInterfaceType() : type;
+                return new ConfigClassImplementation(interfaceType, loadImplementation(interfaceType, handler));
+            }
+        };
+
+        private static <T> Class<?> loadImplementation(final Class<T> type, final ConfigMappingHandler handler) {
+            // Load the entire config class hierarchy, plus nested elements
+            ConfigMappingInterface generatedClass = ConfigMappingInterface.get(type, handler);
+            if (generatedClass == null) {
+                throw ConfigMessages.msg.classIsNotAMapping(type);
+            }
+
+            Class<?> implementationClass = loadClass(generatedClass);
+            for (GeneratedConfigClass nestedGeneratedClass : generatedClass.getNested()) {
+                loadClass(nestedGeneratedClass);
+            }
+
+            return implementationClass;
         }
 
-        Class<?> implementation() {
+        static ConfigClassImplementation get(final Class<?> type) {
+            return CACHE.get(type);
+        }
+
+        private final Class<?> interfaceType;
+        private final Class<?> implementation;
+
+        private volatile MethodHandle constructor;
+        private volatile MethodHandle getProperties;
+        private volatile MethodHandle getSecrets;
+
+        ConfigClassImplementation(Class<?> interfaceType, final Class<?> implementation) {
+            // ensure modular access
+            ConfigClassImplementation.class.getModule().addReads(implementation.getModule());
+            this.implementation = implementation;
+            this.interfaceType = interfaceType;
+        }
+
+        Class<?> getInterfaceType() {
+            return interfaceType;
+        }
+
+        Class<?> getImplementation() {
             return implementation;
         }
 
-        MethodHandle constructor() {
-            MethodHandle constructor = this.constructor;
-            if (constructor == null) {
+        @SuppressWarnings("unchecked")
+        <T> T newInstance(final ConfigMappingContext configMappingContext) {
+            MethodHandle ctor = this.constructor;
+            if (ctor == null) {
                 try {
-                    constructor = LOOKUP.findConstructor(implementation,
-                            methodType(void.class, ConfigMappingContext.class));
-                    this.constructor = constructor.asType(constructor.type().changeReturnType(Object.class));
+                    this.constructor = ctor = LOOKUP.findConstructor(implementation,
+                            methodType(void.class, ConfigMappingContext.class))
+                            .asType(methodType(Object.class, ConfigMappingContext.class));
                 } catch (NoSuchMethodException e) {
                     throw new NoSuchMethodError(e.getMessage());
                 } catch (IllegalAccessException e) {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return this.constructor;
+            return (T) invoke(ctor, configMappingContext);
         }
 
-        MethodHandle getProperties() {
-            MethodHandle getProperties = this.getProperties;
-            if (getProperties == null) {
+        @SuppressWarnings("unchecked")
+        Map<String, String> getProperties() {
+            MethodHandle props = this.getProperties;
+            if (props == null) {
                 try {
-                    this.getProperties = getProperties = LOOKUP.findStatic(implementation, "getProperties",
+                    this.getProperties = props = LOOKUP.findStatic(implementation, "getProperties",
                             methodType(Map.class));
                 } catch (NoSuchMethodException e) {
                     throw new NoSuchMethodError(e.getMessage());
@@ -246,14 +280,15 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return getProperties;
+            return (Map<String, String>) invoke(props);
         }
 
-        MethodHandle getSecrets() {
-            MethodHandle getSecrets = this.getSecrets;
-            if (getSecrets == null) {
+        @SuppressWarnings("unchecked")
+        Set<String> getSecrets() {
+            MethodHandle secrets = this.getSecrets;
+            if (secrets == null) {
                 try {
-                    this.getSecrets = getSecrets = LOOKUP.findStatic(implementation, "getSecrets",
+                    this.getSecrets = secrets = LOOKUP.findStatic(implementation, "getSecrets",
                             methodType(Set.class));
                 } catch (NoSuchMethodException e) {
                     throw new NoSuchMethodError(e.getMessage());
@@ -261,114 +296,24 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return getSecrets;
-        }
-    }
-
-    /**
-     * Implementation of {@link ConfigMappingMetadata} for configuration classes.
-     */
-    static final class ConfigMappingClass implements ConfigMappingMetadata {
-        private static final ClassValue<ConfigMappingClass> cv = new ClassValue<>() {
-            @Override
-            protected ConfigMappingClass computeValue(final Class<?> classType) {
-                return createConfigurationClass(classType);
-            }
-        };
-
-        static ConfigMappingClass getConfigurationClass(Class<?> classType) {
-            Assert.checkNotNullParam("classType", classType);
-            return cv.get(classType);
+            return (Set<String>) invoke(secrets);
         }
 
-        private static ConfigMappingClass createConfigurationClass(final Class<?> classType) {
-            if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
-                    Modifier.isAbstract(classType.getModifiers()) ||
-                    classType.isEnum() ||
-                    classType.isArray() ||
-                    classType.isPrimitive()) {
-                return null;
-            }
-            if (classType.getName().startsWith("java")) {
-                return null;
-            }
-            if (Collection.class.isAssignableFrom(classType) || Map.class.isAssignableFrom(classType)) {
-                return null;
-            }
+        private static Object invoke(final MethodHandle handle, final Object... args) {
             try {
-                classType.getDeclaredConstructor();
-            } catch (NoSuchMethodException e) {
-                return null;
-            }
-            return new ConfigMappingClass(classType);
-        }
-
-        private static String generateInterfaceName(final Class<?> classType) {
-            if (classType.isInterface() && classType.getTypeParameters().length == 0 ||
-                    Modifier.isAbstract(classType.getModifiers()) ||
-                    classType.isEnum()) {
-                throw new IllegalArgumentException();
-            }
-
-            return classType.getPackage().getName() +
-                    "." +
-                    classType.getSimpleName() +
-                    classType.getName().hashCode() +
-                    "I";
-        }
-
-        private final Class<?> classType;
-        private final String interfaceName;
-
-        public ConfigMappingClass(final Class<?> classType) {
-            this.classType = classType;
-            this.interfaceName = generateInterfaceName(classType);
-        }
-
-        @Override
-        public Class<?> getInterfaceType() {
-            return classType;
-        }
-
-        @Override
-        public String getClassName() {
-            return interfaceName;
-        }
-
-        @Override
-        public byte[] getClassBytes() {
-            return ConfigMappingGenerator.generate(classType, interfaceName);
-        }
-
-        public List<ConfigMappingClass> getNested() {
-            List<ConfigMappingClass> nested = new ArrayList<>();
-            collectNested(classType, nested);
-            return nested;
-        }
-
-        private static void collectNested(final Class<?> type, final List<ConfigMappingClass> nested) {
-            for (Field field : type.getDeclaredFields()) {
-                Class<?> fieldType = field.getType();
-                if (Collection.class.isAssignableFrom(fieldType) || Map.class.isAssignableFrom(fieldType)) {
-                    java.lang.reflect.Type genericType = field.getGenericType();
-                    if (genericType instanceof ParameterizedType parameterizedType) {
-                        for (java.lang.reflect.Type typeArg : parameterizedType.getActualTypeArguments()) {
-                            if (typeArg instanceof Class<?> argClass) {
-                                addNested(argClass, nested);
-                            }
-                        }
-                    }
-                } else {
-                    addNested(fieldType, nested);
+                return handle.invokeWithArguments(args);
+            } catch (InvocationTargetException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException | Error r) {
+                    throw r;
+                } catch (Throwable t) {
+                    throw new UndeclaredThrowableException(t);
                 }
-            }
-        }
-
-        private static void addNested(final Class<?> type, final List<ConfigMappingClass> nested) {
-            ConfigMappingClass configClass = getConfigurationClass(type);
-            if (configClass != null) {
-                nested.add(configClass);
-                collectNested(type, nested);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Throwable t) {
+                throw new UndeclaredThrowableException(t);
             }
         }
     }

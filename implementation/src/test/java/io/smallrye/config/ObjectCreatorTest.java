@@ -1,5 +1,6 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation.get;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static java.util.Collections.emptyList;
@@ -17,12 +18,12 @@ import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingContext.MapWithDefault;
-import io.smallrye.config.ConfigMappingContext.ObjectCreator;
 
 public class ObjectCreatorTest {
     @Test
     void objectCreator() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ObjectCreator.class)
                 .withSources(config(
                         "unnamed.value", "unnamed",
                         "unnamed.key.value", "value"))
@@ -130,7 +131,7 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
-            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
 
             this.unnamed = context.new ObjectCreator<Map<String, Nested>>("unnamed", true)
                     .map(String.class, null, "unnamed", null)
@@ -249,6 +250,7 @@ public class ObjectCreatorTest {
     @Test
     void optionalGroup() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(OptionalGroup.class)
                 .withSources(config(
                         "optional.value", "value"))
                 .build();
@@ -281,7 +283,7 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
-            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
             this.optional = context.new ObjectCreator<Optional<Nested>>("optional")
                     .optionalGroup(Nested.class, nestedSupplier).get();
             this.empty = context.new ObjectCreator<Optional<Nested>>("empty")
@@ -340,7 +342,7 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
-            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
             this.map = context.new ObjectCreator<Map<String, Nested>>("")
                     .map(String.class, null, "", null)
                     .lazyGroup(Nested.class, nestedSupplier)
@@ -416,7 +418,7 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(ConfigMapping.NamingStrategy.KEBAB_CASE);
             context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
-            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
 
             this.defaults = context.new ObjectCreator<Map<String, String>>("defaults")
                     .values(String.class, null, String.class, null, emptyList(), "default")
@@ -454,6 +456,7 @@ public class ObjectCreatorTest {
     @Test
     void namingStrategy() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(Naming.class)
                 .withSources(config(
                         "naming.nested_value.value", "value"))
                 .build();
@@ -483,7 +486,7 @@ public class ObjectCreatorTest {
             context.applyNamingStrategy(NamingStrategy.SNAKE_CASE);
             context.applyBeanStyleGetters(ConfigMapping.BeanStyleGetters.DISABLED);
 
-            Supplier<Nested> nestedSupplier = () -> ConfigMappingLoader.configMappingObject(Nested.class, context);
+            Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
             this.nestedValue = context.new ObjectCreator<Nested>("nestedValue").group(nestedSupplier).get();
         }
 

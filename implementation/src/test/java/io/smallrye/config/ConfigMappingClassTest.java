@@ -1,11 +1,11 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.ConfigMappingLoader.getGeneratedConfigClasses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
 
 class ConfigMappingClassTest {
     @Test
@@ -263,22 +265,18 @@ class ConfigMappingClassTest {
     }
 
     @Test
-    void nestedMetadataCollection() {
-        List<ConfigMappingMetadata> metadata = ConfigMappingLoader.getConfigMappingsMetadata(MapNestedClass.class);
-        Set<String> names = metadata.stream()
-                .map(ConfigMappingMetadata::getClassName)
+    void nestedMapGeneratedClasses() {
+        Set<GeneratedConfigClass> generatedClasses = getGeneratedConfigClasses(MapNestedClass.class);
+        Set<String> names = generatedClasses.stream()
+                .map(GeneratedConfigClass::getClassName)
                 .collect(Collectors.toSet());
 
-        // ConfigMappingClass entries (generated interface names)
-        assertTrue(names
-                .contains(ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(MapNestedClass.class).getClassName()));
-        assertTrue(names.contains(
-                ConfigMappingLoader.ConfigMappingClass.getConfigurationClass(MapNestedClass.ServerEntry.class).getClassName()));
-        // ConfigMappingInterface entries (implementation class names)
-        assertTrue(names.contains(ConfigMappingInterface.getImplementationClassName(
-                ConfigMappingLoader.getConfigMapping(MapNestedClass.class).getInterfaceType())));
-        assertTrue(names.contains(ConfigMappingInterface.getImplementationClassName(
-                ConfigMappingLoader.getConfigMapping(MapNestedClass.ServerEntry.class).getInterfaceType())));
+        // ConfigMappingClass interface bridge generated class names
+        assertTrue(names.contains("io.smallrye.config.ServerEntry-1851196551I"));
+        assertTrue(names.contains("io.smallrye.config.MapNestedClass1716132942I"));
+        // ConfigMappingInterface implementations for the ConfigMappingClass interface bridge
+        assertTrue(names.contains("io.smallrye.config.ServerEntry-1851196551I$$CMImpl"));
+        assertTrue(names.contains("io.smallrye.config.MapNestedClass1716132942I$$CMImpl"));
     }
 
     static class MapNestedClass {
@@ -300,6 +298,23 @@ class ConfigMappingClassTest {
 
         public int getThePort() {
             return thePort;
+        }
+    }
+
+    @Test
+    void noArgsConstructor() {
+        assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder().withMapping(NoArgsConstructor.class));
+    }
+
+    static class NoArgsConstructor {
+        private final String value;
+
+        public NoArgsConstructor(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
         }
     }
 }

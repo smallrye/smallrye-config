@@ -13,6 +13,8 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 
+import io.smallrye.config.ConfigMappingHandler;
+
 @MessageBundle(projectCode = "SRCFG", length = 5)
 public interface ConfigMessages {
     // if we add message localization one day, we must drop the Locale.ROOT argument
@@ -212,6 +214,10 @@ public interface ConfigMessages {
     @Message(id = 56, value = "Incompatible ConfigProviderResolver type: Expected %s, but found %s")
     IllegalStateException incompatibleConfigProvider(String expected, String actual);
 
-    @Message(id = 57, value = "Class %s is not recognized as a config class")
-    IllegalStateException classNotRecognizedAsConfigClass(Class<?> type);
+    @Message(id = 57, value = "The config class %s is already registered with the handler %s and cannot be re-registered with the handler %s")
+    IllegalArgumentException handlerAlreadyRegistered(Class<?> type, ConfigMappingHandler currentHandler,
+            ConfigMappingHandler newHandler);
+
+    @Message(id = 58, value = "No handler registered for type %s")
+    IllegalArgumentException handlerNotRegistered(Class<?> type);
 }

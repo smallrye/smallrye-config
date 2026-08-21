@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -30,31 +31,30 @@ import org.eclipse.microprofile.config.spi.Converter;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
+import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
  * The metadata representation of a {@link ConfigMapping} annotated class.
  */
-public final class ConfigMappingInterface implements ConfigMappingMetadata {
+public final class ConfigMappingInterface implements GeneratedConfigClass {
+    private static final Map<Class<?>, ConfigMappingInterface> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
 
-    static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
-    static final Property[] NO_PROPERTIES = new Property[0];
-    static final ClassValue<ConfigMappingInterface> cv = new ClassValue<>() {
-        protected ConfigMappingInterface computeValue(final Class<?> type) {
-            return createConfigurationInterface(type);
-        }
-    };
+    private static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
+    private static final Property[] NO_PROPERTIES = new Property[0];
 
     private final Class<?> interfaceType;
-    private final String className;
+    private final ConfigMappingHandler handler;
+    private final String generatedClassName;
     private final ConfigMappingInterface[] superTypes;
     private final Property[] properties;
     private final ToStringMethod toStringMethod;
 
-    ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingInterface[] superTypes,
-            final Property[] properties) {
+    ConfigMappingInterface(final Class<?> interfaceType, final ConfigMappingHandler handler,
+            final ConfigMappingInterface[] superTypes, final Property[] properties) {
         this.interfaceType = interfaceType;
-        this.className = getImplementationClassName(interfaceType);
+        this.handler = handler;
+        this.generatedClassName = getGeneratedClassName(interfaceType);
         this.superTypes = superTypes;
 
         List<Property> filteredProperties = new ArrayList<>();
@@ -73,43 +73,42 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         this.toStringMethod = toStringMethod != null ? toStringMethod : ToStringMethod.NONE;
     }
 
-    static String getImplementationClassName(Class<?> type) {
+    static String getGeneratedClassName(Class<?> interfaceType) {
         // do not use string concatenation here
         // make sure the impl name doesn't clash with potential user classes
-        String className = type.getName();
+        String className = interfaceType.getName();
         StringBuilder implementationClassName = new StringBuilder(className.length() + 8);
         implementationClassName.append(className).append("$$CMImpl");
         return implementationClassName.toString();
     }
 
-    /**
-     * Get the configuration interface information for the given interface class. This information is cached.
-     *
-     * @param interfaceType the interface type (must not be {@code null})
-     * @return the configuration interface, or {@code null} if the type does not appear to be a configuration interface
-     */
-    public static ConfigMappingInterface getConfigurationInterface(Class<?> interfaceType) {
-        Assert.checkNotNullParam("interfaceType", interfaceType);
-        return cv.get(interfaceType);
+    static ConfigMappingInterface get(final Class<?> interfaceType, final ConfigMappingHandler handler) {
+        return CACHE.computeIfAbsent(interfaceType, new Function<>() {
+            @Override
+            public ConfigMappingInterface apply(Class<?> interfaceType) {
+                return of(interfaceType, handler);
+            }
+        });
     }
 
-    /**
-     * Get the configuration interface type.
-     *
-     * @return the configuration interface type
-     */
+    @Override
+    public Class<?> getParent() {
+        return interfaceType;
+    }
+
+    @Override
     public Class<?> getInterfaceType() {
         return interfaceType;
     }
 
-    /**
-     * Get the generated implementation class name. The class name is the configuration interface type name, plus the
-     * hashcode of the configuration interface type name with the suffix <code>Impl</code>.
-     *
-     * @return the generated implementation class name
-     */
+    @Override
+    public ConfigMappingHandler getHandler() {
+        return handler;
+    }
+
+    @Override
     public String getClassName() {
-        return className;
+        return generatedClassName;
     }
 
     /**
@@ -166,39 +165,39 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return toStringMethod;
     }
 
-    public boolean hasConfigMapping() {
+    boolean hasConfigMapping() {
         return interfaceType.getAnnotation(ConfigMapping.class) != null;
     }
 
     public NamingStrategy getNamingStrategy() {
-        ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
-        return configMapping != null ? configMapping.namingStrategy() : NamingStrategy.KEBAB_CASE;
+        return handler.getNamingStrategy(interfaceType);
     }
 
-    public boolean isBeanStyleGetters() {
+    boolean isBeanStyleGetters() {
         ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
         return configMapping != null && configMapping.beanStyleGetters();
     }
 
-    public BeanStyleGetters getBeanStyleGetters() {
+    BeanStyleGetters getBeanStyleGetters() {
         return isBeanStyleGetters() ? BeanStyleGetters.ENABLED : BeanStyleGetters.DISABLED;
     }
 
     String getClassInternalName() {
-        return className.replace('.', '/');
+        return generatedClassName.replace('.', '/');
     }
 
-    public List<ConfigMappingInterface> getNested() {
-        Set<ConfigMappingInterface> nested = new LinkedHashSet<>();
+    public Set<GeneratedConfigClass> getNested() {
+        Set<GeneratedConfigClass> nested = new LinkedHashSet<>();
         getNested(properties, nested);
-        return new ArrayList<>(nested);
+        return nested;
     }
 
-    public byte[] getClassBytes() {
+    @Override
+    public byte[] generateClassBytes() {
         try {
             return ConfigMappingGenerator.generate(this);
         } catch (Throwable e) {
-            throw ConfigMessages.msg.couldNotGenerateMapping(e, className);
+            throw ConfigMessages.msg.couldNotGenerateMapping(e, generatedClassName);
         }
     }
 
@@ -541,7 +540,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public boolean hasNamingStrategy() {
-            return groupType.getInterfaceType().isAnnotationPresent(ConfigMapping.class);
+            return groupType.hasConfigMapping();
         }
 
         public NamingStrategy getNamingStrategy() {
@@ -664,10 +663,10 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
 
         public Class<? extends Supplier<Iterable<String>>> getKeysProvider() {
-            return Assert.checkNotNullParam("keyProvider", keysProvider);
+            return Assert.checkNotNullParam("keysProvider", keysProvider);
         }
 
-        public boolean hasKeyProvider() {
+        public boolean hasKeysProvider() {
             return keysProvider != null;
         }
 
@@ -788,12 +787,11 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         static final ToStringMethod NONE = new ToStringMethod();
     }
 
-    private static ConfigMappingInterface createConfigurationInterface(Class<?> interfaceType) {
+    private static ConfigMappingInterface of(Class<?> interfaceType, ConfigMappingHandler handler) {
         ConfigMappingInterface.class.getModule().addReads(interfaceType.getModule());
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
             return null;
         }
-        // No reason to use a JDK interface to generate a config class? Primarily to fix the java.nio.file.Path case.
         if (interfaceType.getName().startsWith("java")) {
             return null;
         }
@@ -802,15 +800,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             return null;
         }
 
-        // first, find any supertypes
-        ConfigMappingInterface[] superTypes = getSuperTypes(interfaceType.getInterfaces(), 0, 0);
-        // now find any properties
-        Property[] properties = getProperties(interfaceType, interfaceType.getDeclaredMethods(), 0, 0);
-        // is it anything?
-        return new ConfigMappingInterface(interfaceType, superTypes, properties);
+        if (interfaceType.equals(ConfigMappingClass.Mapper.class)) {
+            return null;
+        }
+
+        ConfigMappingInterface[] superTypes = getSuperTypes(handler, interfaceType.getInterfaces(), 0, 0);
+        Property[] properties = getProperties(handler, interfaceType, interfaceType.getDeclaredMethods(), 0, 0);
+        return new ConfigMappingInterface(interfaceType, handler, superTypes, properties);
     }
 
-    private static ConfigMappingInterface[] getSuperTypes(Class<?>[] interfaces, int si, int ti) {
+    private static ConfigMappingInterface[] getSuperTypes(ConfigMappingHandler handler, Class<?>[] interfaces, int si, int ti) {
         if (si == interfaces.length) {
             if (ti == 0) {
                 return NO_TYPES;
@@ -819,17 +818,17 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
         }
         Class<?> item = interfaces[si];
-        ConfigMappingInterface ci = getConfigurationInterface(item);
+        ConfigMappingInterface ci = get(item, handler);
         if (ci != null) {
-            ConfigMappingInterface[] array = getSuperTypes(interfaces, si + 1, ti + 1);
+            ConfigMappingInterface[] array = getSuperTypes(handler, interfaces, si + 1, ti + 1);
             array[ti] = ci;
             return array;
         } else {
-            return getSuperTypes(interfaces, si + 1, ti);
+            return getSuperTypes(handler, interfaces, si + 1, ti);
         }
     }
 
-    static Property[] getProperties(Class<?> interfaceType, Method[] methods, int si, int ti) {
+    static Property[] getProperties(ConfigMappingHandler handler, Class<?> interfaceType, Method[] methods, int si, int ti) {
         for (int i = si; i < methods.length; i++) {
             Method method = methods[i];
             int mods = method.getModifiers();
@@ -843,12 +842,12 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             if (method.getReturnType() == void.class) {
                 throw ConfigMessages.msg.mappingMethodsCannotBeVoid(method.getName());
             }
-            Property p = getPropertyDef(interfaceType, method, method.getAnnotatedReturnType());
+            Property p = getPropertyDef(handler, interfaceType, method, method.getAnnotatedReturnType());
             final Property[] array;
             if (i + 1 == methods.length) {
                 array = new Property[ti + 1];
             } else {
-                array = getProperties(interfaceType, methods, i + 1, ti + 1);
+                array = getProperties(handler, interfaceType, methods, i + 1, ti + 1);
             }
             array[ti] = p;
             return array;
@@ -856,7 +855,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         return ti > 0 ? new Property[ti] : NO_PROPERTIES;
     }
 
-    private static Property getPropertyDef(Class<?> interfaceType, Method method, AnnotatedType type) {
+    private static Property getPropertyDef(ConfigMappingHandler handler, Class<?> interfaceType, Method method,
+            AnnotatedType type) {
         if (isToStringMethod(method)) {
             return new ToStringMethod(method);
         }
@@ -865,7 +865,8 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
         Method defaultMethod = hasDefaultMethodImplementation(method);
         if (defaultMethod != null) {
-            return new DefaultMethodProperty(method, defaultMethod, getPropertyDef(interfaceType, defaultMethod, type));
+            return new DefaultMethodProperty(method, defaultMethod,
+                    getPropertyDef(handler, interfaceType, defaultMethod, type));
         }
 
         // now figure out what kind it is
@@ -882,7 +883,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
 
             if (rawType == Optional.class) {
                 // optional is special: it can contain a leaf or a group, but not a map (unless it has @ConvertWith)
-                Property nested = getPropertyDef(interfaceType, method, typeOfParameter(type, 0));
+                Property nested = getPropertyDef(handler, interfaceType, method, typeOfParameter(type, 0));
                 if (nested.isMayBeOptional()) {
                     return new OptionalProperty(method, propertyName, nested.asMayBeOptional());
                 }
@@ -893,7 +894,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 AnnotatedType keyType = typeOfParameter(type, 0);
                 AnnotatedType valueType = typeOfParameter(type, 1);
                 String defaultValue = getDefaultValue(method);
-                Property valueProperty = getPropertyDef(interfaceType, method, valueType);
+                Property valueProperty = getPropertyDef(handler, interfaceType, method, valueType);
                 if (valueProperty.isGroup()) {
                     defaultValue = null;
                 }
@@ -909,23 +910,27 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
             }
             if (rawType == List.class || rawType == Set.class) {
                 AnnotatedType elementType = typeOfParameter(type, 0);
-                Class<?> elementClass = rawTypeOf(elementType.getType());
-                if (interfaceType == elementClass) {
-                    throw ConfigMessages.msg.mappingCannotUseSelfReferenceTypes(elementClass.getName());
+                Class<?> elementRawType = rawTypeOf(elementType.getType());
+                if (interfaceType == elementRawType) {
+                    throw ConfigMessages.msg.mappingCannotUseSelfReferenceTypes(elementRawType.getName());
                 }
 
-                if (elementClass == Map.class) {
-                    return new CollectionProperty(rawType, getPropertyDef(interfaceType, method, elementType));
+                if (elementRawType == Map.class) {
+                    return new CollectionProperty(rawType, getPropertyDef(handler, interfaceType, method, elementType));
                 }
 
-                ConfigMappingInterface configurationInterface = getConfigurationInterface(elementClass);
+                // For Collection with Group elements
+                ConfigMappingInterface configurationInterface = get(elementRawType, handler);
                 if (configurationInterface != null) {
                     return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
                 }
-                configurationInterface = ConfigMappingLoader.getConfigMapping(elementClass);
-                if (configurationInterface != null) {
-                    return new CollectionProperty(rawType,
-                            new GroupProperty(method, propertyName, configurationInterface));
+                // Check if the Class has an interface bridge
+                Class<?> interfaceElementRawType = ConfigMappingClass.getInterfaceType(elementRawType);
+                if (interfaceElementRawType != null) {
+                    configurationInterface = get(interfaceElementRawType, handler);
+                    if (configurationInterface != null) {
+                        return new CollectionProperty(rawType, new GroupProperty(method, propertyName, configurationInterface));
+                    }
                 }
 
                 Class<? extends Converter<?>> converter = getConverter(elementType, method);
@@ -935,14 +940,19 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
                 return new CollectionProperty(rawType,
                         new LeafProperty(method, propertyName, elementType.getType(), convertWith, getDefaultValue(method)));
             }
-            ConfigMappingInterface configurationInterface = getConfigurationInterface(rawType);
+
+            // For Groups
+            ConfigMappingInterface configurationInterface = get(rawType, handler);
             if (configurationInterface != null) {
-                // it's a group
                 return new GroupProperty(method, propertyName, configurationInterface);
             }
-            configurationInterface = ConfigMappingLoader.getConfigMapping(rawType);
-            if (configurationInterface != null) {
-                return new GroupProperty(method, propertyName, configurationInterface);
+            // Check if the Class has an interface bridge
+            Class<?> interfaceRawType = ConfigMappingClass.getInterfaceType(rawType);
+            if (interfaceRawType != null) {
+                configurationInterface = get(interfaceRawType, handler);
+                if (configurationInterface != null) {
+                    return new GroupProperty(method, propertyName, configurationInterface);
+                }
             }
             // fall out (leaf)
         }
@@ -1042,10 +1052,9 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
     }
 
     private static void validateConverter(final Type type, final Class<? extends Converter<?>> convertWith) {
-        if (type instanceof Class) {
+        if (type instanceof Class<?> rawType) {
             try {
-                Class<?> classType = (Class<?>) type;
-                Class<?> effectiveType = classType.isPrimitive() ? PrimitiveProperty.boxTypes.get(classType) : classType;
+                Class<?> effectiveType = rawType.isPrimitive() ? PrimitiveProperty.boxTypes.get(rawType) : rawType;
                 Method convertMethod = convertWith.getMethod("convert", String.class);
                 if (!effectiveType.isAssignableFrom(convertMethod.getReturnType())) {
                     throw new IllegalArgumentException();
@@ -1077,7 +1086,7 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
-    private static void getNested(final Property[] properties, final Set<ConfigMappingInterface> nested) {
+    private static void getNested(final Property[] properties, final Set<GeneratedConfigClass> nested) {
         for (Property property : properties) {
             if (property instanceof GroupProperty groupProperty) {
                 ConfigMappingInterface group = groupProperty.getGroupType();
@@ -1134,6 +1143,16 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
         }
     }
 
+    static Map<String, Property> getProperties(final Class<?> type) {
+        return getProperties(ConfigMappingInterface.get(type, ConfigMappingHandler.Handlers.find(type)));
+    }
+
+    static Map<String, Property> getProperties(final ConfigMappingInterface configMapping) {
+        Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
+        getProperties(configMapping, properties);
+        return properties.get(configMapping.getInterfaceType()).get("");
+    }
+
     /**
      * Constructs a representation of all {@link Property} contained in the {@link ConfigMappingInterface}.
      *
@@ -1150,14 +1169,14 @@ public final class ConfigMappingInterface implements ConfigMappingMetadata {
      * The mapping class root {@link Property} use the empty <code>String</code> for the path key.
      *
      * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
-     * @return a <code>Map</code> with {@link Property} values
+     * @param properties a <code>Map</code> with {@link Property} values
      */
-    public static Map<Class<?>, Map<String, Map<String, Property>>> getProperties(final ConfigMappingInterface configMapping) {
-        Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
+    private static void getProperties(
+            final ConfigMappingInterface configMapping,
+            final Map<Class<?>, Map<String, Map<String, Property>>> properties) {
         Function<String, String> namingStrategy = configMapping.getBeanStyleGetters()
                 .andThen(configMapping.getNamingStrategy());
         getProperties(new GroupProperty(null, null, configMapping), namingStrategy, new Path(), properties);
-        return properties;
     }
 
     private static void getProperties(

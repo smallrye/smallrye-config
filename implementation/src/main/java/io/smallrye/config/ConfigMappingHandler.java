@@ -1,8 +1,9 @@
 package io.smallrye.config;
 
+import static java.util.Collections.synchronizedMap;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -14,30 +15,34 @@ import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
- * SPI to support configuration classes.
+ * SPI to support configuration types.
  * <p>
  * Implementations describe how to extract configuration metadata from annotated classes, enabling the core
  * {@link ConfigMappingGenerator} to produce a backing interface and implementation without being coupled to any
  * specific annotation model.
  * <p>
  * Implementations are discovered via {@link java.util.ServiceLoader}.
+ * <p>
+ * A configuration type (including nested types) must be processed by a single handler implementation
+ * across the application. If multiple handlers attempt to process the same type with different
+ * implementations, the behavior is undefined for nested types and an error is raised for root types.
  */
 public interface ConfigMappingHandler {
     /**
      * Whether this handler recognizes the given class as a configuration class.
      *
-     * @param classType the candidate class.
+     * @param type the candidate class.
      * @return {@code true} if this handler can extract configuration metadata from the class.
      */
-    boolean handles(Class<?> classType);
+    boolean handles(Class<?> type);
 
     /**
      * Extract the configuration prefix from the class.
      *
-     * @param classType the configuration class.
+     * @param type the configuration class.
      * @return the prefix, or an empty string if none.
      */
-    String getPrefix(Class<?> classType);
+    String getPrefix(Class<?> type);
 
     /**
      * Extract configuration metadata from a field of a configuration class.
@@ -61,7 +66,7 @@ public interface ConfigMappingHandler {
      *
      * @return the naming strategy.
      */
-    default NamingStrategy getNamingStrategy() {
+    default NamingStrategy getNamingStrategy(Class<?> type) {
         return NamingStrategy.VERBATIM;
     }
 
@@ -84,22 +89,60 @@ public interface ConfigMappingHandler {
     }
 
     final class Handlers {
-        private static final ConfigMappingHandler FALLBACK = new FallbackClassHandler();
-        private static final Map<ClassLoader, List<ConfigMappingHandler>> cache = Collections
-                .synchronizedMap(new WeakHashMap<>());
+        private static final Map<ClassLoader, List<ConfigMappingHandler>> HANDLERS = synchronizedMap(new WeakHashMap<>());
+        private static final ClassValue<Holder<ConfigMappingHandler>> CACHE = new ClassValue<>() {
+            @Override
+            protected Holder<ConfigMappingHandler> computeValue(Class<?> type) {
+                return new Holder<>();
+            }
+        };
 
-        static ConfigMappingHandler find(final Class<?> classType) {
-            List<ConfigMappingHandler> handlers = cache.computeIfAbsent(classType.getClassLoader(), Handlers::load);
+        private static class Holder<T> {
+            volatile T value;
+        }
+
+        static void register(final Class<?> type, final ConfigMappingHandler handler) {
+            set(type, handler);
+        }
+
+        static ConfigMappingHandler get(final Class<?> type) {
+            Holder<ConfigMappingHandler> holder = CACHE.get(type);
+            if (holder.value == null) {
+                throw ConfigMessages.msg.handlerNotRegistered(type);
+            }
+            return holder.value;
+        }
+
+        static ConfigMappingHandler find(final Class<?> type) {
+            return find(type, type.getClassLoader());
+        }
+
+        static ConfigMappingHandler find(final Class<?> type, final ClassLoader classLoader) {
+            List<ConfigMappingHandler> handlers = HANDLERS.computeIfAbsent(classLoader, Handlers::load);
+            Holder<ConfigMappingHandler> holder = CACHE.get(type);
+            if (holder.value != null) {
+                return holder.value;
+            }
+
             for (ConfigMappingHandler handler : handlers) {
-                if (handler.handles(classType)) {
+                if (handler.handles(type)) {
                     return handler;
                 }
             }
-            Class<?> declaring = classType.getDeclaringClass();
-            if (declaring != null) {
-                return find(declaring);
+            return FallbackClassHandler.FALLBACK;
+        }
+
+        private static void set(final Class<?> type, final ConfigMappingHandler handler) {
+            Holder<ConfigMappingHandler> holder = CACHE.get(type);
+            if (holder.value == null) {
+                synchronized (holder) {
+                    if (holder.value == null) {
+                        holder.value = handler;
+                    }
+                }
+            } else if (!holder.value.getClass().equals(handler.getClass())) {
+                throw ConfigMessages.msg.handlerAlreadyRegistered(type, holder.value, handler);
             }
-            return FALLBACK;
         }
 
         private static List<ConfigMappingHandler> load(final ClassLoader classLoader) {
@@ -107,36 +150,52 @@ public interface ConfigMappingHandler {
             for (ConfigMappingHandler handler : ServiceLoader.load(ConfigMappingHandler.class, classLoader)) {
                 handlers.add(handler);
             }
-            handlers.add(new ConfigMappingInterfaceHandler());
+            handlers.add(ConfigMappingInterfaceHandler.CONFIG_MAPPING);
             return List.copyOf(handlers);
         }
+    }
 
-        private final static class ConfigMappingInterfaceHandler implements ConfigMappingHandler {
-            @Override
-            public boolean handles(Class<?> classType) {
-                if (!classType.isInterface() && classType.isAnnotationPresent(ConfigMapping.class)) {
-                    throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(classType);
-                }
-                return classType.isInterface();
-            }
+    final class ConfigMappingInterfaceHandler implements ConfigMappingHandler {
+        public static final ConfigMappingInterfaceHandler CONFIG_MAPPING = new ConfigMappingInterfaceHandler();
 
-            @Override
-            public String getPrefix(Class<?> classType) {
-                ConfigMapping configMapping = classType.getAnnotation(ConfigMapping.class);
-                return configMapping != null ? configMapping.prefix() : "";
-            }
+        private ConfigMappingInterfaceHandler() {
         }
 
-        private final static class FallbackClassHandler implements ConfigMappingHandler {
-            @Override
-            public boolean handles(Class<?> classType) {
-                return true;
+        @Override
+        public boolean handles(Class<?> type) {
+            if (!type.isInterface() && type.isAnnotationPresent(ConfigMapping.class)) {
+                throw ConfigMessages.msg.mappingAnnotationNotSupportedInClass(type);
             }
+            return type.isInterface();
+        }
 
-            @Override
-            public String getPrefix(Class<?> classType) {
-                return "";
-            }
+        @Override
+        public String getPrefix(Class<?> type) {
+            ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
+            return configMapping != null ? configMapping.prefix() : "";
+        }
+
+        @Override
+        public NamingStrategy getNamingStrategy(Class<?> type) {
+            ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
+            return configMapping != null ? configMapping.namingStrategy() : NamingStrategy.KEBAB_CASE;
+        }
+    }
+
+    final class FallbackClassHandler implements ConfigMappingHandler {
+        public static final ConfigMappingHandler FALLBACK = new FallbackClassHandler();
+
+        private FallbackClassHandler() {
+        }
+
+        @Override
+        public boolean handles(Class<?> type) {
+            return true;
+        }
+
+        @Override
+        public String getPrefix(Class<?> type) {
+            return "";
         }
     }
 }

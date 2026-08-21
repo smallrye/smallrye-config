@@ -26,6 +26,7 @@ import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_LOG_VALUES;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_PROFILE_PARENT;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_SECRET_HANDLERS;
+import static java.lang.Thread.currentThread;
 
 import java.lang.reflect.Type;
 import java.nio.file.Paths;
@@ -533,12 +534,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
-    public SmallRyeConfigBuilder withMapping(Class<?> klass) {
-        return withMapping(ConfigClass.configClass(klass));
+    public SmallRyeConfigBuilder withMapping(Class<?> type) {
+        return withMapping(ConfigClass.configClass(type));
     }
 
-    public SmallRyeConfigBuilder withMapping(Class<?> klass, String prefix) {
-        return withMapping(ConfigClass.configClass(klass, prefix));
+    public SmallRyeConfigBuilder withMapping(Class<?> type, String prefix) {
+        return withMapping(ConfigClass.configClass(type, prefix));
     }
 
     public SmallRyeConfigBuilder withMapping(ConfigClass configClass) {
@@ -797,21 +798,26 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         public void mapping(ConfigClass configClass) {
             Assert.checkNotNullParam("configClass", configClass);
-
-            mappings.add(configClass);
-            addDefaultsAndIgnores(configClass);
+            ConfigClass resolved = !classLoader.equals(currentThread().getContextClassLoader())
+                    ? configClass.forClassLoader(classLoader)
+                    : configClass;
+            mappings.add(resolved);
+            addDefaultsAndIgnores(resolved);
         }
 
         public void mappingInstance(ConfigClass configClass, Object instance) {
             Assert.checkNotNullParam("configClass", configClass);
             Assert.checkNotNullParam("instance", instance);
+            ConfigClass resolved = !classLoader.equals(currentThread().getContextClassLoader())
+                    ? configClass.forClassLoader(classLoader)
+                    : configClass;
 
             // TODO - Validate that instance is an implementation of type?
-            mappingsInstances.put(configClass, instance);
-            if (!ignores.matches(configClass.getPrefix())) {
-                ignores.add(configClass.getProperties().keySet());
+            mappingsInstances.put(resolved, instance);
+            if (!ignores.matches(resolved.getPrefix())) {
+                ignores.add(resolved.getProperties().keySet());
             }
-            addDefaultsAndIgnores(configClass);
+            addDefaultsAndIgnores(resolved);
         }
 
         public void ignoredPath(String ignoredPath) {
@@ -839,9 +845,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             // Do not override defaults set by the builder directly, which have priority over mapping defaults
             defaults.add(configClass.getProperties());
             secretKeys.add(configClass.getSecrets());
-
-            ConfigMappingHandler handler = ConfigMappingHandler.Handlers.find(configClass.getType());
-            if (handler.ignoreUnmappedProperties()) {
+            if (configClass.getHandler().ignoreUnmappedProperties()) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
         }
@@ -903,12 +907,12 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         @SuppressWarnings("unchecked")
-        private static int getPriority(final Class<? extends ConfigSourceInterceptor> klass) {
-            Priority priorityAnnotation = klass.getAnnotation(Priority.class);
+        private static int getPriority(final Class<? extends ConfigSourceInterceptor> type) {
+            Priority priorityAnnotation = type.getAnnotation(Priority.class);
             if (priorityAnnotation != null) {
                 return priorityAnnotation.value();
             } else {
-                Class<?> parentClass = klass.getSuperclass();
+                Class<?> parentClass = type.getSuperclass();
                 if (ConfigSourceInterceptor.class.isAssignableFrom(parentClass)) {
                     return getPriority((Class<? extends ConfigSourceInterceptor>) parentClass);
                 }

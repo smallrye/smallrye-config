@@ -16,12 +16,12 @@ import io.smallrye.config._private.ConfigMessages;
  */
 public final class ConfigPropertiesConfigMappingHandler implements ConfigMappingHandler {
     @Override
-    public boolean handles(Class<?> classType) {
-        if (!classType.isEnum() && !classType.isInterface() && !classType.isArray() && !classType.isPrimitive()) {
-            return classType.isAnnotationPresent(ConfigProperties.class);
+    public boolean handles(Class<?> type) {
+        if (!type.isEnum() && !type.isInterface() && !type.isArray() && !type.isPrimitive()) {
+            return type.isAnnotationPresent(ConfigProperties.class);
         }
-        if (classType.isAnnotationPresent(ConfigProperties.class)) {
-            throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(classType);
+        if (type.isAnnotationPresent(ConfigProperties.class)) {
+            throw ConfigMessages.msg.propertiesAnnotationNotSupportedInInterface(type);
         }
         return false;
     }
@@ -45,8 +45,8 @@ public final class ConfigPropertiesConfigMappingHandler implements ConfigMapping
     }
 
     @Override
-    public String getPrefix(Class<?> classType) {
-        ConfigProperties configProperties = classType.getAnnotation(ConfigProperties.class);
+    public String getPrefix(Class<?> type) {
+        ConfigProperties configProperties = type.getAnnotation(ConfigProperties.class);
         String prefix = configProperties != null ? configProperties.prefix() : "";
         if (prefix.equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
             prefix = "";

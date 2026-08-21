@@ -1,20 +1,24 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigMappingLoader.getConfigMappingClass;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingInterface.Property;
+import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
 
 /**
- * Utility class for {@link ConfigMapping} annotated classes.
+ * Utility class for Config classes.
  */
 public final class ConfigMappings {
 
@@ -45,17 +49,14 @@ public final class ConfigMappings {
      * Constructs a representation of all {@link Property} contained in a mapping class. The <code>Map</code> key is
      * the full path to the {@link Property}, including the mapping class prefix.
      *
-     * @param configClass the {@link ConfigMapping} annotated class and <code>String</code> prefix
-     * @see ConfigMappingInterface#getProperties(ConfigMappingInterface)
+     * @param configClass the Config class and <code>String</code> prefix
      * @return a <code>Map</code> with all mapping class {@link Property}
      */
     public static Map<String, Property> getProperties(final ConfigClass configClass) {
         Map<String, Property> properties = new HashMap<>();
         // Because the properties key names do not include the path prefix we need to add it
-        for (Map.Entry<String, Property> entry : ConfigMappingInterface
-                .getProperties(ConfigMappingLoader.getConfigMapping(configClass.getType()))
-                .get(configClass.getType())
-                .get("").entrySet()) {
+        for (Entry<String, Property> entry : ConfigMappingInterface
+                .getProperties(configClass.implementation().getInterfaceType()).entrySet()) {
             properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
         }
         return properties;
@@ -65,7 +66,7 @@ public final class ConfigMappings {
      * Constructs a {@link PropertyNamesMatcher} with all the property names mapped by the specified list of mapping
      * classes.
      *
-     * @param configClasses a list of {@link ConfigMapping} annotated classes
+     * @param configClasses a list of Config classes
      * @return a {@link PropertyNamesMatcher} to match names mapped by the mapping classes
      */
     public static PropertyNamesMatcher<?> propertyNamesMatcher(final List<ConfigClass> configClasses) {
@@ -105,60 +106,146 @@ public final class ConfigMappings {
     }
 
     /**
-     * A representation of a configuration class.
+     * A representation of a Config class.
+     * <p>
+     * A {@code ConfigClass} pairs the config type (an interface annotated with
+     * {@link ConfigMapping @ConfigMapping} or a concrete class) with the configuration prefix it maps to and the
+     * handler responsible for its processing.
+     * <p>
+     * Property names and secret paths are lazily computed and cached on first access.
      */
     public static final class ConfigClass {
         private final Class<?> type;
         private final String prefix;
-        private final Map<String, String> properties;
-        private final Set<String> secrets;
+        private final ConfigMappingHandler handler;
+        private final Function<ClassLoader, ConfigClass> forClassLoader;
 
-        public ConfigClass(final Class<?> type, final String prefix) {
-            Assert.checkNotNullParam("klass", type);
-            Assert.checkNotNullParam("path", prefix);
+        private volatile Properties properties;
+
+        private ConfigClass(
+                final Class<?> type,
+                final String prefix,
+                final ConfigMappingHandler handler,
+                final Function<ClassLoader, ConfigClass> forClassLoader) {
+            Assert.checkNotNullParam("type", type);
+            Assert.checkNotNullParam("prefix", prefix);
+            Assert.checkNotNullParam("handler", handler);
 
             this.type = type;
             this.prefix = prefix;
-            this.properties = new HashMap<>();
-            this.secrets = new HashSet<>();
-
-            Class<?> mappingClass = getConfigMappingClass(type);
-            Set<String> secrets = ConfigMappingLoader.configMappingSecrets(mappingClass);
-            StringBuilder sb = new StringBuilder(prefix);
-            for (Map.Entry<String, String> property : ConfigMappingLoader.configMappingProperties(mappingClass).entrySet()) {
-                String path = property.getKey();
-                String name;
-                if (prefix.isEmpty()) {
-                    name = path;
-                } else if (path.isEmpty()) {
-                    name = prefix;
-                } else if (path.charAt(0) == '[') {
-                    name = sb.append(path).toString();
-                } else {
-                    name = sb.append(".").append(path).toString();
-                }
-                this.properties.put(name, property.getValue());
-                if (secrets.contains(property.getKey())) {
-                    this.secrets.add(name);
-                }
-                sb.setLength(prefix.length());
-            }
+            this.handler = handler;
+            this.forClassLoader = forClassLoader;
         }
 
+        /**
+         * Returns the configuration type.
+         *
+         * @return the configuration type
+         */
         public Class<?> getType() {
             return type;
         }
 
+        /**
+         * Returns the configuration prefix that this type is mapped to.
+         *
+         * @return the configuration prefix
+         */
         public String getPrefix() {
             return prefix;
         }
 
-        public Map<String, String> getProperties() {
-            return properties;
+        /**
+         * Returns the {@link ConfigMappingHandler} responsible for processing this configuration type.
+         *
+         * @return the handler
+         */
+        public ConfigMappingHandler getHandler() {
+            return handler;
         }
 
+        /**
+         * Returns property names mapped by this configuration type, keyed by name (prefixed with {@link #getPrefix()})
+         * and with the mapped configuration.
+         *
+         * @return a Map of property names to defaults
+         */
+        public Map<String, String> getProperties() {
+            return holder().properties();
+        }
+
+        /**
+         * Returns the names that are marked as secrets. Names are prefixed with {@link #getPrefix()}.
+         *
+         * @return a Set of secret property names
+         */
         public Set<String> getSecrets() {
-            return secrets;
+            return holder().secrets();
+        }
+
+        ConfigClassImplementation implementation() {
+            Handlers.register(type, handler);
+            return ConfigClassImplementation.get(type);
+        }
+
+        ConfigClass forClassLoader(final ClassLoader classLoader) {
+            return forClassLoader == null ? this : forClassLoader.apply(classLoader);
+        }
+
+        private Properties holder() {
+            Properties p = properties;
+            if (p == null) {
+                synchronized (this) {
+                    p = properties;
+                    if (p == null) {
+                        properties = p = new Properties();
+                    }
+                }
+            }
+            return p;
+        }
+
+        private final class Properties {
+            private final Map<String, String> properties;
+            private final Set<String> secrets;
+
+            Properties() {
+                Map<String, String> prefixedProperties = new HashMap<>();
+                Set<String> prefixedSecrets = new HashSet<>();
+
+                Map<String, String> properties = implementation().getProperties();
+                Set<String> secrets = implementation().getSecrets();
+                StringBuilder sb = new StringBuilder(prefix);
+                for (Map.Entry<String, String> property : properties.entrySet()) {
+                    String path = property.getKey();
+                    String name;
+                    if (prefix.isEmpty()) {
+                        name = path;
+                    } else if (path.isEmpty()) {
+                        name = prefix;
+                    } else if (path.charAt(0) == '[') {
+                        name = sb.append(path).toString();
+                    } else {
+                        name = sb.append(".").append(path).toString();
+                    }
+                    prefixedProperties.put(name, property.getValue());
+                    if (secrets.contains(property.getKey())) {
+                        prefixedSecrets.add(name);
+                    }
+                    sb.setLength(prefix.length());
+                }
+
+                this.properties = unmodifiableMap(prefixedProperties);
+                this.secrets = unmodifiableSet(prefixedSecrets);
+            }
+
+            Map<String, String> properties() {
+                return properties;
+            }
+
+            Set<String> secrets() {
+                return secrets;
+            }
         }
 
         @Override
@@ -181,13 +268,63 @@ public final class ConfigMappings {
             return Objects.hash(type.getName(), prefix);
         }
 
-        public static ConfigClass configClass(final Class<?> klass, final String prefix) {
-            return new ConfigClass(klass, prefix);
+        /**
+         * Creates a {@code ConfigClass} for the given type, discovering the prefix and handler automatically.
+         *
+         * @param type the configuration type
+         * @return a new {@code ConfigClass}
+         */
+        public static ConfigClass configClass(final Class<?> type) {
+            ConfigMappingHandler handler = Handlers.find(type);
+            return new ConfigClass(type, handler.getPrefix(type), handler, new Function<>() {
+                @Override
+                public ConfigClass apply(ClassLoader classLoader) {
+                    ConfigMappingHandler handler = Handlers.find(type, classLoader);
+                    return new ConfigClass(type, handler.getPrefix(type), handler, null);
+                }
+            });
         }
 
-        public static ConfigClass configClass(final Class<?> klass) {
-            ConfigMappingHandler configClassHandler = Handlers.find(klass);
-            return configClass(klass, configClassHandler.getPrefix(klass));
+        /**
+         * Creates a {@code ConfigClass} for the given type with an explicit prefix, discovering the handler
+         * automatically.
+         *
+         * @param type the configuration type
+         * @param prefix the configuration prefix
+         * @return a new {@code ConfigClass}
+         */
+        public static ConfigClass configClass(final Class<?> type, final String prefix) {
+            return new ConfigClass(type, prefix, Handlers.find(type), new Function<>() {
+                @Override
+                public ConfigClass apply(ClassLoader classLoader) {
+                    ConfigMappingHandler handler = Handlers.find(type, classLoader);
+                    return new ConfigClass(type, prefix, handler, null);
+                }
+            });
+        }
+
+        /**
+         * Creates a {@code ConfigClass} for the given type with an explicit handler. The prefix is obtained
+         * from the handler.
+         *
+         * @param type the configuration type
+         * @param handler the handler responsible for processing this type
+         * @return a new {@code ConfigClass}
+         */
+        public static ConfigClass configClass(final Class<?> type, final ConfigMappingHandler handler) {
+            return new ConfigClass(type, handler.getPrefix(type), handler, null);
+        }
+
+        /**
+         * Creates a {@code ConfigClass} for the given type with an explicit prefix and handler.
+         *
+         * @param type the configuration type
+         * @param prefix the configuration prefix
+         * @param handler the handler responsible for processing this type
+         * @return a new {@code ConfigClass}
+         */
+        public static ConfigClass configClass(final Class<?> type, final String prefix, final ConfigMappingHandler handler) {
+            return new ConfigClass(type, prefix, handler, null);
         }
     }
 }
