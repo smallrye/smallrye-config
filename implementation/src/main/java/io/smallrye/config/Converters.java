@@ -687,7 +687,7 @@ public final class Converters {
         @Override
         public Class<?> convert(String value) throws IllegalArgumentException, NullPointerException {
             try {
-                return Class.forName(value, true, SecuritySupport.getContextClassLoader());
+                return Class.forName(value, true, Thread.currentThread().getContextClassLoader());
             } catch (ClassNotFoundException e) {
                 throw ConfigMessages.msg.classConverterNotFound(e, value);
             }
@@ -1306,9 +1306,9 @@ public final class Converters {
 
         private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
             try {
-                final Constructor<? extends T> declaredConstructor = SecuritySupport.getDeclaredConstructor(clazz, paramType);
+                final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
                 if (!isAccessible(declaredConstructor)) {
-                    SecuritySupport.setAccessible(declaredConstructor, true);
+                    declaredConstructor.setAccessible(true);
                 }
                 return new ConstructorConverter<>(declaredConstructor);
             } catch (NoSuchMethodException e) {
@@ -1328,7 +1328,7 @@ public final class Converters {
                     return null;
                 }
                 if (!isAccessible(method)) {
-                    SecuritySupport.setAccessible(method, true);
+                    method.setAccessible(true);
                 }
                 return new StaticMethodConverter<>(clazz, method);
             } catch (NoSuchMethodException e) {

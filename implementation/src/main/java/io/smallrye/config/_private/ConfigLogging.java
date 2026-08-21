@@ -17,6 +17,11 @@ public interface ConfigLogging extends BasicLogger {
     // we must also do it in ConfigMessages
     ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class, "io.smallrye.config", Locale.ROOT);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1000, value = "Unable to get context classloader instance")
     void failedToRetrieveClassloader(@Cause Throwable cause);
