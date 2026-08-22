@@ -135,6 +135,16 @@ class ExpressionConfigSourceInterceptorTest {
     }
 
     @Test
+    void doubleDollarLiteral() {
+        assertEquals("ab$$cd", buildConfig("password", "ab$$cd").getConfigValue("password").getValue());
+        assertEquals("$$", buildConfig("password", "$$").getConfigValue("password").getValue());
+        assertEquals("ab$$cd1234",
+                buildConfig("password", "ab$$cd${my.prop}", "my.prop", "1234").getConfigValue("password").getValue());
+        assertEquals("ab$$cd",
+                buildConfig("password", "${secret}", "secret", "ab$$cd").getConfigValue("password").getValue());
+    }
+
+    @Test
     void expressionMissing() {
         SmallRyeConfig config = buildConfig("my.prop", "${expression}", "my.prop.partial", "${expression}partial");
 

@@ -62,13 +62,18 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
             return null;
         }
 
+        String value = configValue.getValue();
         // Avoid extra StringBuilder allocations from Expression
-        if (configValue.getValue().indexOf('$') == -1) {
+        if (value.indexOf('$') == -1) {
+            return configValue;
+        }
+        // Mini expressions are off, so a lone $ or $$ is not an expression.
+        if (value.indexOf("${") == -1 && value.indexOf("\\$") == -1) {
             return configValue;
         }
 
         ConfigValue.ConfigValueBuilder valueBuilder = configValue.from();
-        Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
+        Expression expression = Expression.compile(escapeDollarIfExists(value), LENIENT_SYNTAX, NO_TRIM,
                 NO_SMART_BRACES, DOUBLE_COLON);
         String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
             @Override
@@ -107,21 +112,42 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
      * <br>
      * This will replace the expected escape in MicroProfile Config by the escape used in {@link Expression}, a double
      * dollar.
+     * <br>
+     * {@link Expression} also treats {@code $$} as an escaped {@code $}. Mini expressions are not enabled, so that
+     * collapse is only required immediately before <code>{</code> to suppress <code>${...}</code> expansion. Other
+     * {@code $$} sequences are doubled to {@code $$$$} so evaluation still emits a literal {@code $$}.
      */
     private String escapeDollarIfExists(final String value) {
-        int index = value.indexOf("\\$");
-        if (index != -1) {
-            int start = 0;
-            StringBuilder builder = new StringBuilder();
-            while (index != -1) {
-                builder.append(value, start, index).append("$$");
-                start = index + 2;
-                index = value.indexOf("\\$", start);
+        int length = value.length();
+        StringBuilder builder = null;
+        int i = 0;
+        while (i < length) {
+            char c = value.charAt(i);
+            if (c == '\\' && i + 1 < length && value.charAt(i + 1) == '$') {
+                if (builder == null) {
+                    builder = new StringBuilder(length + 8);
+                    builder.append(value, 0, i);
+                }
+                builder.append("$$");
+                i += 2;
+                continue;
             }
-            builder.append(value.substring(start));
-            return builder.toString();
+            if (c == '$' && i + 1 < length && value.charAt(i + 1) == '$'
+                    && (i + 2 >= length || value.charAt(i + 2) != '{')) {
+                if (builder == null) {
+                    builder = new StringBuilder(length + 8);
+                    builder.append(value, 0, i);
+                }
+                builder.append("$$$$");
+                i += 2;
+                continue;
+            }
+            if (builder != null) {
+                builder.append(c);
+            }
+            i++;
         }
-        return value;
+        return builder == null ? value : builder.toString();
     }
 
     private SecretKeysHandler getHandler(final String handlerName, final ConfigSourceInterceptorContext context) {
