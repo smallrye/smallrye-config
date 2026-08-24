@@ -21,7 +21,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  * If no value is given for a property, its default value is used.
  * If a required property has no default value, then an exception will be thrown when {@link #build} is called.
  * The returned object instance is immutable and has a stable {@code equals} and {@code hashCode} method.
- * If the runtime is Java 16 or later, the returned object <em>may</em> be a {@code Record}.
  * <p>
  * To provide a value for a property, use a method reference to indicate which property the value should be associated
  * with. For example,
