@@ -3,7 +3,9 @@ package io.smallrye.config;
 import static io.smallrye.config.ConfigInstanceBuilder.forInterface;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,7 +21,6 @@ import java.util.Set;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Test;
 
-import io.smallrye.config.ConfigInstanceBuilderTest.ConverterNotFound.NotFound;
 import io.smallrye.config.ConfigInstanceBuilderTest.Converters.Numbers;
 
 class ConfigInstanceBuilderTest {
@@ -32,6 +33,60 @@ class ConfigInstanceBuilderTest {
 
         assertEquals("localhost", server.host());
         assertEquals(8080, server.port());
+    }
+
+    @Test
+    void equalsHashCode() {
+        Server a = forInterface(Server.class)
+                .with(Server::host, "localhost")
+                .with(Server::port, 8080)
+                .build();
+
+        Server b = forInterface(Server.class)
+                .with(Server::host, "localhost")
+                .with(Server::port, 8080)
+                .build();
+
+        Server c = forInterface(Server.class)
+                .with(Server::host, "other")
+                .with(Server::port, 9090)
+                .build();
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(a, c);
+    }
+
+    @Test
+    void buildMultipleTimes() {
+        ConfigInstanceBuilder<Server> builder = forInterface(Server.class)
+                .with(Server::host, "localhost")
+                .with(Server::port, 8080);
+
+        Server first = builder.build();
+        Server second = builder.build();
+
+        assertEquals(first, second);
+        assertEquals("localhost", first.host());
+        assertEquals("localhost", second.host());
+        assertNotSame(first, second);
+    }
+
+    @Test
+    void lastWriteWins() {
+        Server server = forInterface(Server.class)
+                .with(Server::host, "first")
+                .with(Server::port, 8080)
+                .with(Server::host, "second")
+                .build();
+
+        assertEquals("second", server.host());
+    }
+
+    @Test
+    void nullValueRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> forInterface(Server.class).with(Server::host, null));
     }
 
     @ConfigMapping
@@ -169,6 +224,21 @@ class ConfigInstanceBuilderTest {
         assertEquals("value", defaults.value());
         assertEquals(9, defaults.defaultInt());
         assertEquals("nested", defaults.nested().value());
+    }
+
+    @Test
+    void overrideDefaults() {
+        Defaults defaults = forInterface(Defaults.class)
+                .with(Defaults::value, "override")
+                .with(Defaults::defaultInt, 42)
+                .with(Defaults::nested, forInterface(Defaults.Nested.class)
+                        .with(Defaults.Nested::value, "override-nested")
+                        .build())
+                .build();
+
+        assertEquals("override", defaults.value());
+        assertEquals(42, defaults.defaultInt());
+        assertEquals("override-nested", defaults.nested().value());
     }
 
     @ConfigMapping
@@ -424,5 +494,31 @@ class ConfigInstanceBuilderTest {
     interface ConverterNull {
         @WithDefault("")
         String value();
+    }
+
+    @Test
+    void inheritance() {
+        Child child = forInterface(Child.class)
+                .with(Child::parentValue, "parent")
+                .with(Child::childValue, "child")
+                .build();
+
+        assertEquals("parent", child.parentValue());
+        assertEquals("child", child.childValue());
+    }
+
+    interface Parent {
+        String parentValue();
+    }
+
+    @ConfigMapping
+    interface Child extends Parent {
+        String childValue();
+    }
+
+    @Test
+    void configurationInterface() {
+        ConfigInstanceBuilder<Server> builder = forInterface(Server.class);
+        assertEquals(Server.class, builder.configurationInterface());
     }
 }
