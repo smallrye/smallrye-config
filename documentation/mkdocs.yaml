@@ -16,6 +16,7 @@ nav:
       - 'Indexed Properties': config/indexed-properties.md
       - 'ConfigValue': config/config-value.md
       - 'Mappings': config/mappings.md
+      - 'Instance Builder': config/instance-builder.md
       - 'Map Support': config/map-support.md
       - 'Secret Keys': config/secret-keys.md
       - 'Customizer': config/customizer.md
