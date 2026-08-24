@@ -7,8 +7,6 @@ import static io.smallrye.config._private.ConfigMessages.msg;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -23,11 +21,9 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -43,178 +39,97 @@ import sun.reflect.ReflectionFactory;
  * The implementation for configuration instance builders.
  */
 final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
+    private static final Map<Object, String> NAME_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * Reflection factory, used for getting the serialized lambda information out of a getter reference.
-     */
-    private static final ReflectionFactory rf = ReflectionFactory.getReflectionFactory();
-    /**
-     * Stack walker for getting caller class, used for setter caching.
-     */
-    private static final StackWalker sw = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-    /**
-     * Our cached lookup object.
-     */
-    private static final MethodHandles.Lookup myLookup = MethodHandles.lookup();
-
-    private record BuilderInfo(Supplier<?> builderFactory, Function<Object, ?> configFactory) {
-    }
-
-    /**
-     * Class value which holds the cached builder and config factories for a given configuration interface.
-     */
-    private static final ClassValue<BuilderInfo> builderInfos = new ClassValue<>() {
-        protected BuilderInfo computeValue(final Class<?> type) {
-            assert type.isInterface();
-            MethodHandles.Lookup lookup;
-            try {
-                lookup = MethodHandles.privateLookupIn(type, myLookup);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), type);
-            }
-
-            Class<?> impl;
-            Class<?> builderClass;
-            try {
-                Handlers.register(type, Handlers.find(type));
-                impl = ConfigClassImplementation.get(type).getImplementation();
-                builderClass = lookup
-                        .findClass(ConfigMappingInterface.ConfigMappingBuilder.getGeneratedBuilderClassName(type));
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException(e);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), type);
-            }
-
-            MethodHandle builderCtor;
-            try {
-                builderCtor = lookup.findConstructor(builderClass, MethodType.methodType(void.class));
-            } catch (NoSuchMethodException e) {
-                throw msg.noConstructor(builderClass);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), builderClass);
-            }
-
-            MethodHandle implCtor;
-            try {
-                implCtor = lookup.findConstructor(impl, MethodType.methodType(void.class, builderClass));
-            } catch (NoSuchMethodException e) {
-                throw msg.noConstructor(impl);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), impl);
-            }
-
-            Supplier<?> builderFactory = () -> {
-                try {
-                    return builderCtor.invoke();
-                } catch (RuntimeException | Error e) {
-                    throw e;
-                } catch (Throwable e) {
-                    throw new UndeclaredThrowableException(e);
-                }
-            };
-
-            Function<Object, ?> configFactory = builder -> {
-                try {
-                    return implCtor.invoke(builder);
-                } catch (RuntimeException | Error e) {
-                    throw e;
-                } catch (Throwable e) {
-                    throw new UndeclaredThrowableException(e);
-                }
-            };
-
-            return new BuilderInfo(builderFactory, configFactory);
-        }
-    };
-
-    /**
-     * Class value that holds the cache of maps of method reference lambdas to their corresponding setter.
-     */
-    private static final ClassValue<Map<Object, BiConsumer<Object, Object>>> setterMapsByCallingClass = new ClassValue<>() {
-        protected Map<Object, BiConsumer<Object, Object>> computeValue(final Class<?> type) {
-            return new ConcurrentHashMap<>();
-        }
-    };
-
-    // =====================================
-
-    static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> configurationInterface)
+    static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> interfaceType)
             throws IllegalArgumentException, SecurityException {
-        return new ConfigInstanceBuilderImpl<>(configurationInterface,
-                builderInfos.get(configurationInterface).builderFactory().get());
-    }
 
-    // =====================================
+        Assert.checkNotNullParam("interfaceType", interfaceType);
+        if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0
+                || interfaceType.getName().startsWith("java")
+                || Secret.class.isAssignableFrom(interfaceType)
+                || interfaceType.equals(ConfigMappingClass.Mapper.class)) {
+            throw msg.invalidConfigurationInterface(interfaceType.getName());
+        }
+
+        return new ConfigInstanceBuilderImpl<>(interfaceType, new HashMap<>());
+    }
 
     private final Class<I> configurationInterface;
-    private final MethodHandles.Lookup lookup;
-    private final Object builderObject;
+    private final Map<String, Object> values;
+    private final ConfigClassImplementation implementation;
 
-    ConfigInstanceBuilderImpl(final Class<I> configurationInterface, final Object builderObject) {
-        this.configurationInterface = configurationInterface;
-        try {
-            lookup = MethodHandles.privateLookupIn(builderObject.getClass(), myLookup);
-        } catch (IllegalAccessException e) {
-            throw msg.accessDenied(builderObject.getClass(), getClass());
-        }
-        this.builderObject = builderObject;
+    ConfigInstanceBuilderImpl(final Class<I> interfaceType, final Map<String, Object> values) {
+        this.configurationInterface = interfaceType;
+        this.values = values;
+
+        Handlers.register(interfaceType, Handlers.find(interfaceType));
+        this.implementation = ConfigClassImplementation.get(interfaceType);
     }
-
-    // =====================================
 
     public Class<I> configurationInterface() {
         return configurationInterface;
     }
 
-    // -------------------------------------
-
     public <T, F extends Function<? super I, T> & Serializable> ConfigInstanceBuilder<I> with(final F getter, final T value) {
         Assert.checkNotNullParam("getter", getter);
         Assert.checkNotNullParam("value", value);
-        Class<?> callerClass = sw.getCallerClass();
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, value);
+        values.put(getPropertyName(getter), value);
         return this;
     }
 
     public ConfigInstanceBuilder<I> with(final ToIntFunctionGetter<I> getter, final int value) {
         Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, value);
+        values.put(getPropertyName(getter), value);
         return this;
     }
 
     public ConfigInstanceBuilder<I> with(final ToLongFunctionGetter<I> getter, final long value) {
         Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, value);
+        values.put(getPropertyName(getter), value);
         return this;
     }
 
     public ConfigInstanceBuilder<I> with(final ToDoubleFunctionGetter<I> getter, final double value) {
         Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, value);
+        values.put(getPropertyName(getter), value);
         return this;
     }
 
     public <F extends Predicate<? super I> & Serializable> ConfigInstanceBuilder<I> with(final F getter, final boolean value) {
         Assert.checkNotNullParam("getter", getter);
-        Class<?> callerClass = sw.getCallerClass();
-        BiConsumer<Object, Object> setter = getSetter(getter, callerClass);
-        setter.accept(builderObject, value);
+        values.put(getPropertyName(getter), value);
         return this;
     }
 
     public I build() {
-        return configurationInterface.cast(builderInfos.get(configurationInterface).configFactory().apply(builderObject));
+        return configurationInterface.cast(implementation.newInstance(values));
     }
 
-    // =====================================
+    private static String getPropertyName(final Object getter) {
+        return NAME_CACHE.computeIfAbsent(getter, lambda -> {
+            MethodHandle writeReplace = ReflectionFactory.getReflectionFactory()
+                    .writeReplaceForSerialization(lambda.getClass());
+            if (writeReplace == null) {
+                throw msg.invalidGetter();
+            }
+            Object replaced;
+            try {
+                replaced = writeReplace.invoke(lambda);
+            } catch (RuntimeException | Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new UndeclaredThrowableException(e);
+            }
+            if (!(replaced instanceof SerializedLambda sl)) {
+                throw msg.invalidGetter();
+            }
+            if (sl.getCapturedArgCount() != 0) {
+                throw msg.invalidGetter();
+            }
+            return sl.getImplMethodName();
+        });
+    }
 
     static final Map<Type, Converter<?>> CONVERTERS = new ConcurrentHashMap<>();
 
@@ -224,8 +139,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     private static void registerConverters() {
         Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>();
-
-        // TODO - We need to register this for Native in Quarkus - Also, we are doubling the work because SR Config also does the registration
         for (Converter<?> converter : ServiceLoader.load(Converter.class, Thread.currentThread().getContextClassLoader())) {
             Type type = Converters.getConverterType(converter.getClass());
             if (type == null) {
@@ -329,97 +242,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         @Override
         public V get(final Object key) {
             return getOrDefault(key, defaultValue);
-        }
-    }
-
-    private BiConsumer<Object, Object> getSetter(final Object getter, final Class<?> callerClass) {
-        Map<Object, BiConsumer<Object, Object>> setterMap = setterMapsByCallingClass.get(callerClass);
-        BiConsumer<Object, Object> setter = setterMap.get(getter);
-        if (setter == null) {
-            setter = setterMap.computeIfAbsent(getter, this::createSetter);
-        }
-        return setter;
-    }
-
-    private BiConsumer<Object, Object> createSetter(Object lambda) {
-        MethodHandle writeReplace = rf.writeReplaceForSerialization(lambda.getClass());
-        if (writeReplace == null) {
-            throw msg.invalidGetter();
-        }
-        Object replaced;
-        try {
-            replaced = writeReplace.invoke(lambda);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new UndeclaredThrowableException(e);
-        }
-        if (!(replaced instanceof SerializedLambda sl)) {
-            throw msg.invalidGetter();
-        }
-        if (sl.getCapturedArgCount() != 0) {
-            throw msg.invalidGetter();
-        }
-        // TODO: check implClassName against the supertype hierarchy of the config interface using shared info mapping
-        String setterName = sl.getImplMethodName();
-        Class<?> type = parseReturnType(sl.getImplMethodSignature());
-        return createSetterByName(setterName, type);
-    }
-
-    private BiConsumer<Object, Object> createSetterByName(final String setterName, final Class<?> type) {
-        Class<?> builderClass = builderObject.getClass();
-        MethodHandle setter;
-        try {
-            setter = lookup.findVirtual(builderClass, setterName, MethodType.methodType(void.class, type));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw msg.accessDenied(getClass(), builderClass);
-        }
-        // adapt it to be an object consumer
-        MethodHandle castSetter = setter.asType(MethodType.methodType(void.class, builderClass, Object.class));
-        return (builder, val) -> {
-            try {
-                castSetter.invoke(builder, val);
-            } catch (RuntimeException | Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new UndeclaredThrowableException(e);
-            }
-        };
-    }
-
-    private Class<?> parseReturnType(final String signature) {
-        int idx = signature.lastIndexOf(')');
-        if (idx == -1) {
-            throw new IllegalStateException("Unexpected invalid signature");
-        }
-        return parseType(signature, idx + 1, signature.length());
-    }
-
-    private Class<?> parseType(String desc, int start, int end) {
-        return switch (desc.charAt(start)) {
-            case 'L' -> parseClassName(desc, start + 1, end - 1);
-            case '[' -> parseType(desc, start + 1, end).arrayType();
-            case 'B' -> byte.class;
-            case 'C' -> char.class;
-            case 'D' -> double.class;
-            case 'F' -> float.class;
-            case 'I' -> int.class;
-            case 'J' -> long.class;
-            case 'S' -> short.class;
-            case 'Z' -> boolean.class;
-            default -> throw msg.invalidGetter();
-        };
-    }
-
-    private Class<?> parseClassName(final String signature, final int start, final int end) {
-        try {
-            return lookup.findClass(signature.substring(start, end).replaceAll("/", "."));
-        } catch (ClassNotFoundException e) {
-            throw msg.invalidGetter();
-        } catch (IllegalAccessException e) {
-            throw msg.accessDenied(getClass(), builderObject.getClass());
         }
     }
 }

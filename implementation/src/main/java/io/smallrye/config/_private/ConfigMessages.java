@@ -221,32 +221,12 @@ public interface ConfigMessages {
     @Message(id = 58, value = "No handler registered for type %s")
     IllegalArgumentException handlerNotRegistered(Class<?> type);
 
-    @Message(id = 59, value = "Access to %2$s was denied in a modular environment. To avoid this error, edit "
-            + "`module-info.java` of %4$s to include `opens %3$s to %1$s`; or, add `--add-opens=%4$s/%3$s=%1$s` to "
-            + "the JVM command line.")
-    SecurityException accessDenied(String ourModuleName, Class<?> targetType, String targetPackage, String targetModuleName);
+    @Message(id = 59, value = "Not a valid configuration interface: %s")
+    IllegalArgumentException invalidConfigurationInterface(String name);
 
-    @Message(id = 60, value = "Access to %1$s was denied in a mixed-module environment. To avoid this error, "
-            + "add `--add-opens=%3$s/%2$s=ALL-UNNAMED` to the JVM command line.")
-    SecurityException accessDenied(Class<?> targetType, String targetPackage, String targetModuleName);
-
-    @Message(id = 61, value = "Missing a valid constructor on configuration implementation %s")
-    IllegalStateException noConstructor(Class<?> implClass);
-
-    @Message(id = 62, value = "The accessor for a configuration property is not valid")
+    @Message(id = 60, value = "The accessor for a configuration property is not valid")
     IllegalArgumentException invalidGetter();
 
-    @Message(id = 63, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
+    @Message(id = 61, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
     NoSuchElementException propertyNotSet(String property);
-
-    default SecurityException accessDenied(Class<?> ourClass, Class<?> targetType) {
-        Module ourModule = ourClass.getModule();
-        Module targetModule = targetType.getModule();
-        assert targetModule.isNamed(); // otherwise we wouldn't be here
-        if (ourModule.isNamed()) {
-            return accessDenied(ourModule.getName(), targetType, targetType.getPackageName(), targetModule.getName());
-        } else {
-            return accessDenied(targetType, targetType.getPackageName(), targetModule.getName());
-        }
-    }
 }

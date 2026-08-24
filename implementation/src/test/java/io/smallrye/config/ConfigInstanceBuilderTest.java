@@ -102,8 +102,8 @@ class ConfigInstanceBuilderTest {
                 .with(Primitives::booleanValue, true)
                 .with(Primitives::byteValue, Byte.valueOf((byte) 1))
                 .with(Primitives::shortValue, Short.valueOf((short) 1))
-                .with(Primitives::intValue, Integer.valueOf(1))
-                .with(Primitives::longValue, Long.valueOf(1))
+                .with(Primitives::intValue, 1)
+                .with(Primitives::longValue, 1L)
                 .with(Primitives::floatValue, Float.valueOf((float) 1.0))
                 .with(Primitives::doubleValue, 1.0d)
                 .with(Primitives::charValue, Character.valueOf((char) 1))
@@ -220,8 +220,11 @@ class ConfigInstanceBuilderTest {
 
     @Test
     void defaults() {
-        Defaults defaults = forInterface(Defaults.class).build();
+        Defaults defaults = forInterface(Defaults.class)
+                .with(Defaults::value, "value")
+                .build();
         assertEquals("value", defaults.value());
+        assertEquals("value", defaults.defaultValue());
         assertEquals(9, defaults.defaultInt());
         assertEquals("nested", defaults.nested().value());
     }
@@ -229,22 +232,25 @@ class ConfigInstanceBuilderTest {
     @Test
     void overrideDefaults() {
         Defaults defaults = forInterface(Defaults.class)
-                .with(Defaults::value, "override")
+                .with(Defaults::value, "value")
+                .with(Defaults::defaultValue, "override")
                 .with(Defaults::defaultInt, 42)
                 .with(Defaults::nested, forInterface(Defaults.Nested.class)
                         .with(Defaults.Nested::value, "override-nested")
                         .build())
                 .build();
 
-        assertEquals("override", defaults.value());
+        assertEquals("override", defaults.defaultValue());
         assertEquals(42, defaults.defaultInt());
         assertEquals("override-nested", defaults.nested().value());
     }
 
     @ConfigMapping
     interface Defaults {
-        @WithDefault("value")
         String value();
+
+        @WithDefault("value")
+        String defaultValue();
 
         @WithDefault("9")
         int defaultInt();
@@ -336,9 +342,10 @@ class ConfigInstanceBuilderTest {
         assertIterableEquals(List.of("one", "two", "three"), maps.mapLists().get("any"));
         assertIterableEquals(List.of(1, 2, 3), maps.mapListsIntegers().get("any"));
 
-        assertThrows(NoSuchElementException.class, () -> forInterface(Maps.class)
+        Maps mapsNoNested = forInterface(Maps.class)
                 .with(Maps::map, Map.of("one", "one", "two", "two"))
-                .build());
+                .build();
+        assertTrue(mapsNoNested.nested().isEmpty());
     }
 
     @ConfigMapping
@@ -520,5 +527,15 @@ class ConfigInstanceBuilderTest {
     void configurationInterface() {
         ConfigInstanceBuilder<Server> builder = forInterface(Server.class);
         assertEquals(Server.class, builder.configurationInterface());
+    }
+
+    @Test
+    void invalidInterface() {
+        assertThrows(IllegalArgumentException.class, () -> forInterface(null));
+        assertThrows(IllegalArgumentException.class, () -> forInterface(String.class));
+        assertThrows(IllegalArgumentException.class, () -> forInterface(Comparable.class));
+        assertThrows(IllegalArgumentException.class, () -> forInterface(Runnable.class));
+        assertThrows(IllegalArgumentException.class, () -> forInterface(Secret.class));
+        assertThrows(IllegalArgumentException.class, () -> forInterface(ConfigMappingClass.Mapper.class));
     }
 }
