@@ -187,8 +187,9 @@ public interface ConfigInstanceBuilder<I> {
      * Build the configuration instance.
      *
      * @return the configuration instance (not {@code null})
-     * @throws IllegalArgumentException if the interface has one or more required properties that were not given a value,
-     *         or if the interface has one or more converters that could not be instantiated
+     * @throws java.util.NoSuchElementException if the interface has one or more required properties that were not given a
+     *         value,
+     * @throws IllegalArgumentException if the interface has one or more converters that could not be instantiated
      */
     I build();
 
@@ -201,11 +202,8 @@ public interface ConfigInstanceBuilder<I> {
      * @throws IllegalArgumentException if the interface class is {@code null},
      *         or if the class object does not represent an interface,
      *         or if the interface is not a valid configuration interface
-     * @throws SecurityException if this class does not have permission to introspect the given interface
-     *         or one of its superinterfaces
      */
-    static <I> ConfigInstanceBuilder<I> forInterface(Class<I> interfaceClass)
-            throws IllegalArgumentException, SecurityException {
+    static <I> ConfigInstanceBuilder<I> forInterface(Class<I> interfaceClass) throws IllegalArgumentException {
         return ConfigInstanceBuilderImpl.forInterface(interfaceClass);
     }
 

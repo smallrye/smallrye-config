@@ -41,8 +41,7 @@ import sun.reflect.ReflectionFactory;
 final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     private static final Map<Object, String> NAME_CACHE = new ConcurrentHashMap<>();
 
-    static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> interfaceType)
-            throws IllegalArgumentException, SecurityException {
+    static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> interfaceType) throws IllegalArgumentException {
 
         Assert.checkNotNullParam("interfaceType", interfaceType);
         if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0
