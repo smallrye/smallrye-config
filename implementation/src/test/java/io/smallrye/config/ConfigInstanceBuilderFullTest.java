@@ -735,7 +735,7 @@ class ConfigInstanceBuilderFullTest {
         enum InsecureRequests {
             ENABLED,
             REDIRECT,
-            DISABLED;
+            DISABLED
         }
 
         enum PayloadHint {
@@ -751,7 +751,7 @@ class ConfigInstanceBuilderFullTest {
 
             private final String label;
 
-            private CookieSameSite(String label) {
+            CookieSameSite(String label) {
                 this.label = label;
             }
 
