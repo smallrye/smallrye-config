@@ -248,7 +248,8 @@ public final class ConfigMappingLoader {
         private final Class<?> interfaceType;
         private final Class<?> implementation;
 
-        private volatile MethodHandle constructor;
+        private volatile MethodHandle ctorConfigMappingContext;
+        private volatile MethodHandle ctorMapValues;
         private volatile MethodHandle getProperties;
         private volatile MethodHandle getSecrets;
 
@@ -269,10 +270,10 @@ public final class ConfigMappingLoader {
 
         @SuppressWarnings("unchecked")
         <T> T newInstance(final ConfigMappingContext configMappingContext) {
-            MethodHandle ctor = this.constructor;
+            MethodHandle ctor = this.ctorConfigMappingContext;
             if (ctor == null) {
                 try {
-                    this.constructor = ctor = LOOKUP.findConstructor(implementation,
+                    this.ctorConfigMappingContext = ctor = LOOKUP.findConstructor(implementation,
                             methodType(void.class, ConfigMappingContext.class))
                             .asType(methodType(Object.class, ConfigMappingContext.class));
                 } catch (NoSuchMethodException e) {
@@ -282,6 +283,23 @@ public final class ConfigMappingLoader {
                 }
             }
             return (T) invoke(ctor, configMappingContext);
+        }
+
+        @SuppressWarnings("unchecked")
+        <T> T newInstance(final Map<String, Object> values) {
+            MethodHandle ctor = this.ctorMapValues;
+            if (ctor == null) {
+                try {
+                    this.ctorMapValues = ctor = LOOKUP.findConstructor(implementation,
+                            methodType(void.class, Map.class))
+                            .asType(methodType(Object.class, Map.class));
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodError(e.getMessage());
+                } catch (IllegalAccessException e) {
+                    throw new IllegalAccessError(e.getMessage());
+                }
+            }
+            return (T) invoke(ctor, values);
         }
 
         @SuppressWarnings("unchecked")

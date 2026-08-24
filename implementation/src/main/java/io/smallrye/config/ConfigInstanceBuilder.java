@@ -14,7 +14,7 @@ import java.util.function.ToLongFunction;
 import org.eclipse.microprofile.config.spi.Converter;
 
 /**
- * A builder which can produce instances of a configuration interface annotated with {@link ConfigMapping}.
+ * A builder which can produce instances of a configuration interface.
  * <p>
  * Objects which are produced by this API will contain values for every property found on the configuration
  * interface or its supertypes.
@@ -28,7 +28,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  * <pre>
     <code>
 
-    &#064;ConfigMapping
     interface MyProgramConfig {
         String message();
         int repeatCount();
@@ -51,13 +50,11 @@ import org.eclipse.microprofile.config.spi.Converter;
  * contains the fully qualified class name of the custom {@code Converter} implementation, or explicitly by calling
  * {@link ConfigInstanceBuilder#registerConverter(Class, Converter)}.
  * <p>
- * Converters follow the same rules applied to {@link io.smallrye.config.SmallRyeConfig} and
- * {@link io.smallrye.config.ConfigMapping}, including overriding the converter to use with
- * {@link io.smallrye.config.WithConverter}.
+ * Converters follow the same rules applied to {@link io.smallrye.config.SmallRyeConfig}, including overriding the
+ * converter to use with {@link io.smallrye.config.WithConverter}.
  *
  * @param <I> the configuration interface type
  *
- * @see io.smallrye.config.ConfigMapping
  * @see org.eclipse.microprofile.config.spi.Converter
  */
 public interface ConfigInstanceBuilder<I> {
@@ -83,7 +80,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set a property on the configuration object to an integer value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -93,7 +90,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set a property on the configuration object to a long value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -103,7 +100,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set a property on the configuration object to a floating-point value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -113,7 +110,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set a property on the configuration object to a boolean value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @param <F> the accessor type
      * @throws IllegalArgumentException if the getter is {@code null}
@@ -140,7 +137,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set an optional property on the configuration object to an integer value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -149,10 +146,10 @@ public interface ConfigInstanceBuilder<I> {
     }
 
     /**
-     * Set an optional property on the configuration object to an integer value.
+     * Set an optional property on the configuration object to a long value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -164,7 +161,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set an optional property on the configuration object to a floating-point value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
      */
@@ -176,7 +173,7 @@ public interface ConfigInstanceBuilder<I> {
      * Set an optional property on the configuration object to a boolean value.
      *
      * @param getter the property accessor (must not be {@code null})
-     * @param value the value to set (must not be {@code null})
+     * @param value the value to set
      * @param <F> the accessor type
      * @return this builder (not {@code null})
      * @throws IllegalArgumentException if the getter is {@code null}
@@ -190,7 +187,8 @@ public interface ConfigInstanceBuilder<I> {
      * Build the configuration instance.
      *
      * @return the configuration instance (not {@code null})
-     * @throws IllegalArgumentException if a required property does not have a value
+     * @throws IllegalArgumentException if the interface has one or more required properties that were not given a value,
+     *         or if the interface has one or more converters that could not be instantiated
      */
     I build();
 
@@ -202,9 +200,7 @@ public interface ConfigInstanceBuilder<I> {
      * @return a new builder for the configuration interface (not {@code null})
      * @throws IllegalArgumentException if the interface class is {@code null},
      *         or if the class object does not represent an interface,
-     *         or if the interface is not a valid configuration interface,
-     *         or if the interface has one or more required properties that were not given a value,
-     *         or if the interface has one or more converters that could not be instantiated
+     *         or if the interface is not a valid configuration interface
      * @throws SecurityException if this class does not have permission to introspect the given interface
      *         or one of its superinterfaces
      */
