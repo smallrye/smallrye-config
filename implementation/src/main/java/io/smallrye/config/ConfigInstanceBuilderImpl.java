@@ -56,56 +56,15 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
      * Our cached lookup object.
      */
     private static final MethodHandles.Lookup myLookup = MethodHandles.lookup();
-    /**
-     * Class value which holds the cached builder class instance.
-     */
-    private static final ClassValue<Supplier<?>> builderFactories = new ClassValue<>() {
-        protected Supplier<?> computeValue(final Class<?> type) {
-            assert type.isInterface();
-            // TODO - Should we cache this eagerly in io.smallrye.config.ConfigMappingLoader.ConfigMappingImplementation?
-            MethodHandles.Lookup lookup;
-            try {
-                lookup = MethodHandles.privateLookupIn(type, myLookup);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), type);
-            }
-            Class<?> impl;
-            try {
-                Handlers.register(type, Handlers.find(type));
-                ConfigClassImplementation.get(type);
-                impl = lookup.findClass(ConfigMappingInterface.ConfigMappingBuilder.getGeneratedBuilderClassName(type));
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException(e);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), type);
-            }
-            MethodHandle mh;
-            try {
-                mh = lookup.findConstructor(impl, MethodType.methodType(void.class));
-            } catch (NoSuchMethodException e) {
-                throw msg.noConstructor(impl);
-            } catch (IllegalAccessException e) {
-                throw msg.accessDenied(getClass(), impl);
-            }
-            // capture the constructor as a Supplier
-            return () -> {
-                try {
-                    return mh.invoke();
-                } catch (RuntimeException | Error e) {
-                    throw e;
-                } catch (Throwable e) {
-                    throw new UndeclaredThrowableException(e);
-                }
-            };
-        }
-    };
+
+    private record BuilderInfo(Supplier<?> builderFactory, Function<Object, ?> configFactory) {
+    }
 
     /**
-     * Class value which holds the cached config class instance constructors.
+     * Class value which holds the cached builder and config factories for a given configuration interface.
      */
-    private static final ClassValue<Function<Object, ?>> configFactories = new ClassValue<>() {
-        // TODO - This is to load the mapping class implementation, which we already have, just missing the right constructor in the ConfigMappingLoader, so we can probably remove this one
-        protected Function<Object, ?> computeValue(final Class<?> type) {
+    private static final ClassValue<BuilderInfo> builderInfos = new ClassValue<>() {
+        protected BuilderInfo computeValue(final Class<?> type) {
             assert type.isInterface();
             MethodHandles.Lookup lookup;
             try {
@@ -113,35 +72,59 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
+
             Class<?> impl;
             Class<?> builderClass;
             try {
+                Handlers.register(type, Handlers.find(type));
                 impl = ConfigClassImplementation.get(type).getImplementation();
-                builderClass = lookup.findClass(ConfigMappingInterface.ConfigMappingBuilder.getGeneratedBuilderClassName(type));
+                builderClass = lookup
+                        .findClass(ConfigMappingInterface.ConfigMappingBuilder.getGeneratedBuilderClassName(type));
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), type);
             }
-            MethodHandle mh;
 
+            MethodHandle builderCtor;
             try {
-                mh = lookup.findConstructor(impl, MethodType.methodType(void.class, builderClass));
+                builderCtor = lookup.findConstructor(builderClass, MethodType.methodType(void.class));
+            } catch (NoSuchMethodException e) {
+                throw msg.noConstructor(builderClass);
+            } catch (IllegalAccessException e) {
+                throw msg.accessDenied(getClass(), builderClass);
+            }
+
+            MethodHandle implCtor;
+            try {
+                implCtor = lookup.findConstructor(impl, MethodType.methodType(void.class, builderClass));
             } catch (NoSuchMethodException e) {
                 throw msg.noConstructor(impl);
             } catch (IllegalAccessException e) {
                 throw msg.accessDenied(getClass(), impl);
             }
-            // capture the constructor as a Function
-            return builder -> {
+
+            Supplier<?> builderFactory = () -> {
                 try {
-                    return mh.invoke(builder);
+                    return builderCtor.invoke();
                 } catch (RuntimeException | Error e) {
                     throw e;
                 } catch (Throwable e) {
                     throw new UndeclaredThrowableException(e);
                 }
             };
+
+            Function<Object, ?> configFactory = builder -> {
+                try {
+                    return implCtor.invoke(builder);
+                } catch (RuntimeException | Error e) {
+                    throw e;
+                } catch (Throwable e) {
+                    throw new UndeclaredThrowableException(e);
+                }
+            };
+
+            return new BuilderInfo(builderFactory, configFactory);
         }
     };
 
@@ -158,7 +141,8 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
 
     static <I> ConfigInstanceBuilderImpl<I> forInterface(Class<I> configurationInterface)
             throws IllegalArgumentException, SecurityException {
-        return new ConfigInstanceBuilderImpl<>(configurationInterface, builderFactories.get(configurationInterface).get());
+        return new ConfigInstanceBuilderImpl<>(configurationInterface,
+                builderInfos.get(configurationInterface).builderFactory().get());
     }
 
     // =====================================
@@ -227,7 +211,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     public I build() {
-        return configurationInterface.cast(configFactories.get(configurationInterface).apply(builderObject));
+        return configurationInterface.cast(builderInfos.get(configurationInterface).configFactory().apply(builderObject));
     }
 
     // =====================================
@@ -284,7 +268,6 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     public static <T> T convertValue(final String value, final Converter<T> converter) {
         T convert = converter.convert(value);
         if (convert == null) {
-            // TODO - new messsage instead of reuse?
             throw ConfigMessages.msg.converterReturnedNull("", value, converter.getClass().getTypeName());
         }
         return convert;
@@ -397,7 +380,7 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         MethodHandle castSetter = setter.asType(MethodType.methodType(void.class, builderClass, Object.class));
         return (builder, val) -> {
             try {
-                castSetter.invoke(builderObject, val);
+                castSetter.invoke(builder, val);
             } catch (RuntimeException | Error e) {
                 throw e;
             } catch (Throwable e) {
