@@ -495,12 +495,72 @@ class ConfigInstanceBuilderTest {
 
     @Test
     void converterNull() {
-        assertThrows(NoSuchElementException.class, () -> forInterface(ConverterNull.class).build());
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> forInterface(ConverterNull.class).build());
+        // SRCFG00040: an empty String default that the Converter considered null (matches the runtime mapping path)
+        assertTrue(exception.getMessage().contains("SRCFG00040"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("ConverterNull.value"), exception.getMessage());
     }
 
     interface ConverterNull {
         @WithDefault("")
         String value();
+    }
+
+    @Test
+    void converterReturnedNullReportsPropertyName() {
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> forInterface(ConverterReturnsNull.class).build());
+        // SRCFG00041: a Converter returned null while converting the default value
+        assertTrue(exception.getMessage().contains("SRCFG00041"), exception.getMessage());
+        // The offending property must be identified in the message
+        assertTrue(exception.getMessage().contains("ConverterReturnsNull.value"), exception.getMessage());
+    }
+
+    interface ConverterReturnsNull {
+        @WithDefault("value")
+        @WithConverter(NullConverter.class)
+        String value();
+
+        class NullConverter implements Converter<String> {
+            @Override
+            public String convert(final String value) {
+                return null;
+            }
+        }
+    }
+
+    @Test
+    void converterExceptionReportsPropertyName() {
+        IllegalArgumentException leaf = assertThrows(IllegalArgumentException.class,
+                () -> forInterface(ConverterThrows.class).build());
+        // SRCFG00039: the Converter threw while converting the default value
+        assertTrue(leaf.getMessage().contains("SRCFG00039"), leaf.getMessage());
+        assertTrue(leaf.getMessage().contains("ConverterThrows.value"), leaf.getMessage());
+
+        // The optional path wraps the same way, carrying the property name
+        IllegalArgumentException optional = assertThrows(IllegalArgumentException.class,
+                () -> forInterface(ConverterThrowsOptional.class).build());
+        assertTrue(optional.getMessage().contains("SRCFG00039"), optional.getMessage());
+        assertTrue(optional.getMessage().contains("ConverterThrowsOptional.value"), optional.getMessage());
+    }
+
+    interface ConverterThrows {
+        @WithDefault("x")
+        @WithConverter(ThrowingConverter.class)
+        String value();
+    }
+
+    interface ConverterThrowsOptional {
+        @WithDefault("x")
+        Optional<@WithConverter(ThrowingConverter.class) String> value();
+    }
+
+    static class ThrowingConverter implements Converter<String> {
+        @Override
+        public String convert(final String value) {
+            throw new IllegalArgumentException("boom");
+        }
     }
 
     @Test

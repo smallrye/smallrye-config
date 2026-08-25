@@ -1,7 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.Converters.newCollectionConverter;
-import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config._private.ConfigMessages.msg;
 
 import java.io.Serial;
@@ -10,19 +8,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -30,8 +21,8 @@ import org.eclipse.microprofile.config.spi.Converter;
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
+import io.smallrye.config.Converters.ConverterWithPriority;
 import io.smallrye.config.Converters.Implicit;
-import io.smallrye.config.SmallRyeConfigBuilder.ConverterWithPriority;
 import io.smallrye.config._private.ConfigMessages;
 import sun.reflect.ReflectionFactory;
 
@@ -137,19 +128,19 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
     }
 
     private static void registerConverters() {
-        Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>();
-        for (Converter<?> converter : ServiceLoader.load(Converter.class, Thread.currentThread().getContextClassLoader())) {
+        Map<Type, ConverterWithPriority> convertersToBuild = new HashMap<>();
+        for (Converter<?> converter : ServiceLoader.load(Converter.class, ConfigInstanceBuilderImpl.class.getClassLoader())) {
             Type type = Converters.getConverterType(converter.getClass());
             if (type == null) {
                 throw ConfigMessages.msg.unableToAddConverter(converter);
             }
-            SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
+            Converters.addConverter(type, converter, convertersToBuild);
         }
 
         CONVERTERS.putAll(Converters.ALL_CONVERTERS);
         CONVERTERS.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
         for (Entry<Type, ConverterWithPriority> entry : convertersToBuild.entrySet()) {
-            CONVERTERS.put(entry.getKey(), entry.getValue().getConverter());
+            CONVERTERS.put(entry.getKey(), entry.getValue().converter());
         }
     }
 
@@ -177,56 +168,12 @@ final class ConfigInstanceBuilderImpl<I> implements ConfigInstanceBuilder<I> {
         return converter;
     }
 
-    public static <T> T convertValue(final String value, final Converter<T> converter) {
-        T convert = converter.convert(value);
-        if (convert == null) {
-            throw ConfigMessages.msg.converterReturnedNull("", value, converter.getClass().getTypeName());
-        }
-        return convert;
-    }
-
     @SuppressWarnings("unused")
-    public static <T> Optional<T> convertOptionalValue(final String value, final Converter<T> converter) {
-        return convertValue(value, Converters.newOptionalConverter(converter));
-    }
-
-    @SuppressWarnings({ "unchecked", "unused" })
-    public static <T, C extends Collection<T>> C convertValues(
-            final String value,
-            final Converter<T> converter,
-            final Class<C> collectionType) {
-        return (C) convertValue(value, newCollectionConverter(converter, createCollectionFactory(collectionType)));
-    }
-
-    @SuppressWarnings({ "unchecked", "unused" })
-    public static <T, C extends Collection<T>> Optional<C> convertOptionalValues(
-            final String value,
-            final Converter<T> converter,
-            final Class<C> collectionType) {
-        Converter<Collection<T>> collectionConverter = newCollectionConverter(converter,
-                createCollectionFactory(collectionType));
-        return (Optional<C>) newOptionalConverter(collectionConverter).convert(value);
-    }
-
-    @SuppressWarnings("unused")
-    public static <T> T requireValue(final T value, final String name) {
+    public static <T> T requireValue(final String name, final T value) {
         if (value == null) {
             throw msg.propertyNotSet(name);
         }
         return value;
-    }
-
-    public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
-            final Class<C> type) {
-        if (type.equals(List.class)) {
-            return ArrayList::new;
-        }
-
-        if (type.equals(Set.class)) {
-            return HashSet::new;
-        }
-
-        throw new IllegalArgumentException();
     }
 
     public static class MapWithDefault<K, V> extends HashMap<K, V> {
