@@ -1,6 +1,5 @@
 package io.smallrye.config;
 
-import static io.smallrye.config.ConfigInstanceBuilderImpl.createCollectionFactory;
 import static io.smallrye.config.ConfigMappingHandler.Handlers.find;
 import static io.smallrye.config.ConfigValidationException.Problem;
 import static io.smallrye.config.Converters.createCollectionFactory;
