@@ -230,7 +230,6 @@ public class ConfigMappingGenerator {
     }
 
     private static final String I_CONFIG_INSTANCE_BUILDER = getInternalName(ConfigInstanceBuilder.class);
-    private static final String I_CONFIG_INSTANCE_BUILDER_IMPL = getInternalName(ConfigInstanceBuilderImpl.class);
     private static final String I_CONVERTERS = getInternalName(Converters.class);
     private static final String I_OPTIONAL_INT = getInternalName(OptionalInt.class);
     private static final String I_OPTIONAL_LONG = getInternalName(OptionalLong.class);
@@ -1680,7 +1679,7 @@ public class ConfigMappingGenerator {
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getBoxType())));
-                ConfigInstanceInvocation.getConverter.invoke(this);
+                ConfigInstanceInvocation.requireConverter.invoke(this);
             }
         }
 
@@ -1692,7 +1691,7 @@ public class ConfigMappingGenerator {
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getValueRawType())));
-                ConfigInstanceInvocation.getConverter.invoke(this);
+                ConfigInstanceInvocation.requireConverter.invoke(this);
             }
         }
 
@@ -1701,12 +1700,12 @@ public class ConfigMappingGenerator {
         }
 
         void visitNewMapWithDefault() {
-            this.visitTypeInsn(NEW, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault");
+            this.visitTypeInsn(NEW, I_OBJECT_CREATOR + "$MapWithDefault");
             this.visitInsn(DUP);
         }
 
         void visitInitMapWithDefault() {
-            this.visitMethodInsn(INVOKESPECIAL, I_CONFIG_INSTANCE_BUILDER_IMPL + "$MapWithDefault", "<init>",
+            this.visitMethodInsn(INVOKESPECIAL, I_OBJECT_CREATOR + "$MapWithDefault", "<init>",
                     "(L" + I_OBJECT + ";)V", false);
         }
 
@@ -1729,23 +1728,29 @@ public class ConfigMappingGenerator {
         convertValues(INVOKESTATIC, I_CONVERTERS, "(" + D_STRING + D_STRING + D_CONVERTER + D_CLASS + ")" + D_COLLECTION),
         convertOptionalValues(INVOKESTATIC, I_CONVERTERS,
                 "(" + D_STRING + D_STRING + D_CONVERTER + D_CLASS + ")" + D_OPTIONAL),
-        getConverter(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "(" + D_CLASS + ")" + D_CONVERTER),
-        requireValue(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER_IMPL, "(" + D_STRING + D_OBJECT + ")" + D_OBJECT),
+        requireConverter(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER, "(" + D_CLASS + ")" + D_CONVERTER, true),
+        requireValue(INVOKESTATIC, I_OBJECT_CREATOR, "(" + D_STRING + D_OBJECT + ")" + D_OBJECT),
         ;
 
         private final int opcode;
         private final String owner;
         private final String desc;
+        private final boolean isInterface;
 
         ConfigInstanceInvocation(int opcode, String owner, String desc) {
+            this(opcode, owner, desc, false);
+        }
+
+        ConfigInstanceInvocation(int opcode, String owner, String desc, boolean isInterface) {
             this.opcode = opcode;
             this.owner = owner;
             this.desc = desc;
+            this.isInterface = isInterface;
         }
 
         @Override
         public void invoke(final MethodVisitor mv) {
-            mv.visitMethodInsn(opcode(), owner, methodName(), desc(), false);
+            mv.visitMethodInsn(opcode(), owner, methodName(), desc(), isInterface);
         }
 
         @Override

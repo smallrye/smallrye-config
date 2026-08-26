@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import io.smallrye.config.ConfigInstanceBuilderImpl.MapWithDefault;
 import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
@@ -1069,10 +1068,33 @@ public final class ConfigMappingContext {
             return false;
         }
 
+        @SuppressWarnings("unused")
+        public static <T> T requireValue(final String name, final T value) {
+            if (value == null) {
+                throw ConfigMessages.msg.propertyNotSet(name);
+            }
+            return value;
+        }
+
         private static String quoted(final String key) {
             NameIterator keyIterator = new NameIterator(key);
             keyIterator.next();
             return keyIterator.hasNext() ? "\"" + key + "\"" : key;
+        }
+
+        public static class MapWithDefault<K, V> extends HashMap<K, V> {
+            @java.io.Serial
+            private static final long serialVersionUID = 1390928078837140814L;
+            private final V defaultValue;
+
+            public MapWithDefault(final V defaultValue) {
+                this.defaultValue = defaultValue;
+            }
+
+            @Override
+            public V get(final Object key) {
+                return getOrDefault(key, defaultValue);
+            }
         }
     }
 }
