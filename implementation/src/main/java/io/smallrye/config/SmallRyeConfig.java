@@ -200,26 +200,6 @@ public class SmallRyeConfig implements Config, Serializable {
         }
     }
 
-    @Deprecated(forRemoval = true)
-    public <T, C extends Collection<T>> C getIndexedValues(String name, Converter<T> converter,
-            IntFunction<C> collectionFactory) {
-        List<String> indexedProperties = getIndexedProperties(name);
-        if (indexedProperties.isEmpty()) {
-            throw new NoSuchElementException(ConfigMessages.msg.propertyNotFound(name));
-        }
-        return getIndexedValues(indexedProperties, converter, collectionFactory);
-    }
-
-    @Deprecated(forRemoval = true)
-    private <T, C extends Collection<T>> C getIndexedValues(List<String> indexedProperties, Converter<T> converter,
-            IntFunction<C> collectionFactory) {
-        C collection = collectionFactory.apply(indexedProperties.size());
-        for (String indexedProperty : indexedProperties) {
-            collection.add(getValue(indexedProperty, converter));
-        }
-        return collection;
-    }
-
     public List<String> getIndexedProperties(final String property) {
         Map<Integer, String> indexedProperties = configSources.getPropertyNames().indexed().get(property);
         return indexedProperties == null ? Collections.emptyList() : indexedProperties.values().stream().toList();
@@ -533,23 +513,6 @@ public class SmallRyeConfig implements Config, Serializable {
         } else {
             return getOptionalValue(name, newCollectionConverter(converter, collectionFactory));
         }
-    }
-
-    @Deprecated(forRemoval = true)
-    public <T, C extends Collection<T>> Optional<C> getIndexedOptionalValues(String name, Converter<T> converter,
-            IntFunction<C> collectionFactory) {
-        List<String> indexedProperties = getIndexedProperties(name);
-        if (indexedProperties.isEmpty()) {
-            return Optional.empty();
-        }
-
-        C collection = collectionFactory.apply(indexedProperties.size());
-        for (String indexedProperty : indexedProperties) {
-            Optional<T> optionalValue = getOptionalValue(indexedProperty, converter);
-            optionalValue.ifPresent(collection::add);
-        }
-
-        return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
     }
 
     @Override

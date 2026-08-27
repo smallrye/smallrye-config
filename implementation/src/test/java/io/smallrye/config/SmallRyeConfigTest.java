@@ -21,6 +21,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -181,8 +182,10 @@ class SmallRyeConfigTest {
                         "server.environments[2]", "prod"))
                 .build();
 
-        List<String> environments = config.getIndexedValues("server.environments", config.requireConverter(String.class),
-                ArrayList::new);
+        List<String> environments = config.getValues(
+                "server.environments",
+                config.requireConverter(String.class),
+                (IntFunction<List<String>>) value -> new ArrayList<>());
         assertEquals(3, environments.size());
         assertEquals("dev", environments.get(0));
         assertEquals("dev", config.getValue("server.environments[0]", String.class));
@@ -192,7 +195,10 @@ class SmallRyeConfigTest {
         assertEquals("prod", config.getValue("server.environments[2]", String.class));
 
         assertThrows(NoSuchElementException.class,
-                () -> config.getIndexedValues("not.found", config.requireConverter(String.class), ArrayList::new));
+                () -> config.getValues(
+                        "not.found",
+                        config.requireConverter(String.class),
+                        (IntFunction<List<String>>) value -> new ArrayList<>()));
     }
 
     @Test
@@ -298,9 +304,11 @@ class SmallRyeConfigTest {
                 .withSources(config("server.environments", ""))
                 .build();
 
-        assertFalse(
-                config.getIndexedOptionalValues("server.environments", config.requireConverter(String.class), ArrayList::new)
-                        .isPresent());
+        assertFalse(config.getOptionalValues(
+                "server.environments",
+                config.requireConverter(String.class),
+                (IntFunction<Collection<String>>) value -> new ArrayList<>())
+                .isPresent());
         assertFalse(config.getOptionalValues("server.environments", String.class).isPresent());
 
         SmallRyeConfig configIndexed = new SmallRyeConfigBuilder()
@@ -308,7 +316,10 @@ class SmallRyeConfigTest {
                 .build();
 
         assertFalse(configIndexed
-                .getIndexedOptionalValues("server.environments", config.requireConverter(String.class), ArrayList::new)
+                .getOptionalValues(
+                        "server.environments",
+                        config.requireConverter(String.class),
+                        (IntFunction<Collection<String>>) value -> new ArrayList<>())
                 .isPresent());
         assertFalse(configIndexed.getOptionalValues("server.environments", String.class).isPresent());
     }

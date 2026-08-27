@@ -630,11 +630,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaults;
     }
 
-    @Deprecated(forRemoval = true)
-    public Map<String, String> getDefaultValues() {
-        return defaults.getProperties();
-    }
-
     public PropertyNamesMatcher<?> getSecretKeys() {
         return secretKeys;
     }
