@@ -124,13 +124,36 @@ public class ConfigMappingGenerator {
     private static final int V_MAPPING_CONTEXT = 1;
 
     /**
+     * A {@link ClassWriter} that resolves types through the {@link ClassLoader} of the mapping being generated,
+     * instead of the {@link ClassLoader} that loaded ASM. This is required because {@code COMPUTE_FRAMES} may call
+     * {@link ClassWriter#getCommonSuperClass(String, String)} to merge frames, which resolves the referenced types
+     * via {@link Class#forName(String, boolean, ClassLoader)}. Under split classloading (e.g. Quarkus augmentation)
+     * the ASM {@link ClassLoader} cannot see the application types being mapped, so it must be given the mapping's
+     * own {@link ClassLoader}.
+     */
+    private static final class MappingClassWriter extends ClassWriter {
+        private final ClassLoader classLoader;
+
+        MappingClassWriter(final int flags, final ClassLoader classLoader) {
+            super(flags);
+            this.classLoader = classLoader;
+        }
+
+        @Override
+        protected ClassLoader getClassLoader() {
+            return classLoader != null ? classLoader : super.getClassLoader();
+        }
+    }
+
+    /**
      * Generates the backing implementation of an interface annotated with the {@link ConfigMapping} annotation.
      *
      * @param mapping information about a configuration interface.
      * @return the class bytes representing the implementation of the configuration interface.
      */
     static byte[] generate(final ConfigMappingInterface mapping) {
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        ClassWriter writer = new MappingClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS,
+                mapping.getInterfaceType().getClassLoader());
 
         writer.visit(V1_8, ACC_PUBLIC, mapping.getClassInternalName(), null, I_OBJECT,
                 new String[] { getInternalName(mapping.getInterfaceType()) });
@@ -258,7 +281,8 @@ public class ConfigMappingGenerator {
         String classInternalName = getInternalName(classType);
         String interfaceInternalName = generatedClassName.replace('.', '/');
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        ClassWriter writer = new MappingClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS,
+                classType.getClassLoader());
         writer.visit(V1_8, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, interfaceInternalName, null, I_OBJECT,
                 new String[] { getInternalName(ConfigMappingClass.Mapper.class) });
 
@@ -770,7 +794,7 @@ public class ConfigMappingGenerator {
             } else {
                 mv.visitPropertyName(property);
                 mv.visitInsn(SWAP);
-                ConfigInstanceInvocation.requireValue.invoke(mv);
+                mv.visitMethod(ConfigInstanceInvocation.requireValue);
                 mv.visitCast(property);
             }
         } else if (property.isOptional() && property.isLeaf()) {
@@ -841,7 +865,7 @@ public class ConfigMappingGenerator {
             } else {
                 mv.visitPropertyName(property);
                 mv.visitInsn(SWAP);
-                ConfigInstanceInvocation.requireValue.invoke(mv);
+                mv.visitMethod(ConfigInstanceInvocation.requireValue);
                 mv.visitCast(property);
             }
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isCollection()
@@ -865,12 +889,16 @@ public class ConfigMappingGenerator {
             mv.visitCast(property);
         } else if (property.isGroup()) {
             Label hasValue = new Label();
+            Label end = new Label();
             mv.visitInsn(DUP);
             mv.visitJumpInsn(IFNONNULL, hasValue);
             mv.visitInsn(POP);
             mv.visitGroup(property.asGroup());
+            mv.visitCast(property);
+            mv.visitJumpInsn(GOTO, end);
             mv.visitLabel(hasValue);
             mv.visitCast(property);
+            mv.visitLabel(end);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isGroup()) {
             Label hasValue = new Label();
             mv.visitInsn(DUP);
@@ -882,7 +910,7 @@ public class ConfigMappingGenerator {
         } else {
             mv.visitPropertyName(property);
             mv.visitInsn(SWAP);
-            ConfigInstanceInvocation.requireValue.invoke(mv);
+            mv.visitMethod(ConfigInstanceInvocation.requireValue);
             mv.visitCast(property);
         }
     }
@@ -1679,7 +1707,7 @@ public class ConfigMappingGenerator {
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getBoxType())));
-                ConfigInstanceInvocation.requireConverter.invoke(this);
+                this.visitMethod(ConfigInstanceInvocation.requireConverter);
             }
         }
 
@@ -1691,7 +1719,7 @@ public class ConfigMappingGenerator {
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getValueRawType())));
-                ConfigInstanceInvocation.requireConverter.invoke(this);
+                this.visitMethod(ConfigInstanceInvocation.requireConverter);
             }
         }
 
