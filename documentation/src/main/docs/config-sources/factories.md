@@ -78,15 +78,18 @@ And registration in:
 org.acme.config.FileSystemConfigSourceFactory
 ```
 
-The `FileSystemConfigSourceFactory` look ups the configuration value for `org.acme.config.file.locations`, and uses it 
+The `FileSystemConfigSourceFactory` look ups the configuration value for `org.acme.config.file.locations`, and uses it
 to set up an additional `ConfigSource`.
 
-Alternatively, a `ConfigurableConfigSourceFactory` accepts a `ConfigMapping` interface to configure the `ConfigSource`:
+## `ConfigurableConfigSourceFactory`
+
+A `ConfigurableConfigSourceFactory` accepts a `@ConfigMapping` interface to configure the `ConfigSource`, removing the
+need to look up configuration values manually via `ConfigSourceContext`:
 
 ```java
 @ConfigMapping(prefix = "org.acme.config.file")
 interface FileSystemConfig {
-    List<URL> locations();   
+    List<URL> locations();
 }
 ```
 
@@ -94,10 +97,27 @@ interface FileSystemConfig {
 public class FileSystemConfigurableConfigSourceFactory implements ConfigurableConfigSourceFactory<FileSystemConfig> {
     @Override
     public Iterable<ConfigSource> getConfigSources(ConfigSourceContext context, FileSystemConfig config) {
-        
+        List<ConfigSource> sources = new ArrayList<>();
+        for (URL url : config.locations()) {
+            try {
+                sources.add(new PropertiesConfigSource(url, 250));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        return sources;
     }
 }
 ```
 
-With a `ConfigurableConfigSourceFactory` it is not required to look up the configuration values with 
-`ConfigSourceContext`. The values are automatically mapped with the defined `@ConfigMapping`.
+And registration in:
+
+```properties title="META-INF/services/io.smallrye.config.ConfigSourceFactory"
+org.acme.config.FileSystemConfigurableConfigSourceFactory
+```
+
+The `ConfigMapping` interface is automatically populated from all `ConfigSource`s already initialized at the time the
+factory runs. Values are resolved using the same two-step initialization as a regular `ConfigSourceFactory`: sources
+from `ConfigSource` / `ConfigSourceProvider` registrations are available, but sources from other
+`ConfigSourceFactory` implementations are not.
+
