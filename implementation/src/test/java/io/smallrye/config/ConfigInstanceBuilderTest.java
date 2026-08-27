@@ -89,6 +89,21 @@ class ConfigInstanceBuilderTest {
                 () -> forInterface(Server.class).with(Server::host, null));
     }
 
+    @Test
+    void lambdaGetterRejected() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> forInterface(Server.class).with(s -> s.host(), "localhost"));
+        assertTrue(exception.getMessage().contains("SRCFG00060"), exception.getMessage());
+    }
+
+    @Test
+    void requiredPrimitiveNotSet() {
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> forInterface(Server.class).with(Server::host, "localhost").build());
+        assertTrue(exception.getMessage().contains("SRCFG00061"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("Server.port"), exception.getMessage());
+    }
+
     @ConfigMapping
     interface Server {
         String host();
@@ -151,6 +166,16 @@ class ConfigInstanceBuilderTest {
 
         assertEquals("value", nested.value());
         assertEquals("group", nested.group().value());
+    }
+
+    @Test
+    void nestedRequired() {
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> forInterface(Nested.class)
+                        .with(Nested::value, "value")
+                        .build());
+        assertTrue(exception.getMessage().contains("SRCFG00061"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group.value"), exception.getMessage());
     }
 
     @ConfigMapping
