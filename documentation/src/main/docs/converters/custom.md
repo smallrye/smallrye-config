@@ -43,7 +43,7 @@ public class CustomValueConverter implements Converter<CustomValue> {
 And registration in:
 
 ```properties title="META-INF/services/org.eclipse.microprofile.config.spi.Converter"
-org.acme.config.CustomValue
+org.acme.config.CustomValueConverter
 ```
 
 !!! warning

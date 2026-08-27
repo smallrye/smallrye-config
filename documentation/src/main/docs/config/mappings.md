@@ -93,10 +93,49 @@ Server server = config.getConfigMapping(Server.class);
     Config Mapping instances are cached. They are populated when the `SmallRyeConfig` instance is initialized and 
     their values are not updated on `ConfigSource` changes. 
 
-For a Config Mapping to be valid, it needs to match every configuration property name contained in the `Config` under 
-the specified prefix set in `@ConfigMapping`. This prevents unknown configuration properties in the `Config`. This 
-behaviour can be disabled with the configuration `smallrye.config.mapping.validate-unknown=false`, or by ignoring 
-specified paths with `io.smallrye.config.SmallRyeConfigBuilder.withMappingIgnore`. 
+For a Config Mapping to be valid, it needs to match every configuration property name contained in the `Config` under
+the specified prefix set in `@ConfigMapping`. This prevents unknown configuration properties in the `Config`.
+
+### Disabling validation
+
+Validation can be disabled entirely in two ways:
+
+Via configuration property:
+
+```properties
+smallrye.config.mapping.validate-unknown=false
+```
+
+Or programmatically via the builder:
+
+```java
+SmallRyeConfig config = new SmallRyeConfigBuilder()
+        .withMapping(Server.class)
+        .withValidateUnknown(false)
+        .build();
+```
+
+### Ignoring specific paths
+
+Rather than disabling validation entirely, specific paths can be ignored with
+`SmallRyeConfigBuilder#withMappingIgnore`. The path argument supports three patterns:
+
+| Pattern   | Meaning                                                |
+|-----------|--------------------------------------------------------|
+| `foo.bar` | Ignores the exact configuration name `foo.bar`         |
+| `foo.*`   | Ignores all direct child names under `foo`             |
+| `foo.**`  | Ignores all names under `foo` at any level (recursive) |
+
+```java
+SmallRyeConfig config = new SmallRyeConfigBuilder()
+        .withMapping(Server.class)
+        .withMappingIgnore("server.foo")      // ignore the exact name
+        .withMappingIgnore("server.extras.*") // ignore direct children of server.extras
+        .withMappingIgnore("server.legacy.**") // ignore everything under server.legacy
+        .build();
+```
+
+Multiple calls to `withMappingIgnore` accumulate — each call adds to the set of ignored paths.
 
 ## Defaults
 
@@ -280,6 +319,35 @@ The `@ConfigMapping` annotation support the following naming stategies:
 - KEBAB_CASE - The method name is derived by replacing case changes with a dash to map the configuration property.
 - VERBATIM - The method name is used as is to map the configuration property.
 - SNAKE_CASE - The method name is derived by replacing case changes with an underscore to map the configuration property.
+
+### `beanStyleGetters`
+
+The `beanStyleGetters` attribute (default `false`) enables matching bean-style getter names (`get`/`is` prefixed) to
+their property name equivalent. For example, `getHost()` and `isEnabled()` map to the properties `host` and `enabled`
+respectively:
+
+```java
+@ConfigMapping(prefix = "server", beanStyleGetters = true)
+public interface Server {
+    String getHost();
+
+    int getPort();
+
+    boolean isEnabled();
+}
+```
+
+```properties
+server.host=localhost
+server.port=8080
+server.enabled=true
+```
+
+!!! warning
+
+    Bean-style getter matching allows multiple method names to match the same configuration name. For instance,
+    `getFoo` and `isFoo` both match `foo`, which may not be intended. Prefer simple method names that match
+    one-to-one with their configuration names.
 
 ## Conversion
 
@@ -527,6 +595,26 @@ Map<String, Alias> localhost = server.aliases.get("localhost");
 
      If the unnamed key (in this case `localhost`) is explicitly set in a property name, the mapping will throw an error.
 
+The `eager` attribute (default `true`) controls whether the unnamed key entry is included in the `Map` when its values
+come only from defaults. When `eager = false`, the unnamed key entry is excluded from the `Map` unless at least one
+of its values is explicitly set in a configuration source:
+
+```java
+@ConfigMapping(prefix = "server")
+public interface Server {
+    @WithUnnamedKey(value = "localhost", eager = false)
+    Map<String, Alias> aliases();
+
+    interface Alias {
+        @WithDefault("localhost")
+        String name();
+    }
+}
+```
+
+With `eager = false` and no properties set, `server.aliases` returns an empty `Map`. With `eager = true` (the
+default), it returns a `Map` with the key `localhost` populated from the `@WithDefault`.
+
 ### `@WithKeys`
 
 The `io.smallrye.config.WithKeys` annotation allows to define which `Map` keys must be loaded by 
@@ -596,9 +684,9 @@ and the size is `1`.
 
 ```java
 Server server = config.getConfigMapping(Server.class);
-Map<String, Alias> localhost = server.aliases.get("localhost");
-Map<String, Alias> any = server.aliases.get("any");
-Map<String, Alias> any = server.aliases.get("prod");
+Map<String, Alias> localhost = server.aliases().get("localhost");
+Map<String, Alias> any = server.aliases().get("any");
+Map<String, Alias> prod = server.aliases().get("prod");
 ```
 
 ## Optionals

@@ -5,13 +5,108 @@
 In SmallRye Config, a secret configuration may be expressed as `${handler::value}`, where the `handler` is the name of 
 a `io.smallrye.config.SecretKeysHandler` to decode or decrypt the `value` separated by a double colon `::`.
 
-It is possible to create a custom `SecretKeysHandler` and provide different ways to decode or decrypt configuration 
-values. 
+It is possible to create a custom `SecretKeysHandler` and provide different ways to decode or decrypt configuration
+values.
 
-A custom `SecretKeysHandler` requires an implementation of `io.smallrye.config.SecretKeysHandler` or 
-`io.smallrye.config.SecretKeysHandlerFactory`. Each implementation requires registration via the `ServiceLoader` 
+A custom `SecretKeysHandler` requires an implementation of `io.smallrye.config.SecretKeysHandler` or
+`io.smallrye.config.SecretKeysHandlerFactory`. Each implementation requires registration via the `ServiceLoader`
 mechanism, either in `META-INF/services/io.smallrye.config.SecretKeysHandler` or
 `META-INF/services/io.smallrye.config.SecretKeysHandlerFactory` files.
+
+### Custom `SecretKeysHandler`
+
+A direct `SecretKeysHandler` implementation is suitable when the handler needs no configuration of its own:
+
+```java
+public class Base64SecretKeysHandler implements SecretKeysHandler {
+    @Override
+    public String decode(final String secret) {
+        return new String(Base64.getDecoder().decode(secret));
+    }
+
+    @Override
+    public String getName() {
+        return "base64";
+    }
+}
+```
+
+```title="META-INF/services/io.smallrye.config.SecretKeysHandler"
+org.acme.config.Base64SecretKeysHandler
+```
+
+A secret value encoded with the `base64` handler can then be expressed as:
+
+```properties
+my.secret=${base64::SGVsbG8gV29ybGQ=}
+```
+
+### `SecretKeysHandlerFactory`
+
+When a handler requires configuration from other config sources (for example, a key or a credential read from
+the config), use `SecretKeysHandlerFactory` instead. The factory receives a `ConfigSourceContext` that provides
+access to all config sources initialized before the factory runs:
+
+```java
+public class VaultSecretKeysHandlerFactory implements SecretKeysHandlerFactory {
+    @Override
+    public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
+        ConfigValue token = context.getValue("vault.token");
+        return new VaultSecretKeysHandler(token.getValue());
+    }
+
+    @Override
+    public String getName() {
+        return "vault";
+    }
+}
+```
+
+```properties title="META-INF/services/io.smallrye.config.SecretKeysHandlerFactory"
+org.acme.config.VaultSecretKeysHandlerFactory
+```
+
+### `LazySecretKeysHandler`
+
+`SecretKeysHandlerFactory` initializes during the first phase of `SmallRyeConfig` bootstrap, alongside regular
+`ConfigSource` and `ConfigSourceProvider` registrations. This means that config values produced by a
+`ConfigSourceFactory` are **not** yet available when the factory's `getSecretKeysHandler` is called.
+
+For handlers that depend on sources provided by a `ConfigSourceFactory`, wrap an inner `SecretKeysHandlerFactory`
+in a `SecretKeysHandlerFactory.LazySecretKeysHandler`. The inner factory's `getSecretKeysHandler` is only invoked
+the first time a value actually needs to be decoded, by which point all sources — including those from
+`ConfigSourceFactory` — are fully initialized:
+
+```java
+public class VaultSecretKeysHandlerFactory implements SecretKeysHandlerFactory {
+    @Override
+    public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
+        return new LazySecretKeysHandler(new SecretKeysHandlerFactory() {
+            @Override
+            public SecretKeysHandler getSecretKeysHandler(final ConfigSourceContext context) {
+                // This runs lazily, after all sources are ready.
+                ConfigValue token = context.getValue("vault.token");
+                return new VaultSecretKeysHandler(token.getValue());
+            }
+
+            @Override
+            public String getName() {
+                return "vault";
+            }
+        });
+    }
+
+    @Override
+    public String getName() {
+        return "vault";
+    }
+}
+```
+
+!!! warning
+
+    The inner factory wrapped by `LazySecretKeysHandler` is what defers initialization. Do not call
+    `context.getValue` in the outer `getSecretKeysHandler`; only the inner factory's `getSecretKeysHandler` (invoked lazily) may resolve configuration values.
 
 !!!danger
 
