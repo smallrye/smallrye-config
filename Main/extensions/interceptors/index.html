@@ -1302,6 +1302,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interceptors
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1318,6 +1336,47 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#iteratenames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterateNames
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configsourceinterceptorcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigSourceInterceptorContext
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1491,6 +1550,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#iteratenames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterateNames
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configsourceinterceptorcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigSourceInterceptorContext
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1520,56 +1609,137 @@ interface.</p>
 registration via the <code>ServiceLoader</code> mechanism in the <code>META-INF/services/io.smallrye.config.ConfigSourceInterceptor</code> 
 file. Alternatively, interceptors may be registered via the Programmatic API in 
 <code>SmallRyeConfigBuilder#withInterceptors</code>.</p>
-<p>The <code>io.smallrye.config.ConfigSourceInterceptor</code> is able to intercept the resolution of a configuration name with the 
-method <code>ConfigValue getValue(ConfigSourceInterceptorContext context, String name)</code>. The <code>ConfigSourceInterceptorContext</code>
-is used to proceed with the interceptor chain. The chain can be short-circuited by returning an instance of 
-<code>io.smallrye.config.ConfigValue</code>. The <code>ConfigValue</code> objects hold information about the key name, value, config source 
-origin and ordinal.</p>
+<p><code>io.smallrye.config.ConfigSourceInterceptor</code> exposes two interception points:</p>
+<ul>
+<li><code>ConfigValue getValue(ConfigSourceInterceptorContext context, String name)</code> — intercepts the resolution of a
+  configuration value by name.</li>
+<li><code>Iterator&lt;String&gt; iterateNames(ConfigSourceInterceptorContext context)</code> — intercepts the iteration of all known
+  configuration property names.</li>
+</ul>
+<p>The <code>ConfigSourceInterceptorContext</code> is used to proceed with the interceptor chain. Calling <code>context.proceed(name)</code>
+continues to the next interceptor in the chain. The chain can be short-circuited by returning a custom instance of
+<code>io.smallrye.config.ConfigValue</code> from <code>getValue</code>, or a custom <code>Iterator&lt;String&gt;</code> from <code>iterateNames</code>. The <code>ConfigValue</code>
+objects hold information about the key name, value, config source origin and ordinal.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>The interceptor chain is applied before any conversion is performed on the configuration value.</p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="p">;</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import static</span><span class="w"> </span><span class="nn">io.smallrye.config.SecretKeys.doLocked</span><span class="p">;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.annotation.Priority</span><span class="p">;</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.annotation.Priority</span><span class="p">;</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptor</span><span class="p">;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config._private.ConfigLogging</span><span class="p">;</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nd">@Priority</span><span class="p">(</span><span class="n">Priorities</span><span class="p">.</span><span class="na">LIBRARY</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">200</span><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">LoggingConfigSourceInterceptor</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">serialVersionUID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">367246512037404779L</span><span class="p">;</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigValue</span><span class="w"> </span><span class="nf">getValue</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="n">ConfigValue</span><span class="w"> </span><span class="n">configValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">doLocked</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">proceed</span><span class="p">(</span><span class="n">name</span><span class="p">));</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">configValue</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">            </span><span class="n">ConfigLogging</span><span class="p">.</span><span class="na">log</span><span class="p">.</span><span class="na">lookup</span><span class="p">(</span><span class="n">configValue</span><span class="p">.</span><span class="na">getName</span><span class="p">(),</span><span class="w"> </span><span class="n">configValue</span><span class="p">.</span><span class="na">getLocation</span><span class="p">(),</span><span class="w"> </span><span class="n">configValue</span><span class="p">.</span><span class="na">getValue</span><span class="p">());</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">            </span><span class="n">ConfigLogging</span><span class="p">.</span><span class="na">log</span><span class="p">.</span><span class="na">notFound</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">configValue</span><span class="p">;</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptor</span><span class="p">;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.Priorities</span><span class="p">;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nd">@Priority</span><span class="p">(</span><span class="n">Priorities</span><span class="p">.</span><span class="na">APPLICATION</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">LoggingConfigSourceInterceptor</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigValue</span><span class="w"> </span><span class="nf">getValue</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="n">ConfigValue</span><span class="w"> </span><span class="n">configValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">proceed</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">configValue</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">            </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Looked up: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">configValue</span><span class="p">.</span><span class="na">getName</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;=&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">configValue</span><span class="p">.</span><span class="na">getValue</span><span class="p">());</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">            </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Not found: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">configValue</span><span class="p">;</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="p">}</span>
 </code></pre></div>
 <p>And registration in:</p>
 <div class="highlight"><span class="filename">META-INF/services/io.smallrye.config.ConfigSourceInterceptor</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">org.acme.config.LoggingConfigSourceInterceptor</span>
 </code></pre></div>
-<p>The <code>LoggingConfigSourceInterceptor</code> logs looks up configuration names in the provided logging platform. The log 
-information includes config name and value, the config source origin and location if exists.</p>
-<p>Interceptors may also be created with an implementation of <code>io.smallrye.config.ConfigSourceInterceptorFactory</code>. Each 
-implementation requires registration via the <code>ServiceLoader</code> mechanism in the 
-<code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file. Alternatively, interceptors factories may 
+<p>The <code>LoggingConfigSourceInterceptor</code> logs each configuration name lookup. The logged information includes the config
+name and value, and (from the resolved <code>ConfigValue</code>) the config source origin and location if they exist.</p>
+<h2 id="iteratenames"><code>iterateNames</code><a class="headerlink" href="#iteratenames" title="Permanent link">#</a></h2>
+<p>The <code>iterateNames</code> method intercepts the set of configuration property names visible to the rest of the chain. The
+default implementation simply delegates to <code>context.iterateNames()</code>. Override it to add, remove, or transform names.</p>
+<p>A common use case is hiding sensitive property names from enumeration while still allowing their values to be
+retrieved:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="p">;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Iterator</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.annotation.Priority</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptor</span><span class="p">;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptorContext</span><span class="p">;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.Priorities</span><span class="p">;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nd">@Priority</span><span class="p">(</span><span class="n">Priorities</span><span class="p">.</span><span class="na">APPLICATION</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HidingConfigSourceInterceptor</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigValue</span><span class="w"> </span><span class="nf">getValue</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">proceed</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Iterator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">iterateNames</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">        </span><span class="n">Iterator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">iterateNames</span><span class="p">();</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Iterator</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">            </span><span class="nd">@Override</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">hasNext</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">names</span><span class="p">.</span><span class="na">hasNext</span><span class="p">();</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">            </span><span class="nd">@Override</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">next</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">                </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">names</span><span class="p">.</span><span class="na">next</span><span class="p">();</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">                </span><span class="c1">// filter out any name starting with &quot;secret.&quot;</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="na">startsWith</span><span class="p">(</span><span class="s">&quot;secret.&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">next</span><span class="p">()</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">        </span><span class="p">};</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="p">}</span>
+</code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p><code>iterateNames</code> affects the results of <code>Config#getPropertyNames()</code> and is used by Config Mappings to discover
+<code>Map</code> keys. Interceptors that hide names will also prevent those names from being mapped into <code>Map</code> entries.</p>
+</div>
+<h2 id="configsourceinterceptorcontext"><code>ConfigSourceInterceptorContext</code><a class="headerlink" href="#configsourceinterceptorcontext" title="Permanent link">#</a></h2>
+<p><code>ConfigSourceInterceptorContext</code> provides two ways to continue the chain:</p>
+<ul>
+<li><code>proceed(String name)</code> — passes the lookup to the <strong>next</strong> interceptor in the chain. This is the standard method
+  to use in most interceptors.</li>
+<li><code>restart(String name)</code> — re-invokes the <strong>first</strong> interceptor in the chain from the beginning. This is intended for
+  relocating or compatibility interceptors that resolve a new name and need the full chain to re-evaluate it, including
+  profile expansion and expression resolution. Passing the original name to <code>restart</code> can cause an infinite loop, so
+  care must be taken.</li>
+</ul>
+<p>Example — an interceptor that resolves an alias name and restarts the full chain for the resolved name:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">package</span><span class="w"> </span><span class="nn">org.acme.config</span><span class="p">;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.annotation.Priority</span><span class="p">;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptor</span><span class="p">;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigSourceInterceptorContext</span><span class="p">;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.ConfigValue</span><span class="p">;</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">io.smallrye.config.Priorities</span><span class="p">;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nd">@Priority</span><span class="p">(</span><span class="n">Priorities</span><span class="p">.</span><span class="na">APPLICATION</span><span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AliasConfigSourceInterceptor</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ConfigSourceInterceptor</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ConfigValue</span><span class="w"> </span><span class="nf">getValue</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigSourceInterceptorContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="na">equals</span><span class="p">(</span><span class="s">&quot;app.host&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">            </span><span class="c1">// Restart the chain with the canonical name so profiles and</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">            </span><span class="c1">// expressions are re-applied to the resolved name.</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">restart</span><span class="p">(</span><span class="s">&quot;server.host&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">proceed</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="p">}</span>
+</code></pre></div>
+<p>Interceptors may also be created with an implementation of <code>io.smallrye.config.ConfigSourceInterceptorFactory</code>. Each
+implementation requires registration via the <code>ServiceLoader</code> mechanism in the
+<code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file. Alternatively, interceptors factories may
 be registered via the Programmatic API in <code>SmallRyeConfigBuilder#withInterceptorFactories</code>.</p>
-<p>The <code>ConfigSourceInterceptorFactory</code> can initialize an interceptor with access to the current chain 
+<p>The <code>ConfigSourceInterceptorFactory</code> can initialize an interceptor with access to the current chain
 (so it can be used to configure the interceptor and retrieve configuration values) and set the priority.</p>
-<p>A <code>ConfigSourceInterceptor</code> implementation class can specify a priority by way of the standard 
-<code>jakarta.annotation.Priority</code> annotation. If no priority is explicitly assigned, the default priority value of 
-<code>io.smallrye.config.Priorities.APPLICATION</code> is assumed. If multiple interceptors are registered with the same priority, 
+<p>A <code>ConfigSourceInterceptor</code> implementation class can specify a priority by way of the standard
+<code>jakarta.annotation.Priority</code> annotation. If no priority is explicitly assigned, the default priority value of
+<code>io.smallrye.config.Priorities.APPLICATION</code> is assumed. If multiple interceptors are registered with the same priority,
 then their execution order may be non-deterministic.</p>
-<p>A collection of built-in priority constants can be found in <code>io.smallrye.config.Priorities</code>. It is recommended to 
+<p>A collection of built-in priority constants can be found in <code>io.smallrye.config.Priorities</code>. It is recommended to
 use <code>io.smallrye.config.Priorities.APPLICATION</code> as a baseline for user defined interceptors.</p>
 
 
