@@ -124,25 +124,9 @@ public class SmallRyeConfig implements Config, Serializable {
     }
 
     private Map<Type, Converter<?>> buildConverters(final SmallRyeConfigBuilder builder) {
-        final Map<Type, SmallRyeConfigBuilder.ConverterWithPriority> convertersToBuild = new HashMap<>(builder.getConverters());
-
-        if (builder.isAddDiscoveredConverters()) {
-            for (Converter<?> converter : builder.discoverConverters()) {
-                Type type = Converters.getConverterType(converter.getClass());
-                if (type == null) {
-                    throw ConfigMessages.msg.unableToAddConverter(converter);
-                }
-                SmallRyeConfigBuilder.addConverter(type, converter, convertersToBuild);
-            }
-        }
-
-        final ConcurrentHashMap<Type, Converter<?>> converters = new ConcurrentHashMap<>(Converters.ALL_CONVERTERS);
-        for (Entry<Type, SmallRyeConfigBuilder.ConverterWithPriority> entry : convertersToBuild.entrySet()) {
-            converters.put(entry.getKey(), entry.getValue().getConverter());
-        }
-        converters.put(ConfigValue.class, Converters.CONFIG_VALUE_CONVERTER);
-
-        return converters;
+        return builder.isAddDiscoveredConverters()
+                ? Converters.loadConverters(builder.getClassLoader(), builder.getConverters())
+                : Converters.buildConverters(builder.getConverters());
     }
 
     Map<Class<?>, Map<String, Object>> buildMappings(final SmallRyeConfigBuilder builder)
@@ -748,27 +732,11 @@ public class SmallRyeConfig implements Config, Serializable {
 
     @Override
     public <T> Converter<T> requireConverter(final Class<T> asType) {
-        final Converter<T> conv = getConverterOrNull(asType);
-        if (conv == null) {
-            throw ConfigMessages.msg.noRegisteredConverter(asType);
-        }
-        return conv;
+        return Converters.requireConverter(converters, asType);
     }
 
-    @SuppressWarnings("unchecked")
     <T> Converter<T> getConverterOrNull(Class<T> asType) {
-        final Converter<?> exactConverter = converters.get(asType);
-        if (exactConverter != null) {
-            return (Converter<T>) exactConverter;
-        }
-        if (asType.isPrimitive()) {
-            return (Converter<T>) getConverterOrNull(Converters.wrapPrimitiveType(asType));
-        }
-        if (asType.isArray()) {
-            final Converter<?> conv = getConverterOrNull(asType.getComponentType());
-            return conv == null ? null : Converters.newArrayConverter(conv, asType);
-        }
-        return (Converter<T>) converters.computeIfAbsent(asType, clazz -> Converters.Implicit.getConverter((Class<?>) clazz));
+        return Converters.resolveConverter(converters, asType);
     }
 
     @Override

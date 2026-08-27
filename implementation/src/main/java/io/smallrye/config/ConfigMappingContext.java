@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingHandler.Handlers.find;
 import static io.smallrye.config.ConfigValidationException.Problem;
+import static io.smallrye.config.Converters.createCollectionFactory;
 import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
@@ -1066,19 +1067,6 @@ public final class ConfigMappingContext {
             }
 
             return false;
-        }
-
-        public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
-                final Class<C> type) {
-            if (type.equals(List.class)) {
-                return ArrayList::new;
-            }
-
-            if (type.equals(Set.class)) {
-                return HashSet::new;
-            }
-
-            throw new IllegalArgumentException();
         }
 
         private static String quoted(final String key) {

@@ -34,22 +34,30 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Currency;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import jakarta.annotation.Priority;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -186,6 +194,113 @@ public final class Converters {
     }
 
     /**
+     * Build the complete set of converters to use, combining the {@linkplain #ALL_CONVERTERS built-in converters}
+     * with the given configured converters. Configured converters override built-in converters for the same type.
+     * <p>
+     * The returned map is a mutable {@link ConcurrentHashMap}.
+     *
+     * @param additionalConverters the converters to add on top of the built-in converters (must not be {@code null})
+     * @return the mutable map of converters keyed by target type (not {@code null})
+     */
+    static Map<Type, Converter<?>> buildConverters(final Map<Type, ConverterWithPriority> additionalConverters) {
+        Map<Type, Converter<?>> converters = new ConcurrentHashMap<>(ALL_CONVERTERS);
+        converters.put(ConfigValue.class, CONFIG_VALUE_CONVERTER);
+        for (Map.Entry<Type, ConverterWithPriority> entry : additionalConverters.entrySet()) {
+            converters.put(entry.getKey(), entry.getValue().converter());
+        }
+        return converters;
+    }
+
+    /**
+     * Load and build the complete set of converters to use, combining the {@linkplain #ALL_CONVERTERS built-in
+     * converters}, converters discovered via {@link java.util.ServiceLoader} using the given {@link ClassLoader},
+     * and the given configured converters. Discovered and configured converters are resolved to their target
+     * {@link Type} and merged respecting {@link jakarta.annotation.Priority}, so a higher-priority converter
+     * overrides a lower-priority one registered for the same type.
+     * <p>
+     * The returned map is a mutable {@link ConcurrentHashMap}.
+     *
+     * @param classLoader the class loader to use for {@link java.util.ServiceLoader} discovery (must not be
+     *        {@code null})
+     * @param additionalConverters the converters to add on top of the built-in and discovered converters (must not
+     *        be {@code null})
+     * @return the mutable map of converters keyed by target type (not {@code null})
+     * @throws IllegalStateException if a discovered converter type cannot be determined
+     */
+    static Map<Type, Converter<?>> loadConverters(
+            final ClassLoader classLoader,
+            final Map<Type, ConverterWithPriority> additionalConverters) {
+
+        Map<Type, ConverterWithPriority> convertersToBuild = new HashMap<>(additionalConverters);
+        for (Converter<?> converter : ServiceLoader.load(Converter.class, classLoader)) {
+            Type type = getConverterType(converter.getClass());
+            if (type == null) {
+                throw ConfigMessages.msg.unableToAddConverter(converter);
+            }
+            addConverter(type, converter, convertersToBuild);
+        }
+
+        return buildConverters(convertersToBuild);
+    }
+
+    static void addConverter(Type type, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
+        // add the converter only if it has a higher priority than another converter for the same type
+        ConverterWithPriority oldConverter = converters.get(type);
+        ConverterWithPriority newConverter = ConverterWithPriority.of(converter);
+        if (oldConverter == null || newConverter.priority() > oldConverter.priority()) {
+            converters.put(type, newConverter);
+        }
+    }
+
+    static void addConverter(Type type, int priority, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
+        // add the converter only if it has a higher priority than another converter for the same type
+        ConverterWithPriority oldConverter = converters.get(type);
+        if (oldConverter == null || priority > oldConverter.priority()) {
+            converters.put(type, ConverterWithPriority.of(converter, priority));
+        }
+    }
+
+    /**
+     * A {@link Converter} paired with its priority. When multiple converters are registered for the same target
+     * {@link Type}, the one with the highest priority takes precedence. The default priority is {@code 100},
+     * used when no {@link Priority} annotation is present on the converter class.
+     */
+    public static final class ConverterWithPriority {
+        private final Converter<?> converter;
+        private final int priority;
+
+        ConverterWithPriority(Converter<?> converter, int priority) {
+            this.converter = converter;
+            this.priority = priority;
+        }
+
+        public Converter<?> converter() {
+            return converter;
+        }
+
+        public int priority() {
+            return priority;
+        }
+
+        private static int getPriority(Converter<?> converter) {
+            int priority = 100;
+            Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
+            if (priorityAnnotation != null) {
+                priority = priorityAnnotation.value();
+            }
+            return priority;
+        }
+
+        static ConverterWithPriority of(final Converter<?> converter) {
+            return new ConverterWithPriority(converter, getPriority(converter));
+        }
+
+        static ConverterWithPriority of(final Converter<?> converter, final int priority) {
+            return new ConverterWithPriority(converter, priority);
+        }
+    }
+
+    /**
      * Get the type of the converter specified by {@code clazz}. If the given class is not a valid
      * converter, then {@code null} is returned.
      *
@@ -223,6 +338,201 @@ public final class Converters {
     @SuppressWarnings("unchecked")
     public static <T> Converter<T> getImplicitConverter(Class<? extends T> type) {
         return (Converter<T>) ALL_CONVERTERS.getOrDefault(type, Implicit.getConverter(type));
+    }
+
+    /**
+     * Resolve a converter for {@code type} from the given {@code converters} map, following the resolution
+     * order: exact match, primitive unwrap, array component, and implicit.
+     * <p>
+     * Returns {@code null} when no converter can be found.
+     *
+     * @param converters the {@link Converter} map to look up (must not be {@code null})
+     * @param type the type to be produced by the converter (must not be {@code null})
+     * @return an instance of the {@link Converter} for the specified type, or {@code null} if none exists
+     * @param <T> the conversion type
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Converter<T> resolveConverter(final Map<Type, Converter<?>> converters, final Class<T> type) {
+        Converter<?> exactConverter = converters.get(type);
+        if (exactConverter != null) {
+            return (Converter<T>) exactConverter;
+        }
+        if (type.isPrimitive()) {
+            return (Converter<T>) resolveConverter(converters, wrapPrimitiveType(type));
+        }
+        if (type.isArray()) {
+            final Converter<?> conv = resolveConverter(converters, type.getComponentType());
+            return conv == null ? null : newArrayConverter(conv, type);
+        }
+        return Implicit.getConverter(type);
+    }
+
+    /**
+     * Resolve a converter for {@code type} from the given {@code converters} map, throwing if none can be found.
+     * This is a convenience wrapper around {@link #resolveConverter(Map, Class)} for callers that require a
+     * converter to exist.
+     *
+     * @param converters the {@link Converter} map to look up (must not be {@code null})
+     * @param type the type to be produced by the converter (must not be {@code null})
+     * @return an instance of the {@link Converter} for the specified type (not {@code null})
+     * @param <T> the conversion type
+     * @throws IllegalArgumentException if no converter is registered for the given type
+     */
+    public static <T> Converter<T> requireConverter(final Map<Type, Converter<?>> converters, final Class<T> type) {
+        Converter<T> converter = resolveConverter(converters, type);
+        if (converter == null) {
+            throw ConfigMessages.msg.noRegisteredConverter(type);
+        }
+        return converter;
+    }
+
+    /**
+     * Returns the value for the specified {@code value}, converting it with the specified {@link Converter}.
+     * <p>
+     * The value is a single element converted by the {@link Converter} to the converter type. A value of {@code dog}
+     * results in the element {@code dog}, considering the property type as a {@code String}.
+     * <p>
+     * If the value is defined as an empty string ({@code ""}) or the {@link Converter} returns {@code null}, a
+     * {@link java.util.NoSuchElementException} is thrown.
+     *
+     * @param name The configuration property name the value belongs to, used for error reporting
+     * @param value The value to convert
+     * @param converter The {@link Converter} to use to convert the value
+     * @return the converted value as an instance of the converter type
+     * @param <T> the property type
+     * @throws IllegalArgumentException if the value cannot be converted to the specified type
+     * @throws java.util.NoSuchElementException if the value is defined as an empty string, or the converter returns
+     *         {@code null}
+     *
+     * @see Converters#convertOptionalValue(String, String, Converter)
+     * @see Converters#convertValues(String, String, Converter, Class)
+     * @see Converters#convertOptionalValues(String, String, Converter, Class)
+     */
+    public static <T> T convertValue(final String name, final String value, final Converter<T> converter) {
+        T convert = doConvert(name, value, converter);
+        if (convert == null) {
+            if (value.isEmpty()) {
+                throw ConfigMessages.msg.propertyEmptyString(name, converter.getClass().getTypeName());
+            }
+            throw ConfigMessages.msg.converterReturnedNull(name, value, converter.getClass().getTypeName());
+        }
+        return convert;
+    }
+
+    /**
+     * Returns the value for the specified {@code value}, converting it into an {@link Optional} with the specified
+     * {@link Converter}.
+     * <p>
+     * The value is a single element converted by the {@link Converter} to the converter type. A value of {@code dog}
+     * results in an {@code Optional} with the element {@code dog}, considering the property type as a {@code String}.
+     * <p>
+     * If the value is defined as an empty string ({@code ""}) or the {@link Converter} returns {@code null}, an empty
+     * {@link Optional} is returned.
+     *
+     * @param name The configuration property name the value belongs to, used for error reporting
+     * @param value The value to convert
+     * @param converter The {@link Converter} to use to convert the value
+     * @return the converted value as an {@code Optional} instance of the converter type
+     * @param <T> the item type
+     * @throws IllegalArgumentException if the value cannot be converted to the specified type
+     *
+     * @see Converters#convertValue(String, String, Converter)
+     * @see Converters#convertOptionalValues(String, String, Converter, Class)
+     */
+    public static <T> Optional<T> convertOptionalValue(final String name, final String value, final Converter<T> converter) {
+        return doConvert(name, value, newOptionalConverter(converter));
+    }
+
+    /**
+     * Returns the values for the specified {@code value}, converting them into a {@code Collection} with the specified
+     * {@link Converter}.
+     * <p>
+     * The value is a single element that a comma-separated string ({@code ,}) can represent, and split into multiple
+     * elements with the backslash ({@code \}) as the escape character. A value of {@code dog,cat,turtle} results in a
+     * {@code Collection} with the elements {@code dog}, {@code cat}, and {@code turtle}, considering the property type
+     * as a {@code String}.
+     * <p>
+     * If the value is defined as an empty string ({@code ""}) or the {@link Converter} returns {@code null}, a
+     * {@link java.util.NoSuchElementException} is thrown.
+     *
+     * @param name The configuration property name the value belongs to, used for error reporting
+     * @param value The value to convert
+     * @param converter The {@link Converter} to use to convert each element of the value
+     * @param collectionType The {@code Collection} type to return the converted elements, either {@link List} or
+     *        {@link Set}
+     * @return the converted values as a {@code Collection} of instances of the converter type
+     * @param <T> the item type
+     * @param <C> the collection type
+     * @throws IllegalArgumentException if the value cannot be converted to the specified type
+     * @throws java.util.NoSuchElementException if the value is defined as an empty string, or the converter returns
+     *         {@code null}
+     *
+     * @see Converters#convertValue(String, String, Converter)
+     * @see Converters#convertOptionalValues(String, String, Converter, Class)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, C extends Collection<T>> C convertValues(
+            final String name,
+            final String value,
+            final Converter<T> converter,
+            final Class<C> collectionType) {
+        return (C) convertValue(name, value, newCollectionConverter(converter, createCollectionFactory(collectionType)));
+    }
+
+    /**
+     * Returns the values for the specified {@code value}, converting them into an {@link Optional} {@code Collection}
+     * with the specified {@link Converter}.
+     * <p>
+     * The value is a single element that a comma-separated string ({@code ,}) can represent, and split into multiple
+     * elements with the backslash ({@code \}) as the escape character. A value of {@code dog,cat,turtle} results in an
+     * {@code Optional<Collection>} with the elements {@code dog}, {@code cat}, and {@code turtle}, considering the
+     * property type as a {@code String}.
+     * <p>
+     * If the value is defined as an empty string ({@code ""}) or the {@link Converter} returns {@code null}, an empty
+     * {@link Optional} is returned.
+     *
+     * @param name The configuration property name the value belongs to, used for error reporting
+     * @param value The value to convert
+     * @param converter The {@link Converter} to use to convert each element of the value
+     * @param collectionType The {@code Collection} type to return the converted elements, either {@link List} or
+     *        {@link Set}
+     * @return the converted values as an {@code Optional<Collection>} of instances of the converter type
+     * @param <T> the item type
+     * @param <C> the collection type
+     * @throws IllegalArgumentException if the value cannot be converted to the specified type
+     *
+     * @see Converters#convertValue(String, String, Converter)
+     * @see Converters#convertValues(String, String, Converter, Class)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, C extends Collection<T>> Optional<C> convertOptionalValues(
+            final String name,
+            final String value,
+            final Converter<T> converter,
+            final Class<C> collectionType) {
+        Converter<Collection<T>> collectionConverter = newCollectionConverter(converter,
+                createCollectionFactory(collectionType));
+        return (Optional<C>) doConvert(name, value, newOptionalConverter(collectionConverter));
+    }
+
+    private static <T> T doConvert(final String name, final String value, final Converter<T> converter) {
+        try {
+            return converter.convert(value);
+        } catch (IllegalArgumentException e) {
+            throw ConfigMessages.msg.converterException(e, name, value, e.getLocalizedMessage());
+        }
+    }
+
+    static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(final Class<C> type) {
+        if (type.equals(List.class)) {
+            return ArrayList::new;
+        }
+
+        if (type.equals(Set.class)) {
+            return HashSet::new;
+        }
+
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -1271,42 +1581,48 @@ public final class Converters {
     }
 
     static final class Implicit {
+        private static final ClassValue<Converter<?>> CACHE = new ClassValue<>() {
+            @Override
+            protected Converter<?> computeValue(Class<?> type) {
+                if (type.isEnum()) {
+                    return new HyphenateEnumConverter(type);
+                }
 
-        @SuppressWarnings("unchecked")
-        static <T> Converter<T> getConverter(Class<? extends T> clazz) {
-            if (clazz.isEnum()) {
-                return new HyphenateEnumConverter(clazz);
-            }
-
-            // implicit converters required by the specification
-            Converter<T> converter = getConverterFromStaticMethod(clazz, "of", String.class);
-            if (converter == null) {
-                converter = getConverterFromStaticMethod(clazz, "of", CharSequence.class);
+                // implicit converters required by the specification
+                Converter<Object> converter = getConverterFromStaticMethod(type, "of", String.class);
                 if (converter == null) {
-                    converter = getConverterFromStaticMethod(clazz, "valueOf", String.class);
+                    converter = getConverterFromStaticMethod(type, "of", CharSequence.class);
                     if (converter == null) {
-                        converter = getConverterFromStaticMethod(clazz, "valueOf", CharSequence.class);
+                        converter = getConverterFromStaticMethod(type, "valueOf", String.class);
                         if (converter == null) {
-                            converter = getConverterFromStaticMethod(clazz, "parse", String.class);
+                            converter = getConverterFromStaticMethod(type, "valueOf", CharSequence.class);
                             if (converter == null) {
-                                converter = getConverterFromStaticMethod(clazz, "parse", CharSequence.class);
+                                converter = getConverterFromStaticMethod(type, "parse", String.class);
                                 if (converter == null) {
-                                    converter = getConverterFromConstructor(clazz, String.class);
+                                    converter = getConverterFromStaticMethod(type, "parse", CharSequence.class);
                                     if (converter == null) {
-                                        converter = getConverterFromConstructor(clazz, CharSequence.class);
+                                        converter = getConverterFromConstructor(type, String.class);
+                                        if (converter == null) {
+                                            converter = getConverterFromConstructor(type, CharSequence.class);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                return converter;
             }
-            return converter;
+        };
+
+        @SuppressWarnings("unchecked")
+        static <T> Converter<T> getConverter(Class<? extends T> type) {
+            return (Converter<T>) CACHE.get(type);
         }
 
-        private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> clazz, Class<? super String> paramType) {
+        private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> type, Class<? super String> paramType) {
             try {
-                final Constructor<? extends T> declaredConstructor = clazz.getDeclaredConstructor(paramType);
+                final Constructor<? extends T> declaredConstructor = type.getDeclaredConstructor(paramType);
                 if (!isAccessible(declaredConstructor)) {
                     declaredConstructor.setAccessible(true);
                 }
@@ -1316,11 +1632,11 @@ public final class Converters {
             }
         }
 
-        private static <T> Converter<T> getConverterFromStaticMethod(Class<? extends T> clazz, String methodName,
+        private static <T> Converter<T> getConverterFromStaticMethod(Class<? extends T> type, String methodName,
                 Class<? super String> paramType) {
             try {
-                final Method method = clazz.getMethod(methodName, paramType);
-                if (clazz != method.getReturnType()) {
+                final Method method = type.getMethod(methodName, paramType);
+                if (type != method.getReturnType()) {
                     // doesn't meet requirements of the spec
                     return null;
                 }
@@ -1330,7 +1646,7 @@ public final class Converters {
                 if (!isAccessible(method)) {
                     method.setAccessible(true);
                 }
-                return new StaticMethodConverter<>(clazz, method);
+                return new StaticMethodConverter<>(type, method);
             } catch (NoSuchMethodException e) {
                 return null;
             }

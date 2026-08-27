@@ -17,6 +17,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigSourceInterceptorFactory.DEFAULT_PRIORITY;
 import static io.smallrye.config.Converters.STRING_CONVERTER;
+import static io.smallrye.config.Converters.addConverter;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newTrimmingConverter;
 import static io.smallrye.config.ProfileConfigSourceInterceptor.convertProfile;
@@ -55,6 +56,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappings.ConfigClass;
+import io.smallrye.config.Converters.ConverterWithPriority;
 import io.smallrye.config.DefaultValuesConfigSource.Defaults;
 import io.smallrye.config._private.ConfigMessages;
 
@@ -142,14 +144,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         }
 
         return discoveredSources;
-    }
-
-    List<Converter<?>> discoverConverters() {
-        List<Converter<?>> discoveredConverters = new ArrayList<>();
-        for (Converter<?> converter : ServiceLoader.load(Converter.class, classLoader)) {
-            discoveredConverters.add(converter);
-        }
-        return discoveredConverters;
     }
 
     List<InterceptorWithPriority> discoverInterceptors() {
@@ -594,7 +588,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             if (type == null) {
                 throw ConfigMessages.msg.unableToAddConverter(converter);
             }
-            addConverter(type, getPriority(converter), converter, this.converters);
+            addConverter(type, converter, this.converters);
         }
         return this;
     }
@@ -603,28 +597,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     public <T> SmallRyeConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
         addConverter(type, priority, converter, converters);
         return this;
-    }
-
-    static void addConverter(Type type, Converter<?> converter, Map<Type, ConverterWithPriority> converters) {
-        addConverter(type, getPriority(converter), converter, converters);
-    }
-
-    static void addConverter(Type type, int priority, Converter<?> converter,
-            Map<Type, ConverterWithPriority> converters) {
-        // add the converter only if it has a higher priority than another converter for the same type
-        ConverterWithPriority oldConverter = converters.get(type);
-        if (oldConverter == null || priority > oldConverter.priority) {
-            converters.put(type, new ConverterWithPriority(converter, priority));
-        }
-    }
-
-    private static int getPriority(Converter<?> converter) {
-        int priority = 100;
-        Priority priorityAnnotation = converter.getClass().getAnnotation(Priority.class);
-        if (priorityAnnotation != null) {
-            priority = priorityAnnotation.value();
-        }
-        return priority;
     }
 
     public List<ConfigSource> getSources() {
@@ -848,20 +820,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             if (configClass.getHandler().ignoreUnmappedProperties()) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
-        }
-    }
-
-    static class ConverterWithPriority {
-        private final Converter<?> converter;
-        private final int priority;
-
-        private ConverterWithPriority(Converter<?> converter, int priority) {
-            this.converter = converter;
-            this.priority = priority;
-        }
-
-        Converter<?> getConverter() {
-            return converter;
         }
     }
 
