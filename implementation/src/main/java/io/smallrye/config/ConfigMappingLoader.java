@@ -5,12 +5,15 @@ import static java.lang.invoke.MethodType.methodType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
@@ -286,20 +289,20 @@ public final class ConfigMappingLoader {
         }
 
         @SuppressWarnings("unchecked")
-        <T> T newInstance(final Map<String, Object> values) {
+        <T> T newInstance(final Map<String, Object> values, final Map<Type, Converter<?>> converters) {
             MethodHandle ctor = this.ctorMapValues;
             if (ctor == null) {
                 try {
                     this.ctorMapValues = ctor = LOOKUP.findConstructor(implementation,
-                            methodType(void.class, Map.class))
-                            .asType(methodType(Object.class, Map.class));
+                            methodType(void.class, Map.class, Map.class))
+                            .asType(methodType(Object.class, Map.class, Map.class));
                 } catch (NoSuchMethodException e) {
                     throw new NoSuchMethodError(e.getMessage());
                 } catch (IllegalAccessException e) {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return (T) invoke(ctor, values);
+            return (T) invoke(ctor, values, converters);
         }
 
         @SuppressWarnings("unchecked")

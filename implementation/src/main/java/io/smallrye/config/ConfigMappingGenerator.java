@@ -122,6 +122,8 @@ public class ConfigMappingGenerator {
 
     private static final int V_THIS = 0;
     private static final int V_MAPPING_CONTEXT = 1;
+    // Slot of the converters Map parameter in the ConfigInstanceBuilder map constructor (slot 1 holds the values Map)
+    private static final int V_CONVERTERS = 2;
 
     /**
      * A {@link ClassWriter} that resolves types through the {@link ClassLoader} of the mapping being generated,
@@ -199,9 +201,10 @@ public class ConfigMappingGenerator {
         ctor.visitEnd();
         ctor.visitMaxs(0, 0);
 
-        // Map Constructor - used by ConfigInstanceBuilder
+        // Map Constructor - used by ConfigInstanceBuilder. The first Map holds the property values, the second holds the
+        // resolved converters (keyed by target Type) that the ConfigInstanceBuilder discovered for the interface loader.
         ConfigInstanceMethodVisitor mapCtor = new ConfigInstanceMethodVisitor(
-                writer.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAP + ";)V", null, null));
+                writer.visitMethod(ACC_PUBLIC, "<init>", "(L" + I_MAP + ";L" + I_MAP + ";)V", null, null));
         mapCtor.visitVarInsn(ALOAD, V_THIS);
         mapCtor.visitMethodInsn(INVOKESPECIAL, I_OBJECT, "<init>", "()V", false);
         for (Property property : mapping.getProperties()) {
@@ -729,12 +732,12 @@ public class ConfigMappingGenerator {
     private static void generateProperty(final ConfigInstanceMethodVisitor mv, final Property property) {
         if (property.isPrimitive()) {
             PrimitiveProperty primitiveProperty = property.asPrimitive();
-            Label hasValue = new Label();
-            Label store = new Label();
-            mv.visitInsn(DUP);
-            mv.visitJumpInsn(IFNONNULL, hasValue);
-            mv.visitInsn(POP);
             if (property.hasDefaultValue() && property.getDefaultValue() != null) {
+                Label hasValue = new Label();
+                Label store = new Label();
+                mv.visitInsn(DUP);
+                mv.visitJumpInsn(IFNONNULL, hasValue);
+                mv.visitInsn(POP);
                 mv.visitPropertyName(property);
                 mv.visitDefaultValue(property);
                 mv.visitConverter(primitiveProperty);
@@ -743,25 +746,22 @@ public class ConfigMappingGenerator {
                 mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitiveProperty.getBoxType()),
                         primitiveProperty.getUnboxMethodName(),
                         primitiveProperty.getUnboxMethodDescriptor(), false);
+                mv.visitJumpInsn(GOTO, store);
+                mv.visitLabel(hasValue);
+                mv.visitTypeInsn(CHECKCAST, getInternalName(primitiveProperty.getBoxType()));
+                mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitiveProperty.getBoxType()),
+                        primitiveProperty.getUnboxMethodName(),
+                        primitiveProperty.getUnboxMethodDescriptor(), false);
+                mv.visitLabel(store);
             } else {
-                Class<?> primitiveType = primitiveProperty.getPrimitiveType();
-                if (primitiveType == long.class) {
-                    mv.visitInsn(Opcodes.LCONST_0);
-                } else if (primitiveType == double.class) {
-                    mv.visitInsn(Opcodes.DCONST_0);
-                } else if (primitiveType == float.class) {
-                    mv.visitInsn(Opcodes.FCONST_0);
-                } else {
-                    mv.visitInsn(ICONST_0);
-                }
+                mv.visitPropertyName(property);
+                mv.visitInsn(SWAP);
+                mv.visitMethod(ConfigInstanceInvocation.requireValue);
+                mv.visitTypeInsn(CHECKCAST, getInternalName(primitiveProperty.getBoxType()));
+                mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitiveProperty.getBoxType()),
+                        primitiveProperty.getUnboxMethodName(),
+                        primitiveProperty.getUnboxMethodDescriptor(), false);
             }
-            mv.visitJumpInsn(GOTO, store);
-            mv.visitLabel(hasValue);
-            mv.visitTypeInsn(CHECKCAST, getInternalName(primitiveProperty.getBoxType()));
-            mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(primitiveProperty.getBoxType()),
-                    primitiveProperty.getUnboxMethodName(),
-                    primitiveProperty.getUnboxMethodDescriptor(), false);
-            mv.visitLabel(store);
         } else if (property.isLeaf() && !property.isOptional()) {
             LeafProperty leafProperty = property.asLeaf();
             if (property.hasDefaultValue() && property.getDefaultValue() != null) {
@@ -889,16 +889,16 @@ public class ConfigMappingGenerator {
             mv.visitCast(property);
         } else if (property.isGroup()) {
             Label hasValue = new Label();
-            Label end = new Label();
+            Label store = new Label();
             mv.visitInsn(DUP);
             mv.visitJumpInsn(IFNONNULL, hasValue);
             mv.visitInsn(POP);
             mv.visitGroup(property.asGroup());
             mv.visitCast(property);
-            mv.visitJumpInsn(GOTO, end);
+            mv.visitJumpInsn(GOTO, store);
             mv.visitLabel(hasValue);
             mv.visitCast(property);
-            mv.visitLabel(end);
+            mv.visitLabel(store);
         } else if (property.isOptional() && property.asOptional().getNestedProperty().isGroup()) {
             Label hasValue = new Label();
             mv.visitInsn(DUP);
@@ -1706,6 +1706,7 @@ public class ConfigMappingGenerator {
                 this.visitInsn(DUP);
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
+                this.visitVarInsn(ALOAD, V_CONVERTERS);
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getBoxType())));
                 this.visitMethod(ConfigInstanceInvocation.requireConverter);
             }
@@ -1718,6 +1719,7 @@ public class ConfigMappingGenerator {
                 this.visitInsn(DUP);
                 this.visitMethodInsn(INVOKESPECIAL, convertWith, "<init>", "()V", false);
             } else {
+                this.visitVarInsn(ALOAD, V_CONVERTERS);
                 this.visitLdcInsn(Type.getType(getDescriptor(property.getValueRawType())));
                 this.visitMethod(ConfigInstanceInvocation.requireConverter);
             }
@@ -1756,7 +1758,7 @@ public class ConfigMappingGenerator {
         convertValues(INVOKESTATIC, I_CONVERTERS, "(" + D_STRING + D_STRING + D_CONVERTER + D_CLASS + ")" + D_COLLECTION),
         convertOptionalValues(INVOKESTATIC, I_CONVERTERS,
                 "(" + D_STRING + D_STRING + D_CONVERTER + D_CLASS + ")" + D_OPTIONAL),
-        requireConverter(INVOKESTATIC, I_CONFIG_INSTANCE_BUILDER, "(" + D_CLASS + ")" + D_CONVERTER, true),
+        requireConverter(INVOKESTATIC, I_CONVERTERS, "(" + D_MAP + D_CLASS + ")" + D_CONVERTER),
         requireValue(INVOKESTATIC, I_OBJECT_CREATOR, "(" + D_STRING + D_OBJECT + ")" + D_OBJECT),
         ;
 

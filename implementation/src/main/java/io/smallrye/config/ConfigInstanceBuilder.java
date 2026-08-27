@@ -44,11 +44,11 @@ import org.eclipse.microprofile.config.spi.Converter;
     </code>
  * </pre>
  *
- * Configuration interface member types are automatically converted with a {@link Converter}. Global converters are
- * registered either by being discovered via the {@link java.util.ServiceLoader} mechanism, and can be
- * registered by providing a {@code META-INF/services/org.eclipse.microprofile.config.spi.Converter} file, which
- * contains the fully qualified class name of the custom {@code Converter} implementation, or explicitly by calling
- * {@link ConfigInstanceBuilder#registerConverter(Class, Converter)}.
+ * Configuration interface member types are automatically converted with a {@link Converter}. Converters are discovered
+ * via the {@link java.util.ServiceLoader} mechanism, registered by providing a
+ * {@code META-INF/services/org.eclipse.microprofile.config.spi.Converter} file that contains the fully qualified class
+ * name of the custom {@code Converter} implementation. Converters are resolved using the {@link ClassLoader} of the
+ * configuration interface.
  * <p>
  * Converters follow the same rules applied to {@link io.smallrye.config.SmallRyeConfig}, including overriding the
  * converter to use with {@link io.smallrye.config.WithConverter}.
@@ -205,30 +205,6 @@ public interface ConfigInstanceBuilder<I> {
      */
     static <I> ConfigInstanceBuilder<I> forInterface(Class<I> interfaceClass) throws IllegalArgumentException {
         return ConfigInstanceBuilderImpl.forInterface(interfaceClass);
-    }
-
-    /**
-     * Globally registers a {@link org.eclipse.microprofile.config.spi.Converter} to be used by the
-     * {@link io.smallrye.config.ConfigInstanceBuilder} to convert configuration interface member types.
-     *
-     * @param type the class of the type to convert (must not be {@code null})
-     * @param converter the converter instance that can convert to the type (must not be {@code null})
-     * @param <T> the type to convert
-     */
-    static <T> void registerConverter(Class<T> type, Converter<T> converter) {
-        ConfigInstanceBuilderImpl.CONVERTERS.put(type, converter);
-    }
-
-    /**
-     * Resolve a {@link org.eclipse.microprofile.config.spi.Converter} for {@code type}, throwing if none can be found.
-     *
-     * @param type the type to be produced by the converter (must not be {@code null})
-     * @return an instance of the {@link Converter} for the specified type (not {@code null})
-     * @param <T> the type to convert
-     * @throws IllegalArgumentException if no converter is registered for the given type
-     */
-    static <T> Converter<T> requireConverter(final Class<T> type) {
-        return Converters.requireConverter(ConfigInstanceBuilderImpl.CONVERTERS, type);
     }
 
     /**

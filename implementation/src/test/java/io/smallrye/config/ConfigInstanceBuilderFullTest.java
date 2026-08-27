@@ -28,25 +28,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.Converter;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.AuthRuntimeConfig.FormAuthConfig.CookieSameSite;
 import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.AuthRuntimeConfig.InclusiveMode;
-import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.CharsetConverter;
-import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.DurationConverter;
 import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.MemorySize;
 import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.MemorySizeConverter;
 import io.smallrye.config.ConfigInstanceBuilderFullTest.HttpConfig.ProxyConfig.ForwardedPrecedence;
 
 class ConfigInstanceBuilderFullTest {
-    @BeforeAll
-    static void beforeAll() {
-        ConfigInstanceBuilder.registerConverter(Duration.class, new DurationConverter());
-        ConfigInstanceBuilder.registerConverter(MemorySize.class, new MemorySizeConverter());
-        ConfigInstanceBuilder.registerConverter(Charset.class, new CharsetConverter());
-    }
-
     @Test
     void emptyWithDefaults() {
         HttpConfig httpConfig = ConfigInstanceBuilder.forInterface(HttpConfig.class)
@@ -282,9 +272,11 @@ class ConfigInstanceBuilderFullTest {
         ServerLimitsConfig limits();
 
         @WithDefault("30M")
+        @WithConverter(DurationConverter.class)
         Duration idleTimeout();
 
         @WithDefault("60s")
+        @WithConverter(DurationConverter.class)
         Duration readTimeout();
 
         BodyConfig body();
@@ -419,9 +411,11 @@ class ConfigInstanceBuilderFullTest {
                 String locationCookie();
 
                 @WithDefault("PT30M")
+                @WithConverter(DurationConverter.class)
                 Duration timeout();
 
                 @WithDefault("PT1M")
+                @WithConverter(DurationConverter.class)
                 Duration newCookieInterval();
 
                 @WithDefault("quarkus-credential")
@@ -438,7 +432,7 @@ class ConfigInstanceBuilderFullTest {
                 @WithDefault("strict")
                 CookieSameSite cookieSameSite();
 
-                Optional<Duration> cookieMaxAge();
+                Optional<@WithConverter(DurationConverter.class) Duration> cookieMaxAge();
 
                 @WithDefault("/j_security_check")
                 String postLocation();
@@ -462,7 +456,7 @@ class ConfigInstanceBuilderFullTest {
 
             Optional<List<String>> exposedHeaders();
 
-            Optional<Duration> accessControlMaxAge();
+            Optional<@WithConverter(DurationConverter.class) Duration> accessControlMaxAge();
 
             Optional<Boolean> accessControlAllowCredentials();
         }
@@ -517,7 +511,7 @@ class ConfigInstanceBuilderFullTest {
 
                 Optional<String> trustStoreCertAlias();
 
-                Optional<Duration> reloadPeriod();
+                Optional<@WithConverter(DurationConverter.class) Duration> reloadPeriod();
             }
         }
 
@@ -535,38 +529,45 @@ class ConfigInstanceBuilderFullTest {
             boolean cachingEnabled();
 
             @WithDefault("30S")
+            @WithConverter(DurationConverter.class)
             Duration cacheEntryTimeout();
 
             @WithDefault("24H")
+            @WithConverter(DurationConverter.class)
             Duration maxAge();
 
             @WithDefault("10000")
             int maxCacheSize();
 
             @WithDefault("UTF-8")
+            @WithConverter(CharsetConverter.class)
             Charset contentEncoding();
         }
 
         interface ServerLimitsConfig {
             @WithDefault("20K")
+            @WithConverter(MemorySizeConverter.class)
             MemorySize maxHeaderSize();
 
             @WithDefault("10240K")
-            Optional<MemorySize> maxBodySize();
+            Optional<@WithConverter(MemorySizeConverter.class) MemorySize> maxBodySize();
 
             @WithDefault("8192")
+            @WithConverter(MemorySizeConverter.class)
             MemorySize maxChunkSize();
 
             @WithDefault("4096")
             int maxInitialLineLength();
 
             @WithDefault("2048")
+            @WithConverter(MemorySizeConverter.class)
             MemorySize maxFormAttributeSize();
 
             @WithDefault("256")
             int maxFormFields();
 
             @WithDefault("1K")
+            @WithConverter(MemorySizeConverter.class)
             MemorySize maxFormBufferedBytes();
 
             @WithDefault("1000")
@@ -584,7 +585,7 @@ class ConfigInstanceBuilderFullTest {
 
             OptionalInt rstFloodMaxRstFramePerWindow();
 
-            Optional<Duration> rstFloodWindowDuration();
+            Optional<@WithConverter(DurationConverter.class) Duration> rstFloodWindowDuration();
         }
 
         interface BodyConfig {
@@ -644,15 +645,15 @@ class ConfigInstanceBuilderFullTest {
             @WithDefault("false")
             boolean enabled();
 
-            Optional<MemorySize> inboundGlobalBandwidth();
+            Optional<@WithConverter(MemorySizeConverter.class) MemorySize> inboundGlobalBandwidth();
 
-            Optional<MemorySize> outboundGlobalBandwidth();
+            Optional<@WithConverter(MemorySizeConverter.class) MemorySize> outboundGlobalBandwidth();
 
-            Optional<Duration> maxDelay();
+            Optional<@WithConverter(DurationConverter.class) Duration> maxDelay();
 
-            Optional<Duration> checkInterval();
+            Optional<@WithConverter(DurationConverter.class) Duration> checkInterval();
 
-            Optional<MemorySize> peakOutboundGlobalBandwidth();
+            Optional<@WithConverter(MemorySizeConverter.class) MemorySize> peakOutboundGlobalBandwidth();
         }
 
         interface SameSiteCookieConfig {
