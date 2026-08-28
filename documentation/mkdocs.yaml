@@ -37,8 +37,6 @@ nav:
       - 'Fallback': extensions/fallback.md
       - 'Relocate': extensions/relocate.md
       - 'Logging': extensions/logging.md
-      - 'Events': extensions/config-events.md
-      - 'Config Source Injection': extensions/config-source-injection.md
 
 plugins:
   - search
