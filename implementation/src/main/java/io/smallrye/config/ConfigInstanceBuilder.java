@@ -38,7 +38,7 @@ import org.eclipse.microprofile.config.spi.Converter;
     builder.with(MyProgramConfig::repeatCount, 42);
 
     MyProgramConfig config = builder.build();
-    for (int i = 0; i < config.repeatCount(); i ++) {
+    for (int i = 0; i &lt; config.repeatCount(); i ++) {
         System.out.println(config.message());
     }
     </code>
