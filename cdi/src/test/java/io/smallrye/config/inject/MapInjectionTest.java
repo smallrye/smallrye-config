@@ -55,6 +55,14 @@ public class MapInjectionTest {
         assertEquals("value", mapBean.getDefaults().get("default"));
     }
 
+    @Test
+    void keysOverInline() {
+        Map<String, String> keysOverInline = mapBean.getKeysOverInline();
+        assertEquals(1, keysOverInline.size());
+        assertEquals("value", keysOverInline.get("key"));
+        assertFalse(keysOverInline.containsKey("raw"));
+    }
+
     @ApplicationScoped
     static class MapBean {
         @Inject
@@ -72,6 +80,9 @@ public class MapInjectionTest {
         @Inject
         @ConfigProperty(name = "optionals.defaults", defaultValue = "default=value")
         Optional<Map<String, String>> optionalDefaults;
+        @Inject
+        @ConfigProperty(name = "keys-over-inline")
+        Map<String, String> keysOverInline;
 
         Map<String, String> getMap() {
             return map;
@@ -92,6 +103,10 @@ public class MapInjectionTest {
         Optional<Map<String, String>> getOptionalDefaults() {
             return optionalDefaults;
         }
+
+        Map<String, String> getKeysOverInline() {
+            return keysOverInline;
+        }
     }
 
     @BeforeAll
@@ -99,6 +114,7 @@ public class MapInjectionTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withSources(config("map.key", "value", "map.key.nested", "value", "map.\"key.quoted\"", "value"))
                 .withSources(config("converted.key", "value"))
+                .withSources(config("keys-over-inline", "raw=value", "keys-over-inline.key", "value"))
                 .build();
         ConfigProviderResolver.instance().registerConfig(config, Thread.currentThread().getContextClassLoader());
     }

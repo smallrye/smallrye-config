@@ -1,10 +1,10 @@
 package io.smallrye.config.inject;
 
+import static io.smallrye.config.Converters.createCollectionFactory;
 import static io.smallrye.config.Converters.newCollectionConverter;
 import static io.smallrye.config.Converters.newMapConverter;
 import static io.smallrye.config.Converters.newOptionalConverter;
 
-import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -35,8 +34,6 @@ import org.eclipse.microprofile.config.spi.Converter;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SecretKeys;
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.common.AbstractConverter;
-import io.smallrye.config.common.AbstractDelegatingConverter;
 
 /**
  * Actual implementations for producer method in CDI producer {@link ConfigProducer}.
@@ -63,8 +60,7 @@ public final class ConfigProducerUtil {
 
     private static Type getType(InjectionPoint injectionPoint) {
         Type type = injectionPoint.getType();
-        if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType().equals(Provider.class)
                     || parameterizedType.getRawType().equals(Instance.class)) {
                 return parameterizedType.getActualTypeArguments()[0];
@@ -89,68 +85,84 @@ public final class ConfigProducerUtil {
         }
 
         SmallRyeConfig smallRyeConfig = config.unwrap(SmallRyeConfig.class);
-        ConfigValue configValue = getConfigValue(name, smallRyeConfig);
-        ConfigValue configValueWithDefault = configValue.withValue(resolveDefault(configValue.getValue(), defaultValue));
+        // Injected values are allowed to read secret keys, so the whole resolution runs unlocked.
+        return SecretKeys.doUnlocked(() -> resolveValue(name, type, defaultValue, smallRyeConfig));
+    }
+
+    private static <T> T resolveValue(final String name, final Type type, final String defaultValue,
+            final SmallRyeConfig config) {
+        if (isType(type, Supplier.class)) {
+            return resolveValue(name, ((ParameterizedType) type).getActualTypeArguments()[0], defaultValue, config);
+        }
 
         if (hasCollection(type)) {
-            return convertValues(configValueWithDefault, type, smallRyeConfig);
+            return convertCollection(name, type, defaultValue, config);
         } else if (hasMap(type)) {
-            return convertMapValues(configValueWithDefault, type, smallRyeConfig);
+            return convertMap(name, type, defaultValue, config);
         }
 
-        return smallRyeConfig.convertValue(configValueWithDefault, resolveConverter(type, smallRyeConfig));
+        ConfigValue configValue = config.getConfigValue(name);
+        configValue = configValue.withValue(resolveDefault(configValue.getValue(), defaultValue));
+        return config.convertValue(configValue, resolveConverter(type, config));
     }
 
-    private static <T> T convertValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
-        List<String> indexedProperties = config.getIndexedProperties(configValue.getName());
-        if (indexedProperties.isEmpty()) {
-            return config.convertValue(configValue, resolveConverter(type, config));
+    @SuppressWarnings("unchecked")
+    private static <T> T convertCollection(final String name, final Type type, final String defaultValue,
+            final SmallRyeConfig config) {
+        boolean optional = isType(type, Optional.class);
+        ParameterizedType collectionType = (ParameterizedType) (optional
+                ? ((ParameterizedType) type).getActualTypeArguments()[0]
+                : type);
+
+        ConfigValue configValue = config.getConfigValue(name);
+        if (defaultValue != null && configValue.getValue() == null && config.getIndexedProperties(name).isEmpty()) {
+            return config.convertValue(configValue.withValue(defaultValue), resolveConverter(type, config));
         }
 
-        // Check ordinality of indexed
-        int indexedOrdinality = Integer.MIN_VALUE;
-        List<ConfigValue> indexedValues = new ArrayList<>(indexedProperties.size());
-        for (String indexedProperty : indexedProperties) {
-            ConfigValue indexedValue = getConfigValue(indexedProperty, config);
-            if (indexedValue.getConfigSourceOrdinal() >= indexedOrdinality) {
-                indexedOrdinality = indexedValue.getConfigSourceOrdinal();
-            }
-            indexedValues.add(indexedValue);
-        }
-
-        BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter = (itemConverter,
-                collectionFactory) -> {
-            Collection<T> collection = collectionFactory.apply(indexedValues.size());
-            for (ConfigValue indexedValue : indexedValues) {
-                collection.add(config.convertValue(indexedValue, itemConverter));
-            }
-            return collection;
-        };
-
-        // Use indexed if comma separated empty or higher in ordinality
-        if (configValue.getValue() == null || indexedOrdinality >= configValue.getConfigSourceOrdinal()) {
-            return resolveConverterForIndexed(type, config, indexedConverter).convert(" ");
-        } else {
-            return config.convertValue(configValue, resolveConverter(type, config));
-        }
+        Converter<Object> itemConverter = resolveConverter(collectionType.getActualTypeArguments()[0], config);
+        IntFunction<? extends Collection<Object>> collectionFactory = createCollectionFactory(rawTypeOf(collectionType));
+        return optional
+                ? (T) config.getOptionalValues(name, itemConverter, collectionFactory)
+                : (T) config.getValues(name, itemConverter, collectionFactory);
     }
 
-    private static <T> T convertMapValues(ConfigValue configValue, Type type, SmallRyeConfig config) {
-        Map<String, String> mapKeys = config.getMapKeys(configValue.getName());
-        if (configValue.getRawValue() != null || mapKeys.isEmpty()) {
-            return config.convertValue(configValue, resolveConverter(type, config));
+    @SuppressWarnings("unchecked")
+    private static <T> T convertMap(final String name, final Type type, final String defaultValue,
+            final SmallRyeConfig config) {
+        boolean optional = isType(type, Optional.class);
+        ParameterizedType mapType = (ParameterizedType) (optional ? ((ParameterizedType) type).getActualTypeArguments()[0]
+                : type);
+        Type valueType = mapType.getActualTypeArguments()[1];
+
+        if (isType(valueType, List.class) || isType(valueType, Set.class)) {
+            ConfigValue configValue = config.getConfigValue(name);
+            if (defaultValue != null && configValue.getValue() == null && config.getMapIndexedKeys(name).isEmpty()) {
+                return config.convertValue(configValue.withValue(defaultValue), resolveConverter(type, config));
+            }
+
+            Converter<Object> keyConverter = resolveConverter(mapType.getActualTypeArguments()[0], config);
+            ParameterizedType collectionType = (ParameterizedType) valueType;
+            Converter<Object> valueConverter = resolveConverter(collectionType.getActualTypeArguments()[0], config);
+            IntFunction<? extends Collection<Object>> collectionFactory = createCollectionFactory(rawTypeOf(collectionType));
+            return optional
+                    ? (T) config.getOptionalValues(name, keyConverter, valueConverter, HashMap::new, collectionFactory)
+                    : (T) config.getValues(name, keyConverter, valueConverter, HashMap::new, collectionFactory);
         }
 
-        BiFunction<Converter<?>, Converter<?>, Map<?, ?>> mapConverter = (keyConverter, valueConverter) -> {
-            Map<Object, Object> map = new HashMap<>(mapKeys.size());
-            for (Map.Entry<String, String> entry : mapKeys.entrySet()) {
-                map.put(keyConverter.convert(entry.getKey()),
-                        config.convertValue(getConfigValue(entry.getValue(), config), valueConverter));
-            }
-            return map;
-        };
+        ConfigValue configValue = config.getConfigValue(name);
+        if (defaultValue != null && configValue.getValue() == null && config.getMapKeys(name).isEmpty()) {
+            return config.convertValue(configValue.withValue(defaultValue), resolveConverter(type, config));
+        }
 
-        return ConfigProducerUtil.<T> resolveConverterForMap(type, config, mapConverter).convert(" ");
+        Converter<Object> keyConverter = resolveConverter(mapType.getActualTypeArguments()[0], config);
+        Converter<Object> valueConverter = resolveConverter(valueType, config);
+        return optional
+                ? (T) config.getOptionalValues(name, keyConverter, valueConverter, HashMap::new)
+                : (T) config.getValues(name, keyConverter, valueConverter, HashMap::new);
+    }
+
+    private static boolean isType(final Type type, final Class<?> rawType) {
+        return type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(rawType);
     }
 
     static ConfigValue getConfigValue(InjectionPoint injectionPoint, SmallRyeConfig config) {
@@ -178,8 +190,7 @@ public final class ConfigProducerUtil {
     @SuppressWarnings("unchecked")
     private static <T> Converter<T> resolveConverter(final Type type, final SmallRyeConfig config) {
         Class<T> rawType = rawTypeOf(type);
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType paramType) {
             Type[] typeArgs = paramType.getActualTypeArguments();
             if (rawType == List.class) {
                 return (Converter<T>) newCollectionConverter(resolveConverter(typeArgs[0], config), ArrayList::new);
@@ -196,64 +207,6 @@ public final class ConfigProducerUtil {
         }
         // just try the raw type
         return config.getConverter(rawType).orElseThrow(() -> InjectionMessages.msg.noRegisteredConverter(rawType));
-    }
-
-    /**
-     * We need to handle indexed properties in a special way, since a Collection may be wrapped in other converters.
-     * The issue is that in the original code the value was retrieved by calling the first converter that will delegate
-     * to all the wrapped types until it finally gets the result. For indexed properties, because it requires
-     * additional key lookups, a special converter is added to perform the work. This is mostly a workaround, since
-     * converters do not have the proper API, and probably should not have to handle this type of logic.
-     *
-     * @see IndexedCollectionConverter
-     */
-    @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverterForIndexed(
-            final Type type,
-            final SmallRyeConfig config,
-            final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter) {
-
-        Class<T> rawType = rawTypeOf(type);
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
-            Type[] typeArgs = paramType.getActualTypeArguments();
-            if (rawType == List.class) {
-                return (Converter<T>) new IndexedCollectionConverter<>(resolveConverter(typeArgs[0], config), ArrayList::new,
-                        indexedConverter);
-            } else if (rawType == Set.class) {
-                return (Converter<T>) new IndexedCollectionConverter<>(resolveConverter(typeArgs[0], config), HashSet::new,
-                        indexedConverter);
-            } else if (rawType == Optional.class) {
-                return (Converter<T>) newOptionalConverter(resolveConverterForIndexed(typeArgs[0], config, indexedConverter));
-            } else if (rawType == Supplier.class) {
-                return resolveConverterForIndexed(typeArgs[0], config, indexedConverter);
-            }
-        }
-
-        throw new IllegalArgumentException();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> Converter<T> resolveConverterForMap(
-            final Type type,
-            final SmallRyeConfig config,
-            final BiFunction<Converter<?>, Converter<?>, Map<?, ?>> mapConverter) {
-
-        Class<T> rawType = rawTypeOf(type);
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
-            Type[] typeArgs = paramType.getActualTypeArguments();
-            if (rawType == Map.class) {
-                return (Converter<T>) new MapKeyConverter<>(resolveConverter(typeArgs[0], config),
-                        resolveConverter(typeArgs[1], config), mapConverter);
-            } else if (rawType == Optional.class) {
-                return (Converter<T>) newOptionalConverter(resolveConverterForMap(typeArgs[0], config, mapConverter));
-            } else if (rawType == Supplier.class) {
-                return resolveConverterForMap(typeArgs[0], config, mapConverter);
-            }
-        }
-
-        throw new IllegalArgumentException();
     }
 
     @SuppressWarnings("unchecked")
@@ -281,8 +234,7 @@ public final class ConfigProducerUtil {
 
     private static <T> boolean hasCollection(final Type type) {
         Class<T> rawType = rawTypeOf(type);
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType paramType) {
             Type[] typeArgs = paramType.getActualTypeArguments();
             if (rawType == List.class) {
                 return true;
@@ -333,8 +285,7 @@ public final class ConfigProducerUtil {
         if (!key.trim().isEmpty()) {
             return key;
         }
-        if (ip.getAnnotated() instanceof AnnotatedMember) {
-            AnnotatedMember<?> member = (AnnotatedMember<?>) ip.getAnnotated();
+        if (ip.getAnnotated() instanceof AnnotatedMember<?> member) {
             AnnotatedType<?> declaringType = member.getDeclaringType();
             if (declaringType != null) {
                 String[] parts = declaringType.getJavaClass().getCanonicalName().split("\\.");
@@ -347,52 +298,5 @@ public final class ConfigProducerUtil {
             }
         }
         throw InjectionMessages.msg.noConfigPropertyDefaultName(ip);
-    }
-
-    static final class IndexedCollectionConverter<T, C extends Collection<T>> extends AbstractDelegatingConverter<T, C> {
-        @Serial
-        private static final long serialVersionUID = 5186940408317652618L;
-
-        private final IntFunction<Collection<T>> collectionFactory;
-        private final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter;
-
-        public IndexedCollectionConverter(
-                final Converter<T> resolveConverter,
-                final IntFunction<Collection<T>> collectionFactory,
-                final BiFunction<Converter<T>, IntFunction<Collection<T>>, Collection<T>> indexedConverter) {
-            super(resolveConverter);
-
-            this.collectionFactory = collectionFactory;
-            this.indexedConverter = indexedConverter;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public C convert(final String value) throws IllegalArgumentException, NullPointerException {
-            return (C) indexedConverter.apply((Converter<T>) getDelegate(), collectionFactory);
-        }
-    }
-
-    static final class MapKeyConverter<K, V> extends AbstractConverter<Map<? extends K, ? extends V>> {
-        @Serial
-        private static final long serialVersionUID = -2920578756435265533L;
-
-        private final Converter<? extends K> keyConverter;
-        private final Converter<? extends V> valueConverter;
-        private final BiFunction<Converter<? extends K>, Converter<? extends V>, Map<? extends K, ? extends V>> mapConverter;
-
-        public MapKeyConverter(
-                final Converter<? extends K> keyConverter,
-                final Converter<? extends V> valueConverter,
-                final BiFunction<Converter<? extends K>, Converter<? extends V>, Map<? extends K, ? extends V>> mapConverter) {
-            this.keyConverter = keyConverter;
-            this.valueConverter = valueConverter;
-            this.mapConverter = mapConverter;
-        }
-
-        @Override
-        public Map<? extends K, ? extends V> convert(final String value) throws IllegalArgumentException, NullPointerException {
-            return mapConverter.apply(keyConverter, valueConverter);
-        }
     }
 }
