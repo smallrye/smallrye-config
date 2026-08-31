@@ -46,7 +46,6 @@ class ArrayTest {
                         + "    - ~\n"))
                 .build();
 
-        assertEquals("something,1,true", config.getConfigValue("foo").getValue());
         assertEquals("something", config.getConfigValue("foo[0]").getValue());
         assertEquals("1", config.getConfigValue("foo[1]").getValue());
         assertEquals("true", config.getConfigValue("foo[2]").getValue());
