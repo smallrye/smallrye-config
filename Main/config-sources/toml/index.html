@@ -8,11 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/extensions/logging/">
+        <link rel="canonical" href="https://smallrye.io/smallrye-config/Main/config-sources/toml/">
       
       
-        <link rel="prev" href="../relocate/">
+        <link rel="prev" href="../yaml/">
       
+      
+        <link rel="next" href="../json/">
       
       
         
@@ -23,7 +25,7 @@
     
     
       
-        <title>Logging - SmallRye Config</title>
+        <title>TOML - SmallRye Config</title>
       
     
     
@@ -76,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#loggingconfigsourceinterceptor" class="md-skip">
+        <a href="#toml-config-source" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Logging
+              TOML
             
           </span>
         </div>
@@ -259,11 +261,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../config-sources/custom/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../custom/" class="md-tabs__link">
           
   
   
@@ -303,13 +307,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../interceptors/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../extensions/interceptors/" class="md-tabs__link">
           
   
   
@@ -825,8 +827,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -854,19 +858,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -884,7 +891,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -902,7 +909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/custom/" class="md-nav__link">
+      <a href="../custom/" class="md-nav__link">
         
   
   
@@ -930,7 +937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/factories/" class="md-nav__link">
+      <a href="../factories/" class="md-nav__link">
         
   
   
@@ -958,7 +965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/locations/" class="md-nav__link">
+      <a href="../locations/" class="md-nav__link">
         
   
   
@@ -986,7 +993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/yaml/" class="md-nav__link">
+      <a href="../yaml/" class="md-nav__link">
         
   
   
@@ -1011,10 +1018,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../config-sources/toml/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1030,6 +1046,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1042,7 +1059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/json/" class="md-nav__link">
+      <a href="../json/" class="md-nav__link">
         
   
   
@@ -1070,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/filesystem/" class="md-nav__link">
+      <a href="../filesystem/" class="md-nav__link">
         
   
   
@@ -1098,7 +1115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/zookeeper/" class="md-nav__link">
+      <a href="../zookeeper/" class="md-nav__link">
         
   
   
@@ -1126,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/hocon/" class="md-nav__link">
+      <a href="../hocon/" class="md-nav__link">
         
   
   
@@ -1154,7 +1171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config-sources/keystore/" class="md-nav__link">
+      <a href="../keystore/" class="md-nav__link">
         
   
   
@@ -1277,10 +1294,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -1296,22 +1311,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1329,7 +1341,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1347,7 +1359,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../interceptors/" class="md-nav__link">
+      <a href="../../extensions/interceptors/" class="md-nav__link">
         
   
   
@@ -1375,7 +1387,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../fallback/" class="md-nav__link">
+      <a href="../../extensions/fallback/" class="md-nav__link">
         
   
   
@@ -1403,7 +1415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relocate/" class="md-nav__link">
+      <a href="../../extensions/relocate/" class="md-nav__link">
         
   
   
@@ -1428,35 +1440,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../extensions/logging/" class="md-nav__link">
         
   
   
@@ -1472,35 +1459,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#loggingconfigsourceinterceptor" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LoggingConfigSourceInterceptor
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1530,25 +1488,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#loggingconfigsourceinterceptor" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LoggingConfigSourceInterceptor
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1568,16 +1509,21 @@
   
 
 
-  <h1>Logging</h1>
-
-<h2 id="loggingconfigsourceinterceptor">LoggingConfigSourceInterceptor<a class="headerlink" href="#loggingconfigsourceinterceptor" title="Permanent link">#</a></h2>
-<p>The <code>io.smallrye.config.LoggingConfigSourceInterceptor</code> logs lookups of configuration names in the provided logging 
-platform. The log information includes config name and value, the config source origin and location if it exists.</p>
-<p>The log is done as <code>debug</code>, so the debug threshold must be set to <code>debug</code> for the <code>io.smallrye.config</code> appender to
-display the logs.</p>
-<p>This requires registration via the <code>ServiceLoader</code> mechanism in the
-<code>META-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory</code> file of the 
-<code>io.smallrye.config.LoggingConfigSourceInterceptor</code> interceptor.</p>
+<h1 id="toml-config-source">TOML Config Source<a class="headerlink" href="#toml-config-source" title="Permanent link">#</a></h1>
+<p>This Config Source allows to use a <a href="https://toml.io">TOML</a> file to load configuration values. The TOML Config Source
+loads the configuration from the following files:</p>
+<ol>
+<li>(<code>265</code>) <code>application.toml</code> in <code>config</code> folder, located in the current working directory</li>
+<li>(<code>255</code>) <code>application.toml</code> in the classpath</li>
+<li>(<code>110</code>) MicroProfile Config configuration file <code>META-INF/microprofile-config.toml</code> in the classpath</li>
+</ol>
+<p>The following dependency is required in the classpath to use the TOML Config Source:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>io.smallrye.config<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>smallrye-config-source-toml<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>4.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">&lt;/dependency&gt;</span>
+</code></pre></div>
 
 
 
