@@ -661,11 +661,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configSources.defaultValues;
     }
 
-    @Deprecated
-    public <T> T convert(String value, Class<T> asType) {
-        return value != null ? requireConverter(asType).convert(value) : null;
-    }
-
     private <T> Converter<Optional<T>> getOptionalConverter(Class<T> asType) {
         Converter<Optional<T>> converter = recast(optionalConverters.get(asType));
         if (converter == null) {

@@ -16,46 +16,30 @@
 package io.smallrye.config.inject;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
-import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.PassivationCapable;
 import jakarta.enterprise.util.AnnotationLiteral;
-import jakarta.inject.Provider;
 
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 /**
  * @author <a href="mailto:struberg@yahoo.de">Mark Struberg</a>
  */
 public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
-
-    private static final Set<Annotation> QUALIFIERS = new HashSet<>();
-    static {
-        QUALIFIERS.add(new ConfigPropertyLiteral());
-    }
+    private static final Set<Annotation> QUALIFIERS = Set.of(new ConfigPropertyLiteral());
 
     private final BeanManager bm;
     private final Class<?> clazz;
-
-    /**
-     * only access via {@link #getConfig()}
-     */
-    private Config _config;
 
     public ConfigInjectionBean(BeanManager bm, Class<?> clazz) {
         this.bm = bm;
@@ -73,45 +57,9 @@ public class ConfigInjectionBean<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T create(CreationalContext<T> context) {
         InjectionPoint ip = (InjectionPoint) bm.getInjectableReference(new MetadataInjectionPoint(), context);
-        Annotated annotated = ip.getAnnotated();
-        ConfigProperty configProperty = annotated.getAnnotation(ConfigProperty.class);
-        String key = ConfigProducerUtil.getConfigKey(ip, configProperty);
-        String defaultValue = configProperty.defaultValue();
-
-        if (annotated.getBaseType() instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) annotated.getBaseType();
-            Type rawType = paramType.getRawType();
-
-            // handle Provider<T> and Instance<T>
-            if (rawType instanceof Class
-                    && (((Class<?>) rawType).isAssignableFrom(Provider.class)
-                            || ((Class<?>) rawType).isAssignableFrom(Instance.class))
-                    && paramType.getActualTypeArguments().length == 1) {
-                Class<?> paramTypeClass = (Class<?>) paramType.getActualTypeArguments()[0];
-                return (T) getConfig().getValue(key, paramTypeClass);
-            }
-        } else {
-            Class<?> annotatedTypeClass = (Class<?>) annotated.getBaseType();
-            if (defaultValue.isEmpty()) {
-                return (T) getConfig().getValue(key, annotatedTypeClass);
-            } else {
-                Optional<T> optionalValue = (Optional<T>) getConfig().getOptionalValue(key, annotatedTypeClass);
-                return optionalValue.orElseGet(
-                        () -> (T) getConfig().unwrap(SmallRyeConfig.class).convert(defaultValue, annotatedTypeClass));
-            }
-        }
-
-        throw InjectionMessages.msg.unhandledConfigProperty();
-    }
-
-    public Config getConfig() {
-        if (_config == null) {
-            _config = io.smallrye.config.Config.get();
-        }
-        return _config;
+        return ConfigProducerUtil.getValue(ip, Config.get());
     }
 
     @Override

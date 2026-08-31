@@ -523,7 +523,19 @@ public final class Converters {
         }
     }
 
-    static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(final Class<C> type) {
+    /**
+     * Create a collection factory for a supported {@link Collection} type. The returned {@link IntFunction} accepts
+     * the expected number of elements and produces an empty collection of the requested type, suitable for use with
+     * {@link #newCollectionConverter(Converter, IntFunction)} and the {@code SmallRyeConfig} collection lookups.
+     *
+     * @param type the collection type; only {@link List} and {@link Set} are supported (must not be {@code null})
+     * @param <T> the item type
+     * @param <C> the collection type
+     * @return a factory producing {@link ArrayList} for {@link List} or {@link HashSet} for {@link Set} (not {@code null})
+     * @throws IllegalArgumentException if {@code type} is neither {@link List} nor {@link Set}
+     */
+    public static <T, C extends Collection<T>> IntFunction<? extends Collection<T>> createCollectionFactory(
+            final Class<C> type) {
         if (type.equals(List.class)) {
             return ArrayList::new;
         }

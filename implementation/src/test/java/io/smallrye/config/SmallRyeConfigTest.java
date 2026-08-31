@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,14 +78,6 @@ class SmallRyeConfigTest {
                 (IntFunction<List<Integer>>) value -> new ArrayList<>());
         assertTrue(values.isPresent());
         assertEquals(Arrays.asList(1, 2, 3, 4), values.get());
-    }
-
-    @Test
-    void convert() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder().build();
-
-        assertEquals(1234, config.convert("1234", Integer.class).intValue());
-        assertNull(config.convert(null, Integer.class));
     }
 
     @Test
