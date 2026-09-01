@@ -1,7 +1,9 @@
 package io.smallrye.config;
 
 import static io.smallrye.common.expression.Expression.Flag.DOUBLE_COLON;
+import static io.smallrye.common.expression.Expression.Flag.ESCAPES;
 import static io.smallrye.common.expression.Expression.Flag.LENIENT_SYNTAX;
+import static io.smallrye.common.expression.Expression.Flag.NO_$$;
 import static io.smallrye.common.expression.Expression.Flag.NO_SMART_BRACES;
 import static io.smallrye.common.expression.Expression.Flag.NO_TRIM;
 import static io.smallrye.config._private.ConfigMessages.msg;
@@ -68,8 +70,8 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
         }
 
         ConfigValue.ConfigValueBuilder valueBuilder = configValue.from();
-        Expression expression = Expression.compile(escapeDollarIfExists(configValue.getValue()), LENIENT_SYNTAX, NO_TRIM,
-                NO_SMART_BRACES, DOUBLE_COLON);
+        Expression expression = Expression.compile(configValue.getValue(),
+                ESCAPES, LENIENT_SYNTAX, DOUBLE_COLON, NO_TRIM, NO_SMART_BRACES, NO_$$);
         String expanded = expression.evaluate(new BiConsumer<ResolveContext<RuntimeException>, StringBuilder>() {
             @Override
             public void accept(ResolveContext<RuntimeException> resolveContext, StringBuilder stringBuilder) {
@@ -93,35 +95,12 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 } else if (resolveContext.hasDefault()) {
                     resolveContext.expandDefault();
                 } else {
-                    valueBuilder.addProblem(new Problem(msg.expandingElementNotFound(key, configValue.getName())));
+                    valueBuilder.addProblem(new Problem(msg.expandingElementNotFound(key, name)));
                 }
             }
         });
 
         return valueBuilder.withValue(expanded).build();
-    }
-
-    /**
-     * MicroProfile Config defines the backslash escape for dollar to retrieve the raw expression. We don't want to
-     * turn {@link Expression.Flag#ESCAPES} on because it may break working configurations.
-     * <br>
-     * This will replace the expected escape in MicroProfile Config by the escape used in {@link Expression}, a double
-     * dollar.
-     */
-    private String escapeDollarIfExists(final String value) {
-        int index = value.indexOf("\\$");
-        if (index != -1) {
-            int start = 0;
-            StringBuilder builder = new StringBuilder();
-            while (index != -1) {
-                builder.append(value, start, index).append("$$");
-                start = index + 2;
-                index = value.indexOf("\\$", start);
-            }
-            builder.append(value.substring(start));
-            return builder.toString();
-        }
-        return value;
     }
 
     private SecretKeysHandler getHandler(final String handlerName, final ConfigSourceInterceptorContext context) {
