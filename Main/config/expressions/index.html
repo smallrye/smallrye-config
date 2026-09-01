@@ -529,6 +529,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Expressions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -545,6 +563,47 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#escaping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escaping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling Expansion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1491,6 +1550,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#escaping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escaping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling Expansion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1524,9 +1613,34 @@ strings and expression segments, which are wrapped by the sequence ${ &hellip; }
 <li><code>${my.prop}${my.prop}</code> - Multiple expressions.</li>
 </ul>
 <p>If an expression cannot be expanded and no default is supplied a <code>NoSuchElementException</code> is thrown.</p>
-<p>Expression expansion may be selectively disabled with <code>io.smallrye.config.Expressions</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Config</span><span class="p">.</span><span class="na">getOrCreate</span><span class="p">();</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">String</span><span class="w"> </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Expressions</span><span class="p">.</span><span class="na">withoutExpansion</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;callable.url&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
+<h2 id="escaping">Escaping<a class="headerlink" href="#escaping" title="Permanent link">#</a></h2>
+<p>A <code>$</code> that begins an expression segment can be escaped with a backslash to treat it as a literal character:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># value is: ${my.prop}</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">expression</span><span class="o">=</span><span class="se">\$</span><span class="s">{my.prop}</span>
+</code></pre></div>
+<p>A backslash that immediately precedes a <code>$</code> can itself be escaped with another backslash:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># my.prop=value</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># value is: \value</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">expression</span><span class="o">=</span><span class="se">\\</span><span class="s">${my.prop}</span>
+</code></pre></div>
+<p>Escaping only applies to values that contain an expression segment. In a value that has no <code>${ ... }</code> segment,
+every backslash is treated as a literal character and nothing needs escaping (for example, a Windows path such as
+<code>C:\some\path</code> is used as-is).</p>
+<p>As soon as a value contains an expression segment, the whole value is processed for escapes and backslash becomes an
+escape character everywhere in it, not just before a <code>$</code>. Standard escape sequences are interpreted (<code>\n</code>, <code>\r</code>, <code>\t</code>,
+<code>\b</code>, <code>\f</code>) and a backslash before any other character is dropped. To keep a literal backslash in such a value, double
+it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># value is: C:\some\path\value (my.prop=value)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">expression</span><span class="o">=</span><span class="s">C:</span><span class="se">\\</span><span class="s">some</span><span class="se">\\</span><span class="s">path</span><span class="se">\\</span><span class="s">${my.prop}</span>
+</code></pre></div>
+<h2 id="disabling-expansion">Disabling Expansion<a class="headerlink" href="#disabling-expansion" title="Permanent link">#</a></h2>
+<p>Expression expansion may be selectively disabled for a block of code using <code>io.smallrye.config.Expressions.withoutExpansion()</code>.
+The raw (unexpanded) value is returned for any property looked up within the block:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">callable.url</span><span class="o">=</span><span class="s">https://${remote.host}/</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Config</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Config</span><span class="p">.</span><span class="na">getOrCreate</span><span class="p">();</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">// returns &quot;https://${remote.host}/&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">String</span><span class="w"> </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Expressions</span><span class="p">.</span><span class="na">withoutExpansion</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getValue</span><span class="p">(</span><span class="s">&quot;callable.url&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
 </code></pre></div>
 
 
