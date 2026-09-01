@@ -431,12 +431,6 @@ public class SmallRyeConfig implements Config, Serializable {
         return configValue != null ? configValue : ConfigValue.builder().withName(name).build();
     }
 
-    @Deprecated
-    public String getRawValue(String name) {
-        final ConfigValue configValue = getConfigValue(name);
-        return configValue != null ? configValue.getValue() : null;
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public <T> Optional<T> getOptionalValue(String name, Class<T> propertyType) {
