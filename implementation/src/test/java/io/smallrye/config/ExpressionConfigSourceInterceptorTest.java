@@ -120,18 +120,28 @@ class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void escape() {
-        assertEquals("${my.prop}", buildConfig("expression", "$${my.prop}").getConfigValue("expression").getValue());
-        assertEquals("${my.prop}", buildConfig("expression", "\\${my.prop}").getConfigValue("expression").getValue());
+        // Test NO_$$
+        assertEquals("$1234",
+                buildConfig("expression", "$${my.prop}", "my.prop", "1234").getConfigValue("expression").getValue());
 
-        assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
-                buildConfig("camel.expression",
-                        "file:target/prices/?fileName=$${date:now:yyyyMMddssSS}.txt&charset=utf-8")
-                        .getConfigValue("camel.expression").getValue());
+        assertEquals("${my.prop}",
+                buildConfig("expression", "\\${my.prop}").getConfigValue("expression").getValue());
 
         assertEquals("file:target/prices/?fileName=${date:now:yyyyMMddssSS}.txt&charset=utf-8",
                 buildConfig("camel.expression",
                         "file:target/prices/?fileName=\\${date:now:yyyyMMddssSS}.txt&charset=utf-8")
                         .getConfigValue("camel.expression").getValue());
+
+        assertEquals("\\$\\{%s}",
+                buildConfig("key", "\\\\$\\\\{%s}").getConfigValue("key").getValue());
+
+        // Standard escape sequences are interpreted within an expression-bearing value.
+        assertEquals("a\tbvalue",
+                buildConfig("expression", "a\\tb${my.prop}", "my.prop", "value").getConfigValue("expression").getValue());
+
+        // A backslash before any other character is dropped within an expression-bearing value.
+        assertEquals("qwqvalue",
+                buildConfig("expression", "q\\wq${my.prop}", "my.prop", "value").getConfigValue("expression").getValue());
     }
 
     @Test
@@ -158,22 +168,22 @@ class ExpressionConfigSourceInterceptorTest {
 
         ConfigValue noExpression = config.getConfigValue("my.prop");
         assertNotNull(noExpression);
-        assertEquals(noExpression.getName(), "my.prop");
+        assertEquals("my.prop", noExpression.getName());
         assertNull(noExpression.getValue());
 
         ConfigValue noExpressionPartial = config.getConfigValue("my.prop.partial");
         assertNotNull(noExpressionPartial);
-        assertEquals(noExpressionPartial.getName(), "my.prop.partial");
+        assertEquals("my.prop.partial", noExpressionPartial.getName());
         assertNull(noExpressionPartial.getValue());
 
         ConfigValue noExpressionAnotherPartial = config.getConfigValue("my.prop.anotherPartial");
         assertNotNull(noExpressionAnotherPartial);
-        assertEquals(noExpressionAnotherPartial.getName(), "my.prop.anotherPartial");
+        assertEquals("my.prop.anotherPartial", noExpressionAnotherPartial.getName());
         assertNull(noExpressionAnotherPartial.getValue());
 
         ConfigValue noExpressionDependent = config.getConfigValue("my.prop.dependent");
         assertNotNull(noExpressionDependent);
-        assertEquals(noExpressionDependent.getName(), "my.prop.dependent");
+        assertEquals("my.prop.dependent", noExpressionDependent.getName());
         assertNull(noExpressionDependent.getValue());
 
         assertThrows(Exception.class, () -> config.getValue("my.prop", String.class));
@@ -184,10 +194,10 @@ class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void arrayEscapes() {
-        SmallRyeConfig config = buildConfig("list", "cat,dog,${mouse},sea\\,turtle", "mouse", "mouse");
+        SmallRyeConfig config = buildConfig("list", "cat,dog,${mouse},sea\\\\,turtle", "mouse", "mouse");
         List<String> list = config.getValues("list", String.class, ArrayList::new);
         assertEquals(4, list.size());
-        assertEquals(list, Stream.of("cat", "dog", "mouse", "sea,turtle").collect(toList()));
+        assertEquals(Stream.of("cat", "dog", "mouse", "sea,turtle").toList(), list);
     }
 
     @Test
@@ -204,8 +214,15 @@ class ExpressionConfigSourceInterceptorTest {
 
     @Test
     void windowPath() {
-        SmallRyeConfig config = buildConfig("window.path", "C:\\Some\\Path");
-        assertEquals("C:\\Some\\Path", config.getConfigValue("window.path").getValue());
+        // A value with no expression segment keeps every backslash literal (no escaping applied).
+        assertEquals("C:\\Some\\Path",
+                buildConfig("window.path", "C:\\Some\\Path").getConfigValue("window.path").getValue());
+
+        // As soon as the value contains an expression, backslash becomes an escape character everywhere in it, so a
+        // literal backslash must be doubled
+        assertEquals("C:\\some\\path\\value",
+                buildConfig("window.path", "C:\\\\some\\\\path\\\\${my.prop}", "my.prop", "value").getConfigValue("window.path")
+                        .getValue());
     }
 
     @Test

@@ -54,10 +54,6 @@
           <dependenciesToScan>
             <dependency>org.eclipse.microprofile.config:microprofile-config-tck</dependency>
           </dependenciesToScan>
-          <!-- Require updates to MP TCK -->
-          <excludes>
-            <exclude>org.eclipse.microprofile.config.tck.ConverterTest</exclude>
-          </excludes>
         </configuration>
         <executions>
           <execution>
@@ -66,6 +62,10 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <!-- To be able to exclude specific methods; TestNG doesn't support excludesFile method exclusion -->
+              <suiteXmlFiles>
+                <suiteXmlFile>tck-suite.xml</suiteXmlFile>
+              </suiteXmlFiles>
               <classpathDependencyExcludes>
                 <exclude>org.apache.openwebbeans:openwebbeans-spi</exclude>
                 <exclude>org.apache.openwebbeans:openwebbeans-impl</exclude>
@@ -79,6 +79,9 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <suiteXmlFiles>
+                <suiteXmlFile>tck-suite-owb.xml</suiteXmlFile>
+              </suiteXmlFiles>
               <classpathDependencyExcludes>
                 <exclude>org.jboss.weld:weld-core-impl</exclude>
                 <exclude>org.jboss.arquillian.container:arquillian-weld-embedded</exclude>

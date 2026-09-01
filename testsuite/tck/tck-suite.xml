@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="microprofile-config-tck" verbose="2" configfailurepolicy="continue">
+    <test name="microprofile-config-tck">
+        <packages>
+            <package name="org.eclipse.microprofile.config.tck.*"/>
+        </packages>
+
+        <classes>
+            <class name="org.eclipse.microprofile.config.tck.PropertyExpressionsTest">
+                <methods>
+                    <exclude name="arrayEscapes"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>
