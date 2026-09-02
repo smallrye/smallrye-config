@@ -65,7 +65,7 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
         }
 
         // Avoid extra StringBuilder allocations from Expression
-        if (configValue.getValue().indexOf('$') == -1) {
+        if (!configValue.getValue().contains("${")) {
             return configValue;
         }
 

@@ -132,9 +132,6 @@ class ExpressionConfigSourceInterceptorTest {
                         "file:target/prices/?fileName=\\${date:now:yyyyMMddssSS}.txt&charset=utf-8")
                         .getConfigValue("camel.expression").getValue());
 
-        assertEquals("\\$\\{%s}",
-                buildConfig("key", "\\\\$\\\\{%s}").getConfigValue("key").getValue());
-
         // Standard escape sequences are interpreted within an expression-bearing value.
         assertEquals("a\tbvalue",
                 buildConfig("expression", "a\\tb${my.prop}", "my.prop", "value").getConfigValue("expression").getValue());
@@ -142,6 +139,13 @@ class ExpressionConfigSourceInterceptorTest {
         // A backslash before any other character is dropped within an expression-bearing value.
         assertEquals("qwqvalue",
                 buildConfig("expression", "q\\wq${my.prop}", "my.prop", "value").getConfigValue("expression").getValue());
+
+        // The bare $ is not followed by { so there is no expression segment; the value is returned as is
+        assertEquals("\\\\$\\\\{%s}",
+                buildConfig("key", "\\\\$\\\\{%s}").getConfigValue("key").getValue());
+
+        assertEquals("^\\..*|.*\\/\\..*$",
+                buildConfig("expression", "^\\..*|.*\\/\\..*$").getConfigValue("expression").getValue());
     }
 
     @Test
