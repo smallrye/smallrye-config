@@ -1,0 +1,2 @@
+org.eclipse.microprofile.config.tck.PropertyExpressionsTest#arrayEscapes
+org.eclipse.microprofile.config.tck.ConverterTest
