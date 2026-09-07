@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2155,7 +2155,7 @@ share the same prefix (or namespace). It supports the following set of features:
 </div>
 <p>A Config Mapping requires an interface with minimal metadata configuration annotated with 
 <code>io.smallrye.config.ConfigMapping</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2247,9 +2247,9 @@ the specified prefix set in <code>@ConfigMapping</code>. This prevents unknown c
 </table>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">SmallRyeConfig</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SmallRyeConfigBuilder</span><span class="p">()</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">        </span><span class="p">.</span><span class="na">withMapping</span><span class="p">(</span><span class="n">Server</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">&quot;server.foo&quot;</span><span class="p">)</span><span class="w">      </span><span class="c1">// ignore the exact name</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">&quot;server.extras.*&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// ignore direct children of server.extras</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">&quot;server.legacy.**&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// ignore everything under server.legacy</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">"server.foo"</span><span class="p">)</span><span class="w">      </span><span class="c1">// ignore the exact name</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">"server.extras.*"</span><span class="p">)</span><span class="w"> </span><span class="c1">// ignore direct children of server.extras</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="p">.</span><span class="na">withMappingIgnore</span><span class="p">(</span><span class="s">"server.legacy.**"</span><span class="p">)</span><span class="w"> </span><span class="c1">// ignore everything under server.legacy</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
 <p>Multiple calls to <code>withMappingIgnore</code> accumulate — each call adds to the set of ignored paths.</p>
@@ -2257,10 +2257,10 @@ the specified prefix set in <code>@ConfigMapping</code>. This prevents unknown c
 <p>The <code>io.smallrye.config.WithDefault</code> annotation allows to set a default property value into a mapping (and prevent
 errors if the configuration value is not available in any <code>ConfigSource</code>).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Defaults</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">"foo"</span><span class="p">)</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">&quot;bar&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">"bar"</span><span class="p">)</span>
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">bar</span><span class="p">();</span>
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
 </code></pre></div>
@@ -2273,7 +2273,7 @@ return the value <code>bar</code>.</p>
 <li>The configuration path is built by taking the root object type prefix (or namespace), the nested type name and the 
 member name of the nested type</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
@@ -2304,7 +2304,7 @@ member name of the nested type</li>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="p">}</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;child&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"child"</span><span class="p">)</span>
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Child</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Parent</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="p">}</span>
@@ -2314,9 +2314,9 @@ member name of the nested type</li>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="p">}</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;child&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"child"</span><span class="p">)</span>
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Child</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Parent</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;child-name&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"child-name"</span><span class="p">)</span>
 <a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span>
 <a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="p">}</span>
 </code></pre></div>
@@ -2324,9 +2324,9 @@ member name of the nested type</li>
 <h3 id="withname"><code>@WithName</code><a class="headerlink" href="#withname" title="Permanent link">#</a></h3>
 <p>If a method name and a property name do not match, the <code>io.smallrye.config.WithName</code> annotation can 
 override the method name mapping and use the name supplied in the annotation.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">)</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"name"</span><span class="p">)</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">port</span><span class="p">();</span>
@@ -2338,7 +2338,7 @@ override the method name mapping and use the name supplied in the annotation.</p
 <h3 id="withparentname"><code>@WithParentName</code><a class="headerlink" href="#withparentname" title="Permanent link">#</a></h3>
 <p>The <code>io.smallrye.config.WithParentName</code> annotation allows configurations mappings to inherit its parent container name, 
 simplifying the configuration property name required to match the mapping.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nd">@WithParentName</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="n">ServerHostAndPort</span><span class="w"> </span><span class="nf">hostAndPort</span><span class="p">();</span>
@@ -2366,7 +2366,7 @@ simplifying the configuration property name required to match the mapping.</p>
 the property <code>server.name</code> instead.</p>
 <h3 id="namingstrategy">NamingStrategy<a class="headerlink" href="#namingstrategy" title="Permanent link">#</a></h3>
 <p>Method names in camelCase map to kebab-case configuration property names by default.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">theHost</span><span class="p">();</span>
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
@@ -2377,7 +2377,7 @@ the property <code>server.name</code> instead.</p>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="na">server.the-port</span><span class="o">=</span><span class="s">8080</span>
 </code></pre></div>
 <p>The mapping strategy can be adjusted by setting <code>namingStrategy</code> value in the <code>@ConfigMapping</code> annotation.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">namingStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigMapping</span><span class="p">.</span><span class="na">NamingStrategy</span><span class="p">.</span><span class="na">VERBATIM</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">,</span><span class="w"> </span><span class="n">namingStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigMapping</span><span class="p">.</span><span class="na">NamingStrategy</span><span class="p">.</span><span class="na">VERBATIM</span><span class="p">)</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ServerVerbatimNamingStrategy</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">theHost</span><span class="p">();</span>
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
@@ -2397,7 +2397,7 @@ the property <code>server.name</code> instead.</p>
 <p>The <code>beanStyleGetters</code> attribute (default <code>false</code>) enables matching bean-style getter names (<code>get</code>/<code>is</code> prefixed) to
 their property name equivalent. For example, <code>getHost()</code> and <code>isEnabled()</code> map to the properties <code>host</code> and <code>enabled</code>
 respectively:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">beanStyleGetters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">,</span><span class="w"> </span><span class="n">beanStyleGetters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">getHost</span><span class="p">();</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
@@ -2420,40 +2420,40 @@ one-to-one with their configuration names.</p>
 <p>A config mapping interface support automatic conversions of all types available for conversion in <code>Config</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nd">@ConfigMapping</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">SomeTypes</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;int&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"int"</span><span class="p">)</span>
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">intPrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;int&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"int"</span><span class="p">)</span>
 <a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">    </span><span class="n">Integer</span><span class="w"> </span><span class="nf">intWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>
-<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;long&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"long"</span><span class="p">)</span>
 <a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="nf">longPrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>
-<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;long&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"long"</span><span class="p">)</span>
 <a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a><span class="w">    </span><span class="n">Long</span><span class="w"> </span><span class="nf">longWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>
-<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;float&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"float"</span><span class="p">)</span>
 <a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="nf">floatPrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>
-<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;float&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"float"</span><span class="p">)</span>
 <a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a><span class="w">    </span><span class="n">Float</span><span class="w"> </span><span class="nf">floatWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a>
-<a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;double&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"double"</span><span class="p">)</span>
 <a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a><span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">doublePrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a>
-<a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;double&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"double"</span><span class="p">)</span>
 <a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a><span class="w">    </span><span class="n">Double</span><span class="w"> </span><span class="nf">doubleWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a>
-<a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;char&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"char"</span><span class="p">)</span>
 <a id="__codelineno-22-28" name="__codelineno-22-28" href="#__codelineno-22-28"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="nf">charPrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-29" name="__codelineno-22-29" href="#__codelineno-22-29"></a>
-<a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;char&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"char"</span><span class="p">)</span>
 <a id="__codelineno-22-31" name="__codelineno-22-31" href="#__codelineno-22-31"></a><span class="w">    </span><span class="n">Character</span><span class="w"> </span><span class="nf">charWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-32" name="__codelineno-22-32" href="#__codelineno-22-32"></a>
-<a id="__codelineno-22-33" name="__codelineno-22-33" href="#__codelineno-22-33"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;boolean&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-33" name="__codelineno-22-33" href="#__codelineno-22-33"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"boolean"</span><span class="p">)</span>
 <a id="__codelineno-22-34" name="__codelineno-22-34" href="#__codelineno-22-34"></a><span class="w">    </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">booleanPrimitive</span><span class="p">();</span>
 <a id="__codelineno-22-35" name="__codelineno-22-35" href="#__codelineno-22-35"></a>
-<a id="__codelineno-22-36" name="__codelineno-22-36" href="#__codelineno-22-36"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;boolean&quot;</span><span class="p">)</span>
+<a id="__codelineno-22-36" name="__codelineno-22-36" href="#__codelineno-22-36"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"boolean"</span><span class="p">)</span>
 <a id="__codelineno-22-37" name="__codelineno-22-37" href="#__codelineno-22-37"></a><span class="w">    </span><span class="n">Boolean</span><span class="w"> </span><span class="nf">booleanWrapper</span><span class="p">();</span>
 <a id="__codelineno-22-38" name="__codelineno-22-38" href="#__codelineno-22-38"></a><span class="p">}</span>
 </code></pre></div>
@@ -2471,7 +2471,7 @@ one-to-one with their configuration names.</p>
 <a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>
 <a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">    </span><span class="n">Optional</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">optional</span><span class="p">();</span>
 <a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">&quot;optional.int&quot;</span><span class="p">)</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">    </span><span class="nd">@WithName</span><span class="p">(</span><span class="s">"optional.int"</span><span class="p">)</span>
 <a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">    </span><span class="n">OptionalInt</span><span class="w"> </span><span class="nf">optionalInt</span><span class="p">();</span>
 <a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>
 <a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">    </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
@@ -2493,7 +2493,7 @@ one-to-one with their configuration names.</p>
 <a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">class</span> <span class="nc">FooBarConverter</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Converter</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span><span class="nd">@Override</span>
 <a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="p">;</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"bar"</span><span class="p">;</span>
 <a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="p">}</span>
 </code></pre></div>
@@ -2511,7 +2511,7 @@ member</li>
 <li>The index specified in the configuration name is used to order the element in the <code>Collection</code></li>
 <li>Missing elements or gaps are removed</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ServerCollections</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span><span class="n">Set</span><span class="o">&lt;</span><span class="n">Environment</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">environments</span><span class="p">();</span>
 <a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
@@ -2551,7 +2551,7 @@ member to act as a map key</li>
 <li>The additional configuration name maps a Map entry with the configuration name as the <code>Map</code> entry key and 
 the configuration value as the Map entry value</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
 <a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>
@@ -2573,7 +2573,7 @@ the configuration value as the Map entry value</li>
 <a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="na">server.form.error.page</span><span class="o">=</span><span class="s">error.html</span>
 <a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="na">server.aliases.localhost[0].name</span><span class="o">=</span><span class="s">prod</span>
 <a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="na">server.aliases.localhost[1].name</span><span class="o">=</span><span class="s">127.0.0.1</span>
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="na">server.aliases.</span><span class="se">\&quot;</span><span class="na">io.smallrye</span><span class="se">\&quot;</span><span class="na">[0].name</span><span class="o">=</span><span class="s">smallrye</span>
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="na">server.aliases.</span><span class="se">\"</span><span class="na">io.smallrye</span><span class="se">\"</span><span class="na">[0].name</span><span class="o">=</span><span class="s">smallrye</span>
 </code></pre></div>
 <p>The configuration property name needs to specify an additional segment to act as the map key. The <code>server.form</code> matches 
 the <code>Server#form</code> <code>Map</code> and the segments <code>index</code>, <code>login.page</code> and <code>error.page</code> represent the <code>Map</code> 
@@ -2599,9 +2599,9 @@ with the same name must use the quoted format across all sources, including Envi
 </div>
 <h3 id="withunnamedkey"><code>@WithUnnamedKey</code><a class="headerlink" href="#withunnamedkey" title="Permanent link">#</a></h3>
 <p>The <code>io.smallrye.config.WithUnnamedKey</code> annotation allows to omit a single map key in the configuration path:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="nd">@WithUnnamedKey</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">)</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="nd">@WithUnnamedKey</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">)</span>
 <a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">aliases</span><span class="p">();</span>
 <a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>
 <a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="kd">interface</span> <span class="nc">Alias</span><span class="w"> </span><span class="p">{</span>
@@ -2616,7 +2616,7 @@ with the same name must use the quoted format across all sources, including Envi
 entry. Due to <code>@WithUnnamedKey("localhost")</code> the <code>Map</code> key is not required in the configuration path. The key used to 
 look up the Map entry is given by <code>io.smallrye.config.WithUnnamedKey#value</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">Server</span><span class="w"> </span><span class="n">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getConfigMapping</span><span class="p">(</span><span class="n">Server</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">localhost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">);</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">localhost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">);</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -2625,13 +2625,13 @@ look up the Map entry is given by <code>io.smallrye.config.WithUnnamedKey#value<
 <p>The <code>eager</code> attribute (default <code>true</code>) controls whether the unnamed key entry is included in the <code>Map</code> when its values
 come only from defaults. When <code>eager = false</code>, the unnamed key entry is excluded from the <code>Map</code> unless at least one
 of its values is explicitly set in a configuration source:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="nd">@WithUnnamedKey</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">eager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="nd">@WithUnnamedKey</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"localhost"</span><span class="p">,</span><span class="w"> </span><span class="n">eager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
 <a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">aliases</span><span class="p">();</span>
 <a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>
 <a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">    </span><span class="kd">interface</span> <span class="nc">Alias</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">        </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">)</span>
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">        </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">)</span>
 <a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span>
 <a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="p">}</span>
@@ -2641,7 +2641,7 @@ default), it returns a <code>Map</code> with the key <code>localhost</code> popu
 <h3 id="withkeys"><code>@WithKeys</code><a class="headerlink" href="#withkeys" title="Permanent link">#</a></h3>
 <p>The <code>io.smallrye.config.WithKeys</code> annotation allows to define which <code>Map</code> keys must be loaded by 
 the configuration: </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">    </span><span class="nd">@WithKeys</span><span class="p">(</span><span class="n">KeysProvider</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
 <a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">aliases</span><span class="p">();</span>
@@ -2653,7 +2653,7 @@ the configuration: </p>
 <a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="w">    </span><span class="kd">class</span> <span class="nc">KeysProvider</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Supplier</span><span class="o">&lt;</span><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a><span class="w">        </span><span class="nd">@Override</span>
 <a id="__codelineno-35-12" name="__codelineno-35-12" href="#__codelineno-35-12"></a><span class="w">        </span><span class="kd">public</span><span class="w"> </span><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">get</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;prod&quot;</span><span class="p">);</span>
+<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"dev"</span><span class="p">,</span><span class="w"> </span><span class="s">"test"</span><span class="p">,</span><span class="w"> </span><span class="s">"prod"</span><span class="p">);</span>
 <a id="__codelineno-35-14" name="__codelineno-35-14" href="#__codelineno-35-14"></a><span class="w">        </span><span class="p">}</span>
 <a id="__codelineno-35-15" name="__codelineno-35-15" href="#__codelineno-35-15"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-35-16" name="__codelineno-35-16" href="#__codelineno-35-16"></a><span class="p">}</span>
@@ -2671,13 +2671,13 @@ the final configuration (relative to the <code>Map</code> path segment), or the 
 <h3 id="withdefaults"><code>@WithDefaults</code><a class="headerlink" href="#withdefaults" title="Permanent link">#</a></h3>
 <p>The <code>io.smallrye.config.WithDefaults</code> is a marker annotation to use only in a <code>Map</code> to return the default value for
 the value element on any key lookup:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">    </span><span class="nd">@WithDefaults</span>
 <a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">aliases</span><span class="p">();</span>
 <a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>
 <a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="w">    </span><span class="kd">interface</span> <span class="nc">Alias</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="w">        </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">)</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="w">        </span><span class="nd">@WithDefault</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">)</span>
 <a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="nf">name</span><span class="p">();</span>
 <a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="p">}</span>
@@ -2690,9 +2690,9 @@ the value element on any key lookup:</p>
 <p>The <code>Map</code> can only iterate and size the defined keys. In this case, the <code>aliases</code> <code>Map</code> only iterates the <code>prod</code> key,
 and the size is <code>1</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="n">Server</span><span class="w"> </span><span class="n">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getConfigMapping</span><span class="p">(</span><span class="n">Server</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">localhost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">);</span>
-<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">any</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;any&quot;</span><span class="p">);</span>
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">prod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;prod&quot;</span><span class="p">);</span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">localhost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">);</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">any</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">"any"</span><span class="p">);</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="n">prod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="na">aliases</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">"prod"</span><span class="p">);</span>
 </code></pre></div>
 <h2 id="optionals">Optionals<a class="headerlink" href="#optionals" title="Permanent link">#</a></h2>
 <ul>
@@ -2703,7 +2703,7 @@ and the size is <code>1</code>.</p>
 <ul>
 <li>A mapping can mark a member type as a secret with <code>Secret&lt;T&gt;</code>:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;credentials&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"credentials"</span><span class="p">)</span>
 <a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Credentials</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">username</span><span class="p">();</span>
 <a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>
@@ -2728,7 +2728,7 @@ implementation of the <code>toString</code> method. The <code>equals</code> and 
 <h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">#</a></h2>
 <p>A config mapping may combine annotations from <a href="https://beanvalidation.org/">Bean Validation</a> to validate configuration 
 properties values.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nd">@ConfigMapping</span><span class="p">(</span><span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"server"</span><span class="p">)</span>
 <a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="kd">interface</span> <span class="nc">Server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">    </span><span class="nd">@Size</span><span class="p">(</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span>
 <a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">host</span><span class="p">();</span>
@@ -2799,7 +2799,7 @@ values do not follow the contraints defined in <code>Server</code>. </p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
