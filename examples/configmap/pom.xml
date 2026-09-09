@@ -10,7 +10,7 @@
 
   <groupId>io.smallrye.config.examples</groupId>
   <artifactId>configmap</artifactId>
-  <version>3.18.3</version>
+  <version>3.18.4-SNAPSHOT</version>
 
   <name>SmallRye Config Examples: ConfigMap</name>
 
@@ -125,6 +125,6 @@
   </build>
 
   <scm>
-    <tag>3.18.3</tag>
+    <tag>3.18.3-SNAPSHOT</tag>
   </scm>
 </project>
