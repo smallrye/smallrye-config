@@ -86,7 +86,7 @@ class SecretKeysTest {
 
         MappingSecret mapping = config.getConfigMapping(MappingSecret.class);
         assertEquals("secret", mapping.secret());
-        assertThrows(SecurityException.class, () -> config.getConfigValue("mapping.secret").getValue(),
+        assertThrows(SecurityException.class, () -> config.getConfigValue("mapping.secret"),
                 "Not allowed to access secret key mapping.secret");
     }
 

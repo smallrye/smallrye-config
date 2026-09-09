@@ -232,6 +232,24 @@ class StringUtilTest {
         assertEquals("my.\"unquoted\"", StringUtil.unquoted("my.\"unquoted\""));
         assertEquals("unquoted", StringUtil.unquoted("my.\"unquoted\"", 3, 13));
         assertEquals("unquoted", StringUtil.unquoted("my.unquoted", 3, 11));
+
+        // the quotes wrap a single segment, so they are stripped
+        assertEquals("bar", StringUtil.unquoted("map.\"bar\"", 4));
+        assertEquals("bar.baz", StringUtil.unquoted("map.\"bar.baz\"", 4));
+        assertEquals("bar[0]", StringUtil.unquoted("map.\"bar[0]\"", 4));
+
+        // the region spans multiple segments, so the quotes are part of the name and are kept
+        assertEquals("\"bar\"[0]", StringUtil.unquoted("map.\"bar\"[0]", 4));
+        assertEquals("\"bar\".baz", StringUtil.unquoted("map.\"bar\".baz", 4));
+        assertEquals("bar.\"baz\"", StringUtil.unquoted("map.bar.\"baz\"", 4));
+
+        // the region starts and ends with a quote, but the quotes belong to different segments
+        assertEquals("\"bar\".\"baz\"", StringUtil.unquoted("map.\"bar\".\"baz\"", 4));
+        assertEquals("\"bar.baz\".\"qux\"", StringUtil.unquoted("map.\"bar.baz\".\"qux\"", 4));
+        assertEquals("\"bar\".\"baz.qux\"", StringUtil.unquoted("map.\"bar\".\"baz.qux\"", 4));
+
+        // an escaped quote is part of the segment, so it does not break the matching pair
+        assertEquals("bar\\\"baz", StringUtil.unquoted("map.\"bar\\\"baz\"", 4));
     }
 
     @Test

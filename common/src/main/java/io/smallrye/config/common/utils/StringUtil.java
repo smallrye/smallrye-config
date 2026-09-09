@@ -397,6 +397,15 @@ public class StringUtil {
         }
 
         if (name.charAt(begin) == '"' && name.charAt(end - 1) == '"') {
+            // both quotes must be the matching pair of a single segment, or they are part of the name
+            for (int i = begin + 1; i < end - 1; i++) {
+                char c = name.charAt(i);
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
+                    return name.substring(begin, end);
+                }
+            }
             return name.substring(begin + 1, end - 1);
         } else {
             return name.substring(begin, end);
