@@ -99,7 +99,9 @@ public class FileSystemConfigSource extends MapBackedConfigSource {
     private static String readContent(Path file) {
         try {
             String content = Files.readString(file);
-            if (content.endsWith("\n")) {
+            if (content.endsWith("\r\n")) {
+                content = content.substring(0, content.length() - 2);
+            } else if (content.endsWith("\n") || content.endsWith("\r")) {
                 content = content.substring(0, content.length() - 1);
             }
             return content;

@@ -74,6 +74,13 @@ class FileSystemConfigSourceTest {
     }
 
     @Test
+    void testConfigOrdinalWithTrailingWindowsNewline(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("config_ordinal"), "500\r\n");
+        ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
+        assertEquals(500, configSource.getOrdinal());
+    }
+
+    @Test
     void testMultilineNoTrailingNewline(@TempDir Path tempDir) throws IOException {
         Files.writeString(tempDir.resolve("key"), "line1\nline2\nline3");
         ConfigSource configSource = new FileSystemConfigSource(tempDir.toFile());
