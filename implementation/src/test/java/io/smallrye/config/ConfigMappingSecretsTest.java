@@ -81,6 +81,7 @@ class ConfigMappingSecretsTest {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
                 .withMapping(MappingSecrets.class)
+                .withProfile("dev")
                 .withSources(config(
                         "%dev.secrets.secret", "secret",
                         "secrets.secret", "secret",

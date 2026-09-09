@@ -797,7 +797,8 @@ public class SmallRyeConfig implements Config, Serializable {
             this.sources = configSources;
             this.defaultValues = defaultValues;
             this.interceptorChain = current;
-            this.propertyNames = new PropertyNames(current, builder.getSecretKeys(), builder.isCachePropertyNames());
+            this.propertyNames = new PropertyNames(current, builder.getSecretKeys().withProfiles(profiles),
+                    builder.isCachePropertyNames());
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
@@ -1075,7 +1076,7 @@ public class SmallRyeConfig implements Config, Serializable {
                 while (namesIterator.hasNext()) {
                     String name = namesIterator.next();
                     // separate empty check to avoid PropertyName alloc
-                    if (!secretKeys.isEmpty() && secretKeys.matches(PropertyName.unprofiled(name).getName())) {
+                    if (!secretKeys.isEmpty() && secretKeys.matches(name)) {
                         secretNames.add(name);
                     } else {
                         names.add(name);

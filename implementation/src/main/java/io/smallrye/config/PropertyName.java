@@ -209,17 +209,4 @@ public class PropertyName {
     public static PropertyName name(final String name) {
         return new PropertyName(name);
     }
-
-    public static PropertyName unprofiled(final String name) {
-        if (!name.isEmpty() && name.charAt(0) == '%') {
-            int profilesEnd = name.indexOf('.', 1);
-            return new PropertyName(profilesEnd == -1 ? name : name.substring(profilesEnd + 1));
-        } else {
-            return new PropertyName(name);
-        }
-    }
-
-    public static boolean hasWildcardOrIndexed(final String name) {
-        return name.indexOf('*') != -1 || name.indexOf('[') != -1;
-    }
 }

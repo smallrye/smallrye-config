@@ -2,6 +2,10 @@ package io.smallrye.config;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -100,6 +104,35 @@ public final class SecretKeys implements Serializable {
             }
         } else {
             return supplier.get();
+        }
+    }
+
+    public static class Secrets extends PropertyNamesMatcher<Void> {
+        private final Set<String> secrets = new HashSet<>();
+
+        public Set<String> getSecrets() {
+            return Collections.unmodifiableSet(secrets);
+        }
+
+        @Override
+        protected void add(String name, Void value) {
+            secrets.add(name);
+            super.add(name, null);
+        }
+
+        @Override
+        protected void put(String name, Void value) {
+            secrets.add(name);
+            super.put(name, null);
+        }
+
+        Secrets withProfiles(List<String> profiles) {
+            for (String secret : secrets) {
+                for (String profile : profiles) {
+                    super.add("%" + profile + "." + secret, null);
+                }
+            }
+            return this;
         }
     }
 }

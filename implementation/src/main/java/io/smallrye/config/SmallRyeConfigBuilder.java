@@ -58,6 +58,7 @@ import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.Converters.ConverterWithPriority;
 import io.smallrye.config.DefaultValuesConfigSource.Defaults;
+import io.smallrye.config.SecretKeys.Secrets;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -72,7 +73,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final List<InterceptorWithPriority> interceptors = new ArrayList<>();
     private final List<String> profiles = new ArrayList<>();
     private final Defaults defaults = new Defaults();
-    private final PropertyNamesMatcher<?> secretKeys = new PropertyNamesMatcher<>();
+    private final Secrets secrets = new Secrets();
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
     private ConfigValidator validator = ConfigValidator.EMPTY;
     private final MappingBuilder mappingsBuilder = new MappingBuilder();
@@ -408,7 +409,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         interceptors.add(new InterceptorWithPriority(new ConfigSourceInterceptorFactory() {
             @Override
             public ConfigSourceInterceptor getInterceptor(final ConfigSourceInterceptorContext context) {
-                return new SecretKeysConfigSourceInterceptor(SmallRyeConfigBuilder.this.secretKeys);
+                return new SecretKeysConfigSourceInterceptor(SmallRyeConfigBuilder.this.secrets);
             }
 
             @Override
@@ -513,7 +514,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
     public SmallRyeConfigBuilder withSecretKeys(String... keys) {
         for (String key : keys) {
-            secretKeys.add(key);
+            secrets.add(key);
         }
         return this;
     }
@@ -630,8 +631,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return defaults;
     }
 
-    public PropertyNamesMatcher<?> getSecretKeys() {
-        return secretKeys;
+    public Secrets getSecretKeys() {
+        return secrets;
     }
 
     public MappingBuilder getMappingsBuilder() {
@@ -811,7 +812,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private void addDefaultsAndIgnores(ConfigClass configClass) {
             // Do not override defaults set by the builder directly, which have priority over mapping defaults
             defaults.add(configClass.getProperties());
-            secretKeys.add(configClass.getSecrets());
+            secrets.add(configClass.getSecrets());
             if (configClass.getHandler().ignoreUnmappedProperties()) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
