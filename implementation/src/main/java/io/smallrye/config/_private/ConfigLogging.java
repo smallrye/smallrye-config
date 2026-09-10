@@ -57,4 +57,10 @@ public interface ConfigLogging extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1008, value = "The value %s has been converted by a Boolean Converter to \"false\"")
     void booleanConversionFalse(String value);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1009, value = "The Map path keys \"%s\" and \"%s\" are ambiguous. " +
+            "These can cause issues in the mapping. Please, do not mix quoted and unquoted in the same Map key. " +
+            "Using %1$s.")
+    void mappingMapKeysAmbiguous(String quoted, String unquoted);
 }

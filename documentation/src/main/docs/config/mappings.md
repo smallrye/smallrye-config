@@ -557,9 +557,39 @@ maps to the `Map<String, List<Alias>> aliases()` member, where `localhost` is th
 
 !!! tip "Map quoted keys requirement" 
 
-    They `Map` key part in the configuration property name may require quotes to delimit the key if the key contains
-    a dot, otherwise they are optional. If the key name is delimted by quotes, all configuration property names related 
+    The `Map` key part in the configuration property name may require quotes to delimit the key if the key contains
+    a dot, otherwise they are optional. If the key name is delimited by quotes, all configuration property names related 
     with the same name must use the quoted format across all sources, including Environment Variables.
+
+!!! warning "Do not mix quoted and unquoted keys"
+
+    For a key that spans a single segment, the quoted and unquoted forms name the same `Map` key. Both
+    `server.aliases.localhost.name` and `server.aliases."localhost".name` refer to the key `localhost`, so writing both
+    makes the key ambiguous.
+
+    When `SmallRyeConfig` finds both forms, it resolves the entry with the quoted form and logs a warning:
+
+    ```
+    SRCFG01009: The Map path keys "server.aliases."localhost"" and "server.aliases.localhost" are ambiguous. These can 
+    cause issues in the mapping. Please, do not mix quoted and unquoted in the same Map key. Using 
+    server.aliases."localhost".
+    ```
+
+    Because only the quoted form is used to look up the entry values, the property names written in the unquoted form 
+    are left unmapped, and the mapping fails validation:
+
+    ```
+    SRCFG00050: server.aliases.localhost.name does not map to any root
+    ```
+
+    If the two forms also split the members of a nested group between them, the members that only exist in the 
+    unquoted form are not found at all, and the mapping additionally fails with:
+
+    ```
+    SRCFG00014: The config property server.aliases."localhost".name is required but it could not be found in any config source
+    ```
+
+    Either form works on its own, so pick one and use it consistently for a given key across all sources.
 
 ### `@WithUnnamedKey`
 
@@ -593,7 +623,7 @@ Map<String, Alias> localhost = server.aliases.get("localhost");
 
 !!! warning
 
-     If the unnamed key (in this case `localhost`) is explicitly set in a property name, the mapping will throw an error.
+     If the unnamed key (in this case `localhost`) is explicitly set in a property name, the explicit value takes precedence
 
 The `eager` attribute (default `true`) controls whether the unnamed key entry is included in the `Map` when its values
 come only from defaults. When `eager = false`, the unnamed key entry is excluded from the `Map` unless at least one

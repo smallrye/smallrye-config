@@ -421,7 +421,7 @@ public class ObjectCreatorTest {
             Supplier<Nested> nestedSupplier = () -> get(Nested.class).newInstance(context);
 
             this.defaults = context.new ObjectCreator<Map<String, String>>("defaults")
-                    .values(String.class, null, String.class, null, emptyList(), "default")
+                    .values(String.class, null, String.class, null, null, "default")
                     .get();
 
             this.defaultsNested = context.new ObjectCreator<Map<String, Nested>>("defaults-nested")

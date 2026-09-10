@@ -171,14 +171,14 @@ class ConfigMappingWithKeysTest {
 
     @ConfigMapping(prefix = "empty")
     interface EmptyKey {
-        @WithKeys(EmptyKeyProdiver.class)
+        @WithKeys(EmptyKeyProvider.class)
         Map<String, Nested> nested();
 
         interface Nested {
             String value();
         }
 
-        class EmptyKeyProdiver implements Supplier<Iterable<String>> {
+        class EmptyKeyProvider implements Supplier<Iterable<String>> {
             @Override
             public Iterable<String> get() {
                 return List.of("");
@@ -241,6 +241,46 @@ class ConfigMappingWithKeysTest {
             @Override
             public Iterable<String> get() {
                 return List.of("");
+            }
+        }
+    }
+
+    @Test
+    void noKeys() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidateUnknown(false)
+                .withSources(new MapBackedConfigSource("", Map.of(
+                        "no-keys.leaf.one", "one",
+                        "no-keys.leaf.two", "two",
+                        "no-keys.nested.one.value", "one",
+                        "no-keys.nested.two.value", "two")) {
+                })
+                .withMapping(NoKeys.class)
+                .build();
+
+        NoKeys mapping = config.getConfigMapping(NoKeys.class);
+
+        // a provider that supplies no keys falls back to discovering the keys from the property names
+        assertEquals(Set.of("one", "two"), mapping.leaf().keySet());
+        assertEquals(Set.of("one", "two"), mapping.nested().keySet());
+    }
+
+    @ConfigMapping(prefix = "no-keys")
+    interface NoKeys {
+        @WithKeys(NoKeysProvider.class)
+        Map<String, String> leaf();
+
+        @WithKeys(NoKeysProvider.class)
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
+
+        class NoKeysProvider implements Supplier<Iterable<String>> {
+            @Override
+            public Iterable<String> get() {
+                return List.of();
             }
         }
     }

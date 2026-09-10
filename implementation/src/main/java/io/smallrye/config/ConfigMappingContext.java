@@ -6,13 +6,13 @@ import static io.smallrye.config.Converters.createCollectionFactory;
 import static io.smallrye.config.Converters.newOptionalConverter;
 import static io.smallrye.config.Converters.newSecretConverter;
 import static io.smallrye.config.common.utils.StringUtil.unindexed;
+import static io.smallrye.config.common.utils.StringUtil.unquoted;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -32,6 +32,7 @@ import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfigBuilder.MappingBuilder;
+import io.smallrye.config._private.ConfigLogging;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
@@ -291,7 +292,7 @@ public final class ConfigMappingContext {
         public <K> ObjectCreator<T> map(
                 final Class<K> keyRawType,
                 final Class<? extends Converter<K>> keyConvertWith) {
-            return map(keyRawType, keyConvertWith, null, Collections.emptyList());
+            return map(keyRawType, keyConvertWith, null, null);
         }
 
         public <K> ObjectCreator<T> map(
@@ -373,77 +374,89 @@ public final class ConfigMappingContext {
                             }
                         }
 
-                        // single map key with the path plus the map key
-                        // the key is used in the resulting Map and the value in the nested creators to append nested elements paths
-                        Map<String, String> mapKeys = new HashMap<>();
-                        // single map key with all property names that share the same key
-                        Map<String, List<String>> mapProperties = new HashMap<>();
+                        // raw map keys (quoted, unquoted, or multi) to all property names that share that key.
+                        // used to determine whether a named key's properties were already consumed by the unnamed creator.
+                        Map<String, List<String>> mapKeyProperties = new HashMap<>();
 
                         if (keys != null) {
                             for (String key : keys) {
-                                if (key.isEmpty()) {
-                                    mapKeys.put(key, path);
-                                } else {
-                                    mapKeys.put(key, path + "." + quoted(key));
-                                }
+                                mapKeyProperties.putIfAbsent(quoted(key), new ArrayList<>());
                             }
                         }
-                        if (mapKeys.isEmpty()) {
+                        // no keys provider, or the provider supplied no keys, so discover them from the property names
+                        if (mapKeyProperties.isEmpty()) {
                             for (String propertyName : config.getPropertyNames()) {
                                 if (propertyName.length() > path.length() + 1 // only consider properties bigger than the map path
                                         && (path.isEmpty() || propertyName.charAt(path.length()) == '.') // next char must be a dot (for the key)
                                         && propertyName.startsWith(path)) { // the property must start with the map path
 
-                                    // Start at the map root path
+                                    // start at the map root path
                                     NameIterator mapProperty = !path.isEmpty()
-                                            ? new NameIterator(unindexed(propertyName), path.length())
-                                            : new NameIterator(unindexed(propertyName));
-                                    // Move to the next key
-                                    mapProperty.next();
-
-                                    String mapKey = unindexed(mapProperty.getPreviousSegment());
-                                    mapKeys.computeIfAbsent(mapKey, new Function<String, String>() {
-                                        @Override
-                                        public String apply(final String s) {
-                                            return unindexed(propertyName.substring(0, mapProperty.getPosition()));
-                                        }
-                                    });
-
-                                    mapProperties.computeIfAbsent(mapKey, new Function<String, List<String>>() {
-                                        @Override
-                                        public List<String> apply(final String s) {
-                                            return new ArrayList<>();
-                                        }
-                                    });
-                                    mapProperties.get(mapKey).add(propertyName);
+                                            ? new NameIterator(propertyName, path.length())
+                                            : new NameIterator(propertyName);
+                                    // raw map key used to build the full map path
+                                    String mapKey = unindexed(
+                                            propertyName.substring(mapProperty.getPosition() + 1, mapProperty.getNextEnd()));
+                                    // group all property names under the same raw map key
+                                    mapKeyProperties.computeIfAbsent(mapKey, key -> new ArrayList<>()).add(propertyName);
                                 }
                             }
                         }
 
-                        for (Map.Entry<String, String> mapKey : mapKeys.entrySet()) {
+                        // deduplicate map keys. single segment keys quoted or unquoted are the same key
+                        Set<String> mapKeys = new HashSet<>(mapKeyProperties.size());
+                        Map<String, String> mapAmbiguousKeys = new HashMap<>();
+                        for (String mapKey : mapKeyProperties.keySet()) {
+                            String unquotedKey = unquoted(mapKey);
+                            String quotedKey = "\"" + unquotedKey + "\"";
+                            // if we find both the quoted and unquoted map key, prefer the quoted and signal it
+                            if (mapKeys.contains(unquotedKey) || mapKeys.contains(quotedKey)) {
+                                mapKeys.remove(unquotedKey);
+                                mapKeys.add(quotedKey);
+                                mapAmbiguousKeys.put(quotedKey, unquotedKey);
+                                // merge the property list of the losing key into the winner
+                                mapKeyProperties.get(quotedKey).addAll(mapKeyProperties.get(unquotedKey));
+                            } else {
+                                mapKeys.add(mapKey);
+                            }
+                        }
+
+                        for (String mapKey : mapKeys) {
                             nestedCreators.add(new Consumer<>() {
                                 @Override
                                 public void accept(Function<String, Object> get) {
-                                    // When we use the unnamed key empty and nested elements, we don't know if
+                                    // When we use the unnamed key and nested elements, we don't know if
                                     // properties reference a nested element name or a named key. Since unnamed key
                                     // creator runs first, we know which property names were used and skip those.
-                                    if (unnamedKey != null && !unnamedKey.isEmpty() && !mapProperties.isEmpty()) {
-                                        boolean allUsed = true;
-                                        for (String mapProperty : mapProperties.get(mapKey.getKey())) {
-                                            if (!usedProperties.contains(mapProperty)) {
-                                                allUsed = false;
-                                                break;
+                                    if (unnamedKey != null && !unnamedKey.isEmpty()) {
+                                        // mapKeyProperties is keyed by the raw map key, matching mapKey directly.
+                                        // The list is empty for keys provided via @WithKeys (no scanned properties).
+                                        List<String> properties = mapKeyProperties.get(mapKey);
+                                        if (!properties.isEmpty()) {
+                                            boolean allUsed = true;
+                                            for (String mapProperty : properties) {
+                                                if (!usedProperties.contains(mapProperty)) {
+                                                    allUsed = false;
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        if (allUsed) {
-                                            return;
+                                            if (allUsed) {
+                                                return;
+                                            }
                                         }
                                     }
 
                                     // This is the full path plus the map key
-                                    V value = (V) get.apply(mapKey.getValue());
+                                    String pathMapKey = path.isEmpty() ? mapKey : mapKey.isEmpty() ? path : path + "." + mapKey;
+                                    V value = (V) get.apply(pathMapKey);
                                     if (value != null) {
-                                        map.put(keyConverter.convert(mapKey.getKey()), value);
+                                        if (mapAmbiguousKeys.containsKey(mapKey)) {
+                                            // pathMapKey is the quoted key, which is the one we use
+                                            String unquotedPath = path.isEmpty() ? mapAmbiguousKeys.get(mapKey)
+                                                    : path + "." + mapAmbiguousKeys.get(mapKey);
+                                            ConfigLogging.log.mappingMapKeysAmbiguous(pathMapKey, unquotedPath);
+                                        }
+                                        map.put(keyConverter.convert(unquoted(mapKey)), value);
                                     }
                                 }
                             });
