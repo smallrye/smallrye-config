@@ -8,6 +8,7 @@ import static io.smallrye.config.ConfigMappings.ConfigClass.configClass;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static io.smallrye.config.SmallRyeConfig.SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN;
 import static java.util.Collections.singletonList;
+import static java.util.logging.Level.ALL;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,17 +34,29 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.Converter;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.smallrye.config.ConfigMappingInterfaceTest.MyRestClientConfig.RestClientConfig;
 import io.smallrye.config.common.MapBackedConfigSource;
+import io.smallrye.testing.logging.LogCapture;
 
 class ConfigMappingInterfaceTest {
+    @RegisterExtension
+    static LogCapture logCapture = LogCapture.with(logRecord -> logRecord.getMessage().startsWith("SRCFG"), ALL);
+
+    @BeforeEach
+    void setUp() {
+        logCapture.records().clear();
+    }
+
     @Test
     void configMapping() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -2266,6 +2279,31 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
+    void mapKeyAmbiguous() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .withMapping(MapKeyQuotes.class)
+                .withSources(config(
+                        "map.nested.quoted.value", "value",
+                        "map.nested.\"quoted\".another", "another",
+                        "map.nested.another.value", "value",
+                        "map.nested.\"another\".another", "another",
+                        "map.nested.\"one.two\".value", "value",
+                        "map.nested.\"one.two\".another", "another",
+                        "map.nested.one.two.unrelated", "unrelated"));
+
+        assertThrows(ConfigValidationException.class, builder::build);
+        List<String> logs = logCapture.records().stream().map(LogRecord::getMessage).toList();
+        assertTrue(logs.stream().anyMatch(s -> s.equals(
+                "SRCFG01009: The Map path keys \"map.nested.\"quoted\"\" and \"map.nested.quoted\" are ambiguous. " +
+                        "These can cause issues in the mapping. Please, do not mix quoted and unquoted in the same Map key. " +
+                        "Using map.nested.\"quoted\".")));
+        assertTrue(logs.stream().anyMatch(s -> s.equals(
+                "SRCFG01009: The Map path keys \"map.nested.\"another\"\" and \"map.nested.another\" are ambiguous. " +
+                        "These can cause issues in the mapping. Please, do not mix quoted and unquoted in the same Map key. " +
+                        "Using map.nested.\"another\".")));
+    }
+
+    @Test
     void mapKeyQuotesMultipleSegments() {
         SmallRyeConfig config = new SmallRyeConfigBuilder()
                 .withValidateUnknown(false)
@@ -2283,6 +2321,51 @@ class ConfigMappingInterfaceTest {
         // the key spans multiple segments, so the quotes are part of the key
         assertEquals("1234", mapping.values().get("\"three.four\".five"));
         assertEquals("1234", mapping.values().get("\"six.seven\".\"eight\""));
+    }
+
+    @Test
+    void mapKeyQuotesMultipleSegmentsWithUnnamedKey() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(MapKeyQuotesWithUnnamedKey.class)
+                .withSources(config(
+                        "map.nested.\"three.four.five\".value", "1234",
+                        "map.nested.value", "unnamed"))
+                .build();
+
+        MapKeyQuotesWithUnnamedKey mapping = config.getConfigMapping(MapKeyQuotesWithUnnamedKey.class);
+        assertEquals("unnamed", mapping.nested().get(null).value());
+        // a key spanning multiple segments has to be quoted as a whole, so it is a single segment in the name
+        assertEquals("1234", mapping.nested().get("three.four.five").value());
+    }
+
+    @Test
+    void mapKeyQuotesMultipleSegmentsWithUnnamedKeyUnsupported() {
+        // Unlike a Map of leaves, where the key is everything that follows the Map path, a Map of groups has to
+        // split the remainder of the name between the key and the nested group path. The split is a single
+        // segment, so a key cannot span segments here and "three.four".five is read as the key "three.four",
+        // which leaves five.value unaccounted for. The mapped name is map.nested.*.value and the wildcard is not
+        // terminal, so the name does not match and is reported as unknown. Quote the key as a whole instead.
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, () -> new SmallRyeConfigBuilder()
+                .withMapping(MapKeyQuotesWithUnnamedKey.class)
+                .withSources(config(
+                        "map.nested.\"three.four\".five.value", "1234",
+                        "map.nested.value", "unnamed"))
+                .build());
+
+        assertEquals(1, exception.getProblemCount());
+        assertEquals(
+                "SRCFG00050: map.nested.\"three.four\".five.value in KeyValuesConfigSource does not map to any root",
+                exception.getProblem(0).getMessage());
+    }
+
+    @ConfigMapping(prefix = "map")
+    interface MapKeyQuotesWithUnnamedKey {
+        @WithUnnamedKey
+        Map<String, Nested> nested();
+
+        interface Nested {
+            String value();
+        }
     }
 
     @ConfigMapping(prefix = "map")
