@@ -14,20 +14,14 @@ import static io.smallrye.config.common.utils.StringUtil.isNumericEquals;
  * <li><code>foo.bar.baz</code> matches <code>foo.*.baz</code></li>
  * <li><code>foo."bar.baz"</code> matches <code>foo.*</code></li>
  * <li><code>foo.bar[0]</code> matches <code>foo.bar[*]</code></li>
+ * <li><code>foo."bar[0]"</code> does not match <code>foo.bar[0]</code></li>
+ * <li><code>foo."bar[0]"</code> does not match <code>foo."bar[*]"</code></li>
  * </ul>
+ * <p>
+ * Due to the equality rules and hashing function, {@link PropertyName} is <code>NOT</code> suitable for use in
+ * structures that require an even distribution of keys.
  */
-public class PropertyName {
-    private final String name;
-    private final int hashCode;
-
-    public PropertyName(final String name) {
-        this.name = name;
-        this.hashCode = hashCode(name);
-    }
-
-    public String getName() {
-        return name;
-    }
+public record PropertyName(String name) {
 
     @Override
     public boolean equals(final Object o) {
@@ -46,12 +40,12 @@ public class PropertyName {
      *
      * @param name a String with a configuration name.
      * @param other a String with another configuration name.
-     * @return <code>true</code> if both arguments match the {@link PropertyName} semantics, <code>false</code>
+     * @return <code>true</code> if both arguments match the {@link PropertyName} semantics,
+     *         <code>false</code>
      *         otherwise.
      */
     public static boolean equals(final String name, final String other) {
-        return equalsInternal(name, 0, name.length(), other, 0, other.length())
-                || equalsInternal(other, 0, other.length(), name, 0, name.length());
+        return equals(name, 0, name.length(), other, 0, other.length());
     }
 
     /**
@@ -66,104 +60,448 @@ public class PropertyName {
      * @return <code>true</code> if both arguments match the {@link PropertyName} semantics, <code>false</code>
      *         otherwise.
      */
-    public static boolean equals(final String name, final int offset, final int len, final String other, final int ooffset,
-            final int olen) {
-        return equalsInternal(name, offset, len, other, ooffset, olen)
-                || equalsInternal(other, ooffset, olen, name, offset, len);
-    }
-
     @SuppressWarnings("squid:S4973")
-    private static boolean equalsInternal(final String name, final int offset, final int len, final String other,
-            final int ooffset, final int olen) {
+    public static boolean equals(
+            final String name, final int offset, final int len,
+            final String other, final int ooffset, final int olen) {
+
         //noinspection StringEquality
-        if (name == other) {
+        if (name == other && offset == ooffset && len == olen) {
             return true;
         }
-
-        if (name.equals("*") && (other.isEmpty() || other.equals("\"\""))) {
+        if (len == olen && name.regionMatches(offset, other, ooffset, len)) {
+            return true;
+        }
+        // fast path, names that share a long prefix are the common case, so if the last character is different we
+        // know there is no match.
+        if (len != 0 && olen != 0) {
+            char last = name.charAt(offset + len - 1);
+            char olast = other.charAt(ooffset + olen - 1);
+            if (last != olast && isPlain(last) && isPlain(olast)) {
+                return false;
+            }
+        }
+        // a wildcard stands for any segment, empty ones included, so "map.*" matches "map.\"\"", but it does not
+        // stand for a leading empty segment, so "*" matches neither "" nor ".foo"
+        if (startsEmpty(name, offset, offset + len) != startsEmpty(other, ooffset, ooffset + olen)) {
             return false;
         }
 
-        char n;
-        char o;
+        if (matches(name, offset, offset + len, other, ooffset, ooffset + olen)) {
+            return true;
+        }
+        // matching is symmetric, except for the greedy trailing star, so the other direction is only required
+        // when it is the other name that ends in one
+        if (other.indexOf('*', ooffset) == -1) {
+            return false;
+        }
+        int last = lastSegmentStart(other, ooffset, ooffset + olen);
+        if (!isStar(other, last, nameEnd(other, last, ooffset + olen))) {
+            return false;
+        }
+        return matches(other, ooffset, ooffset + olen, name, offset, offset + len);
+    }
 
-        int matchPosition = offset + len - 1;
-        for (int i = ooffset + olen - 1; i >= ooffset; i--) {
-            if (matchPosition == -1) {
+    /**
+     * Checks if the character only stands for itself, so it neither ends the segment nor carries any meaning.
+     */
+    private static boolean isPlain(final char c) {
+        return c != '.' && c != '"' && c != '*' && c != '[' && c != ']' && c != '\\';
+    }
+
+    /**
+     * Checks if the first segment of the region is empty, which only a leading dot or a leading quote can make it.
+     */
+    private static boolean startsEmpty(final String name, final int start, final int end) {
+        if (start == end) {
+            return true;
+        }
+        char c = name.charAt(start);
+        if (c == '.') {
+            return true;
+        }
+        // only a run of quotes can be an empty segment, so a single one, or one that a name follows, cannot
+        if (c != '"' || start + 1 == end || name.charAt(start + 1) != '"') {
+            return false;
+        }
+        return isEmpty(name, start, segmentEnd(name, start, end));
+    }
+
+    /**
+     * Matches the segments of <code>name</code> against the segments of <code>other</code>, in order. A star segment
+     * in <code>name</code> stands for any non empty segment in <code>other</code>, and a trailing star segment is
+     * greedy, so it stands for every remaining segment.
+     */
+    private static boolean matches(
+            final String name, final int start, final int end,
+            final String other, final int ostart, final int oend) {
+
+        int s = start;
+        int os = ostart;
+        segments: for (;;) {
+            for (int i = s, o = os; i < end && o < oend;) {
+                char c = name.charAt(i);
+                char d = other.charAt(o);
+                if (c == '.' && d == '.') {
+                    // everything before matched and both segments end here
+                    s = i + 1;
+                    os = o + 1;
+                    continue segments;
+                } else if (c == '"' && !isQuoteRequired(name, start, end, i)) {
+                    // a quote that carries no meaning only shifts the name being compared
+                    i++;
+                } else if (d == '"' && !isQuoteRequired(other, ostart, oend, o)) {
+                    o++;
+                } else if (c == '"' && isPlain(d) || d == '"' && isPlain(c)) {
+                    // the quote that remains is one the segment requires, so it is a plain character that only
+                    // another quote matches, and a segment holding one is never a wildcard
+                    return false;
+                } else if (!isPlain(c) || !isPlain(d)) {
+                    break;
+                } else if (c != d) {
+                    // nothing later in either segment can realign what already differs
+                    return false;
+                } else {
+                    i++;
+                    o++;
+                }
+            }
+
+            int e = segmentEnd(name, s, end);
+            int oe = segmentEnd(other, os, oend);
+
+            // greedy map - a trailing star segment consumes every remaining segment
+            if (e == end && oe != oend && isStar(name, s, nameEnd(name, s, e))) {
+                int last = lastSegmentStart(other, os, oend);
+                if (hasWildcard(other, ostart, oend) || hasIndex(other, os, last)) {
+                    return false;
+                }
+                return segmentMatches(name, s, e, other, last, oend);
+            }
+
+            if (!segmentMatches(name, s, e, other, os, oe)) {
                 return false;
             }
 
-            o = other.charAt(i);
-            n = name.charAt(matchPosition);
+            if (e == end || oe == oend) {
+                return e == end && oe == oend;
+            }
 
-            if (n == '*') {
-                if (o == ']') {
-                    return false;
-                } else if (o == '"') {
-                    int beginQuote = other.lastIndexOf('"', i - 1);
-                    if (beginQuote != -1) {
-                        i = beginQuote;
-                    }
-                } else {
-                    int previousDot = other.lastIndexOf('.', i);
-                    if (previousDot != -1) {
-                        i = previousDot + 1;
-                    } else {
-                        i = 0;
-                    }
-                    // greedy map - match any ending segments if a last segment is a *
-                    if (matchPosition + 1 == len) {
-                        // try to match by removing the * and the last segment
-                        if (equalsInternal(name, offset, matchPosition, other, ooffset, olen - (ooffset + olen - i))) {
+            s = e + 1;
+            os = oe + 1;
+        }
+    }
+
+    /**
+     * Matches a single segment. Quotes that the segment does not require carry no meaning, so <code>"bar"</code>
+     * matches <code>bar</code> and <code>"*"</code> is still the wildcard <code>*</code>. Quotes that the segment
+     * does require are part of the name, so <code>"bar.baz"</code> is a single opaque segment, in which the star and
+     * the brackets are plain characters.
+     */
+    private static boolean segmentMatches(
+            final String name, final int start, final int end,
+            final String other, final int ostart, final int oend) {
+        int index = indexStart(name, start, end);
+        int oindex = indexStart(other, ostart, oend);
+        if ((index == -1) != (oindex == -1)) {
+            return false;
+        }
+        if (index != -1 && !indexMatches(name, index + 1, end - 1, other, oindex + 1, oend - 1)) {
+            return false;
+        }
+
+        int e = index == -1 ? end : index;
+        int oe = oindex == -1 ? oend : oindex;
+        if (isStar(name, start, e) || isStar(other, ostart, oe)) {
+            return true;
+        }
+        return unquotedEquals(name, start, e, other, ostart, oe);
+    }
+
+    /**
+     * Matches the contents of two indexes, where the star matches any index.
+     */
+    private static boolean indexMatches(
+            final String name, final int start, final int end,
+            final String other, final int ostart, final int oend) {
+
+        boolean star = isStar(name, start, end);
+        boolean ostar = isStar(other, ostart, oend);
+        if (star && ostar) {
+            return true;
+        } else if (star) {
+            return isNumeric(other, ostart, oend - ostart);
+        } else if (ostar) {
+            return isNumeric(name, start, end - start);
+        }
+        return isNumericEquals(name, start, end - start, other, ostart, oend - ostart);
+    }
+
+    /**
+     * The end position of the segment that starts in <code>start</code>, which is the next dot that no quote holds,
+     * or the end of the region.
+     */
+    private static int segmentEnd(final String name, final int start, final int end) {
+        boolean quoted = false;
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (c == '.' && !quoted) {
+                return i;
+            }
+        }
+        return end;
+    }
+
+    private static int lastSegmentStart(final String name, final int start, final int end) {
+        int last = start;
+        for (int s = start; s < end;) {
+            int e = segmentEnd(name, s, end);
+            if (e == end) {
+                break;
+            }
+            s = e + 1;
+            last = s;
+        }
+        return last;
+    }
+
+    /**
+     * The end position of the name part of a segment, which is the position of its index, if it has one.
+     */
+    private static int nameEnd(final String name, final int start, final int end) {
+        int index = indexStart(name, start, end);
+        return index == -1 ? end : index;
+    }
+
+    /**
+     * The position of the opening bracket of the index that ends the segment, or <code>-1</code> if the segment has
+     * no index. Brackets that a quoted segment holds are plain characters, so <code>"bar[0]"</code> has no index,
+     * while <code>bar[0]</code> and <code>"bar"[0]</code> both have one.
+     */
+    private static int indexStart(final String name, final int start, final int end) {
+        // an index always closes the segment, so a segment that does not end in a bracket cannot hold one
+        if (end - start < 3 || name.charAt(end - 1) != ']') {
+            return -1;
+        }
+
+        int quote = name.indexOf('"', start);
+        if (quote == -1 || quote >= end) {
+            // without a quote to turn them into plain characters, the last opening bracket starts the index
+            int open = name.lastIndexOf('[', end - 2);
+            return open >= start ? open : -1;
+        }
+
+        boolean quoted = false;
+        int open = -1;
+        int close = -1;
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (!quoted && c == '[') {
+                open = i;
+            } else if (!quoted && c == ']') {
+                close = i;
+            }
+        }
+        return close == end - 1 && open != -1 && open < close ? open : -1;
+    }
+
+    /**
+     * Checks if the region holds a star that is a wildcard, which a greedy star cannot stand for. A star that a
+     * quoted segment requiring its quotes holds is a plain character, so it is not a wildcard.
+     */
+    private static boolean hasWildcard(final String name, final int start, final int end) {
+        int star = name.indexOf('*', start);
+        if (star == -1 || star >= end) {
+            return false;
+        }
+        for (int s = start; s < end;) {
+            int e = segmentEnd(name, s, end);
+            if (segmentContainsWildcard(name, s, e)) {
+                return true;
+            }
+            if (e == end) {
+                return false;
+            }
+            s = e + 1;
+        }
+        return false;
+    }
+
+    private static boolean segmentContainsWildcard(final String name, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '"') {
+                int close = closingQuote(name, i, end);
+                if (!hasRequiredQuotes(name, i + 1, close)) {
+                    for (int k = i + 1; k < close; k++) {
+                        if (name.charAt(k) == '\\') {
+                            k++;
+                        } else if (name.charAt(k) == '*') {
                             return true;
                         }
-                        // try to match by keeping the original * and removing the last segment,
-                        // but only if the remaining other does not contain a *
-                        int newOlen = olen - (ooffset + olen - i) - 1;
-                        for (int j = ooffset; j < ooffset + newOlen; j++) {
-                            if (other.charAt(j) == '*') {
-                                return false;
-                            }
-                        }
-                        return equalsInternal(name, offset, len, other, ooffset, newOlen);
                     }
                 }
-            } else if (o == ']' && n == ']') {
-                int otherBeginIndexed = other.lastIndexOf('[', i);
-                int nameBeginIndexed = name.lastIndexOf('[', matchPosition);
-                if (otherBeginIndexed != -1 && nameBeginIndexed != -1) {
-                    if (other.charAt(otherBeginIndexed + 1) == '*' && name.charAt(nameBeginIndexed + 1) == '*') {
-                        i = i - 2;
-                        matchPosition = matchPosition - 3;
-                    } else if (name.charAt(nameBeginIndexed + 1) == '*'
-                            && isNumeric(other, otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
-                        i = otherBeginIndexed;
-                        matchPosition = matchPosition - 3;
-                        // greedy map - match any ending segments if a last segment is a *[*]
-                        if (matchPosition + 4 == len) {
-                            // try to match by removing the * and the last segment
-                            if (equalsInternal(name, offset, matchPosition + 1,
-                                    other, ooffset, olen - (ooffset + olen - i)))
-                                return true;
-                            // try to match by keeping the original * and removing the last segment plus the brackets
-                            return equalsInternal(name, offset, nameBeginIndexed, other,
-                                    ooffset, olen - (ooffset + olen - otherBeginIndexed));
-                        }
-                    } else if (isNumericEquals(name, nameBeginIndexed + 1, matchPosition - nameBeginIndexed - 1, other,
-                            otherBeginIndexed + 1, i - otherBeginIndexed - 1)) {
-                        i = otherBeginIndexed;
-                        matchPosition = nameBeginIndexed - 1;
-                    } else {
-                        return false;
-                    }
-                    continue;
-                }
-            } else if (o != n) {
+                i = close;
+            } else if (c == '*') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int closingQuote(final String name, final int quote, final int end) {
+        for (int i = quote + 1; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '"') {
+                return i;
+            }
+        }
+        return end;
+    }
+
+    /**
+     * Checks if a quoted run requires its quotes, which is the case when it holds a segment boundary.
+     */
+    private static boolean hasRequiredQuotes(final String name, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '.' || c == '[' || c == ']') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the region is a single star, once the quotes that carry no meaning are removed, so both
+     * <code>*</code> and <code>"*"</code> are a wildcard, while <code>"a.*"</code> is a plain name.
+     */
+    private static boolean isStar(final String name, final int start, final int end) {
+        boolean star = false;
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '"' && !isQuoteRequired(name, start, end, i)) {
+                // do nothing
+            } else if (c == '*' && !star) {
+                star = true;
+            } else {
                 return false;
             }
-            matchPosition--;
         }
-        return matchPosition < offset;
+        return star;
+    }
+
+    /**
+     * Checks if the region holds nothing but quotes that carry no meaning, so it is an empty segment, which a
+     * wildcard does not match.
+     */
+    private static boolean isEmpty(final String name, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                return false;
+            } else if (c != '"' || isQuoteRequired(name, start, end, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if any segment that starts before <code>end</code> holds an index. A greedy star cannot swallow such a
+     * segment, because the index it holds has nothing to match it.
+     */
+    private static boolean hasIndex(final String name, final int start, final int end) {
+        int bracket = name.indexOf('[', start);
+        if (bracket == -1 || bracket >= end) {
+            return false;
+        }
+        for (int s = start; s < end;) {
+            int e = segmentEnd(name, s, end);
+            if (indexStart(name, s, e) != -1) {
+                return true;
+            }
+            s = e + 1;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the character in the given position is a quote that the segment requires, which is the case when the
+     * quoted run holds a segment boundary. Such quotes are part of the comparison, so <code>"bar]"</code> does not
+     * match <code>bar]</code>. A quote that the segment does not require carries no meaning and is not part of the
+     * comparison, so <code>"bar"</code> matches <code>bar</code>. A quote that no other quote closes is required as
+     * well, because {@link #segmentEnd} lets such a run swallow every dot that follows it, and both have to agree on
+     * where the segment ends.
+     */
+    private static boolean isQuoteRequired(final String name, final int start, final int end, final int quote) {
+        // if another quote precedes this one before a segment boundary, this is an inner quote of the run
+        for (int i = quote - 1; i >= start; i--) {
+            char c = name.charAt(i);
+            if (c == '"') {
+                return false;
+            } else if (c == '.' || c == '[' || c == ']') {
+                break;
+            }
+        }
+        // a quote that closes the run before any segment boundary makes it one the segment does not require
+        for (int i = quote + 1; i < end; i++) {
+            char c = name.charAt(i);
+            if (c == '"') {
+                return false;
+            } else if (c == '.' || c == '[' || c == ']') {
+                break;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Compares two segments, skipping the quotes that carry no meaning. An escaped character is compared as it is,
+     * so the escaped quote in <code>"bar\"baz"</code> is part of the name and does not delimit anything.
+     */
+    private static boolean unquotedEquals(final String name, final int start, final int end, final String other,
+            final int ostart, final int oend) {
+        int i = start;
+        int o = ostart;
+        for (;;) {
+            while (i < end && name.charAt(i) == '"' && !isQuoteRequired(name, start, end, i)) {
+                i++;
+            }
+            while (o < oend && other.charAt(o) == '"' && !isQuoteRequired(other, ostart, oend, o)) {
+                o++;
+            }
+            if (i == end || o == oend) {
+                return i == end && o == oend;
+            }
+            char c = name.charAt(i++);
+            if (c != other.charAt(o++)) {
+                return false;
+            }
+            if (c == '\\') {
+                // the escaped character is part of the name, even when it is a quote
+                if (i == end || o == oend) {
+                    return i == end && o == oend;
+                }
+                if (name.charAt(i++) != other.charAt(o++)) {
+                    return false;
+                }
+            }
+        }
     }
 
     /**
@@ -176,15 +514,15 @@ public class PropertyName {
      */
     @Override
     public int hashCode() {
-        return hashCode;
-    }
-
-    private static int hashCode(final String name) {
         int h = 0;
         int length = name.length();
         boolean quotesOpen = false;
         for (int i = 0; i < length; i++) {
             char c = name.charAt(i);
+            if (c == '\\') {
+                i++;
+                continue;
+            }
             if (quotesOpen) {
                 if (c == '"') {
                     quotesOpen = false;

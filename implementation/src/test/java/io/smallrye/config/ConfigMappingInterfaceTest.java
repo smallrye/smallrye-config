@@ -2265,6 +2265,26 @@ class ConfigMappingInterfaceTest {
         assertEquals("another", mapping.nested().get("quoted").another());
     }
 
+    @Test
+    void mapKeyQuotesMultipleSegments() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withValidateUnknown(false)
+                .withMapping(MapKeyQuotes.class)
+                .withSources(config(
+                        "map.values.\"one.two\"", "1234",
+                        "map.values.\"three.four\".five", "1234",
+                        "map.values.\"six.seven\".\"eight\"", "1234"))
+                .build();
+
+        MapKeyQuotes mapping = config.getConfigMapping(MapKeyQuotes.class);
+
+        // the quotes wrap the whole key, so the key is the quoted segment
+        assertEquals("1234", mapping.values().get("one.two"));
+        // the key spans multiple segments, so the quotes are part of the key
+        assertEquals("1234", mapping.values().get("\"three.four\".five"));
+        assertEquals("1234", mapping.values().get("\"six.seven\".\"eight\""));
+    }
+
     @ConfigMapping(prefix = "map")
     interface MapKeyQuotes {
         Map<String, String> values();

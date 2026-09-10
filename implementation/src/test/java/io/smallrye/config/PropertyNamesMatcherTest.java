@@ -128,6 +128,30 @@ class PropertyNamesMatcherTest {
         assertTrue(matcher.matches("name.one"));
     }
 
+    @Test
+    void quotedSegments() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        matcher.add("map.*.\"one\"", "one");
+        matcher.add("map.*.\"one.two\"", "two");
+        matcher.add("map.*.three", "three");
+
+        assertTrue(matcher.matches("map.key.\"one\""));
+        assertTrue(matcher.matches("map.key.one"));
+        assertTrue(matcher.matches("map.key.\"one.two\""));
+        assertTrue(matcher.matches("map.key.three"));
+        assertTrue(matcher.matches("map.key.\"three\""));
+        assertFalse(matcher.matches("map.key.one.two"));
+
+        assertEquals("one", matcher.get("map.key.\"one\""));
+        assertEquals("one", matcher.get("map.key.one"));
+        assertEquals("two", matcher.get("map.key.\"one.two\""));
+        assertEquals("three", matcher.get("map.key.three"));
+        assertEquals("three", matcher.get("map.key.\"three\""));
+
+        assertTrue(matcher.matches("map.\"key.one\".\"one.two\""));
+        assertTrue(matcher.matches("map.\"key\".three"));
+    }
+
     @ConfigMapping
     interface Conflicts {
         Map<String, Nested> map();
