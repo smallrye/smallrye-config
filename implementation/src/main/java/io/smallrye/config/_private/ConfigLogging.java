@@ -12,7 +12,6 @@ import org.jboss.logging.annotations.MessageLogger;
 
 @MessageLogger(projectCode = "SRCFG", length = 5)
 public interface ConfigLogging extends BasicLogger {
-
     // if we add message localization one day, we must drop the Locale.ROOT argument
     // we must also do it in ConfigMessages
     ConfigLogging log = Logger.getMessageLogger(MethodHandles.lookup(), ConfigLogging.class, "io.smallrye.config", Locale.ROOT);
@@ -34,10 +33,18 @@ public interface ConfigLogging extends BasicLogger {
     @Message(id = 1002, value = "The config %s was not found")
     void notFound(String name);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1003, value = "Unable to get declared constructor for class %s with arguments %s")
     void failedToRetrieveDeclaredConstructor(@Cause Throwable cause, String clazz, String paramTypes);
 
+    /**
+     * @deprecated Reserved. Used in previous implementations, but no longer required.
+     */
+    @SuppressWarnings("unused")
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1004, value = "Unable to set accessible flag on %s")
     void failedToSetAccessible(@Cause Throwable cause, String accessibleObject);
