@@ -28,7 +28,7 @@
     <name>SmallRye Config: Spring</name>
 
     <properties>
-        <version.spring.boot>4.1.0</version.spring.boot>
+        <version.spring.boot>4.1.1</version.spring.boot>
     </properties>
 
     <dependencies>
