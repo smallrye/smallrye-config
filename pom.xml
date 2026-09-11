@@ -40,7 +40,7 @@
     <version.smallrye.common>2.20.0</version.smallrye.common>
     <version.asm>9.10.1</version.asm>
 
-    <version.smallrye.testing>2.5.0</version.smallrye.testing>
+    <version.smallrye.testing>2.5.1</version.smallrye.testing>
 
     <version.module-services-plugin>1.3</version.module-services-plugin>
     <!-- Sonar settings -->
