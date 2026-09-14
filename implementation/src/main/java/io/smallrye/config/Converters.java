@@ -364,7 +364,7 @@ public final class Converters {
             final Converter<?> conv = resolveConverter(converters, type.getComponentType());
             return conv == null ? null : newArrayConverter(conv, type);
         }
-        return Implicit.getConverter(type);
+        return (Converter<T>) converters.computeIfAbsent(type, key -> Implicit.getConverter((Class<?>) key));
     }
 
     /**
@@ -1593,43 +1593,47 @@ public final class Converters {
     }
 
     static final class Implicit {
-        private static final ClassValue<Converter<?>> CACHE = new ClassValue<>() {
-            @Override
-            protected Converter<?> computeValue(Class<?> type) {
-                if (type.isEnum()) {
-                    return new HyphenateEnumConverter(type);
-                }
+        /**
+         * Implicit converters are deliberately not cached here. The converter is an instance of a class loaded by
+         * the loader of {@link Converters}, while the type it converts to is frequently loaded by an ancestor
+         * loader (a JDK type such as {@link java.time.Duration}, for instance). Anchoring the converter to the type
+         * (in a {@link ClassValue}, or in any map keyed by the type) therefore keeps the loader of
+         * {@link Converters} alive for as long as the type is alive, which in a container that creates a
+         * {@link ClassLoader} per application means the loader can never be collected.
+         * <p>
+         * Callers that want to cache the result must do so with a lifetime no longer than their own, as
+         * {@link Converters#resolveConverter(Map, Class)} does.
+         */
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        static <T> Converter<T> getConverter(Class<? extends T> type) {
+            if (type.isEnum()) {
+                return new HyphenateEnumConverter(type);
+            }
 
-                // implicit converters required by the specification
-                Converter<Object> converter = getConverterFromStaticMethod(type, "of", String.class);
+            // implicit converters required by the specification
+            Converter<T> converter = getConverterFromStaticMethod(type, "of", String.class);
+            if (converter == null) {
+                converter = getConverterFromStaticMethod(type, "of", CharSequence.class);
                 if (converter == null) {
-                    converter = getConverterFromStaticMethod(type, "of", CharSequence.class);
+                    converter = getConverterFromStaticMethod(type, "valueOf", String.class);
                     if (converter == null) {
-                        converter = getConverterFromStaticMethod(type, "valueOf", String.class);
+                        converter = getConverterFromStaticMethod(type, "valueOf", CharSequence.class);
                         if (converter == null) {
-                            converter = getConverterFromStaticMethod(type, "valueOf", CharSequence.class);
+                            converter = getConverterFromStaticMethod(type, "parse", String.class);
                             if (converter == null) {
-                                converter = getConverterFromStaticMethod(type, "parse", String.class);
+                                converter = getConverterFromStaticMethod(type, "parse", CharSequence.class);
                                 if (converter == null) {
-                                    converter = getConverterFromStaticMethod(type, "parse", CharSequence.class);
+                                    converter = getConverterFromConstructor(type, String.class);
                                     if (converter == null) {
-                                        converter = getConverterFromConstructor(type, String.class);
-                                        if (converter == null) {
-                                            converter = getConverterFromConstructor(type, CharSequence.class);
-                                        }
+                                        converter = getConverterFromConstructor(type, CharSequence.class);
                                     }
                                 }
                             }
                         }
                     }
                 }
-                return converter;
             }
-        };
-
-        @SuppressWarnings("unchecked")
-        static <T> Converter<T> getConverter(Class<? extends T> type) {
-            return (Converter<T>) CACHE.get(type);
+            return converter;
         }
 
         private static <T> Converter<T> getConverterFromConstructor(Class<? extends T> type, Class<? super String> paramType) {
