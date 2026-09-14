@@ -7,11 +7,16 @@
     ]
   },
   {
-    "version": "4.0.0.CR1",
-    "title": "4.0.0.CR1",
+    "version": "4.0.0.CR2",
+    "title": "4.0.0.CR2",
     "aliases": [
       "Latest"
     ]
+  },
+  {
+    "version": "4.0.0.CR1",
+    "title": "4.0.0.CR1",
+    "aliases": []
   },
   {
     "version": "3.18.3",
