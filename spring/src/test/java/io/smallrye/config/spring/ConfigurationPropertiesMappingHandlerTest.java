@@ -1,6 +1,9 @@
 package io.smallrye.config.spring;
 
+import static io.smallrye.config.ConfigMappingLoader.getGeneratedConfigClasses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -14,8 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Name;
 
-import io.smallrye.config.ConfigMappingLoader;
+import io.smallrye.config.ConfigMappingHandler.ConfigMappingInterfaceHandler;
 import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
+import io.smallrye.config.ConfigMappings;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -219,15 +224,65 @@ class ConfigurationPropertiesMappingHandlerTest {
 
     @Test
     void allMappingMetadata() {
-        Set<String> names = ConfigMappingLoader.getGeneratedConfigClasses(ToolGroupProperties.class)
+        Set<String> names = getGeneratedConfigClasses(ToolGroupProperties.class)
                 .stream()
                 .map(GeneratedConfigClass::getClassName)
                 .collect(Collectors.toSet());
 
-        assertTrue(names.contains("io.smallrye.config.spring.ToolGroupProperties-1087945751I"));
-        assertTrue(names.contains("io.smallrye.config.spring.ToolGroupProperties-1087945751I$$CMImpl"));
-        assertTrue(names.contains("io.smallrye.config.spring.GroupConfig648864326I"));
-        assertTrue(names.contains("io.smallrye.config.spring.GroupConfig648864326I$$CMImpl"));
+        String test = "io.smallrye.config.spring.ConfigurationPropertiesMappingHandlerTest";
+        assertTrue(names.contains(test + "$ToolGroupProperties$$CMClass"));
+        assertTrue(names.contains(test + "$ToolGroupProperties$$CMClass$$CMImpl"));
+        assertTrue(names.contains(test + "$ToolGroupProperties$GroupConfig$$CMClass"));
+        assertTrue(names.contains(test + "$ToolGroupProperties$GroupConfig$$CMClass$$CMImpl"));
+    }
+
+    @Test
+    void bridgeHandlerAfterMapping() {
+        new SmallRyeConfigBuilder()
+                .withMapping(BridgeFromMapping.class)
+                .withDefaultValue("bridge-mapping.host", "localhost")
+                .build();
+
+        Set<GeneratedConfigClass> generated = getGeneratedConfigClasses(BridgeFromMapping.class);
+        GeneratedConfigClass configClass = generated.stream()
+                .filter(g -> g.getParent().equals(BridgeFromMapping.class))
+                .findFirst()
+                .orElseThrow();
+        GeneratedConfigClass bridge = generated.stream()
+                .filter(g -> g.getParent().equals(configClass.getInterfaceType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertSame(ConfigMappingInterfaceHandler.CONFIG_MAPPING, bridge.getHandler());
+        assertNotSame(configClass.getHandler(), bridge.getHandler());
+    }
+
+    @ConfigurationProperties(prefix = "bridge-mapping")
+    public static class BridgeFromMapping {
+        public String host;
+    }
+
+    @Test
+    void bridgeHandlerAfterProperties() {
+        ConfigMappings.getProperties(ConfigClass.configClass(BridgeFromProperties.class));
+
+        Set<GeneratedConfigClass> generated = getGeneratedConfigClasses(BridgeFromProperties.class);
+        GeneratedConfigClass configClass = generated.stream()
+                .filter(g -> g.getParent().equals(BridgeFromProperties.class))
+                .findFirst()
+                .orElseThrow();
+        GeneratedConfigClass bridge = generated.stream()
+                .filter(g -> g.getParent().equals(configClass.getInterfaceType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertSame(ConfigMappingInterfaceHandler.CONFIG_MAPPING, bridge.getHandler());
+        assertNotSame(configClass.getHandler(), bridge.getHandler());
+    }
+
+    @ConfigurationProperties(prefix = "bridge-properties")
+    public static class BridgeFromProperties {
+        public String host;
     }
 
     @Test

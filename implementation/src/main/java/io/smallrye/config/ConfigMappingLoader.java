@@ -17,6 +17,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import io.smallrye.common.classloader.ClassDefiner;
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.ConfigMappingHandler.ConfigMappingInterfaceHandler;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingInterface.Property;
 import io.smallrye.config._private.ConfigMessages;
@@ -73,8 +74,10 @@ public final class ConfigMappingLoader {
         if (configMappingClass != null) {
             generatedClasses.add(configMappingClass);
             generatedClasses.addAll(configMappingClass.getNested());
-            generatedClasses.addAll(getGeneratedConfigClasses(configMappingClass.getInterfaceType(),
-                    configMappingClass.getHandler()));
+            // A config class is mapped through a generated interface bridge, which has a handler of its own
+            generatedClasses.addAll(getGeneratedConfigClasses(
+                    configMappingClass.getInterfaceType(),
+                    ConfigMappingInterfaceHandler.CONFIG_MAPPING));
         }
         return Set.copyOf(generatedClasses);
     }
@@ -192,50 +195,53 @@ public final class ConfigMappingLoader {
         private static final ClassValue<ConfigClassImplementation> CACHE = new ClassValue<>() {
             @Override
             protected ConfigClassImplementation computeValue(Class<?> type) {
-                // Try to load the implementation class of a config interface from the CL
-                try {
-                    Class<?> implementationClass = type.getClassLoader()
-                            .loadClass(ConfigMappingInterface.getGeneratedClassName(type));
-                    if (type.isAssignableFrom(implementationClass)) {
-                        return new ConfigClassImplementation(type, implementationClass);
+                // A type loaded by the bootstrap loader cannot be a mapping, and has no loader to look in
+                ClassLoader classLoader = type.getClassLoader();
+                if (classLoader != null) {
+                    // Try to load the implementation class of a config interface from the CL
+                    try {
+                        Class<?> implementationClass = classLoader
+                                .loadClass(ConfigMappingInterface.getGeneratedClassName(type));
+                        if (type.isAssignableFrom(implementationClass)) {
+                            return new ConfigClassImplementation(implementationClass);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        // Fall through to dynamic generation
                     }
-                } catch (ClassNotFoundException e) {
-                    // Fall through to dynamic generation
-                }
 
-                // Try to load the implementation class of a class compatible config interface from the CL
-                try {
-                    Class<?> interfaceType = type.getClassLoader()
-                            .loadClass(ConfigMappingClass.getGeneratedClassName(type));
-                    Class<?> implementationClass = type.getClassLoader()
-                            .loadClass(ConfigMappingInterface.getGeneratedClassName(interfaceType));
-                    if (interfaceType.isAssignableFrom(implementationClass)) {
-                        return new ConfigClassImplementation(interfaceType, implementationClass);
+                    // Try to load the implementation class of a class compatible config interface from the CL
+                    try {
+                        Class<?> interfaceType = classLoader
+                                .loadClass(ConfigMappingClass.getGeneratedClassName(type));
+                        Class<?> implementationClass = classLoader
+                                .loadClass(ConfigMappingInterface.getGeneratedClassName(interfaceType));
+                        if (interfaceType.isAssignableFrom(implementationClass)) {
+                            return new ConfigClassImplementation(implementationClass);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        // Fall through to dynamic generation
                     }
-                } catch (ClassNotFoundException e) {
-                    // Fall through to dynamic generation
                 }
 
                 // Dynamically generate and load the implementation class
                 ConfigMappingHandler handler = Handlers.get(type);
                 ConfigMappingInterface configMappingInterface = ConfigMappingInterface.get(type, handler);
                 if (configMappingInterface != null) {
-                    return new ConfigClassImplementation(type, loadImplementation(type, configMappingInterface.getHandler()));
+                    return new ConfigClassImplementation(loadImplementation(configMappingInterface));
                 }
 
+                // A config class is mapped through a generated interface bridge, which is what is implemented
                 ConfigMappingClass configMappingClass = ConfigMappingClass.get(type, handler);
-                Class<?> interfaceType = configMappingClass != null ? configMappingClass.getInterfaceType() : type;
-                return new ConfigClassImplementation(interfaceType, loadImplementation(interfaceType, handler));
+                if (configMappingClass != null) {
+                    return new ConfigClassImplementation(loadImplementation(configMappingClass.getMappingBridge()));
+                }
+
+                throw ConfigMessages.msg.classIsNotAMapping(type);
             }
         };
 
-        private static <T> Class<?> loadImplementation(final Class<T> type, final ConfigMappingHandler handler) {
-            // Load the entire config class hierarchy, plus nested elements
-            ConfigMappingInterface generatedClass = ConfigMappingInterface.get(type, handler);
-            if (generatedClass == null) {
-                throw ConfigMessages.msg.classIsNotAMapping(type);
-            }
-
+        // Load the entire config class hierarchy, plus nested elements
+        private static <T> Class<?> loadImplementation(final ConfigMappingInterface generatedClass) {
             Class<?> implementationClass = loadClass(generatedClass);
             for (GeneratedConfigClass nestedGeneratedClass : generatedClass.getNested()) {
                 loadClass(nestedGeneratedClass);
@@ -248,7 +254,6 @@ public final class ConfigMappingLoader {
             return CACHE.get(type);
         }
 
-        private final Class<?> interfaceType;
         private final Class<?> implementation;
 
         private volatile MethodHandle ctorConfigMappingContext;
@@ -256,15 +261,10 @@ public final class ConfigMappingLoader {
         private volatile MethodHandle getProperties;
         private volatile MethodHandle getSecrets;
 
-        ConfigClassImplementation(Class<?> interfaceType, final Class<?> implementation) {
+        ConfigClassImplementation(final Class<?> implementation) {
             // ensure modular access
             ConfigClassImplementation.class.getModule().addReads(implementation.getModule());
             this.implementation = implementation;
-            this.interfaceType = interfaceType;
-        }
-
-        Class<?> getInterfaceType() {
-            return interfaceType;
         }
 
         Class<?> getImplementation() {

@@ -1,7 +1,6 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.loadClass;
-import static java.util.Collections.synchronizedMap;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -11,12 +10,12 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.function.Function;
 
+import io.smallrye.config.ConfigMappingHandler.ConfigMappingInterfaceHandler;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingInterface.Property;
 import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
+import io.smallrye.config._private.ConfigMessages;
 
 /**
  * Represents a concrete configuration class (as opposed to a {@code @ConfigMapping} interface).
@@ -44,39 +43,74 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
         }
     }
 
-    private static final Map<Class<?>, ConfigMappingClass> CACHE = synchronizedMap(new WeakHashMap<>());
+    /**
+     * A {@link ClassValue} stores its values in the key {@link Class} own {@code classValueMap}, so the metadata and
+     * the {@link Class} it describes form a cycle that is collected together with the {@link ClassLoader}. A
+     * {@code WeakHashMap} keyed by {@link Class} cannot do the same, because the metadata strongly references its own
+     * key, which keeps the entry alive forever. The {@link Holder} allows the metadata to be computed by the caller,
+     * which requires a {@link ConfigMappingHandler} that {@code ClassValue#computeValue(Class)} does not receive.
+     * <p>
+     * Only a type accepted by {@link #isConfigurationClass(Class)} may be looked up in the cache. The cache is probed
+     * with arbitrary types to find out whether they are configuration classes, and because the {@link Holder} is
+     * stored even when there is no metadata to store in it, an entry for a type we do not own, like a JDK type, keeps
+     * the SmallRye Config {@link ClassLoader} alive for as long as that type, which is forever.
+     */
+    private static final ClassValue<Holder<ConfigMappingClass>> CACHE = new ClassValue<>() {
+        @Override
+        protected Holder<ConfigMappingClass> computeValue(final Class<?> type) {
+            return new Holder<>();
+        }
+    };
 
-    static ConfigMappingClass get(final Class<?> classType, final ConfigMappingHandler handler) {
-        return CACHE.computeIfAbsent(classType, new Function<>() {
-            @Override
-            public ConfigMappingClass apply(Class<?> type) {
-                return of(type, handler);
-            }
-        });
+    private static final class Holder<T> {
+        volatile T value;
     }
 
-    private static ConfigMappingClass of(final Class<?> classType, final ConfigMappingHandler handler) {
+    static ConfigMappingClass get(final Class<?> classType, final ConfigMappingHandler handler) {
+        if (!isConfigurationClass(classType)) {
+            return null;
+        }
+
+        Holder<ConfigMappingClass> holder = CACHE.get(classType);
+        ConfigMappingClass configMappingClass = holder.value;
+        if (configMappingClass == null) {
+            synchronized (holder) {
+                configMappingClass = holder.value;
+                if (configMappingClass == null) {
+                    configMappingClass = new ConfigMappingClass(classType, handler);
+                    holder.value = configMappingClass;
+                }
+            }
+        }
+        return configMappingClass;
+    }
+
+    /**
+     * Whether the type may be mapped as a configuration class. A type rejected here is never looked up in the
+     * {@link #CACHE}, so the cache only holds entries for types that belong to the application.
+     */
+    private static boolean isConfigurationClass(final Class<?> classType) {
         if (classType.isInterface() ||
                 Modifier.isAbstract(classType.getModifiers()) ||
                 classType.isEnum() ||
                 classType.isArray() ||
                 classType.isPrimitive()) {
-            return null;
+            return false;
         }
         if (classType.getName().startsWith("java")) {
-            return null;
+            return false;
         }
         if (Collection.class.isAssignableFrom(classType) || Map.class.isAssignableFrom(classType)) {
-            return null;
+            return false;
         }
         try {
             classType.getDeclaredConstructor();
         } catch (NoSuchMethodException e) {
             // There is no good way to distinguish if it is valid, because it may be handled by a runtime Converter
-            return null;
+            return false;
         }
 
-        return new ConfigMappingClass(classType, handler);
+        return true;
     }
 
     private final Class<?> classType;
@@ -120,20 +154,44 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
 
     @Override
     public Property[] getProperties() {
-        return ConfigMappingInterface.get(interfaceType, Handlers.find(interfaceType)).getProperties();
+        return getMappingBridge().getProperties();
+    }
+
+    /**
+     * The metadata of the generated interface bridge.
+     * <p>
+     * The bridge is a plain {@link ConfigMapping} interface: {@link ConfigMappingGenerator} already translated
+     * everything the configuration class handler contributes, the member names and the naming strategy, into
+     * annotations on it. It is resolved with {@link ConfigMappingInterfaceHandler} and not with the handler of the
+     * class it bridges, which is also what {@link Handlers#find(Class)} yields for it, because a handler for
+     * configuration classes does not handle interfaces.
+     * <p>
+     * Every caller that needs the bridge metadata goes through here.
+     * {@link ConfigMappingInterface#get(Class, ConfigMappingHandler)} caches by type and the first writer wins, so a
+     * caller resolving the bridge with a different handler would decide, for all the others, which handler the
+     * bridge metadata reports.
+     */
+    ConfigMappingInterface getMappingBridge() {
+        ConfigMappingInterface configMappingInterface = ConfigMappingInterface.get(interfaceType,
+                ConfigMappingInterfaceHandler.CONFIG_MAPPING);
+        if (configMappingInterface == null) {
+            throw ConfigMessages.msg.classIsNotAMapping(interfaceType);
+        }
+        return configMappingInterface;
     }
 
     static Class<?> getInterfaceType(final Class<?> type) {
-        ConfigMappingClass configMappingClass = CACHE.get(type);
+        if (!isConfigurationClass(type)) {
+            return null;
+        }
+        ConfigMappingClass configMappingClass = CACHE.get(type).value;
         return configMappingClass == null ? null : configMappingClass.getInterfaceType();
     }
 
     static String getGeneratedClassName(Class<?> type) {
-        return type.getPackage().getName() +
-                "." +
-                type.getSimpleName() +
-                type.getName().hashCode() +
-                "I";
+        // do not use getSimpleName(), it resolves the enclosing class, which may not be visible to the same
+        // class loader as the nested class, and it drops the package for classes in the default package
+        return type.getName() + "$$CMClass";
     }
 
     Set<GeneratedConfigClass> getNested() {
