@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,7 +37,28 @@ import io.smallrye.config._private.ConfigMessages;
  * The metadata representation of a {@link ConfigMapping} annotated class.
  */
 public final class ConfigMappingInterface implements GeneratedConfigClass {
-    private static final Map<Class<?>, ConfigMappingInterface> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
+    /**
+     * A {@link ClassValue} stores its values in the key {@link Class} own {@code classValueMap}, so the metadata and
+     * the {@link Class} it describes form a cycle that is collected together with the {@link ClassLoader}. A
+     * {@code WeakHashMap} keyed by {@link Class} cannot do the same, because the metadata strongly references its own
+     * key, which keeps the entry alive forever. The {@link Holder} allows the metadata to be computed by the caller,
+     * which requires a {@link ConfigMappingHandler} that {@code ClassValue#computeValue(Class)} does not receive.
+     * <p>
+     * Only a type accepted by the guard in {@link #get(Class, ConfigMappingHandler)} may be looked up in the cache.
+     * The cache is probed with arbitrary types to find out whether they are groups, and because the {@link Holder} is
+     * stored even when there is no metadata to store in it, an entry for a type we do not own, like a JDK type, keeps
+     * the SmallRye Config {@link ClassLoader} alive for as long as that type, which is forever.
+     */
+    private static final ClassValue<Holder<ConfigMappingInterface>> CACHE = new ClassValue<>() {
+        @Override
+        protected Holder<ConfigMappingInterface> computeValue(final Class<?> type) {
+            return new Holder<>();
+        }
+    };
+
+    private static final class Holder<T> {
+        volatile T value;
+    }
 
     private static final ConfigMappingInterface[] NO_TYPES = new ConfigMappingInterface[0];
     private static final Property[] NO_PROPERTIES = new Property[0];
@@ -83,12 +103,29 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
     }
 
     static ConfigMappingInterface get(final Class<?> interfaceType, final ConfigMappingHandler handler) {
-        return CACHE.computeIfAbsent(interfaceType, new Function<>() {
-            @Override
-            public ConfigMappingInterface apply(Class<?> interfaceType) {
-                return of(interfaceType, handler);
+        // the read edge is added for every type we are asked about, and not only for the ones we accept, so that the
+        // set of modules we may reflect upon does not depend on which types happen to be groups
+        ConfigMappingInterface.class.getModule().addReads(interfaceType.getModule());
+
+        if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0
+                || interfaceType.getName().startsWith("java")
+                || Secret.class.isAssignableFrom(interfaceType)
+                || interfaceType.equals(ConfigMappingClass.Mapper.class)) {
+            return null;
+        }
+
+        Holder<ConfigMappingInterface> holder = CACHE.get(interfaceType);
+        ConfigMappingInterface configMappingInterface = holder.value;
+        if (configMappingInterface == null) {
+            synchronized (holder) {
+                configMappingInterface = holder.value;
+                if (configMappingInterface == null) {
+                    configMappingInterface = of(interfaceType, handler);
+                    holder.value = configMappingInterface;
+                }
             }
-        });
+        }
+        return configMappingInterface;
     }
 
     @Override
@@ -788,22 +825,6 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
     }
 
     private static ConfigMappingInterface of(Class<?> interfaceType, ConfigMappingHandler handler) {
-        ConfigMappingInterface.class.getModule().addReads(interfaceType.getModule());
-        if (!interfaceType.isInterface() || interfaceType.getTypeParameters().length != 0) {
-            return null;
-        }
-        if (interfaceType.getName().startsWith("java")) {
-            return null;
-        }
-
-        if (Secret.class.isAssignableFrom(interfaceType)) {
-            return null;
-        }
-
-        if (interfaceType.equals(ConfigMappingClass.Mapper.class)) {
-            return null;
-        }
-
         ConfigMappingInterface[] superTypes = getSuperTypes(handler, interfaceType.getInterfaces(), 0, 0);
         Property[] properties = getProperties(handler, interfaceType, interfaceType.getDeclaredMethods(), 0, 0);
         return new ConfigMappingInterface(interfaceType, handler, superTypes, properties);
@@ -1141,10 +1162,6 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
         } else {
             throw ConfigMessages.msg.noRawType(type);
         }
-    }
-
-    static Map<String, Property> getProperties(final Class<?> type) {
-        return getProperties(ConfigMappingInterface.get(type, ConfigMappingHandler.Handlers.find(type)));
     }
 
     static Map<String, Property> getProperties(final ConfigMappingInterface configMapping) {

@@ -271,12 +271,13 @@ class ConfigMappingClassTest {
                 .map(GeneratedConfigClass::getClassName)
                 .collect(Collectors.toSet());
 
-        // ConfigMappingClass interface bridge generated class names
-        assertTrue(names.contains("io.smallrye.config.ServerEntry-1851196551I"));
-        assertTrue(names.contains("io.smallrye.config.MapNestedClass1716132942I"));
+        // ConfigMappingClass interface bridge generated class names, which keep the enclosing class of a nested
+        // class, so that two nested classes with the same simple name do not generate the same name
+        assertTrue(names.contains("io.smallrye.config.ConfigMappingClassTest$MapNestedClass$ServerEntry$$CMClass"));
+        assertTrue(names.contains("io.smallrye.config.ConfigMappingClassTest$MapNestedClass$$CMClass"));
         // ConfigMappingInterface implementations for the ConfigMappingClass interface bridge
-        assertTrue(names.contains("io.smallrye.config.ServerEntry-1851196551I$$CMImpl"));
-        assertTrue(names.contains("io.smallrye.config.MapNestedClass1716132942I$$CMImpl"));
+        assertTrue(names.contains("io.smallrye.config.ConfigMappingClassTest$MapNestedClass$ServerEntry$$CMClass$$CMImpl"));
+        assertTrue(names.contains("io.smallrye.config.ConfigMappingClassTest$MapNestedClass$$CMClass$$CMImpl"));
     }
 
     static class MapNestedClass {
@@ -316,5 +317,10 @@ class ConfigMappingClassTest {
         public String getValue() {
             return value;
         }
+    }
+
+    @Test
+    void notAMapping() {
+        assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder().withMapping(String.class));
     }
 }

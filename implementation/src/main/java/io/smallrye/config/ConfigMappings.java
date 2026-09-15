@@ -16,6 +16,7 @@ import io.smallrye.common.constraint.Assert;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
 import io.smallrye.config.ConfigMappingInterface.Property;
 import io.smallrye.config.ConfigMappingLoader.ConfigClassImplementation;
+import io.smallrye.config._private.ConfigMessages;
 
 /**
  * Utility class for Config classes.
@@ -53,10 +54,18 @@ public final class ConfigMappings {
      * @return a <code>Map</code> with all mapping class {@link Property}
      */
     public static Map<String, Property> getProperties(final ConfigClass configClass) {
+        ConfigMappingInterface mapping = ConfigMappingInterface.get(configClass.getType(), configClass.getHandler());
+        if (mapping == null) {
+            // A config class is mapped through a generated interface bridge, which is what holds the properties
+            ConfigMappingClass configMappingClass = ConfigMappingClass.get(configClass.getType(), configClass.getHandler());
+            if (configMappingClass == null) {
+                throw ConfigMessages.msg.classIsNotAMapping(configClass.getType());
+            }
+            mapping = configMappingClass.getMappingBridge();
+        }
         Map<String, Property> properties = new HashMap<>();
         // Because the properties key names do not include the path prefix we need to add it
-        for (Entry<String, Property> entry : ConfigMappingInterface
-                .getProperties(configClass.implementation().getInterfaceType()).entrySet()) {
+        for (Entry<String, Property> entry : ConfigMappingInterface.getProperties(mapping).entrySet()) {
             properties.put(prefix(configClass.getPrefix(), entry.getKey()), entry.getValue());
         }
         return properties;

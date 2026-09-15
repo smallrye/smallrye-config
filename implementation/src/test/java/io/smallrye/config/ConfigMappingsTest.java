@@ -212,12 +212,13 @@ public class ConfigMappingsTest {
         assertTrue(properties.containsKey("mapped.value"));
         assertTrue(properties.containsKey("mapped.collection[*].value"));
 
-        Map<?, ?> cache = (Map<?, ?>) privateLookupIn(ConfigMappingInterface.class, lookup())
-                .findStaticGetter(ConfigMappingInterface.class, "CACHE", Map.class)
+        ClassValue<?> cache = (ClassValue<?>) privateLookupIn(ConfigMappingInterface.class, lookup())
+                .findStaticGetter(ConfigMappingInterface.class, "CACHE", ClassValue.class)
                 .invoke();
-        cache.clear();
+        cache.remove(MappedProperties.class);
+        cache.remove(MappedProperties.Nested.class);
 
-        getProperties(configClass(MappedProperties.class));
+        properties = getProperties(configClass(MappedProperties.class));
         assertEquals(3, properties.size());
         assertTrue(properties.containsKey("mapped.nested.value"));
         assertTrue(properties.containsKey("mapped.value"));
@@ -289,5 +290,43 @@ public class ConfigMappingsTest {
         String defaultValue();
 
         Map<String, String> map();
+    }
+
+    @Test
+    void propertiesNoSideEffects() {
+        // Reading the metadata must not register a handler for the type, nor generate its implementation class
+        Map<String, Property> properties = getProperties(configClass(UnregisteredProperties.class));
+        assertEquals(1, properties.size());
+        assertTrue(properties.containsKey("unregistered.value"));
+
+        assertThrows(IllegalArgumentException.class, () -> ConfigMappingHandler.Handlers.get(UnregisteredProperties.class));
+        assertThrows(ClassNotFoundException.class, () -> UnregisteredProperties.class.getClassLoader()
+                .loadClass(ConfigMappingInterface.getGeneratedClassName(UnregisteredProperties.class)));
+    }
+
+    @ConfigMapping(prefix = "unregistered")
+    interface UnregisteredProperties {
+        String value();
+    }
+
+    @Test
+    void propertiesNotAMapping() {
+        // A type that cannot be mapped must be reported, and not fail later with the mapping metadata missing
+        assertThrows(IllegalArgumentException.class, () -> getProperties(
+                configClass(NotAMapping.class, "not-a-mapping")));
+        assertThrows(IllegalArgumentException.class, () -> getProperties(
+                configClass(NotAMappingInterface.class, "not-a-mapping")));
+    }
+
+    static class NotAMapping {
+        String value;
+
+        NotAMapping(final String value) {
+            this.value = value;
+        }
+    }
+
+    interface NotAMappingInterface<T> {
+        T value();
     }
 }
