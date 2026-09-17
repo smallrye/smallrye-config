@@ -36,7 +36,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.6.0</version>
         <configuration>
           <environmentVariables>
             <MP_TCK_ENV_DUMMY>dummy</MP_TCK_ENV_DUMMY>
