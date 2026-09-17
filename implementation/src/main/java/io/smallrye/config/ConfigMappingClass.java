@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.smallrye.config.ConfigMappingHandler.ConfigMappingInterfaceHandler;
 import io.smallrye.config.ConfigMappingHandler.Handlers;
@@ -47,38 +48,41 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
      * A {@link ClassValue} stores its values in the key {@link Class} own {@code classValueMap}, so the metadata and
      * the {@link Class} it describes form a cycle that is collected together with the {@link ClassLoader}. A
      * {@code WeakHashMap} keyed by {@link Class} cannot do the same, because the metadata strongly references its own
-     * key, which keeps the entry alive forever. The {@link Holder} allows the metadata to be computed by the caller,
-     * which requires a {@link ConfigMappingHandler} that {@code ClassValue#computeValue(Class)} does not receive.
+     * key, which keeps the entry alive forever. The box allows the metadata to be computed by the caller, which
+     * requires a {@link ConfigMappingHandler} that {@code ClassValue#computeValue(Class)} does not receive.
      * <p>
-     * Only a type accepted by {@link #isConfigurationClass(Class)} may be looked up in the cache. The cache is probed
-     * with arbitrary types to find out whether they are configuration classes, and because the {@link Holder} is
-     * stored even when there is no metadata to store in it, an entry for a type we do not own, like a JDK type, keeps
-     * the SmallRye Config {@link ClassLoader} alive for as long as that type, which is forever.
+     * The box is an {@link AtomicReference} rather than a type of ours, because the key {@link Class} holds the entry
+     * strongly, and so holds the class of whatever the entry contains. A box of ours parked on a type loaded
+     * elsewhere keeps the SmallRye Config {@link ClassLoader} alive for as long as that type, even while the box is
+     * empty, and {@link #getInterfaceType(Class)} leaves it empty for every type that turns out not to be mapped
+     * here. An {@link AtomicReference} is defined by the bootstrap loader, so an empty entry costs the type nothing.
+     * <p>
+     * A filled entry still pins, through the metadata itself. Only a type accepted by
+     * {@link #isConfigurationClass(Class)} is ever filled, so it is that guard that has to keep the metadata of one
+     * class loader off the types of another.
      */
-    private static final ClassValue<Holder<ConfigMappingClass>> CACHE = new ClassValue<>() {
+    private static final ClassValue<AtomicReference<ConfigMappingClass>> CACHE = new ClassValue<>() {
         @Override
-        protected Holder<ConfigMappingClass> computeValue(final Class<?> type) {
-            return new Holder<>();
+        protected AtomicReference<ConfigMappingClass> computeValue(final Class<?> type) {
+            return new AtomicReference<>();
         }
     };
-
-    private static final class Holder<T> {
-        volatile T value;
-    }
 
     static ConfigMappingClass get(final Class<?> classType, final ConfigMappingHandler handler) {
         if (!isConfigurationClass(classType)) {
             return null;
         }
 
-        Holder<ConfigMappingClass> holder = CACHE.get(classType);
-        ConfigMappingClass configMappingClass = holder.value;
+        AtomicReference<ConfigMappingClass> holder = CACHE.get(classType);
+        ConfigMappingClass configMappingClass = holder.get();
         if (configMappingClass == null) {
+            // use synchronized block instead of compareAndSet,
+            // because computation is expensive so we run once per type instead of once per racing thread
             synchronized (holder) {
-                configMappingClass = holder.value;
+                configMappingClass = holder.get();
                 if (configMappingClass == null) {
                     configMappingClass = new ConfigMappingClass(classType, handler);
-                    holder.value = configMappingClass;
+                    holder.set(configMappingClass);
                 }
             }
         }
@@ -184,7 +188,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
         if (!isConfigurationClass(type)) {
             return null;
         }
-        ConfigMappingClass configMappingClass = CACHE.get(type).value;
+        ConfigMappingClass configMappingClass = CACHE.get(type).get();
         return configMappingClass == null ? null : configMappingClass.getInterfaceType();
     }
 

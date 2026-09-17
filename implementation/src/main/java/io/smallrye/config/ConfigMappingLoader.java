@@ -192,6 +192,14 @@ public final class ConfigMappingLoader {
     }
 
     static final class ConfigClassImplementation {
+        /**
+         * Unlike the other caches, this one holds a value of ours directly and not a box that is empty until a caller
+         * fills it. It does not need one: {@code computeValue(Class)} has everything it needs to produce the value,
+         * and a {@link ClassValue} associates nothing when {@code computeValue(Class)} throws, so a type that is not a
+         * mapping leaves no entry to make harmless. An entry here always holds an implementation, which pins the
+         * SmallRye Config {@link ClassLoader} whatever it is wrapped in, so it is the caller that has to keep this
+         * off the types of another loader.
+         */
         private static final ClassValue<ConfigClassImplementation> CACHE = new ClassValue<>() {
             @Override
             protected ConfigClassImplementation computeValue(Class<?> type) {
