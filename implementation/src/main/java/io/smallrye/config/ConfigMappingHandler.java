@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -94,60 +95,62 @@ public interface ConfigMappingHandler {
          * <p>
          * The map is keyed weakly by the loader and holds the handlers through a {@link WeakReference}, so it never
          * keeps a loader (nor its application-provided handlers, which strongly reference it) from being collected.
-         * The strong reference that keeps a live loader's handlers around is {@link Handler#discovered}, which lives
-         * in the {@code classValueMap} of the configuration type {@link Class} and is therefore collected together
-         * with the loader. Only {@link #find(Class)} publishes the handlers there, so a lookup that goes through
-         * {@link #find(Class, ClassLoader)} alone may have to discover them again.
+         * The strong reference that keeps a live loader's handlers around is the {@link #DISCOVERED} entry, which
+         * lives in the {@code classValueMap} of the configuration type {@link Class} and is therefore collected
+         * together with the loader. Only {@link #find(Class)} publishes the handlers there, so a lookup that goes
+         * through {@link #find(Class, ClassLoader)} alone may have to discover them again.
          */
         private static final Map<ClassLoader, WeakReference<List<ConfigMappingHandler>>> HANDLERS = new WeakHashMap<>();
         /**
-         * The state for each configuration type. A {@link ClassValue} stores its values in the key {@link Class} own
-         * {@code classValueMap}, so the state is collected together with the type and its {@link ClassLoader}. A
-         * {@code WeakHashMap} keyed by {@link Class} cannot do the same, because the state holds handlers loaded by
-         * the key's own {@link ClassLoader}, which keeps the entry alive forever.
+         * The handler registered for each configuration type. A {@link ClassValue} stores its values in the key
+         * {@link Class} own {@code classValueMap}, so the registration is collected together with the type and its
+         * {@link ClassLoader}. A {@code WeakHashMap} keyed by {@link Class} cannot do the same, because the handler
+         * may be loaded by the key's own {@link ClassLoader}, which keeps the entry alive forever.
+         * <p>
+         * The box is an {@link AtomicReference} rather than a type of ours, because the key {@link Class} holds the
+         * entry strongly, and so holds the class of whatever the entry contains. Nothing filters the types this is
+         * asked about, so most entries stay empty, and an {@link AtomicReference} is defined by the bootstrap loader,
+         * which means an empty entry costs the type nothing.
          */
-        private static final ClassValue<Handler> CACHE = new ClassValue<>() {
+        private static final ClassValue<AtomicReference<ConfigMappingHandler>> REGISTERED = new ClassValue<>() {
             @Override
-            protected Handler computeValue(Class<?> type) {
-                return new Handler();
+            protected AtomicReference<ConfigMappingHandler> computeValue(Class<?> type) {
+                return new AtomicReference<>();
             }
         };
-
         /**
-         * The per configuration type state: the handler registered for the type, and the handlers discovered for the
-         * type's {@link ClassLoader}. Both are keyed by the type and have the same lifetime, so they share a single
-         * {@link Handlers#CACHE} entry.
-         * <p>
-         * The two fields look alike, but they do not have the same concurrency requirements. The write to
-         * {@link #registered} is guarded, because the first write wins and a registration that conflicts with it has
-         * to be reported. The write to {@link #discovered} is not, because it only memoizes
-         * {@link Handlers#load(ClassLoader)}, which is itself synchronized and returns the same list for the same
-         * loader, so threads that race here publish the same instance and do not repeat the discovery.
+         * The handlers discovered for the {@link ClassLoader} of each configuration type, memoizing
+         * {@link #load(ClassLoader)}. Kept apart from {@link #REGISTERED} because the two do not have the same
+         * concurrency requirements: a registration has to report a conflict with the one already in place, while a
+         * discovery only has to publish a list that {@link #load(ClassLoader)} is already returning per loader, so
+         * threads that race here publish the same instance and do not repeat the discovery.
          */
-        private static class Handler {
-            volatile ConfigMappingHandler registered;
-            volatile List<ConfigMappingHandler> discovered;
-        }
+        private static final ClassValue<AtomicReference<List<ConfigMappingHandler>>> DISCOVERED = new ClassValue<>() {
+            @Override
+            protected AtomicReference<List<ConfigMappingHandler>> computeValue(Class<?> type) {
+                return new AtomicReference<>();
+            }
+        };
 
         static void register(final Class<?> type, final ConfigMappingHandler handler) {
             set(type, handler);
         }
 
         static ConfigMappingHandler get(final Class<?> type) {
-            Handler handler = CACHE.get(type);
-            if (handler.registered == null) {
+            ConfigMappingHandler registered = REGISTERED.get(type).get();
+            if (registered == null) {
                 throw ConfigMessages.msg.handlerNotRegistered(type);
             }
-            return handler.registered;
+            return registered;
         }
 
         static ConfigMappingHandler find(final Class<?> type) {
-            Handler handler = CACHE.get(type);
-            List<ConfigMappingHandler> discovered = handler.discovered;
+            AtomicReference<List<ConfigMappingHandler>> holder = DISCOVERED.get(type);
+            List<ConfigMappingHandler> discovered = holder.get();
             if (discovered == null) {
                 // unguarded on purpose: threads that race here use the same list, they do not discover it twice
                 discovered = load(type.getClassLoader());
-                handler.discovered = discovered;
+                holder.set(discovered);
             }
             return find(type, discovered);
         }
@@ -157,7 +160,7 @@ public interface ConfigMappingHandler {
         }
 
         private static ConfigMappingHandler find(final Class<?> type, final List<ConfigMappingHandler> handlers) {
-            ConfigMappingHandler registered = CACHE.get(type).registered;
+            ConfigMappingHandler registered = REGISTERED.get(type).get();
             if (registered != null) {
                 return registered;
             }
@@ -171,15 +174,10 @@ public interface ConfigMappingHandler {
         }
 
         private static void set(final Class<?> type, final ConfigMappingHandler handler) {
-            Handler cached = CACHE.get(type);
-            if (cached.registered == null) {
-                synchronized (cached) {
-                    if (cached.registered == null) {
-                        cached.registered = handler;
-                    }
-                }
-            } else if (!cached.registered.getClass().equals(handler.getClass())) {
-                throw ConfigMessages.msg.handlerAlreadyRegistered(type, cached.registered, handler);
+            // the first registration wins, and the witness tells the loser whether it disagreed with it
+            ConfigMappingHandler registered = REGISTERED.get(type).compareAndExchange(null, handler);
+            if (registered != null && !registered.getClass().equals(handler.getClass())) {
+                throw ConfigMessages.msg.handlerAlreadyRegistered(type, registered, handler);
             }
         }
 
