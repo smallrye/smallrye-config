@@ -13,7 +13,7 @@
     <name>SmallRye Config: ConfigSource - TOML</name>
 
     <properties>
-        <tomlj.version>1.1.1</tomlj.version>
+        <tomlj.version>1.2.0</tomlj.version>
     </properties>
 
     <dependencies>
