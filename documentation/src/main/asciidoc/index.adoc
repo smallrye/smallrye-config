@@ -1,0 +1,97 @@
+= SmallRye Config
+include::_attributes.adoc[]
+
+*SmallRye Config* is a library that provides a way to configure applications, frameworks and containers. It is used
+in applications servers like https://wildfly.org/[WildFly], https://openliberty.io[Open Liberty] and
+https://tomee.apache.org[TomEE] or frameworks like https://quarkus.io[Quarkus]. It can also be used completely
+standalone in any Java application, which makes it a very flexible library.
+
+It follows the https://github.com/eclipse/microprofile-config/[MicroProfile Config] specification to provide
+the initial config foundations and expands with it own concepts to cover a wide range of use cases observed in the
+configuration space.
+
+== Use SmallRye Config in a Java application
+
+Add the _dependency_ to your project using your preferred build tool:
+
+[.tabs]
+====
+
+Maven::
++
+--
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.smallrye.config</groupId>
+    <artifactId>smallrye-config</artifactId>
+    <version>{project-version}</version>
+</dependency>
+----
+
+--
+
+Gradle (Groovy)::
++
+--
+
+[source,groovy,subs="attributes+"]
+----
+implementation 'io.smallrye.config:smallrye-config:{project-version}'
+----
+
+--
+
+Gradle (Kotlin)::
++
+--
+
+[source,kotlin,subs="attributes+"]
+----
+implementation("io.smallrye.config:smallrye-config:{project-version}")
+----
+
+--
+
+JBang::
++
+--
+
+[source,java,subs="attributes+"]
+----
+//DEPS io.smallrye.config:smallrye-config:{project-version}
+----
+
+--
+
+====
+
+And retrieve a `SmallRyeConfig` instance with:
+
+[source,java]
+----
+Config config = io.smallrye.config.Config.getOrCreate();
+----
+
+[NOTE]
+====
+
+The `SmallRyeConfig` instance will be created and registered to the context class loader if no such configuration
+is already created and registered.
+
+====
+
+Or build your own:
+
+[source,java]
+----
+SmallRyeConfig config = new SmallRyeConfigBuilder().build();
+----
+
+[NOTE]
+====
+
+`io.smallrye.config.Config` is the entry point to all the config capabilities provided by SmallRye Config.
+
+====
