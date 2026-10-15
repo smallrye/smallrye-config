@@ -30,6 +30,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     private final String value;
     private final String rawValue;
     private final String profile;
+    private final boolean secret;
     private final String configSourceName;
     private final int configSourceOrdinal;
     private final int configSourcePosition;
@@ -42,6 +43,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.value = builder.value;
         this.rawValue = builder.rawValue;
         this.profile = builder.profile;
+        this.secret = builder.secret;
         this.configSourceName = builder.configSourceName;
         this.configSourceOrdinal = builder.configSourceOrdinal;
         this.configSourcePosition = builder.configSourcePosition;
@@ -78,6 +80,17 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public boolean isDefault() {
         return configSourceOrdinal == ORDINAL && NAME.equals(configSourceName);
+    }
+
+    /**
+     * If the configuration is a secret key. Secret keys are only accessible with
+     * {@link SecretKeys#doUnlocked(java.util.function.Supplier)}, so a secret {@link ConfigValue} is always retrieved
+     * in an unlocked context. The flag allows the caller to avoid exposing the value, for instance, in a log message.
+     *
+     * @return {@code true} if the configuration is a secret key, or {@code false} otherwise
+     */
+    public boolean isSecret() {
+        return secret;
     }
 
     @Override
@@ -128,6 +141,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
     public ConfigValue withProfile(final String profile) {
         return from().withProfile(profile).build();
+    }
+
+    public ConfigValue withSecret(final boolean secret) {
+        return from().withSecret(secret).build();
     }
 
     public ConfigValue withConfigSourceName(final String configSourceName) {
@@ -181,9 +198,10 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     public String toString() {
         return "ConfigValue{" +
                 "name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                ", rawValue='" + rawValue + '\'' +
+                ", value='" + (secret ? "***" : value) + '\'' +
+                ", rawValue='" + (secret ? "***" : rawValue) + '\'' +
                 ", profile='" + profile + '\'' +
+                ", secret=" + secret +
                 ", configSourceName='" + configSourceName + '\'' +
                 ", configSourceOrdinal=" + configSourceOrdinal +
                 ", configSourcePosition=" + configSourcePosition +
@@ -197,6 +215,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 .withValue(value)
                 .withRawValue(rawValue)
                 .withProfile(profile)
+                .withSecret(secret)
                 .withConfigSourceName(configSourceName)
                 .withConfigSourceOrdinal(configSourceOrdinal)
                 .withConfigSourcePosition(configSourcePosition)
@@ -213,6 +232,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         private String value;
         private String rawValue;
         private String profile;
+        private boolean secret;
         private String configSourceName;
         private int configSourceOrdinal;
         private int configSourcePosition;
@@ -236,6 +256,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
 
         public ConfigValueBuilder withProfile(final String profile) {
             this.profile = profile;
+            return this;
+        }
+
+        public ConfigValueBuilder withSecret(final boolean secret) {
+            this.secret = secret;
             return this;
         }
 

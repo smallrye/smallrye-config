@@ -30,8 +30,12 @@ public class SecretKeysConfigSourceInterceptor implements ConfigSourceIntercepto
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         // separate empty check to avoid PropertyName alloc
-        if (SecretKeys.isLocked() && !secrets.isEmpty() && secrets.matches(name)) {
-            throw ConfigMessages.msg.notAllowed(name);
+        if (!secrets.isEmpty() && secrets.matches(name)) {
+            if (SecretKeys.isLocked()) {
+                throw ConfigMessages.msg.notAllowed(name);
+            }
+            ConfigValue configValue = context.proceed(name);
+            return configValue != null ? configValue.withSecret(true) : null;
         }
         return context.proceed(name);
     }

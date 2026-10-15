@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -1379,12 +1380,52 @@ public final class Converters {
 
         @Override
         public Secret<T> convert(final String value) throws IllegalArgumentException, NullPointerException {
-            return new Secret<T>() {
-                @Override
-                public T get() {
-                    return delegate.convert(value);
-                }
-            };
+            T converted = delegate.convert(value);
+            // an empty value converts to null, so it can be handled as missing (Optional, required, defaults)
+            if (converted == null) {
+                return null;
+            }
+            return new SecretValue<>(converted);
+        }
+    }
+
+    /**
+     * A {@link Secret} with value semantics, so mappings holding secrets can still be compared with {@code equals}.
+     * The {@code toString} does not expose the value.
+     */
+    static final class SecretValue<T> implements Secret<T>, Serializable {
+        @Serial
+        private static final long serialVersionUID = 3409872345762548323L;
+        private final T value;
+
+        SecretValue(final T value) {
+            this.value = value;
+        }
+
+        @Override
+        public T get() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof SecretValue<?> that)) {
+                return false;
+            }
+            return Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Secret{***}";
         }
     }
 

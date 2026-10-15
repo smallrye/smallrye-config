@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,6 +103,33 @@ class ConfigMappingSecretsTest {
         assertEquals("secret", doUnlocked(() -> config.getConfigValue("%dev.secrets.secret").getValue()));
     }
 
+    @Test
+    void secretConfigValue() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MappingSecrets.class)
+                .withProfile("dev")
+                .withSources(config(
+                        "secrets.secret", "secret",
+                        "%dev.secrets.optional", "secret",
+                        "secrets.list[0]", "secret",
+                        "not.a.secret", "value"))
+                .withSecretKeys()
+                .build();
+
+        ConfigValue secret = doUnlocked(() -> config.getConfigValue("secrets.secret"));
+        assertTrue(secret.isSecret());
+        assertEquals("secret", secret.getValue());
+        assertFalse(secret.toString().contains("'secret'"));
+
+        ConfigValue profiled = doUnlocked(() -> config.getConfigValue("secrets.optional"));
+        assertTrue(profiled.isSecret());
+        assertEquals("secret", profiled.getValue());
+
+        assertFalse(config.getConfigValue("not.a.secret").isSecret());
+        assertFalse(doUnlocked(() -> config.getConfigValue("not.a.secret")).isSecret());
+    }
+
     @ConfigMapping(prefix = "secrets")
     interface MappingSecrets {
         Secret<String> secret();
@@ -167,5 +195,108 @@ class ConfigMappingSecretsTest {
                 return "redacted";
             }
         }
+    }
+
+    @Test
+    void missing() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MissingSecrets.class)
+                .withSources(config("secrets.secret", "secret"))
+                .withSecretKeys()
+                .build();
+
+        MissingSecrets mapping = config.getConfigMapping(MissingSecrets.class);
+        assertEquals("secret", mapping.secret().get());
+        assertFalse(mapping.optional().isPresent());
+        assertFalse(mapping.optionalList().isPresent());
+        assertTrue(mapping.map().isEmpty());
+    }
+
+    @Test
+    void missingRequired() {
+        assertThrows(ConfigValidationException.class, () -> new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MissingSecrets.class)
+                .withSecretKeys()
+                .build());
+    }
+
+    @Test
+    void empty() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MissingSecrets.class)
+                .withSources(config("secrets.secret", "secret", "secrets.optional", ""))
+                .withSecretKeys()
+                .build();
+
+        MissingSecrets mapping = config.getConfigMapping(MissingSecrets.class);
+        assertFalse(mapping.optional().isPresent());
+    }
+
+    @Test
+    void equality() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MappingSecrets.class)
+                .withSources(config(
+                        "secrets.secret", "secret",
+                        "secrets.optional", "secret",
+                        "secrets.list[0]", "secret",
+                        "secrets.optional-list[0]", "secret",
+                        "secrets.map.key", "secret",
+                        "secrets.map-list.key[0]", "secret"))
+                .withSecretKeys()
+                .build();
+
+        SmallRyeConfig other = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MappingSecrets.class)
+                .withSources(config(
+                        "secrets.secret", "secret",
+                        "secrets.optional", "secret",
+                        "secrets.list[0]", "secret",
+                        "secrets.optional-list[0]", "secret",
+                        "secrets.map.key", "secret",
+                        "secrets.map-list.key[0]", "secret"))
+                .withSecretKeys()
+                .build();
+
+        SmallRyeConfig different = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(MappingSecrets.class)
+                .withSources(config(
+                        "secrets.secret", "different",
+                        "secrets.optional", "secret",
+                        "secrets.list[0]", "secret",
+                        "secrets.optional-list[0]", "secret",
+                        "secrets.map.key", "secret",
+                        "secrets.map-list.key[0]", "secret"))
+                .withSecretKeys()
+                .build();
+
+        MappingSecrets mapping = config.getConfigMapping(MappingSecrets.class);
+        MappingSecrets otherMapping = other.getConfigMapping(MappingSecrets.class);
+        MappingSecrets differentMapping = different.getConfigMapping(MappingSecrets.class);
+
+        assertEquals(mapping.secret(), otherMapping.secret());
+        assertEquals(mapping.secret().hashCode(), otherMapping.secret().hashCode());
+        assertEquals(mapping, otherMapping);
+        assertEquals(mapping.hashCode(), otherMapping.hashCode());
+        assertNotEquals(mapping.secret(), differentMapping.secret());
+        assertNotEquals(mapping, differentMapping);
+        assertEquals("Secret{***}", mapping.secret().toString());
+    }
+
+    @ConfigMapping(prefix = "secrets")
+    interface MissingSecrets {
+        Secret<String> secret();
+
+        Optional<Secret<String>> optional();
+
+        Optional<List<Secret<String>>> optionalList();
+
+        Map<String, Secret<String>> map();
     }
 }
