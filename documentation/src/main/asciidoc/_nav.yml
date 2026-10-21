@@ -1,0 +1,66 @@
+title: SmallRye Config
+nav:
+- title: Home
+  page: index
+- title: Config
+  items:
+  - title: Getting Started
+    page: config/getting-started
+  - title: Expressions
+    page: config/expressions
+  - title: Profiles
+    page: config/profiles
+  - title: Environment Variables
+    page: config/environment-variables
+  - title: Indexed Properties
+    page: config/indexed-properties
+  - title: ConfigValue
+    page: config/config-value
+  - title: Mappings
+    page: config/mappings
+  - title: Instance Builder
+    page: config/instance-builder
+  - title: Map Support
+    page: config/map-support
+  - title: Secret Keys
+    page: config/secret-keys
+  - title: Customizer
+    page: config/customizer
+  - title: Configuration Reference
+    page: config/configuration
+- title: Config Sources
+  items:
+  - title: Custom
+    page: config-sources/custom
+  - title: Factories
+    page: config-sources/factories
+  - title: Locations
+    page: config-sources/locations
+  - title: YAML
+    page: config-sources/yaml
+  - title: TOML
+    page: config-sources/toml
+  - title: JSON
+    page: config-sources/json
+  - title: FileSystem
+    page: config-sources/filesystem
+  - title: ZooKeeper
+    page: config-sources/zookeeper
+  - title: HOCON
+    page: config-sources/hocon
+  - title: KeyStore
+    page: config-sources/keystore
+- title: Converters
+  items:
+  - title: Custom
+    page: converters/custom
+- title: Extensions
+  items:
+  - title: Interceptors
+    page: extensions/interceptors
+  - title: Fallback
+    page: extensions/fallback
+  - title: Relocate
+    page: extensions/relocate
+  - title: Logging
+    page: extensions/logging
