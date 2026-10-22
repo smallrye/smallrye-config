@@ -107,6 +107,17 @@ class ConfigMappingInterfaceTest {
     }
 
     @Test
+    void singlePrefix() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(configClass(Server.class, "server"))
+                .withSources(config("server.host", "localhost", "server.port", "8080")).build();
+        // a single mapping registered for the type does not require the prefix
+        Server configProperties = config.getConfigMapping(Server.class);
+        assertEquals("localhost", configProperties.host());
+        assertEquals(8080, configProperties.port());
+    }
+
+    @Test
     void unknownConfigElement() {
         assertThrows(ConfigValidationException.class,
                 () -> new SmallRyeConfigBuilder().withMapping(configClass(Server.class, "server")).build());

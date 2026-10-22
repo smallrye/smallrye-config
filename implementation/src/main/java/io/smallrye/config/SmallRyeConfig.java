@@ -593,10 +593,16 @@ public class SmallRyeConfig implements Config, Serializable {
             throw ConfigMessages.msg.mappingPrefixNotFound(type.getName(), null);
         }
 
-        Object mapping = mappingsForType.get(prefix);
-        if (mapping == null && prefix == null) {
-            String handlerPrefix = ConfigMappingHandler.Handlers.get(type).getPrefix(type);
-            mapping = mappingsForType.get(handlerPrefix);
+        Object mapping;
+        if (prefix == null) {
+            // a single mapping for the type is unambiguous, so the prefix does not have to be resolved
+            if (mappingsForType.size() == 1) {
+                mapping = mappingsForType.values().iterator().next();
+            } else {
+                mapping = mappingsForType.get(ConfigMappingHandler.Handlers.get(type).getPrefix(type));
+            }
+        } else {
+            mapping = mappingsForType.get(prefix);
         }
 
         if (mapping == null) {
