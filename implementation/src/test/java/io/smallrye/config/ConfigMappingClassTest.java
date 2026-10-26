@@ -304,7 +304,10 @@ class ConfigMappingClassTest {
 
     @Test
     void noArgsConstructor() {
-        assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder().withMapping(NoArgsConstructor.class));
+        // a class without a no-args constructor can only be mapped with a template instance
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder().withMapping(NoArgsConstructor.class)
+                .withDefaultValue("value", "value");
+        assertThrows(IllegalArgumentException.class, builder::build);
     }
 
     static class NoArgsConstructor {

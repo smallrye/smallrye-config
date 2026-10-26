@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -39,7 +40,24 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
      * is called to create an instance of the class and populate the values from the interface implementation.
      */
     public interface Mapper {
+        /**
+         * Creates a new instance of the configuration class, with its no-args constructor, and populates every
+         * non-final field from the interface implementation.
+         *
+         * @return the populated instance of the configuration class
+         */
         default Object map() {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * Populates every non-final field of an existing instance of the configuration class from the interface
+         * implementation. A final field keeps the value of the instance.
+         *
+         * @param target the instance of the configuration class to populate
+         * @return the populated instance, which is always the {@code target}
+         */
+        default Object map(Object target) {
             throw new UnsupportedOperationException();
         }
     }
@@ -58,7 +76,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
      * here. An {@link AtomicReference} is defined by the bootstrap loader, so an empty entry costs the type nothing.
      * <p>
      * A filled entry still pins, through the metadata itself. Only a type accepted by
-     * {@link #isConfigurationClass(Class)} is ever filled, so it is that guard that has to keep the metadata of one
+     * {@link #isConfigurationClass(Class, boolean)} is ever filled, so it is that guard that has to keep the metadata of one
      * class loader off the types of another.
      */
     private static final ClassValue<AtomicReference<ConfigMappingClass>> CACHE = new ClassValue<>() {
@@ -69,7 +87,14 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
     };
 
     static ConfigMappingClass get(final Class<?> classType, final ConfigMappingHandler handler) {
-        if (!isConfigurationClass(classType)) {
+        // a root class is registered explicitly, so it does not require a no-args constructor, because it can be
+        // mapped from a template instance
+        return get(classType, handler, false);
+    }
+
+    static ConfigMappingClass get(final Class<?> classType, final ConfigMappingHandler handler,
+            final boolean requireNoArgsConstructor) {
+        if (!isConfigurationClass(classType, requireNoArgsConstructor)) {
             return null;
         }
 
@@ -93,7 +118,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
      * Whether the type may be mapped as a configuration class. A type rejected here is never looked up in the
      * {@link #CACHE}, so the cache only holds entries for types that belong to the application.
      */
-    private static boolean isConfigurationClass(final Class<?> classType) {
+    private static boolean isConfigurationClass(final Class<?> classType, final boolean requireNoArgsConstructor) {
         if (classType.isInterface() ||
                 Modifier.isAbstract(classType.getModifiers()) ||
                 classType.isEnum() ||
@@ -107,14 +132,110 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
         if (Collection.class.isAssignableFrom(classType) || Map.class.isAssignableFrom(classType)) {
             return false;
         }
-        try {
-            classType.getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
+        if (requireNoArgsConstructor && !hasNoArgsConstructor(classType)) {
             // There is no good way to distinguish if it is valid, because it may be handled by a runtime Converter
             return false;
         }
 
         return true;
+    }
+
+    static boolean hasNoArgsConstructor(final Class<?> classType) {
+        try {
+            classType.getDeclaredConstructor();
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * The default values of a mapping populated from a template instance, which are the values of the template
+     * fields, in the same way the field initializers of a configuration class are the default values of a regular
+     * mapping. A template value must be converted back by the converter of the field, with {@link Object#toString()}.
+     * A nested configuration class instance is walked recursively, a collection becomes a comma separated value, a
+     * map becomes an entry for each key, and an {@link Optional} or a {@link Secret} is unwrapped.
+     *
+     * @param classType the configuration class
+     * @param template the template instance
+     * @param prefix the prefix of the mapping
+     * @param handler the handler of the configuration class
+     * @return the default values, by property name
+     */
+    static Map<String, String> defaults(
+            final Class<?> classType,
+            final Object template,
+            final String prefix,
+            final ConfigMappingHandler handler) {
+        Map<String, String> defaults = new HashMap<>();
+        for (Field field : classType.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            Object value;
+            try {
+                field.setAccessible(true);
+                value = field.get(template);
+            } catch (IllegalAccessException | RuntimeException e) {
+                continue;
+            }
+            if (value == null) {
+                continue;
+            }
+
+            ConfigMappingHandler.FieldMember fieldMember = ConfigMappingHandler.FieldMember.of(field, handler);
+            String name = fieldMember.name() != null
+                    ? fieldMember.name()
+                    : handler.getNamingStrategy(classType).apply(field.getName());
+            String propertyName = prefix.isEmpty() ? name : name.isEmpty() ? prefix : prefix + "." + name;
+            defaults(value, propertyName, fieldMember.converter() != null, handler, defaults);
+        }
+        return defaults;
+    }
+
+    private static void defaults(
+            final Object value,
+            final String name,
+            final boolean converter,
+            final ConfigMappingHandler handler,
+            final Map<String, String> defaults) {
+        if (value instanceof Optional<?> optional) {
+            optional.ifPresent(v -> defaults(v, name, converter, handler, defaults));
+        } else if (value instanceof Secret<?> secret) {
+            defaults(secret.get(), name, converter, handler, defaults);
+        } else if (value instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    String key = String.valueOf(entry.getKey());
+                    key = key.indexOf('.') != -1 ? "\"" + key + "\"" : key;
+                    defaults(entry.getValue(), name + "." + key, converter, handler, defaults);
+                }
+            }
+        } else if (value instanceof Collection<?> collection) {
+            StringBuilder joined = new StringBuilder();
+            int index = 0;
+            for (Object element : collection) {
+                if (element == null) {
+                    continue;
+                }
+                if (!converter && isConfigurationClass(element.getClass(), true)) {
+                    defaults(element, name + "[" + index + "]", false, handler, defaults);
+                } else {
+                    if (!joined.isEmpty()) {
+                        joined.append(',');
+                    }
+                    joined.append(String.valueOf(element).replace("\\", "\\\\").replace(",", "\\,"));
+                }
+                index++;
+            }
+            if (!joined.isEmpty()) {
+                defaults.put(name, joined.toString());
+            }
+        } else if (!converter && isConfigurationClass(value.getClass(), true)) {
+            defaults.putAll(defaults(value.getClass(), value, name, handler));
+        } else if (!(value instanceof Character character && character == 0)) {
+            defaults.put(name, String.valueOf(value));
+        }
     }
 
     private final Class<?> classType;
@@ -185,7 +306,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
     }
 
     static Class<?> getInterfaceType(final Class<?> type) {
-        if (!isConfigurationClass(type)) {
+        if (!isConfigurationClass(type, true)) {
             return null;
         }
         ConfigMappingClass configMappingClass = CACHE.get(type).get();
@@ -217,7 +338,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
                 if (genericType instanceof ParameterizedType parameterizedType) {
                     for (java.lang.reflect.Type typeArg : parameterizedType.getActualTypeArguments()) {
                         if (typeArg instanceof Class<?> argClass) {
-                            ConfigMappingClass configMappingClass = get(argClass, handler);
+                            ConfigMappingClass configMappingClass = get(argClass, handler, true);
                             if (configMappingClass != null && nested.add(configMappingClass)) {
                                 getNested(argClass, handler, nested);
                             }
@@ -225,7 +346,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
                     }
                 }
             } else {
-                ConfigMappingClass configClass = get(fieldType, handler);
+                ConfigMappingClass configClass = get(fieldType, handler, true);
                 if (configClass != null && nested.add(configClass)) {
                     getNested(fieldType, handler, nested);
                 }

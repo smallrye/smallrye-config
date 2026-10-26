@@ -86,6 +86,29 @@ public interface ConfigMappingHandler {
 
     record FieldMember(String name, String defaultValue, Class<? extends Converter<?>> converter) {
         public static final FieldMember EMPTY = new FieldMember(null, null, null);
+
+        /**
+         * The configuration metadata of a field, which is the metadata of {@link #processField(Field)} with
+         * SmallRye Config's own annotations ({@link WithName}, {@link WithDefault}, {@link WithConverter}) taking
+         * precedence over it.
+         *
+         * @param field the field of a configuration class.
+         * @param handler the handler of the configuration class.
+         * @return the metadata of the field.
+         */
+        public static FieldMember of(final Field field, final ConfigMappingHandler handler) {
+            FieldMember fieldMember = handler.processField(field);
+            WithName withName = field.getAnnotation(WithName.class);
+            WithDefault withDefault = field.getAnnotation(WithDefault.class);
+            WithConverter withConverter = field.getAnnotation(WithConverter.class);
+            if (withName == null && withDefault == null && withConverter == null) {
+                return fieldMember;
+            }
+            return new FieldMember(
+                    withName != null ? withName.value() : fieldMember.name(),
+                    withDefault != null ? withDefault.value() : fieldMember.defaultValue(),
+                    withConverter != null ? withConverter.value() : fieldMember.converter());
+        }
     }
 
     final class Handlers {

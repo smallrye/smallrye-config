@@ -318,7 +318,8 @@ public class ConfigMappingsTest {
                 configClass(NotAMappingInterface.class, "not-a-mapping")));
     }
 
-    static class NotAMapping {
+    // a class without a no-args constructor is a mapping if populated from a template, but an abstract class is not
+    abstract static class NotAMapping {
         String value;
 
         NotAMapping(final String value) {

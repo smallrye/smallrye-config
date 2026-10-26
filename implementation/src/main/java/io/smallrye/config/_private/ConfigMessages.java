@@ -229,4 +229,13 @@ public interface ConfigMessages {
 
     @Message(id = 61, value = "The property %s is required but it was not set in the ConfigInstanceBuilder")
     NoSuchElementException propertyNotSet(String property);
+
+    @Message(id = 62, value = "The template %s is not an instance of the config class %s")
+    IllegalArgumentException templateNotInstanceOfType(Object template, Class<?> type);
+
+    @Message(id = 63, value = "The config class %s does not declare a no-args constructor, and can only be mapped with a template instance")
+    IllegalArgumentException mappingClassRequiresTemplate(Class<?> type);
+
+    @Message(id = 64, value = "The config mapping %s is an interface, and cannot be mapped with a template instance")
+    IllegalArgumentException templateRequiresClass(Class<?> type);
 }
