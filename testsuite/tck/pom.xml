@@ -37,7 +37,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <!-- TODO - Remove once available in parent again -->
-        <version>3.6.0</version>
+        <version>3.6.1</version>
         <configuration>
           <environmentVariables>
             <MP_TCK_ENV_DUMMY>dummy</MP_TCK_ENV_DUMMY>
