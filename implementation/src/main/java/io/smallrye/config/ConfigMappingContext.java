@@ -69,7 +69,7 @@ public final class ConfigMappingContext {
             Class<?> type = configClass.getType();
             String prefix = configClass.getPrefix();
             applyPrefix(configClass.getPrefix());
-            Object instance = constructMapping(type);
+            Object instance = constructMapping(type, mappingBuilder.getMappingsTemplates().get(configClass));
             this.mappings.computeIfAbsent(type, k -> new HashMap<>(4)).put(prefix, instance);
         }
     }
@@ -78,8 +78,12 @@ public final class ConfigMappingContext {
         return mappings;
     }
 
+    /**
+     * @param interfaceType the mapping interface or configuration class
+     * @param template the instance of the configuration class to populate, or {@code null} to create a new instance
+     */
     @SuppressWarnings("unchecked")
-    <T> T constructMapping(Class<T> interfaceType) {
+    <T> T constructMapping(Class<T> interfaceType, Object template) {
         int problemsCount = problems.size();
         Object mappingObject = constructGroup(interfaceType);
         if (problemsCount != problems.size()) {
@@ -87,12 +91,17 @@ public final class ConfigMappingContext {
         }
         try {
             ConfigValidator validator = config.getConfigValidator();
-            if (mappingObject instanceof ConfigMappingClass.Mapper) {
-                mappingObject = ((ConfigMappingClass.Mapper) mappingObject).map();
+            if (mappingObject instanceof ConfigMappingClass.Mapper mapper) {
+                if (template != null) {
+                    mappingObject = mapper.map(template);
+                } else if (ConfigMappingClass.hasNoArgsConstructor(interfaceType)) {
+                    mappingObject = mapper.map();
+                } else {
+                    throw ConfigMessages.msg.mappingClassRequiresTemplate(interfaceType);
+                }
                 if (!validator.equals(ConfigValidator.EMPTY)) {
                     config.getConfigValidator()
-                            .validateMapping(ConfigMappingClass.get(mappingObject.getClass(), find(mappingObject.getClass())),
-                                    mappingObject);
+                            .validateMapping(ConfigMappingClass.get(interfaceType, find(interfaceType)), mappingObject);
                 }
             } else {
                 if (!validator.equals(ConfigValidator.EMPTY)) {

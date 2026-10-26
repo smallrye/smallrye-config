@@ -302,11 +302,15 @@ public class ConfigMappingGenerator {
             av.visitEnd();
         }
 
-        Object classInstance;
-        try {
-            classInstance = classType.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        // A class without a no-args constructor can only be mapped from a template instance, so it has no defaults
+        boolean hasNoArgsConstructor = ConfigMappingClass.hasNoArgsConstructor(classType);
+        Object classInstance = null;
+        if (hasNoArgsConstructor) {
+            try {
+                classInstance = classType.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         }
 
         Field[] declaredFields = classType.getDeclaredFields();
@@ -315,20 +319,10 @@ public class ConfigMappingGenerator {
                     getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
                     null);
 
-            ConfigMappingHandler.FieldMember fieldMember = handler.processField(declaredField);
-
-            String name = declaredField.isAnnotationPresent(WithName.class)
-                    ? declaredField.getAnnotation(WithName.class).value()
-                    : fieldMember.name();
-
-            String defaultValue = declaredField.isAnnotationPresent(WithDefault.class)
-                    ? declaredField.getAnnotation(WithDefault.class).value()
-                    : fieldMember.defaultValue();
-
-            Class<? extends org.eclipse.microprofile.config.spi.Converter<?>> converter = declaredField
-                    .isAnnotationPresent(WithConverter.class)
-                            ? declaredField.getAnnotation(WithConverter.class).value()
-                            : fieldMember.converter();
+            ConfigMappingHandler.FieldMember fieldMember = ConfigMappingHandler.FieldMember.of(declaredField, handler);
+            String name = fieldMember.name();
+            String defaultValue = fieldMember.defaultValue();
+            Class<? extends org.eclipse.microprofile.config.spi.Converter<?>> converter = fieldMember.converter();
 
             if (name != null) {
                 AnnotationVisitor av = mv.visitAnnotation("L" + getInternalName(WithName.class) + ";", true);
@@ -348,7 +342,7 @@ public class ConfigMappingGenerator {
                 av.visitEnd();
             }
 
-            if (defaultValue == null) {
+            if (defaultValue == null && classInstance != null) {
                 try {
                     declaredField.setAccessible(true);
                     Object fieldDefault = declaredField.get(classInstance);
@@ -365,12 +359,27 @@ public class ConfigMappingGenerator {
             mv.visitEnd();
         }
 
-        MethodVisitor ctor = writer.visitMethod(ACC_PUBLIC, "map", "()L" + I_OBJECT + ";", null, null);
+        // map() - creates a new instance and populates it. Without a no-args constructor, it is not generated, so the
+        // class can only be mapped from a template instance
+        String mapDescriptor = "(L" + I_OBJECT + ";)L" + I_OBJECT + ";";
+        if (hasNoArgsConstructor) {
+            MethodVisitor map = writer.visitMethod(ACC_PUBLIC, "map", "()L" + I_OBJECT + ";", null, null);
+            map.visitVarInsn(ALOAD, 0);
+            map.visitTypeInsn(NEW, classInternalName);
+            map.visitInsn(DUP);
+            map.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V", false);
+            map.visitMethodInsn(INVOKEINTERFACE, interfaceInternalName, "map", mapDescriptor, true);
+            map.visitInsn(ARETURN);
+            map.visitMaxs(0, 0);
+            map.visitEnd();
+        }
+
+        // map(Object target) - populates every non-final field of the target instance
+        MethodVisitor ctor = writer.visitMethod(ACC_PUBLIC, "map", mapDescriptor, null, null);
         Label ctorStart = new Label();
         ctor.visitLabel(ctorStart);
-        ctor.visitTypeInsn(NEW, classInternalName);
-        ctor.visitInsn(DUP);
-        ctor.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V", false);
+        ctor.visitVarInsn(ALOAD, 1);
+        ctor.visitTypeInsn(CHECKCAST, classInternalName);
         ctor.visitVarInsn(ASTORE, 1);
 
         for (Field declaredField : declaredFields) {
@@ -437,7 +446,8 @@ public class ConfigMappingGenerator {
 
         ctor.visitVarInsn(ALOAD, 1);
         ctor.visitInsn(ARETURN);
-        ctor.visitMaxs(2, 2);
+        ctor.visitMaxs(0, 0);
+        ctor.visitEnd();
         writer.visitEnd();
 
         return writer.toByteArray();

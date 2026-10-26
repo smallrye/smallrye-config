@@ -543,6 +543,34 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     /**
+     * Registers a config class mapping that populates the {@code template} instance, instead of creating a new
+     * instance of the config class.
+     *
+     * @param type the config class
+     * @param prefix the prefix of the mapping
+     * @param template the instance of the config class to populate
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see MappingBuilder#mappingTemplate(ConfigClass, Object)
+     */
+    public <T> SmallRyeConfigBuilder withMapping(Class<T> type, String prefix, T template) {
+        return withMapping(ConfigClass.configClass(type, prefix), template);
+    }
+
+    /**
+     * Registers a config class mapping that populates the {@code template} instance, instead of creating a new
+     * instance of the config class.
+     *
+     * @param configClass the config class mapping
+     * @param template the instance of the config class to populate
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see MappingBuilder#mappingTemplate(ConfigClass, Object)
+     */
+    public SmallRyeConfigBuilder withMapping(ConfigClass configClass, Object template) {
+        mappingsBuilder.mappingTemplate(configClass, template);
+        return this;
+    }
+
+    /**
      * Ignores a specified path segment when performing a Config Mapping.
      * <p>
      * By default, a Config Mapping must match every configuration path available in the Config system. However, such
@@ -762,6 +790,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     public final class MappingBuilder {
         private final Set<ConfigClass> mappings = new HashSet<>();
         private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
+        private final Map<ConfigClass, Object> mappingsTemplates = new HashMap<>();
         private final PropertyNamesMatcher<?> ignores = new PropertyNamesMatcher<>();
 
         public void mapping(ConfigClass configClass) {
@@ -788,6 +817,48 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             addDefaultsAndIgnores(resolved);
         }
 
+        /**
+         * Registers a config class mapping that populates a template instance, instead of creating a new instance of
+         * the config class. The values of the template are the default values of the mapping, in the same way the
+         * field initializers of a config class are the default values of a regular mapping, so:
+         * <ul>
+         * <li>a field with a configuration value is populated with it, and every other field keeps the value of the
+         * template</li>
+         * <li>the values of the template have priority over the defaults of the config class (initializers or
+         * {@link WithDefault}), and the default values of the builder have priority over the template</li>
+         * <li>a final field is never populated, and keeps the value of the template, including a final nested
+         * config class instance or map, which is not populated either</li>
+         * <li>a nested config class instance, a collection or a map of the template is replaced by a new instance,
+         * which keeps the template values without a configuration value</li>
+         * <li>a template value must be converted back by the converter of the field, with
+         * {@link Object#toString()}, in the same way as a field initializer</li>
+         * </ul>
+         * The config class does not require a no-args constructor. The template is populated when the
+         * {@link SmallRyeConfig} is built, and it is the instance returned by
+         * {@link SmallRyeConfig#getConfigMapping(Class, String)}.
+         *
+         * @param configClass the config class mapping
+         * @param template the instance of the config class to populate
+         */
+        public void mappingTemplate(ConfigClass configClass, Object template) {
+            Assert.checkNotNullParam("configClass", configClass);
+            Assert.checkNotNullParam("template", template);
+            ConfigClass resolved = !classLoader.equals(currentThread().getContextClassLoader())
+                    ? configClass.forClassLoader(classLoader)
+                    : configClass;
+            if (resolved.getType().isInterface()) {
+                throw ConfigMessages.msg.templateRequiresClass(resolved.getType());
+            }
+            if (!resolved.getType().isInstance(template)) {
+                throw ConfigMessages.msg.templateNotInstanceOfType(template, resolved.getType());
+            }
+
+            mappingsTemplates.put(resolved, template);
+            defaults.add(ConfigMappingClass.defaults(resolved.getType(), template, resolved.getPrefix(),
+                    resolved.getHandler()));
+            mapping(resolved);
+        }
+
         public void ignoredPath(String ignoredPath) {
             Assert.checkNotNullParam("ignoredPath", ignoredPath);
             ignores.add(ignoredPath);
@@ -799,6 +870,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         public Map<ConfigClass, Object> getMappingsInstances() {
             return mappingsInstances;
+        }
+
+        public Map<ConfigClass, Object> getMappingsTemplates() {
+            return mappingsTemplates;
         }
 
         PropertyNamesMatcher<?> getIgnores() {
