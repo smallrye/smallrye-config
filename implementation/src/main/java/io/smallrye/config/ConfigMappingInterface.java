@@ -214,13 +214,8 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
         return handler.getNamingStrategy(interfaceType);
     }
 
-    boolean isBeanStyleGetters() {
-        ConfigMapping configMapping = interfaceType.getAnnotation(ConfigMapping.class);
-        return configMapping != null && configMapping.beanStyleGetters();
-    }
-
-    BeanStyleGetters getBeanStyleGetters() {
-        return isBeanStyleGetters() ? BeanStyleGetters.ENABLED : BeanStyleGetters.DISABLED;
+    public BeanStyleGetters getBeanStyleGetters() {
+        return handler.getBeanStyleGetters(interfaceType);
     }
 
     String getClassInternalName() {

@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.smallrye.config.ConfigMapping.BeanStyleGetters;
 import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config._private.ConfigMessages;
 
@@ -68,6 +69,19 @@ public interface ConfigMappingHandler {
      */
     default NamingStrategy getNamingStrategy(Class<?> type) {
         return NamingStrategy.VERBATIM;
+    }
+
+    /**
+     * Whether bean-style getter names (<code>getFoo</code>, <code>isFoo</code>) are matched to configuration
+     * properties by stripping the prefix. The resulting function is applied before the
+     * {@link #getNamingStrategy(Class) naming strategy}.
+     * <p>
+     * Defaults to {@link BeanStyleGetters#DISABLED}, which uses method names as-is.
+     *
+     * @return the bean-style getters matching mode.
+     */
+    default BeanStyleGetters getBeanStyleGetters(Class<?> type) {
+        return BeanStyleGetters.DISABLED;
     }
 
     /**
@@ -248,6 +262,13 @@ public interface ConfigMappingHandler {
         public NamingStrategy getNamingStrategy(Class<?> type) {
             ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
             return configMapping != null ? configMapping.namingStrategy() : NamingStrategy.KEBAB_CASE;
+        }
+
+        @Override
+        public BeanStyleGetters getBeanStyleGetters(Class<?> type) {
+            ConfigMapping configMapping = type.getAnnotation(ConfigMapping.class);
+            return configMapping != null && configMapping.beanStyleGetters() ? BeanStyleGetters.ENABLED
+                    : BeanStyleGetters.DISABLED;
         }
     }
 

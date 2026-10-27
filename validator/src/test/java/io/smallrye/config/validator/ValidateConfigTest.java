@@ -27,9 +27,11 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -43,6 +45,7 @@ import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 import io.smallrye.config.WithParentName;
 
 public class ValidateConfigTest {
@@ -417,6 +420,90 @@ public class ValidateConfigTest {
         @Override
         public boolean isValid(final MethodValidation.Nested value, final ConstraintValidatorContext context) {
             return false;
+        }
+    }
+
+    @Test
+    void beanStyleGetters() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .withValidator(new BeanValidationConfigValidatorImpl())
+                .withSources(config(
+                        "app.max-concurrent-requests", "0",
+                        "app.top-p", "1.5",
+                        "app.named", "10",
+                        "app.nested-group.inner-value", "10",
+                        "app.nested-list[0].inner-value", "20"))
+                .withMapping(BeanStyleGetters.class);
+
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
+        List<String> validations = new ArrayList<>();
+        for (int i = 0; i < validationException.getProblemCount(); i++) {
+            validations.add(validationException.getProblem(i).getMessage());
+        }
+
+        assertValidationsEqual(validations,
+                "app.max-concurrent-requests must be greater than 0",
+                "app.top-p must be less than or equal to 1",
+                "app.named must be less than or equal to 5",
+                "app.nested-group.inner-value must be less than or equal to 5",
+                "app.nested-list[0].inner-value must be less than or equal to 5");
+    }
+
+    @ConfigMapping(prefix = "app", beanStyleGetters = true)
+    public interface BeanStyleGetters {
+        @Positive
+        int getMaxConcurrentRequests();
+
+        @DecimalMax("1")
+        double getTopP();
+
+        @WithName("named")
+        @Max(5)
+        int getSomething();
+
+        NestedGroup getNestedGroup();
+
+        List<NestedGroup> getNestedList();
+
+        interface NestedGroup {
+            @Max(5)
+            int getInnerValue();
+        }
+    }
+
+    @Test
+    void nestedGroupNames() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .withValidator(new BeanValidationConfigValidatorImpl())
+                .withSources(config(
+                        "app.nested-group.inner-value", "10",
+                        "app.nested-list[0].inner-value", "20",
+                        "app.nested-map.key.inner-value", "30"))
+                .withMapping(NestedGroupNames.class);
+
+        ConfigValidationException validationException = assertThrows(ConfigValidationException.class, builder::build);
+        List<String> validations = new ArrayList<>();
+        for (int i = 0; i < validationException.getProblemCount(); i++) {
+            validations.add(validationException.getProblem(i).getMessage());
+        }
+
+        assertValidationsEqual(validations,
+                "app.nested-group.inner-value must be less than or equal to 5",
+                "app.nested-list[0].inner-value must be less than or equal to 5",
+                "app.nested-map.key.inner-value must be less than or equal to 5");
+    }
+
+    @ConfigMapping(prefix = "app")
+    public interface NestedGroupNames {
+        NestedGroup nestedGroup();
+
+        List<NestedGroup> nestedList();
+
+        Map<String, NestedGroup> nestedMap();
+
+        interface NestedGroup {
+            @Max(5)
+            int innerValue();
         }
     }
 
