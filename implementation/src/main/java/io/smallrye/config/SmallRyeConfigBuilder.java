@@ -888,7 +888,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             // Do not override defaults set by the builder directly, which have priority over mapping defaults
             defaults.add(configClass.getProperties());
             secrets.add(configClass.getSecrets());
-            if (configClass.getHandler().ignoreUnmappedProperties()) {
+            if (configClass.getHandler().ignoreUnmappedProperties(configClass.getType())) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
             }
         }
