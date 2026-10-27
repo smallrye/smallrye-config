@@ -68,6 +68,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -1190,6 +1192,21 @@ public class ConfigMappingGenerator {
     private static void generateStaticInit(final ClassVisitor classVisitor, final ConfigMappingInterface mapping) {
         Map<String, Property> properties = ConfigMappingInterface.getProperties(mapping);
 
+        // A mapping without the ConfigMapping annotation inherits the bean-style getters of the mapping it is nested
+        // in, and the same mapping may be nested in mappings with different settings, so the names it may resolve to
+        // with bean-style getters are also recorded (without defaults, which the root mapping holds).
+        Set<String> beanStyleNames = new TreeSet<>();
+        if (!mapping.hasConfigMapping()) {
+            Map<String, Property> beanStyleProperties = ConfigMappingInterface.getProperties(mapping,
+                    BeanStyleGetters.ENABLED.andThen(mapping.getNamingStrategy()));
+            for (String name : beanStyleProperties.keySet()) {
+                if (!properties.containsKey(name)) {
+                    beanStyleNames.add(name);
+                }
+            }
+        }
+        int size = properties.size() + beanStyleNames.size();
+
         classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "PROPERTIES", "Ljava/util/Map;",
                 "Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;", null).visitEnd();
         classVisitor.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "SECRETS", "Ljava/util/Set;",
@@ -1200,10 +1217,10 @@ public class ConfigMappingGenerator {
         // PROPERTIES
         clinit.visitTypeInsn(NEW, "java/util/HashMap");
         clinit.visitInsn(DUP);
-        if (properties.size() < 3) {
-            clinit.visitIntInsn(BIPUSH, properties.size() + 1);
+        if (size < 3) {
+            clinit.visitIntInsn(BIPUSH, size + 1);
         } else {
-            clinit.visitIntInsn(SIPUSH, (int) ((float) properties.size() / 0.75f + 1.0f));
+            clinit.visitIntInsn(SIPUSH, (int) ((float) size / 0.75f + 1.0f));
         }
         clinit.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "(I)V", false);
         clinit.visitFieldInsn(PUTSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
@@ -1245,6 +1262,14 @@ public class ConfigMappingGenerator {
             } else {
                 clinit.visitInsn(ACONST_NULL);
             }
+            clinit.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
+                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
+            clinit.visitInsn(POP);
+        }
+        for (String name : beanStyleNames) {
+            clinit.visitFieldInsn(GETSTATIC, mapping.getClassInternalName(), "PROPERTIES", "Ljava/util/Map;");
+            clinit.visitLdcInsn(name);
+            clinit.visitInsn(ACONST_NULL);
             clinit.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
                     "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
             clinit.visitInsn(POP);

@@ -1164,8 +1164,23 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
     }
 
     static Map<String, Property> getProperties(final ConfigMappingInterface configMapping) {
+        return getProperties(configMapping, configMapping.getBeanStyleGetters().andThen(configMapping.getNamingStrategy()));
+    }
+
+    /**
+     * Constructs the {@link Property} names of the {@link ConfigMappingInterface} with the specified naming function.
+     * A nested group without a {@link ConfigMapping} annotation inherits the naming from the parent mapping, so its
+     * names depend on where the group is nested.
+     *
+     * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
+     * @param namingStrategy the function to apply to the member names
+     * @return a <code>Map</code> of property names to {@link Property}
+     */
+    static Map<String, Property> getProperties(
+            final ConfigMappingInterface configMapping,
+            final Function<String, String> namingStrategy) {
         Map<Class<?>, Map<String, Map<String, Property>>> properties = new HashMap<>();
-        getProperties(configMapping, properties);
+        getProperties(new GroupProperty(null, null, configMapping), namingStrategy, new Path(), properties);
         return properties.get(configMapping.getInterfaceType()).get("");
     }
 
@@ -1184,17 +1199,11 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
      * <p>
      * The mapping class root {@link Property} use the empty <code>String</code> for the path key.
      *
-     * @param configMapping a {@link ConfigMappingInterface} representation of a {@link ConfigMapping} annotated class
+     * @param groupProperty the {@link GroupProperty} of the {@link ConfigMappingInterface} to collect the names from
+     * @param namingStrategy the function to apply to the member names
+     * @param path the {@link Path} to the group
      * @param properties a <code>Map</code> with {@link Property} values
      */
-    private static void getProperties(
-            final ConfigMappingInterface configMapping,
-            final Map<Class<?>, Map<String, Map<String, Property>>> properties) {
-        Function<String, String> namingStrategy = configMapping.getBeanStyleGetters()
-                .andThen(configMapping.getNamingStrategy());
-        getProperties(new GroupProperty(null, null, configMapping), namingStrategy, new Path(), properties);
-    }
-
     private static void getProperties(
             final GroupProperty groupProperty,
             final Function<String, String> namingStrategy,

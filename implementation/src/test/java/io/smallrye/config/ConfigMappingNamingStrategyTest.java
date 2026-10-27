@@ -323,6 +323,56 @@ public class ConfigMappingNamingStrategyTest {
         assertEquals("value", mapping.getMap().get("default").getValue());
     }
 
+    @Test
+    void beanStyleGettersLazyGroups() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(config(
+                        "lazy.nested-map.one.inner-value", "1",
+                        "lazy.nested-map.two.inner-value", "2",
+                        "lazy.nested-map.two.inner-group.deep-value", "deep",
+                        "lazy.optional-nested.inner-value", "3",
+                        "lazy.optional-deep.inner-group.deep-value", "deeper"))
+                .withMapping(BeanStyleGettersLazyGroups.class)
+                .build();
+
+        BeanStyleGettersLazyGroups mapping = config.getConfigMapping(BeanStyleGettersLazyGroups.class);
+        assertEquals(2, mapping.getNestedMap().size());
+        assertEquals(1, mapping.getNestedMap().get("one").getInnerValue());
+        assertEquals(2, mapping.getNestedMap().get("two").getInnerValue());
+        assertTrue(mapping.getNestedMap().get("one").getInnerGroup().isEmpty());
+        assertEquals("deep", mapping.getNestedMap().get("two").getInnerGroup().get().getDeepValue());
+        assertTrue(mapping.getOptionalNested().isPresent());
+        assertEquals(3, mapping.getOptionalNested().get().getInnerValue());
+        assertTrue(mapping.getOptionalEmpty().isEmpty());
+        assertTrue(mapping.getOptionalDeep().isPresent());
+        assertEquals("deeper", mapping.getOptionalDeep().get().getInnerGroup().get().getDeepValue());
+    }
+
+    @ConfigMapping(prefix = "lazy", beanStyleGetters = true)
+    interface BeanStyleGettersLazyGroups {
+        Map<String, Nested> getNestedMap();
+
+        Optional<Nested> getOptionalNested();
+
+        Optional<Nested> getOptionalEmpty();
+
+        Optional<Deep> getOptionalDeep();
+
+        interface Nested {
+            int getInnerValue();
+
+            Optional<Inner> getInnerGroup();
+        }
+
+        interface Deep {
+            Optional<Inner> getInnerGroup();
+        }
+
+        interface Inner {
+            String getDeepValue();
+        }
+    }
+
     @ConfigMapping(prefix = "get", beanStyleGetters = true)
     interface BeanStyleGettersDefaults {
         @WithDefault("value")
