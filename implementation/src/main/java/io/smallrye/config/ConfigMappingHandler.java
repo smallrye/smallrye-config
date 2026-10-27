@@ -98,6 +98,20 @@ public interface ConfigMappingHandler {
         return false;
     }
 
+    /**
+     * Whether unmapped properties under the prefix of the given configuration class should be ignored during
+     * validation.
+     * <p>
+     * Allows a handler to decide per configuration class, for instance from an attribute of the annotation it
+     * handles. Defaults to {@link #ignoreUnmappedProperties()}.
+     *
+     * @param type the configuration class.
+     * @return {@code true} to ignore unmapped properties under the class prefix, {@code false} to validate them.
+     */
+    default boolean ignoreUnmappedProperties(Class<?> type) {
+        return ignoreUnmappedProperties();
+    }
+
     record FieldMember(String name, String defaultValue, Class<? extends Converter<?>> converter) {
         public static final FieldMember EMPTY = new FieldMember(null, null, null);
 

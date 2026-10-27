@@ -2,8 +2,10 @@ package io.smallrye.config.spring;
 
 import static io.smallrye.config.ConfigMappingLoader.getGeneratedConfigClasses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -17,10 +19,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Name;
 
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingHandler.ConfigMappingInterfaceHandler;
 import io.smallrye.config.ConfigMappingLoader.GeneratedConfigClass;
 import io.smallrye.config.ConfigMappings;
 import io.smallrye.config.ConfigMappings.ConfigClass;
+import io.smallrye.config.ConfigValidationException;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -441,5 +446,88 @@ class ConfigurationPropertiesMappingHandlerTest {
             public String description;
             public String provider;
         }
+    }
+
+    @Test
+    void namingStrategyFromConfigMapping() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(VerbatimProperties.class)
+                .withDefaultValue("verbatim.maxAttempts", "5")
+                .withDefaultValue("verbatim.backoffMillis", "1000")
+                .build();
+
+        VerbatimProperties properties = config.getConfigMapping(VerbatimProperties.class);
+        assertEquals(5, properties.maxAttempts);
+        assertEquals(1000L, properties.backoffMillis);
+
+        // the class carries @ConfigMapping, but it is still handled by the Spring handler
+        GeneratedConfigClass generated = getGeneratedConfigClasses(VerbatimProperties.class).stream()
+                .filter(g -> g.getParent().equals(VerbatimProperties.class))
+                .findFirst()
+                .orElseThrow();
+        assertInstanceOf(ConfigurationPropertiesMappingHandler.class, generated.getHandler());
+    }
+
+    @ConfigurationProperties(prefix = "verbatim")
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class VerbatimProperties {
+        public int maxAttempts;
+        public long backoffMillis;
+    }
+
+    @Test
+    void nestedInheritsEnclosingNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedNamingProperties.class)
+                .withDefaultValue("nested-naming.appName", "my-app")
+                .withDefaultValue("nested-naming.server.baseUrl", "http://localhost")
+                .withDefaultValue("nested-naming.pool.max_size", "20")
+                .build();
+
+        NestedNamingProperties properties = config.getConfigMapping(NestedNamingProperties.class);
+        assertEquals("my-app", properties.appName);
+        assertEquals("http://localhost", properties.server.baseUrl);
+        assertEquals(20, properties.pool.maxSize);
+    }
+
+    @ConfigurationProperties(prefix = "nested-naming")
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class NestedNamingProperties {
+        public String appName;
+        public Server server;
+        public Pool pool;
+
+        // inherits VERBATIM from the enclosing class
+        public static class Server {
+            public String baseUrl;
+        }
+
+        // declares its own strategy
+        @ConfigMapping(namingStrategy = NamingStrategy.SNAKE_CASE)
+        public static class Pool {
+            public int maxSize;
+        }
+    }
+
+    @Test
+    void ignoreUnknownFieldsFalse() {
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, () -> new SmallRyeConfigBuilder()
+                .withMapping(StrictProperties.class)
+                .withDefaultValue("strict.host", "localhost")
+                .withDefaultValue("strict.unmapped", "value")
+                .build());
+        assertTrue(exception.getMessage().contains("strict.unmapped"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(StrictProperties.class)
+                .withDefaultValue("strict.host", "localhost")
+                .withDefaultValue("other.unmapped", "value")
+                .build();
+        assertEquals("localhost", config.getConfigMapping(StrictProperties.class).host);
+    }
+
+    @ConfigurationProperties(prefix = "strict", ignoreUnknownFields = false)
+    public static class StrictProperties {
+        public String host;
     }
 }
