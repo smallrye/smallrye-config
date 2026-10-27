@@ -18,8 +18,10 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -51,12 +53,19 @@ public final class ConfigMappingContext {
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
+    private final NavigableSet<String> sortedPropertyNames;
 
     public ConfigMappingContext(
             final SmallRyeConfig config,
             final MappingBuilder mappingBuilder) {
 
         this.config = config;
+
+        NavigableSet<String> sorted = new TreeSet<>();
+        for (String name : config.getPropertyNames()) {
+            sorted.add(name);
+        }
+        this.sortedPropertyNames = sorted;
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
             Class<?> type = entry.getKey().getType();
@@ -1062,17 +1071,23 @@ public final class ConfigMappingContext {
          * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
          */
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
+            String ceiling = sortedPropertyNames.ceiling(path);
+            if (ceiling == null || !ceiling.startsWith(path)) {
+                return false;
+            }
+
             List<String> candidates = new ArrayList<>();
-            for (String name : config.getPropertyNames()) {
-                if (name.startsWith(path)) {
-                    String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
-                            ? name.substring(path.length() + 1)
-                            : name.substring(path.length());
-                    if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
-                        candidates.add(candidate);
-                    } else {
-                        candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
-                    }
+            for (String name : sortedPropertyNames.tailSet(path, true)) {
+                if (!name.startsWith(path)) {
+                    break;
+                }
+                String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
+                        ? name.substring(path.length() + 1)
+                        : name.substring(path.length());
+                if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
+                    candidates.add(candidate);
+                } else {
+                    candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
                 }
             }
 
