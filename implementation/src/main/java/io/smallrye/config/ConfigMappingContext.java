@@ -13,6 +13,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -51,12 +52,20 @@ public final class ConfigMappingContext {
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
+    private final List<String> sortedPropertyNames;
 
     public ConfigMappingContext(
             final SmallRyeConfig config,
             final MappingBuilder mappingBuilder) {
 
         this.config = config;
+        // unfortunately config.getPropertyNames() returns an Iterable so we can't size the list in advance
+        List<String> sorted = new ArrayList<>();
+        for (String name : config.getPropertyNames()) {
+            sorted.add(name);
+        }
+        Collections.sort(sorted);
+        this.sortedPropertyNames = sorted;
 
         for (Map.Entry<ConfigClass, Object> entry : mappingBuilder.getMappingsInstances().entrySet()) {
             Class<?> type = entry.getKey().getType();
@@ -1062,17 +1071,26 @@ public final class ConfigMappingContext {
          * @return <code>true</code> if a runtime config name exits in the mapping names or <code>false</code> otherwise
          */
         private <G> boolean createRequired(final Class<G> groupType, final String path) {
+            int idx = Collections.binarySearch(sortedPropertyNames, path);
+            int startIdx = idx >= 0 ? idx : -(idx + 1);
+            if (startIdx >= sortedPropertyNames.size() || !sortedPropertyNames.get(startIdx).startsWith(path)) {
+                return false;
+            }
+
             List<String> candidates = new ArrayList<>();
-            for (String name : config.getPropertyNames()) {
-                if (name.startsWith(path)) {
-                    String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
-                            ? name.substring(path.length() + 1)
-                            : name.substring(path.length());
-                    if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
-                        candidates.add(candidate);
-                    } else {
-                        candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
-                    }
+            int pathLength = path.length();
+            for (int i = startIdx; i < sortedPropertyNames.size(); i++) {
+                String name = sortedPropertyNames.get(i);
+                if (!name.startsWith(path)) {
+                    break;
+                }
+                String candidate = name.length() > pathLength && name.charAt(pathLength) == '.'
+                        ? name.substring(pathLength + 1)
+                        : name.substring(pathLength);
+                if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
+                    candidates.add(candidate);
+                } else {
+                    candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
                 }
             }
 
