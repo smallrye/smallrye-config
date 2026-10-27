@@ -77,9 +77,12 @@ public interface InjectionMessages {
      * io.smallrye.config.inject.ValidateInjectionTest$ConstructorUnnamedPropertyTest$ConstructorUnnamedPropertyBean(String)
      *
      */
-    public static String formatInjectionPoint(InjectionPoint injectionPoint) {
+    static String formatInjectionPoint(InjectionPoint injectionPoint) {
 
         Member member = injectionPoint.getMember();
+        if (member == null) {
+            return String.valueOf(injectionPoint);
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append(member.getDeclaringClass().getName());

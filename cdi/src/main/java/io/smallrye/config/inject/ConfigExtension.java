@@ -37,6 +37,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -129,13 +130,18 @@ public class ConfigExtension implements Extension {
 
     protected void processConfigInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         InjectionPoint injectionPoint = pip.getInjectionPoint();
-        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigProperty.class)) {
+        Annotated annotated = injectionPoint.getAnnotated();
+        if (annotated == null) {
+            return;
+        }
+
+        if (annotated.isAnnotationPresent(ConfigProperty.class)) {
             configPropertyInjectionPoints.add(injectionPoint);
         }
 
-        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigProperties.class)) {
+        if (annotated.isAnnotationPresent(ConfigProperties.class)) {
             ConfigClass properties = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
-                    injectionPoint.getAnnotated().getAnnotation(ConfigProperties.class).prefix());
+                    annotated.getAnnotation(ConfigProperties.class).prefix());
 
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!properties.getPrefix().equals(ConfigProperties.UNCONFIGURED_PREFIX)) {
@@ -146,9 +152,9 @@ public class ConfigExtension implements Extension {
         }
 
         // Add to SmallRyeConfig config classes with a different prefix by injection point
-        if (injectionPoint.getAnnotated().isAnnotationPresent(ConfigMapping.class)) {
+        if (annotated.isAnnotationPresent(ConfigMapping.class)) {
             ConfigClass mapping = ConfigClass.configClass((Class<?>) injectionPoint.getType(),
-                    injectionPoint.getAnnotated().getAnnotation(ConfigMapping.class).prefix());
+                    annotated.getAnnotation(ConfigMapping.class).prefix());
             // If the prefix is empty at the injection point, fallbacks to the class prefix (already registered)
             if (!mapping.getPrefix().isEmpty()) {
                 configMappings.add(mapping);
@@ -186,9 +192,13 @@ public class ConfigExtension implements Extension {
         Set<String> configNames = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         for (InjectionPoint injectionPoint : getConfigPropertyInjectionPoints()) {
             Type type = injectionPoint.getType();
+            Annotated annotated = injectionPoint.getAnnotated();
+            if (annotated == null) {
+                continue;
+            }
 
             // validate injection config name
-            ConfigProperty configProperty = injectionPoint.getAnnotated().getAnnotation(ConfigProperty.class);
+            ConfigProperty configProperty = annotated.getAnnotation(ConfigProperty.class);
             String name;
             try {
                 name = ConfigProducerUtil.getConfigKey(injectionPoint, configProperty);
