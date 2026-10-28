@@ -19,6 +19,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -116,11 +117,17 @@ public class CreateRequiredBenchmark {
             qp("quarkus.tls.handshake-timeout", new String[] { "enabled" }),
     };
 
+    @Param({ "rest", "hibernate" })
+    private String dataset;
+
     private List<String> propertyNames;
 
     @Setup
     public void setup() throws IOException {
-        propertyNames = loadPropertyNames();
+        String resource = "hibernate".equals(dataset)
+                ? "/quarkus-runtime-property-names-hibernate.txt"
+                : "/quarkus-runtime-property-names.txt";
+        propertyNames = loadPropertyNames(resource);
     }
 
     // -----------------------------------------------------------------------
@@ -138,7 +145,10 @@ public class CreateRequiredBenchmark {
     // -----------------------------------------------------------------------
     @Benchmark
     public void navigableSet(Blackhole bh) {
-        NavigableSet<String> sorted = new TreeSet<>(propertyNames);
+        NavigableSet<String> sorted = new TreeSet<>();
+        for (String name : propertyNames) {
+            sorted.add(name);
+        }
         for (QueryPath qp : QUERY_PATHS) {
             bh.consume(createRequired_navigableSet(sorted, qp.path, qp.mappedProperties));
         }
@@ -160,8 +170,26 @@ public class CreateRequiredBenchmark {
     // -----------------------------------------------------------------------
     @Benchmark
     public void sortedList(Blackhole bh) {
-        List<String> sorted = new ArrayList<>(propertyNames);
+        List<String> sorted = new ArrayList<>();
+        for (String name : propertyNames) {
+            sorted.add(name);
+        }
         Collections.sort(sorted);
+        for (QueryPath qp : QUERY_PATHS) {
+            bh.consume(createRequired_sortedList(sorted, qp.path, qp.mappedProperties));
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Approach 4b: Sorted List with sort-on-insert via binarySearch
+    // -----------------------------------------------------------------------
+    @Benchmark
+    public void sortedList_insertionSort(Blackhole bh) {
+        List<String> sorted = new ArrayList<>();
+        for (String name : propertyNames) {
+            int idx = Collections.binarySearch(sorted, name);
+            sorted.add(idx >= 0 ? idx : -(idx + 1), name);
+        }
         for (QueryPath qp : QUERY_PATHS) {
             bh.consume(createRequired_sortedList(sorted, qp.path, qp.mappedProperties));
         }
@@ -173,7 +201,10 @@ public class CreateRequiredBenchmark {
     @Benchmark
     public void prefixHashSet_plus_navigableSet(Blackhole bh) {
         Set<String> prefixes = buildPrefixIndex(propertyNames);
-        NavigableSet<String> sorted = new TreeSet<>(propertyNames);
+        NavigableSet<String> sorted = new TreeSet<>();
+        for (String name : propertyNames) {
+            sorted.add(name);
+        }
         for (QueryPath qp : QUERY_PATHS) {
             bh.consume(createRequired_prefixSetNav(sorted, prefixes, qp.path, qp.mappedProperties));
         }
@@ -332,10 +363,10 @@ public class CreateRequiredBenchmark {
         return prefixes;
     }
 
-    private static List<String> loadPropertyNames() throws IOException {
-        List<String> names = new ArrayList<>(640);
+    private static List<String> loadPropertyNames(String resource) throws IOException {
+        List<String> names = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CreateRequiredBenchmark.class.getResourceAsStream("/quarkus-runtime-property-names.txt"),
+                CreateRequiredBenchmark.class.getResourceAsStream(resource),
                 StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
