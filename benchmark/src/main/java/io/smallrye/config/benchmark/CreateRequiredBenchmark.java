@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
@@ -155,7 +156,19 @@ public class CreateRequiredBenchmark {
     }
 
     // -----------------------------------------------------------------------
-    // Approach 4: Prefix HashSet + NavigableSet
+    // Approach 4: Sorted List — build sorted ArrayList + query via binarySearch
+    // -----------------------------------------------------------------------
+    @Benchmark
+    public void sortedList(Blackhole bh) {
+        List<String> sorted = new ArrayList<>(propertyNames);
+        Collections.sort(sorted);
+        for (QueryPath qp : QUERY_PATHS) {
+            bh.consume(createRequired_sortedList(sorted, qp.path, qp.mappedProperties));
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Approach 5: Prefix HashSet + NavigableSet
     // -----------------------------------------------------------------------
     @Benchmark
     public void prefixHashSet_plus_navigableSet(Blackhole bh) {
@@ -200,6 +213,35 @@ public class CreateRequiredBenchmark {
         }
         List<String> candidates = new ArrayList<>();
         for (String name : sorted.tailSet(path, true)) {
+            if (!name.startsWith(path)) {
+                break;
+            }
+            String candidate = name.length() > path.length() && name.charAt(path.length()) == '.'
+                    ? name.substring(path.length() + 1)
+                    : name.substring(path.length());
+            candidates.add(candidate);
+        }
+        if (!candidates.isEmpty()) {
+            for (String mappedProperty : mappedProperties) {
+                for (String candidate : candidates) {
+                    if (PropertyName.equals(candidate, mappedProperty)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean createRequired_sortedList(List<String> sorted, String path, String[] mappedProperties) {
+        int idx = Collections.binarySearch(sorted, path);
+        int startIdx = idx >= 0 ? idx : -(idx + 1);
+        if (startIdx >= sorted.size() || !sorted.get(startIdx).startsWith(path)) {
+            return false;
+        }
+        List<String> candidates = new ArrayList<>();
+        for (int i = startIdx; i < sorted.size(); i++) {
+            String name = sorted.get(i);
             if (!name.startsWith(path)) {
                 break;
             }
@@ -291,7 +333,7 @@ public class CreateRequiredBenchmark {
     }
 
     private static List<String> loadPropertyNames() throws IOException {
-        List<String> names = new ArrayList<>();
+        List<String> names = new ArrayList<>(640);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 CreateRequiredBenchmark.class.getResourceAsStream("/quarkus-runtime-property-names.txt"),
                 StandardCharsets.UTF_8))) {
