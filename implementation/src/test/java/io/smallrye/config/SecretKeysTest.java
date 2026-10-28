@@ -70,6 +70,30 @@ class SecretKeysTest {
         });
     }
 
+    @Test
+    void expressionReferencingSecretIsSecret() {
+        SmallRyeConfig config = buildConfig("secret", "12345678", "not.secret", "value",
+                "expression", "url:${secret}", "nested", "${expression}", "plain", "url:${not.secret}")
+                .unwrap(SmallRyeConfig.class);
+
+        assertThrows(SecurityException.class, () -> config.getConfigValue("expression"),
+                "Not allowed to access secret key secret");
+
+        SecretKeys.doUnlocked(() -> {
+            ConfigValue expression = config.getConfigValue("expression");
+            assertEquals("url:12345678", expression.getValue());
+            assertTrue(expression.isSecret());
+
+            ConfigValue nested = config.getConfigValue("nested");
+            assertEquals("url:12345678", nested.getValue());
+            assertTrue(nested.isSecret());
+
+            ConfigValue plain = config.getConfigValue("plain");
+            assertEquals("url:value", plain.getValue());
+            assertFalse(plain.isSecret());
+        });
+    }
+
     @ConfigMapping(prefix = "mapping")
     interface MappingSecret {
         String secret();

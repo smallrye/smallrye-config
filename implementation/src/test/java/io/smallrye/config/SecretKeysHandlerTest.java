@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.NoSuchElementException;
 
@@ -37,7 +38,9 @@ class SecretKeysHandlerTest {
                 .withDefaultValue("my.secret", "${handler::secret}")
                 .build();
 
-        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
+        ConfigValue secret = config.getConfigValue("my.secret");
+        assertEquals("decoded", secret.getValue());
+        assertTrue(secret.isSecret());
     }
 
     @Test
@@ -91,6 +94,8 @@ class SecretKeysHandlerTest {
                 .withDefaultValue("my.expression", "${handler::secret}")
                 .build();
 
-        assertEquals("decoded", config.getConfigValue("my.secret").getValue());
+        ConfigValue secret = config.getConfigValue("my.secret");
+        assertEquals("decoded", secret.getValue());
+        assertTrue(secret.isSecret());
     }
 }

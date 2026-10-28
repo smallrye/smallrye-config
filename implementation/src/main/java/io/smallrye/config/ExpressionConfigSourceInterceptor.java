@@ -80,6 +80,8 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 // Requires a handler lookup
                 int index = key.indexOf("::");
                 if (index != -1) {
+                    // a value decoded by a secret handler is a secret
+                    valueBuilder.withSecret(true);
                     stringBuilder.append(getHandler(key.substring(0, index), context).decode(key.substring(index + 2)));
                     return;
                 }
@@ -87,6 +89,10 @@ public class ExpressionConfigSourceInterceptor implements ConfigSourceIntercepto
                 // Expression lookup
                 ConfigValue resolve = getValue(context, key, depth + 1);
                 if (resolve != null) {
+                    // the expanded value contains a secret, so it must be treated as a secret as well
+                    if (resolve.isSecret()) {
+                        valueBuilder.withSecret(true);
+                    }
                     if (!resolve.hasProblems()) {
                         stringBuilder.append(resolve.getValue());
                     } else {
