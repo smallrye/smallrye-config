@@ -289,6 +289,67 @@ class ConfigMappingSecretsTest {
         assertEquals("Secret{***}", mapping.secret().toString());
     }
 
+    @Test
+    void secretWildcardDoesNotMatchNonSecret() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(NamedSecrets.class)
+                .withMapping(NamedNotSecrets.class)
+                .withProfile("dev")
+                .withSources(config(
+                        "datasource.password", "secret",
+                        "datasource.named.password", "secret",
+                        "%dev.datasource.devservices.password", "not-secret"))
+                .build();
+
+        NamedSecrets secrets = config.getConfigMapping(NamedSecrets.class);
+        assertEquals(Set.of("<default>", "named"), secrets.datasources().keySet());
+        assertEquals("secret", secrets.datasources().get("<default>").password().get().get());
+        assertEquals("secret", secrets.datasources().get("named").password().get().get());
+        NamedNotSecrets notSecrets = config.getConfigMapping(NamedNotSecrets.class);
+        assertEquals("not-secret", notSecrets.datasources().get("<default>").devservices().password().get());
+
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.named.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.other.password"));
+        ConfigValue devservices = config.getConfigValue("datasource.devservices.password");
+        assertEquals("not-secret", devservices.getValue());
+        assertFalse(devservices.isSecret());
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("datasource.devservices.password"));
+        assertFalse(properties.contains("datasource.password"));
+        assertFalse(properties.contains("datasource.named.password"));
+    }
+
+    @ConfigMapping(prefix = "datasource")
+    interface NamedSecrets {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, DataSource> datasources();
+
+        interface DataSource {
+            Optional<Secret<String>> password();
+        }
+    }
+
+    @ConfigMapping(prefix = "datasource")
+    interface NamedNotSecrets {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, DataSource> datasources();
+
+        interface DataSource {
+            DevServices devservices();
+
+            interface DevServices {
+                Optional<String> password();
+            }
+        }
+    }
+
     @ConfigMapping(prefix = "secrets")
     interface MissingSecrets {
         Secret<String> secret();

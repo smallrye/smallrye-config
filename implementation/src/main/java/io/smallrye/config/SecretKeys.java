@@ -107,29 +107,56 @@ public final class SecretKeys implements Serializable {
         }
     }
 
-    public static class Secrets extends PropertyNamesMatcher<Void> {
+    public static class Secrets extends PropertyNamesMatcher<Boolean> {
         private final Set<String> secrets = new HashSet<>();
 
         public Set<String> getSecrets() {
             return Collections.unmodifiableSet(secrets);
         }
 
+        /**
+         * Match a name with the secret keys. A name registered with {@link #addNotSecret(String, List)} is more specific
+         * than a secret key with wildcards, so it does not match.
+         *
+         * @param name the String to be matched
+         * @return {@code true} if the name is a secret key or {@code false} otherwise.
+         */
         @Override
-        protected void add(String name, Void value) {
-            secrets.add(name);
-            super.add(name, null);
+        public boolean matches(final String name) {
+            return Boolean.TRUE.equals(get(name));
         }
 
         @Override
-        protected void put(String name, Void value) {
+        protected void add(String name, Boolean value) {
             secrets.add(name);
-            super.put(name, null);
+            super.add(name, Boolean.TRUE);
+        }
+
+        @Override
+        protected void put(String name, Boolean value) {
+            secrets.add(name);
+            super.put(name, Boolean.TRUE);
+        }
+
+        /**
+         * Registers a name that matches a secret key with wildcards, but that is not a secret. For instance, a
+         * secret {@code datasource.*.password} in a named datasource, and a non-secret
+         * {@code datasource.devservices.password} in a different mapping. An exact secret name is not overridden.
+         *
+         * @param name the name that is not a secret
+         * @param profiles the active profiles
+         */
+        void addNotSecret(final String name, final List<String> profiles) {
+            super.add(name, Boolean.FALSE);
+            for (String profile : profiles) {
+                super.add("%" + profile + "." + name, Boolean.FALSE);
+            }
         }
 
         Secrets withProfiles(List<String> profiles) {
             for (String secret : secrets) {
                 for (String profile : profiles) {
-                    super.add("%" + profile + "." + secret, null);
+                    super.add("%" + profile + "." + secret, Boolean.TRUE);
                 }
             }
             return this;
