@@ -539,4 +539,39 @@ class ProfileConfigSourceInterceptorTest {
                 .withSources(config(keyValues))
                 .build();
     }
+
+    @Test
+    void profilePropertiesConfigSource() {
+        // a config value source with profiled names answers the profiled lookups
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withProfile("prof")
+                .withSources(new PropertiesConfigSource(Map.of(
+                        "my.prop", "1",
+                        "%prof.my.prop", "2",
+                        "%other.my.prop", "3",
+                        "my.plain", "plain"), "props", 100))
+                .build();
+
+        assertEquals("2", config.getValue("my.prop", String.class));
+        assertEquals("my.prop", config.getConfigValue("my.prop").getName());
+        assertEquals("prof", config.getConfigValue("my.prop").getProfile());
+        assertEquals("2", config.getConfigValue("%prof.my.prop").getValue());
+        assertEquals("3", config.getConfigValue("%other.my.prop").getValue());
+        assertEquals("plain", config.getValue("my.plain", String.class));
+        assertNull(config.getConfigValue("my.plain").getProfile());
+
+        // a config value source without profiled names never answers a profiled lookup
+        PropertiesConfigSource plain = new PropertiesConfigSource(Map.of("my.prop", "1"), "props", 100);
+        assertNull(plain.getConfigValue("%prof.my.prop"));
+        assertNull(plain.getValue("%prof.my.prop"));
+        assertEquals("1", plain.getValue("my.prop"));
+        config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withProfile("prof")
+                .withSources(plain)
+                .build();
+        assertEquals("1", config.getValue("my.prop", String.class));
+        assertNull(config.getConfigValue("my.prop").getProfile());
+    }
 }

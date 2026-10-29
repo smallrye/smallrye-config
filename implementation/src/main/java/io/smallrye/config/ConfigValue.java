@@ -177,6 +177,11 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
                 configSourcePosition, lineNumber, problems);
     }
 
+    public ConfigValue withNameAndProfile(final String name, final String profile) {
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
+    }
+
     public ConfigValue withSecret(final boolean secret) {
         return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
                 configSourcePosition, lineNumber, problems);

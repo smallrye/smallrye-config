@@ -170,6 +170,12 @@ class ConfigValueTest {
         assertTrue(original.withName("other").isSecret());
         assertFalse(original.withSecret(false).isSecret());
         assertEquals("raw", original.withName("other").getRawValue());
+
+        ConfigValue profiled = original.withNameAndProfile("other", "dev");
+        assertEquals("other", profiled.getName());
+        assertEquals("dev", profiled.getProfile());
+        assertEquals("value", profiled.getValue());
+        assertEquals(2, profiled.getConfigSourcePosition());
     }
 
     @Test

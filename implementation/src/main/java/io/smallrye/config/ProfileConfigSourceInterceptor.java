@@ -44,29 +44,19 @@ public class ProfileConfigSourceInterceptor implements ConfigSourceInterceptor {
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
         if (!profiles.isEmpty()) {
             String normalizeName = activeName(name, profiles);
-            ConfigValue profileValue = getProfileValue(context, normalizeName);
-            if (profileValue != null) {
-                final ConfigValue originalValue = context.proceed(normalizeName);
-                if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
-                    return originalValue;
+            for (int i = 0; i < profiles.size(); i++) {
+                ConfigValue profileValue = context.proceed(prefixProfiles.get(i).concat(normalizeName));
+                if (profileValue != null) {
+                    final ConfigValue originalValue = context.proceed(normalizeName);
+                    if (originalValue != null && CONFIG_SOURCE_COMPARATOR.compare(originalValue, profileValue) > 0) {
+                        return originalValue;
+                    }
+                    // a single copy sets both the active name and the profile
+                    return profileValue.withNameAndProfile(normalizeName, profiles.get(i));
                 }
-                return profileValue.withName(normalizeName);
             }
         }
-
         return context.proceed(name);
-    }
-
-    public ConfigValue getProfileValue(final ConfigSourceInterceptorContext context, final String normalizeName) {
-        for (int i = 0; i < profiles.size(); i++) {
-            String profile = profiles.get(i);
-            ConfigValue profileValue = context.proceed(prefixProfiles.get(i).concat(normalizeName));
-            if (profileValue != null) {
-                return profileValue.withProfile(profile);
-            }
-        }
-
-        return null;
     }
 
     @Override
