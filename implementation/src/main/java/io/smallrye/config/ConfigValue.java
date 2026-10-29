@@ -51,6 +51,33 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         this.problems = builder.problems;
     }
 
+    /**
+     * A direct copy constructor for the {@code withX} methods, which only need a single new instance and no
+     * intermediary builder.
+     */
+    private ConfigValue(
+            final String name,
+            final String value,
+            final String rawValue,
+            final String profile,
+            final boolean secret,
+            final String configSourceName,
+            final int configSourceOrdinal,
+            final int configSourcePosition,
+            final int lineNumber,
+            final List<Problem> problems) {
+        this.name = name;
+        this.value = value;
+        this.rawValue = rawValue;
+        this.profile = profile;
+        this.secret = secret;
+        this.configSourceName = configSourceName;
+        this.configSourceOrdinal = configSourceOrdinal;
+        this.configSourcePosition = configSourcePosition;
+        this.lineNumber = lineNumber;
+        this.problems = problems;
+    }
+
     @Override
     public String getName() {
         return name;
@@ -132,39 +159,53 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
     }
 
     public ConfigValue withName(final String name) {
-        return from().withName(name).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withValue(final String value) {
-        return from().withValue(value).build();
+        // A ConfigValue with problems is a failed resolution and never exposes a value, so a new value cannot be set
+        // while the problems remain. ConfigValueBuilder#build() enforces the same rule since the expression
+        // expansion stopped clearing the value itself and started to record the problems instead (#833). Use
+        // noProblems() first to set a value on a ConfigValue that carries problems.
+        return new ConfigValue(name, hasProblems() ? null : value, rawValue, profile, secret, configSourceName,
+                configSourceOrdinal, configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withProfile(final String profile) {
-        return from().withProfile(profile).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withSecret(final boolean secret) {
-        return from().withSecret(secret).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withConfigSourceName(final String configSourceName) {
-        return from().withConfigSourceName(configSourceName).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withConfigSourceOrdinal(final int configSourceOrdinal) {
-        return from().withConfigSourceOrdinal(configSourceOrdinal).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withConfigSourcePosition(final int configSourcePosition) {
-        return from().withConfigSourcePosition(configSourcePosition).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue withLineNumber(final int lineNumber) {
-        return from().withLineNumber(lineNumber).build();
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, problems);
     }
 
     public ConfigValue noProblems() {
-        return from().noProblems().build();
+        // no list at all, so later copies through from() have nothing to copy
+        return new ConfigValue(name, value, rawValue, profile, secret, configSourceName, configSourceOrdinal,
+                configSourcePosition, lineNumber, null);
     }
 
     public ConfigValue withProblems(final List<Problem> problems) {
@@ -308,6 +349,7 @@ public class ConfigValue implements org.eclipse.microprofile.config.ConfigValue 
         }
 
         public ConfigValue build() {
+            // a ConfigValue with problems is a failed resolution and never exposes a value, see ConfigValue#withValue
             if (problems != null && !problems.isEmpty()) {
                 this.value = null;
             }

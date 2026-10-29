@@ -1,9 +1,13 @@
 package io.smallrye.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -138,5 +142,62 @@ class ConfigValueTest {
         public int getOrdinal() {
             return 900;
         }
+    }
+
+    @Test
+    void withCopies() {
+        ConfigValue original = ConfigValue.builder()
+                .withName("my.prop")
+                .withValue("value")
+                .withRawValue("raw")
+                .withProfile("prof")
+                .withSecret(true)
+                .withConfigSourceName("source")
+                .withConfigSourceOrdinal(100)
+                .withConfigSourcePosition(2)
+                .withLineNumber(10)
+                .build();
+
+        // every copy keeps all the other fields, the same as a copy through the builder
+        assertEquals(original.from().withName("other").build(), original.withName("other"));
+        assertEquals(original.from().withValue("other").build(), original.withValue("other"));
+        assertEquals(original.from().withProfile("other").build(), original.withProfile("other"));
+        assertEquals(original.from().withConfigSourceName("other").build(), original.withConfigSourceName("other"));
+        assertEquals(original.from().withConfigSourceOrdinal(1).build(), original.withConfigSourceOrdinal(1));
+        assertEquals(original.from().withConfigSourcePosition(1).build(), original.withConfigSourcePosition(1));
+        assertEquals(10, original.withName("other").getLineNumber());
+        assertEquals(1, original.withLineNumber(1).getLineNumber());
+        assertTrue(original.withName("other").isSecret());
+        assertFalse(original.withSecret(false).isSecret());
+        assertEquals("raw", original.withName("other").getRawValue());
+    }
+
+    @Test
+    void withCopiesProblems() {
+        ConfigValue problems = ConfigValue.builder()
+                .withName("my.prop")
+                .withValue("value")
+                .addProblem(new ConfigValidationException.Problem("problem"))
+                .build();
+        assertTrue(problems.hasProblems());
+        assertNull(problems.getValue());
+
+        // copies keep the problems, and a value cannot be set while there are problems
+        assertTrue(problems.withName("other").hasProblems());
+        assertEquals(1, problems.withName("other").getProblems().size());
+        assertNull(problems.withValue("other").getValue());
+        assertTrue(problems.withValue("other").hasProblems());
+
+        ConfigValue noProblems = problems.noProblems();
+        assertFalse(noProblems.hasProblems());
+        assertEquals(List.of(), noProblems.getProblems());
+        assertFalse(noProblems.from().build().hasProblems());
+        assertFalse(noProblems.withName("other").hasProblems());
+        assertEquals("other", noProblems.withValue("other").getValue());
+
+        // the copy holds the same problems as the original, so the original problems list is left alone
+        ConfigValue more = problems.withProblems(List.of(new ConfigValidationException.Problem("another")));
+        assertEquals(2, more.getProblems().size());
+        assertEquals(1, problems.getProblems().size());
     }
 }

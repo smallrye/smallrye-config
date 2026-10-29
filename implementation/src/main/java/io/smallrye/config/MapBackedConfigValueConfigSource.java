@@ -39,7 +39,7 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
         super(name, ConfigSourceUtil.getOrdinalFromMap(new ConfigValueMapView(propertyMap), defaultOrdinal));
         this.properties = new HashMap<>();
         for (Map.Entry<String, ConfigValue> entry : propertyMap.entrySet()) {
-            this.properties.put(entry.getKey(), entry.getValue().from().withConfigSourceOrdinal(getOrdinal()).build());
+            this.properties.put(entry.getKey(), entry.getValue().withConfigSourceOrdinal(getOrdinal()));
         }
     }
 
