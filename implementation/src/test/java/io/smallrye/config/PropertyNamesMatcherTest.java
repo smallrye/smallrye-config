@@ -206,4 +206,34 @@ class PropertyNamesMatcherTest {
             String another();
         }
     }
+
+    @Test
+    void exactNamesOnly() {
+        PropertyNamesMatcher<String> matcher = new PropertyNamesMatcher<>();
+        assertTrue(matcher.isEmpty());
+        assertFalse(matcher.matches("my.prop"));
+        assertNull(matcher.get("my.prop"));
+
+        matcher.add("my.prop", "value");
+        matcher.add("my.other", null);
+        assertFalse(matcher.isEmpty());
+
+        assertTrue(matcher.matches("my.prop"));
+        assertTrue(matcher.matches("my.other"));
+        assertEquals("value", matcher.get("my.prop"));
+        assertNull(matcher.get("my.other"));
+
+        assertFalse(matcher.matches("my.prop.nested"));
+        assertFalse(matcher.matches("my"));
+        assertFalse(matcher.matches("*"));
+        assertFalse(matcher.matches(""));
+        assertNull(matcher.get("my.prop.nested"));
+        assertNull(matcher.get("*"));
+
+        // a wildcard turns the trie on
+        matcher.add("map.*.value", "map");
+        assertTrue(matcher.matches("map.key.value"));
+        assertEquals("map", matcher.get("map.key.value"));
+        assertFalse(matcher.matches("my.prop.nested"));
+    }
 }

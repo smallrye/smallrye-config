@@ -33,7 +33,11 @@ public class PropertyNamesMatcher<T> {
     }
 
     public boolean isEmpty() {
-        return properties.isEmpty() && wildcards.children == null && wildcards.wildcard == null && !wildcards.greedy;
+        return properties.isEmpty() && noWildcards();
+    }
+
+    private boolean noWildcards() {
+        return wildcards.children == null && wildcards.wildcard == null && !wildcards.greedy;
     }
 
     /**
@@ -46,6 +50,10 @@ public class PropertyNamesMatcher<T> {
         boolean match = properties.containsKey(name);
         if (match) {
             return true;
+        }
+        // nothing to walk, so skip the iterator
+        if (noWildcards()) {
+            return false;
         }
 
         NameIterator ni = new NameIterator(name);
@@ -101,6 +109,10 @@ public class PropertyNamesMatcher<T> {
         T result = properties.get(name);
         if (result != null) {
             return result;
+        }
+        // nothing to walk, so skip the iterator
+        if (noWildcards()) {
+            return null;
         }
 
         NameIterator ni = new NameIterator(name);
