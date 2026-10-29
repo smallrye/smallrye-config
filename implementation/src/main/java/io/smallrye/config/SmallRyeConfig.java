@@ -1139,19 +1139,21 @@ public class SmallRyeConfig implements Config, Serializable {
             }
 
             private static class NamesIterable implements Iterable<String> {
-                private final Iterator<Set<String>> namesIterators;
+                private final List<Set<String>> names;
 
                 public NamesIterable(final Names names) {
                     if (SecretKeys.isLocked()) {
-                        this.namesIterators = List.of(names.names()).iterator();
+                        this.names = List.of(names.names());
                     } else {
-                        this.namesIterators = List.of(names.names(), names.secretNames()).iterator();
+                        this.names = List.of(names.names(), names.secretNames());
                     }
                 }
 
                 @Override
                 @SuppressWarnings("NullableProblems")
                 public Iterator<String> iterator() {
+                    // a new Iterator of the names for each call, so the Iterable can be iterated multiple times
+                    Iterator<Set<String>> namesIterators = names.iterator();
                     return new Iterator<>() {
                         Iterator<String> current = namesIterators.next().iterator();
 

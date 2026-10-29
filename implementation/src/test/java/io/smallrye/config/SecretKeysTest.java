@@ -43,6 +43,25 @@ class SecretKeysTest {
     }
 
     @Test
+    void propertyNamesIterableMultipleTimes() {
+        Config config = buildConfig("secret", "12345678", "not.secret", "value");
+
+        Iterable<String> locked = config.getPropertyNames();
+        for (int i = 0; i < 2; i++) {
+            Set<String> properties = StreamSupport.stream(locked.spliterator(), false).collect(toSet());
+            assertFalse(properties.contains("secret"));
+            assertTrue(properties.contains("not.secret"));
+        }
+
+        Iterable<String> unlocked = SecretKeys.doUnlocked(config::getPropertyNames);
+        for (int i = 0; i < 2; i++) {
+            Set<String> properties = StreamSupport.stream(unlocked.spliterator(), false).collect(toSet());
+            assertTrue(properties.contains("secret"));
+            assertTrue(properties.contains("not.secret"));
+        }
+    }
+
+    @Test
     void unlockAndLock() {
         Config config = buildConfig("secret", "12345678", "not.secret", "value");
 
