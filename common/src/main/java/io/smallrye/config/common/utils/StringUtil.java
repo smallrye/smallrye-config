@@ -447,7 +447,10 @@ public class StringUtil {
         }
 
         int end = camelHumps.length();
-        StringBuilder b = new StringBuilder();
+        if (isSkewered(camelHumps, end)) {
+            return camelHumps;
+        }
+        StringBuilder b = new StringBuilder(end + 4);
 
         for (int i = 0; i < end; i++) {
             char c = camelHumps.charAt(i);
@@ -501,5 +504,19 @@ public class StringUtil {
         }
 
         return b.toString();
+    }
+
+    /**
+     * A name made only of lower case letters, digits and the path characters that {@code skewer} copies as they are
+     * is already in its skewered form, which is the common case for mapping method names, so the copy can be skipped.
+     */
+    private static boolean isSkewered(final String name, final int end) {
+        for (int i = 0; i < end; i++) {
+            char c = name.charAt(i);
+            if (!(('a' <= c && c <= 'z') || ('0' <= c && c <= '9') || c == '.' || c == '*' || c == '[' || c == ']')) {
+                return false;
+            }
+        }
+        return true;
     }
 }
