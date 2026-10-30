@@ -3,6 +3,9 @@ package io.smallrye.config;
 import static io.smallrye.config.KeyValuesConfigSource.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -10,14 +13,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.eclipse.microprofile.config.spi.Converter;
@@ -223,5 +229,111 @@ class ImplicitConverterTest {
                 .build();
 
         assertEquals(Locale.forLanguageTag("PT"), config.getValue("locale", Locale.class));
+    }
+
+    /** A type with an implicit static factory, loaded by the same loader as SmallRye Config. */
+    public static final class Size {
+        final long bytes;
+
+        Size(long bytes) {
+            this.bytes = bytes;
+        }
+
+        public static Size of(String value) {
+            return new Size(Long.parseLong(value.trim()));
+        }
+    }
+
+    @Test
+    void implicitConvertersAreSharedBetweenConfigs() {
+        SmallRyeConfig one = new SmallRyeConfigBuilder().build();
+        SmallRyeConfig two = new SmallRyeConfigBuilder().build();
+        // same loader as Converters: cached in the ClassValue
+        assertSame(one.getConverter(MyEnum.class).get(), two.getConverter(MyEnum.class).get());
+        assertSame(one.getConverter(Size.class).get(), two.getConverter(Size.class).get());
+        assertEquals(42, one.getConverter(Size.class).get().convert(" 42 ").bytes);
+        // JDK type, loaded by an ancestor loader: cached in the ancestor map
+        assertSame(Converters.Implicit.getConverter(Instant.class), Converters.Implicit.getConverter(Instant.class));
+        assertEquals(Instant.parse("2020-01-01T00:00:00Z"),
+                Converters.Implicit.getConverter(Instant.class).convert("2020-01-01T00:00:00Z"));
+        // a type without an implicit converter resolves to null, also when asked again
+        assertNull(Converters.Implicit.getConverter(Object.class));
+        assertNull(Converters.Implicit.getConverter(Object.class));
+    }
+
+    /**
+     * Defines the named classes itself from the bytes of its parent, so the types it loads are distinct from the
+     * ones the test sees, with whichever parent the test wants.
+     */
+    static final class DefiningLoader extends ClassLoader {
+        private final Set<String> names;
+
+        DefiningLoader(final ClassLoader parent, final String... names) {
+            super(parent);
+            this.names = Set.of(names);
+        }
+
+        @Override
+        protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+            if (!names.contains(name)) {
+                return super.loadClass(name, resolve);
+            }
+            synchronized (getClassLoadingLock(name)) {
+                Class<?> c = findLoadedClass(name);
+                if (c == null) {
+                    try (InputStream in = ImplicitConverterTest.class.getClassLoader()
+                            .getResourceAsStream(name.replace('.', '/') + ".class")) {
+                        byte[] bytes = in.readAllBytes();
+                        c = defineClass(name, bytes, 0, bytes.length);
+                    } catch (IOException e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
+                }
+                return c;
+            }
+        }
+    }
+
+    private static final String MY_ENUM = ImplicitConverterTest.class.getName() + "$MyEnum";
+
+    @Test
+    void implicitConverterOfDescendantLoaderIsCachedAndCollectable() throws Exception {
+        DefiningLoader loader = new DefiningLoader(ImplicitConverterTest.class.getClassLoader(), MY_ENUM);
+        Class<?> enumType = loader.loadClass(MY_ENUM);
+        assertNotSame(MyEnum.class, enumType);
+        Converter<?> converter = Converters.Implicit.getConverter(enumType);
+        assertSame(converter, Converters.Implicit.getConverter(enumType));
+        assertEquals("TrendBreaker", ((Enum<?>) converter.convert("trend-breaker")).name());
+
+        // the cache entry lives in the class, so dropping the loader must collect loader, class and converter
+        WeakReference<ClassLoader> ref = new WeakReference<>(loader);
+        loader = null;
+        enumType = null;
+        converter = null;
+        assertCollected(ref);
+    }
+
+    @Test
+    void implicitConverterOfUnrelatedLoaderIsNotCached() throws Exception {
+        // parent is the platform loader: neither an ancestor nor a descendant of the loader of Converters
+        DefiningLoader loader = new DefiningLoader(ClassLoader.getPlatformClassLoader(), MY_ENUM);
+        Class<?> enumType = loader.loadClass(MY_ENUM);
+        Converter<?> converter = Converters.Implicit.getConverter(enumType);
+        assertNotSame(converter, Converters.Implicit.getConverter(enumType));
+        assertEquals("TrendBreaker", ((Enum<?>) converter.convert("trend-breaker")).name());
+
+        WeakReference<ClassLoader> ref = new WeakReference<>(loader);
+        loader = null;
+        enumType = null;
+        converter = null;
+        assertCollected(ref);
+    }
+
+    private static void assertCollected(final WeakReference<?> ref) throws InterruptedException {
+        for (int i = 0; i < 100 && ref.get() != null; i++) {
+            System.gc();
+            Thread.sleep(20);
+        }
+        assertNull(ref.get(), "loader was not collected");
     }
 }
