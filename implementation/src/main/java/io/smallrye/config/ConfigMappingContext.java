@@ -51,6 +51,7 @@ public final class ConfigMappingContext {
 
     private final StringBuilder nameBuilder = new StringBuilder();
     private final Set<String> usedProperties = new HashSet<>();
+    private final Set<String> secretProperties = new HashSet<>();
     private final List<Problem> problems = new ArrayList<>();
     private final List<String> sortedPropertyNames;
 
@@ -85,6 +86,32 @@ public final class ConfigMappingContext {
 
     Map<Class<?>, Map<String, Object>> getMappings() {
         return mappings;
+    }
+
+    Set<String> getUsedProperties() {
+        return usedProperties;
+    }
+
+    /**
+     * Checks if a property name was read by a {@link Secret} member of a mapping, including the elements of a
+     * {@link Secret} collection or map.
+     *
+     * @param propertyName the property name
+     * @return {@code true} if the property name was read as a {@link Secret}, or {@code false} otherwise
+     */
+    boolean isSecretProperty(final String propertyName) {
+        if (secretProperties.contains(propertyName)) {
+            return true;
+        }
+        for (String secretProperty : secretProperties) {
+            if (propertyName.length() > secretProperty.length()
+                    && propertyName.startsWith(secretProperty)
+                    && (propertyName.charAt(secretProperty.length()) == '.'
+                            || propertyName.charAt(secretProperty.length()) == '[')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -659,6 +686,7 @@ public final class ConfigMappingContext {
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<Secret<V>> converter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertValue(context, propertyName, converter);
         }
@@ -720,6 +748,7 @@ public final class ConfigMappingContext {
                 final Class<V> valueRawType,
                 final Class<? extends Converter<V>> valueConvertWith) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<Secret<V>> converter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertOptionalValue(context, propertyName, converter);
         }
@@ -773,6 +802,7 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<Secret<V>> itemConverter = newSecretConverter(context.getConverter(itemRawType, itemConvertWith));
             return convertValues(context, propertyName, itemConverter, collectionRawType);
         }
@@ -826,6 +856,7 @@ public final class ConfigMappingContext {
                 final Class<? extends Converter<V>> itemConvertWith,
                 final Class<C> collectionRawType) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<Secret<V>> itemConverter = newSecretConverter(context.getConverter(itemRawType, itemConvertWith));
             return convertOptionalValues(context, propertyName, itemConverter, collectionRawType);
         }
@@ -889,6 +920,7 @@ public final class ConfigMappingContext {
                 final Iterable<String> keys,
                 final String defaultValue) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
             Converter<Secret<V>> valueConverter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertValues(context, propertyName, keyConverter, valueConverter, keys, defaultValue);
@@ -984,6 +1016,7 @@ public final class ConfigMappingContext {
                 final Iterable<String> keys,
                 final String defaultValue) {
             String propertyName = context.toPropertyName(name, applyNamingStrategy);
+            context.secretProperties.add(propertyName);
             Converter<K> keyConverter = context.getConverter(keyRawType, keyConvertWith);
             Converter<Secret<V>> valueConverter = newSecretConverter(context.getConverter(valueRawType, valueConvertWith));
             return convertValues(context, propertyName, keyConverter, valueConverter, collectionRawType, keys, defaultValue);

@@ -144,6 +144,22 @@ public class SmallRyeConfig implements Config, Serializable {
             }
         });
 
+        // A secret key with wildcards may match a name used by a non-secret member of a different mapping
+        SecretKeys.Secrets secrets = builder.getSecretKeys();
+        if (!secrets.isEmpty()) {
+            boolean notSecrets = false;
+            for (String usedProperty : context.getUsedProperties()) {
+                if (secrets.matches(usedProperty) && !context.isSecretProperty(usedProperty)) {
+                    secrets.addNotSecret(usedProperty, getProfiles());
+                    notSecrets = true;
+                }
+            }
+            // names may have been cached during the mapping, with the secret keys before the change
+            if (notSecrets) {
+                configSources.getPropertyNames().reset();
+            }
+        }
+
         if (getOptionalValue(SMALLRYE_CONFIG_MAPPING_VALIDATE_UNKNOWN, boolean.class).orElse(true)) {
             context.reportUnknown(mappingsBuilder.getIgnores());
         }
@@ -1059,6 +1075,10 @@ public class SmallRyeConfig implements Config, Serializable {
                 this.interceptorChain = interceptorChain;
                 this.secretKeys = secretKeys;
                 this.cachePropertyNames = cachePropertyNames;
+            }
+
+            void reset() {
+                names.set(Names.empty());
             }
 
             Iterable<String> get() {
