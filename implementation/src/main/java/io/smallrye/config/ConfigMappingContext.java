@@ -190,8 +190,12 @@ public final class ConfigMappingContext {
         }
     }
 
-    private Function<String, String> namingStrategy() {
-        return beanStyleGetters.andThen(namingStrategy);
+    /**
+     * Applies the bean-style getter rule and then the naming strategy. The two are applied directly rather than through
+     * {@code beanStyleGetters.andThen(namingStrategy)}, which allocates a new composed function for each property name.
+     */
+    private String applyNaming(final String name) {
+        return namingStrategy.apply(beanStyleGetters.apply(name));
     }
 
     private String toPropertyName(final String name, final boolean applyNamingStrategy) {
@@ -205,7 +209,7 @@ public final class ConfigMappingContext {
         }
 
         if (applyNamingStrategy) {
-            nameBuilder.append(namingStrategy().apply(name));
+            nameBuilder.append(applyNaming(name));
         } else {
             nameBuilder.append(name);
         }
@@ -296,7 +300,7 @@ public final class ConfigMappingContext {
                             nameBuilder.append('.');
                         }
                         if (applyNamingStrategy) {
-                            nameBuilder.append(namingStrategy().apply(path));
+                            nameBuilder.append(applyNaming(path));
                         } else {
                             nameBuilder.append(path);
                         }
