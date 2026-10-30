@@ -28,13 +28,6 @@ jobs:
     with:
       version: ${{github.event.inputs.tag || github.ref_name}}
 
-  publish-docs:
-    name: Publish Docs
-    uses: ./.github/workflows/publish-docs.yml
-    secrets: inherit
-    with:
-      version: ${{github.event.inputs.tag || github.ref_name}}
-
   publish-tck:
     name: Publish TCK Report
     uses: ./.github/workflows/publish-tck.yml
