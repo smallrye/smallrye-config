@@ -963,29 +963,35 @@ public class SmallRyeConfig implements Config, Serializable {
             List<Entry<String, Supplier<Iterator<String>>>> properties = new ArrayList<>(
                     builder.getMappingsBuilder().getMappings().size());
 
+            // The name lists are only needed for the Env names (containing a dot) whose path the prefix is in, which
+            // most mappings never see, so each list is built on its first use and kept for the following ones.
+
             // Match dotted properties from other sources with Env with the same semantic meaning
             properties.add(Map.entry("", new Supplier<>() {
-                final List<String> names = new ArrayList<>();
-                {
-                    // Filter out some sources that do not contribute to the matching
-                    for (ConfigSource configSource : sources) {
-                        if (!(configSource instanceof EnvConfigSource)
-                                // consider these system sources from SR, like defaults, to exclude generated things
-                                && configSource.getOrdinal() > Integer.MIN_VALUE + 1000
-                                && configSource.getOrdinal() < Integer.MAX_VALUE - 1000) {
-
-                            for (String propertyName : Optional.ofNullable(configSource.getPropertyNames())
-                                    .orElse(Collections.emptySet())) {
-                                if (EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
-                                    names.add(activeName(propertyName, profiles));
-                                }
-                            }
-                        }
-                    }
-                }
+                List<String> names;
 
                 @Override
                 public Iterator<String> get() {
+                    List<String> names = this.names;
+                    if (names == null) {
+                        names = new ArrayList<>();
+                        // Filter out some sources that do not contribute to the matching
+                        for (ConfigSource configSource : sources) {
+                            if (!(configSource instanceof EnvConfigSource)
+                                    // consider these system sources from SR, like defaults, to exclude generated things
+                                    && configSource.getOrdinal() > Integer.MIN_VALUE + 1000
+                                    && configSource.getOrdinal() < Integer.MAX_VALUE - 1000) {
+
+                                for (String propertyName : Optional.ofNullable(configSource.getPropertyNames())
+                                        .orElse(Collections.emptySet())) {
+                                    if (EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
+                                        names.add(activeName(propertyName, profiles));
+                                    }
+                                }
+                            }
+                        }
+                        this.names = names;
+                    }
                     return names.iterator();
                 }
             }));
@@ -995,30 +1001,33 @@ public class SmallRyeConfig implements Config, Serializable {
                 // if the prefix contains dashes we must always check for matches
                 boolean prefixHasDashes = mapping.getPrefix().indexOf('-') != -1;
                 properties.add(Map.entry(mapping.getPrefix(), new Supplier<>() {
-                    final List<String> names = new ArrayList<>();
-                    {
-                        for (String propertyName : mapping.getProperties().keySet()) {
-                            if (prefixHasDashes || EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
-                                names.add(propertyName);
-                            }
-                        }
-
-                        // Sort by most specific key search to avoid clashing with map keys
-                        names.sort(new Comparator<String>() {
-                            @Override
-                            public int compare(String o1, String o2) {
-                                if (PropertyName.equals(o1, o2)) {
-                                    // A name containing a star is always smaller
-                                    return Integer.compare(o1.length(), o2.length()) * -1;
-                                } else {
-                                    return o1.compareTo(o2);
-                                }
-                            }
-                        });
-                    }
+                    List<String> names;
 
                     @Override
                     public Iterator<String> get() {
+                        List<String> names = this.names;
+                        if (names == null) {
+                            names = new ArrayList<>();
+                            for (String propertyName : mapping.getProperties().keySet()) {
+                                if (prefixHasDashes || EnvConfigSource.isCandidateForEnvMatching(propertyName)) {
+                                    names.add(propertyName);
+                                }
+                            }
+
+                            // Sort by most specific key search to avoid clashing with map keys
+                            names.sort(new Comparator<String>() {
+                                @Override
+                                public int compare(String o1, String o2) {
+                                    if (PropertyName.equals(o1, o2)) {
+                                        // A name containing a star is always smaller
+                                        return Integer.compare(o1.length(), o2.length()) * -1;
+                                    } else {
+                                        return o1.compareTo(o2);
+                                    }
+                                }
+                            });
+                            this.names = names;
+                        }
                         return names.iterator();
                     }
                 }));
