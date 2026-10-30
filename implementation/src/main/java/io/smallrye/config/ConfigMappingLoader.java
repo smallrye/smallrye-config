@@ -293,7 +293,11 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return (T) invoke(ctor, configMappingContext);
+            try {
+                return (T) (Object) ctor.invokeExact(configMappingContext);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -310,7 +314,11 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return (T) invoke(ctor, values, converters);
+            try {
+                return (T) (Object) ctor.invokeExact(values, converters);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -326,7 +334,11 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return (Map<String, String>) invoke(props);
+            try {
+                return (Map<String, String>) props.invokeExact();
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -342,25 +354,29 @@ public final class ConfigMappingLoader {
                     throw new IllegalAccessError(e.getMessage());
                 }
             }
-            return (Set<String>) invoke(secrets);
+            try {
+                return (Set<String>) secrets.invokeExact();
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
 
-        private static Object invoke(final MethodHandle handle, final Object... args) {
-            try {
-                return handle.invokeWithArguments(args);
-            } catch (InvocationTargetException e) {
-                try {
-                    throw e.getCause();
-                } catch (RuntimeException | Error r) {
-                    throw r;
-                } catch (Throwable t) {
-                    throw new UndeclaredThrowableException(t);
-                }
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Throwable t) {
-                throw new UndeclaredThrowableException(t);
+        /**
+         * The handles above are invoked with {@code invokeExact} on their exact (already adapted) types. The generic
+         * {@code invokeWithArguments} path spreads the arguments through a freshly built spreader and generic invoker
+         * on every call, which spins LambdaForms and dominates the cost of instantiating a mapping at startup.
+         */
+        private static RuntimeException rethrow(final Throwable t) {
+            if (t instanceof InvocationTargetException) {
+                return rethrow(t.getCause());
             }
+            if (t instanceof RuntimeException) {
+                return (RuntimeException) t;
+            }
+            if (t instanceof Error) {
+                throw (Error) t;
+            }
+            return new UndeclaredThrowableException(t);
         }
     }
 }
