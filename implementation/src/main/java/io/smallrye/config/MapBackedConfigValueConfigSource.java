@@ -1,5 +1,7 @@
 package io.smallrye.config;
 
+import static io.smallrye.config.common.utils.ConfigSourceUtil.hasProfiledName;
+
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +17,7 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
     private static final long serialVersionUID = -4619155951589529987L;
 
     private final Map<String, ConfigValue> properties;
+    private final boolean hasProfiledName;
 
     /**
      * Construct a new instance. The config source will use a default ordinal of {@code 100} and
@@ -39,8 +42,9 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
         super(name, ConfigSourceUtil.getOrdinalFromMap(new ConfigValueMapView(propertyMap), defaultOrdinal));
         this.properties = new HashMap<>();
         for (Map.Entry<String, ConfigValue> entry : propertyMap.entrySet()) {
-            this.properties.put(entry.getKey(), entry.getValue().from().withConfigSourceOrdinal(getOrdinal()).build());
+            this.properties.put(entry.getKey(), entry.getValue().withConfigSourceOrdinal(getOrdinal()));
         }
+        this.hasProfiledName = hasProfiledName(properties.keySet());
     }
 
     @Override
@@ -50,6 +54,10 @@ public abstract class MapBackedConfigValueConfigSource extends AbstractConfigSou
 
     @Override
     public ConfigValue getConfigValue(final String propertyName) {
+        // profiled lookups probe every source once per active profile, so skip the hash when none can match
+        if (!hasProfiledName && !propertyName.isEmpty() && propertyName.charAt(0) == '%') {
+            return null;
+        }
         return properties.get(propertyName);
     }
 

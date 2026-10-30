@@ -108,7 +108,7 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
             if (configSource instanceof ConfigValueConfigSource) {
                 ConfigValue configValue = ((ConfigValueConfigSource) configSource).getConfigValue(propertyName);
                 if (configValue != null) {
-                    return configValue.from().withConfigSourcePosition(position).build();
+                    return configValue.withConfigSourcePosition(position);
                 }
                 return null;
             }
