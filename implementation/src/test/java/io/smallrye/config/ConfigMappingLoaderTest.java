@@ -265,4 +265,23 @@ class ConfigMappingLoaderTest {
         assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$GlobalConfig$$CMImpl"));
         assertTrue(classNames.contains("io.smallrye.config.ConfigMappingLoaderTest$MyConfig$UserConfig$$CMImpl"));
     }
+
+    interface GrandParentConfig {
+        Optional<String> grandParent();
+    }
+
+    interface ParentConfig extends GrandParentConfig {
+        Optional<String> parent();
+    }
+
+    interface ChildConfig extends ParentConfig {
+        Optional<String> child();
+    }
+
+    @Test
+    void discoverTransitiveSuperTypes() {
+        Set<Class<?>> types = getGeneratedConfigClasses(ChildConfig.class).stream()
+                .map(GeneratedConfigClass::getInterfaceType).collect(toSet());
+        assertEquals(Set.of(ChildConfig.class, ParentConfig.class, GrandParentConfig.class), types);
+    }
 }
