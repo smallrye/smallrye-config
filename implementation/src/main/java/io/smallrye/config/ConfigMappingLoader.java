@@ -65,10 +65,7 @@ public final class ConfigMappingLoader {
         if (configMappingInterface != null) {
             generatedClasses.add(configMappingInterface);
             generatedClasses.addAll(configMappingInterface.getNested());
-            for (ConfigMappingInterface superType : configMappingInterface.getSuperTypes()) {
-                generatedClasses.add(superType);
-                generatedClasses.addAll(superType.getNested());
-            }
+            collectSuperTypes(configMappingInterface, generatedClasses);
         }
         ConfigMappingClass configMappingClass = ConfigMappingClass.get(type, handler);
         if (configMappingClass != null) {
@@ -80,6 +77,14 @@ public final class ConfigMappingLoader {
                     ConfigMappingInterfaceHandler.CONFIG_MAPPING));
         }
         return Set.copyOf(generatedClasses);
+    }
+
+    private static void collectSuperTypes(final ConfigMappingInterface type, final Set<GeneratedConfigClass> generatedClasses) {
+        for (ConfigMappingInterface superType : type.getSuperTypes()) {
+            generatedClasses.add(superType);
+            generatedClasses.addAll(superType.getNested());
+            collectSuperTypes(superType, generatedClasses);
+        }
     }
 
     // Visible for testing
