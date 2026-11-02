@@ -530,4 +530,184 @@ class ConfigurationPropertiesMappingHandlerTest {
     public static class StrictProperties {
         public String host;
     }
+
+    @Test
+    void snakeCaseNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SnakeCaseProperties.class)
+                .withDefaultValue("snake.max_attempts", "5")
+                .withDefaultValue("snake.backoff_millis", "1000")
+                .build();
+
+        SnakeCaseProperties properties = config.getConfigMapping(SnakeCaseProperties.class);
+        assertEquals(5, properties.maxAttempts);
+        assertEquals(1000L, properties.backoffMillis);
+    }
+
+    @ConfigurationProperties(prefix = "snake")
+    @ConfigMapping(namingStrategy = NamingStrategy.SNAKE_CASE)
+    public static class SnakeCaseProperties {
+        public int maxAttempts;
+        public long backoffMillis;
+    }
+
+    @Test
+    void nameAnnotationOverridesNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NameWithStrategyProperties.class)
+                .withDefaultValue("name-strategy.hostName", "localhost")
+                .withDefaultValue("name-strategy.listen_port", "8080")
+                .build();
+
+        NameWithStrategyProperties properties = config.getConfigMapping(NameWithStrategyProperties.class);
+        assertEquals("localhost", properties.host);
+        assertEquals(8080, properties.listenPort);
+    }
+
+    @ConfigurationProperties(prefix = "name-strategy")
+    @ConfigMapping(namingStrategy = NamingStrategy.SNAKE_CASE)
+    public static class NameWithStrategyProperties {
+        // explicit name is used as is, the naming strategy does not apply
+        @Name("hostName")
+        public String host;
+        public int listenPort;
+    }
+
+    @Test
+    void deeplyNestedInheritsOutermostNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(DeepNamingProperties.class)
+                .withDefaultValue("deep-naming.appName", "my-app")
+                .withDefaultValue("deep-naming.database.jdbcUrl", "jdbc:h2:mem:test")
+                .withDefaultValue("deep-naming.database.pool.minSize", "5")
+                .withDefaultValue("deep-naming.database.pool.maxSize", "20")
+                .build();
+
+        DeepNamingProperties properties = config.getConfigMapping(DeepNamingProperties.class);
+        assertEquals("my-app", properties.appName);
+        assertEquals("jdbc:h2:mem:test", properties.database.jdbcUrl);
+        assertEquals(5, properties.database.pool.minSize);
+        assertEquals(20, properties.database.pool.maxSize);
+    }
+
+    @ConfigurationProperties(prefix = "deep-naming")
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class DeepNamingProperties {
+        public String appName;
+        public Database database;
+
+        public static class Database {
+            public String jdbcUrl;
+            public Pool pool;
+
+            // two levels down, still resolves to the outermost VERBATIM
+            public static class Pool {
+                public int minSize;
+                public int maxSize;
+            }
+        }
+    }
+
+    @Test
+    void collectionElementsInheritNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(CollectionNamingProperties.class)
+                .withDefaultValue("collection-naming.nodes[0].nodeName", "main")
+                .withDefaultValue("collection-naming.nodes[0].baseUrl", "http://localhost:11434")
+                .withDefaultValue("collection-naming.groups.search.groupDescription", "Search tools")
+                .build();
+
+        CollectionNamingProperties properties = config.getConfigMapping(CollectionNamingProperties.class);
+        assertEquals(1, properties.nodes.size());
+        assertEquals("main", properties.nodes.get(0).nodeName);
+        assertEquals("http://localhost:11434", properties.nodes.get(0).baseUrl);
+        assertEquals(1, properties.groups.size());
+        assertEquals("Search tools", properties.groups.get("search").groupDescription);
+    }
+
+    @ConfigurationProperties(prefix = "collection-naming")
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class CollectionNamingProperties {
+        public List<Node> nodes;
+        public Map<String, Group> groups;
+
+        public static class Node {
+            public String nodeName;
+            public String baseUrl;
+        }
+
+        public static class Group {
+            public String groupDescription;
+        }
+    }
+
+    @Test
+    void siblingClassDoesNotInheritNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SiblingNamingProperties.class)
+                .withDefaultValue("sibling-naming.appName", "my-app")
+                // not enclosed by the annotated class, so it falls back to kebab-case
+                .withDefaultValue("sibling-naming.endpoint.base-url", "http://localhost")
+                // declares its own strategy
+                .withDefaultValue("sibling-naming.snakeEndpoint.base_url", "http://snake")
+                .build();
+
+        SiblingNamingProperties properties = config.getConfigMapping(SiblingNamingProperties.class);
+        assertEquals("my-app", properties.appName);
+        assertEquals("http://localhost", properties.endpoint.baseUrl);
+        assertEquals("http://snake", properties.snakeEndpoint.baseUrl);
+    }
+
+    @ConfigurationProperties(prefix = "sibling-naming")
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class SiblingNamingProperties {
+        public String appName;
+        public Endpoint endpoint;
+        public SnakeEndpoint snakeEndpoint;
+    }
+
+    public static class Endpoint {
+        public String baseUrl;
+    }
+
+    @ConfigMapping(namingStrategy = NamingStrategy.SNAKE_CASE)
+    public static class SnakeEndpoint {
+        public String baseUrl;
+    }
+
+    @Test
+    void ignoreUnknownFieldsFalseUsesNamingStrategy() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(StrictVerbatimProperties.class)
+                .withDefaultValue("strict-verbatim.maxAttempts", "5")
+                .build();
+        assertEquals(5, config.getConfigMapping(StrictVerbatimProperties.class).maxAttempts);
+
+        // the kebab-case name is not mapped under VERBATIM, so it is reported as unknown
+        ConfigValidationException exception = assertThrows(ConfigValidationException.class, () -> new SmallRyeConfigBuilder()
+                .withMapping(StrictVerbatimProperties.class)
+                .withDefaultValue("strict-verbatim.maxAttempts", "5")
+                .withDefaultValue("strict-verbatim.max-attempts", "5")
+                .build());
+        assertTrue(exception.getMessage().contains("strict-verbatim.max-attempts"));
+    }
+
+    @ConfigurationProperties(prefix = "strict-verbatim", ignoreUnknownFields = false)
+    @ConfigMapping(namingStrategy = NamingStrategy.VERBATIM)
+    public static class StrictVerbatimProperties {
+        public int maxAttempts;
+    }
+
+    @Test
+    void handlerResolvesNamingStrategyFromEnclosingClasses() {
+        ConfigurationPropertiesMappingHandler handler = new ConfigurationPropertiesMappingHandler();
+
+        assertEquals(NamingStrategy.KEBAB_CASE, handler.getNamingStrategy(ServerProperties.class));
+        assertEquals(NamingStrategy.KEBAB_CASE, handler.getNamingStrategy(NestedAppProperties.Server.class));
+        assertEquals(NamingStrategy.VERBATIM, handler.getNamingStrategy(VerbatimProperties.class));
+        assertEquals(NamingStrategy.VERBATIM, handler.getNamingStrategy(DeepNamingProperties.Database.Pool.class));
+        assertEquals(NamingStrategy.SNAKE_CASE, handler.getNamingStrategy(NestedNamingProperties.Pool.class));
+        assertEquals(NamingStrategy.KEBAB_CASE, handler.getNamingStrategy(Endpoint.class));
+        assertEquals(NamingStrategy.SNAKE_CASE, handler.getNamingStrategy(SnakeEndpoint.class));
+    }
 }

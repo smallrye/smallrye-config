@@ -388,4 +388,54 @@ public class ConfigMappingNamingStrategyTest {
             String getValue();
         }
     }
+
+    @Test
+    void nestedOverrideNamingStrategyInOptionalGroupAndMap() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(NestedOverrideVerbatim.class)
+                .withMapping(NestedOverrideSnake.class)
+                .withSources(config(
+                        "override-verbatim.optionalGroup.groupDescription", "optional",
+                        "override-verbatim.groups.search.groupDescription", "search",
+                        "override-snake.optional_group.group_description", "optional",
+                        "override-snake.groups.search.group_description", "search"))
+                .build();
+
+        NestedOverrideVerbatim verbatim = config.getConfigMapping(NestedOverrideVerbatim.class);
+        assertTrue(verbatim.optionalGroup().isPresent());
+        assertEquals("optional", verbatim.optionalGroup().get().groupDescription());
+        assertEquals(1, verbatim.groups().size());
+        assertEquals("search", verbatim.groups().get("search").groupDescription());
+
+        NestedOverrideSnake snake = config.getConfigMapping(NestedOverrideSnake.class);
+        assertTrue(snake.optionalGroup().isPresent());
+        assertEquals("optional", snake.optionalGroup().get().groupDescription());
+        assertEquals(1, snake.groups().size());
+        assertEquals("search", snake.groups().get("search").groupDescription());
+    }
+
+    @ConfigMapping(prefix = "override-verbatim", namingStrategy = VERBATIM)
+    interface NestedOverrideVerbatim {
+        Optional<Group> optionalGroup();
+
+        Map<String, Group> groups();
+
+        // the nested group declares the same strategy as the parent, so the mapped names are not in kebab-case
+        @ConfigMapping(namingStrategy = VERBATIM)
+        interface Group {
+            String groupDescription();
+        }
+    }
+
+    @ConfigMapping(prefix = "override-snake", namingStrategy = SNAKE_CASE)
+    interface NestedOverrideSnake {
+        Optional<Group> optionalGroup();
+
+        Map<String, Group> groups();
+
+        @ConfigMapping(namingStrategy = SNAKE_CASE)
+        interface Group {
+            String groupDescription();
+        }
+    }
 }
