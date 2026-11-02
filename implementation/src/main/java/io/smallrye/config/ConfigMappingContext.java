@@ -1081,6 +1081,10 @@ public final class ConfigMappingContext {
                 return false;
             }
 
+            // the candidates and the mapped names must be compared with the same naming strategy. The group may
+            // declare its own strategy in its @ConfigMapping, so the mapped names are not necessarily in kebab-case
+            // and both sides are normalized to kebab-case, which is the fixed point for all naming strategies.
+            boolean normalize = !namingStrategy.equals(NamingStrategy.KEBAB_CASE);
             List<String> candidates = new ArrayList<>();
             int pathLength = path.length();
             for (int i = startIdx; i < sortedPropertyNames.size(); i++) {
@@ -1091,18 +1095,15 @@ public final class ConfigMappingContext {
                 String candidate = name.length() > pathLength && name.charAt(pathLength) == '.'
                         ? name.substring(pathLength + 1)
                         : name.substring(pathLength);
-                if (namingStrategy.equals(NamingStrategy.KEBAB_CASE)) {
-                    candidates.add(candidate);
-                } else {
-                    candidates.add(NamingStrategy.KEBAB_CASE.apply(candidate));
-                }
+                candidates.add(normalize ? NamingStrategy.KEBAB_CASE.apply(candidate) : candidate);
             }
 
             if (!candidates.isEmpty()) {
                 Map<String, String> properties = ConfigClassImplementation.get(groupType).getProperties();
                 for (String mappedProperty : properties.keySet()) {
+                    String mapped = normalize ? NamingStrategy.KEBAB_CASE.apply(mappedProperty) : mappedProperty;
                     for (String candidate : candidates) {
-                        if (PropertyName.equals(candidate, mappedProperty)) {
+                        if (PropertyName.equals(candidate, mapped)) {
                             return true;
                         }
                     }
