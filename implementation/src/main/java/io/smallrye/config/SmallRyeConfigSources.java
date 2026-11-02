@@ -35,8 +35,10 @@ class SmallRyeConfigSources implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext context, final String name) {
-        for (ConfigValueConfigSource configSource : configSources) {
-            ConfigValue configValue = configSource.getConfigValue(name);
+        // Indexed loop: this is called for every lookup and an Iterator per call adds up.
+        List<ConfigValueConfigSource> configSources = this.configSources;
+        for (int i = 0, size = configSources.size(); i < size; i++) {
+            ConfigValue configValue = configSources.get(i).getConfigValue(name);
             if (configValue != null) {
                 return configValue;
             }
