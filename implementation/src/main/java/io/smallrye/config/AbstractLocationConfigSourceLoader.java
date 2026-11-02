@@ -132,7 +132,7 @@ public abstract class AbstractLocationConfigSourceLoader {
             } catch (IOException e) {
                 throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
             }
-        } else if ("file".equals(uri.getScheme()) && Files.notExists(urlPath) && failOnMissingFile()) {
+        } else if (failOnMissingFile() && "file".equals(uri.getScheme()) && Files.notExists(urlPath)) {
             throw ConfigMessages.msg.failedToLoadResource(new FileNotFoundException(uri.toString()), uri.toString());
         }
         return configSources;
