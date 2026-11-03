@@ -289,6 +289,171 @@ class ConfigMappingSecretsTest {
         assertEquals("Secret{***}", mapping.secret().toString());
     }
 
+    @Test
+    void secretWildcardDoesNotMatchNonSecret() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(NamedSecrets.class)
+                .withMapping(NamedNotSecrets.class)
+                .withProfile("dev")
+                .withSources(config(
+                        "datasource.password", "secret",
+                        "datasource.named.password", "secret",
+                        "%dev.datasource.devservices.password", "not-secret"))
+                .build();
+
+        NamedSecrets secrets = config.getConfigMapping(NamedSecrets.class);
+        assertEquals(Set.of("<default>", "named"), secrets.datasources().keySet());
+        assertEquals("secret", secrets.datasources().get("<default>").password().get().get());
+        assertEquals("secret", secrets.datasources().get("named").password().get().get());
+        NamedNotSecrets notSecrets = config.getConfigMapping(NamedNotSecrets.class);
+        assertEquals("not-secret", notSecrets.datasources().get("<default>").devservices().password().get());
+
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.named.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.other.password"));
+        ConfigValue devservices = config.getConfigValue("datasource.devservices.password");
+        assertEquals("not-secret", devservices.getValue());
+        assertFalse(devservices.isSecret());
+
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertTrue(properties.contains("datasource.devservices.password"));
+        assertFalse(properties.contains("datasource.password"));
+        assertFalse(properties.contains("datasource.named.password"));
+    }
+
+    @Test
+    void secretWildcardDoesNotMatchNonSecretMappingsOrder() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(NamedNotSecrets.class)
+                .withMapping(NamedSecrets.class)
+                .withSources(config(
+                        "datasource.named.password", "secret",
+                        "datasource.devservices.password", "not-secret"))
+                .build();
+
+        assertEquals("not-secret", config.getConfigMapping(NamedNotSecrets.class).datasources().get("<default>")
+                .devservices().password().get());
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.named.password"));
+        assertFalse(config.getConfigValue("datasource.devservices.password").isSecret());
+    }
+
+    @Test
+    void secretKeysWildcardAlwaysMatches() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSecretKeys("datasource.*.password")
+                .withMapping(NamedPlain.class)
+                .withProfile("dev")
+                .withSources(config(
+                        "datasource.named.password", "secret",
+                        "%dev.datasource.other.password", "secret"))
+                .build();
+
+        NamedPlain mapping = config.getConfigMapping(NamedPlain.class);
+        assertEquals("secret", mapping.datasources().get("named").password().get());
+        assertEquals("secret", mapping.datasources().get("other").password().get());
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.named.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.other.password"));
+        Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertFalse(properties.contains("datasource.named.password"));
+        assertFalse(properties.contains("%dev.datasource.other.password"));
+    }
+
+    @Test
+    void secretKeysWildcardMatchesMappingNames() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSecretKeys("plain.*")
+                .withMapping(PlainSecrets.class)
+                .withMapping(NamedSecrets.class)
+                .withSources(config("plain.token", "secret"))
+                .build();
+
+        assertEquals("secret", config.getConfigMapping(PlainSecrets.class).token());
+        assertThrows(SecurityException.class, () -> config.getConfigValue("plain.token"));
+    }
+
+    @Test
+    void secretKeysWildcardMatchesMappingNamesBuildTwice() {
+        SmallRyeConfigBuilder builder = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSecretKeys("plain.*")
+                .withMapping(PlainSecrets.class)
+                .withMapping(NamedSecrets.class)
+                .withSources(config("plain.token", "secret"));
+        builder.build();
+        SmallRyeConfig config = builder.build();
+        assertThrows(SecurityException.class, () -> config.getConfigValue("plain.token"));
+    }
+
+    @Test
+    void secretWildcardDoesNotMatchNonSecretShorterPrefix() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withMapping(NamedSecrets.class)
+                .withMapping(RootNotSecrets.class)
+                .withSources(config(
+                        "datasource.named.password", "secret",
+                        "datasource.devservices.password", "not-secret"))
+                .build();
+
+        assertEquals("not-secret", config.getConfigMapping(RootNotSecrets.class).datasource().devservices().password().get());
+        assertThrows(SecurityException.class, () -> config.getConfigValue("datasource.named.password"));
+        assertFalse(config.getConfigValue("datasource.devservices.password").isSecret());
+    }
+
+    @ConfigMapping
+    interface RootNotSecrets {
+        NamedNotSecrets.DataSource datasource();
+    }
+
+    @ConfigMapping(prefix = "plain")
+    interface PlainSecrets {
+        String token();
+    }
+
+    @ConfigMapping(prefix = "datasource")
+    interface NamedPlain {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, DataSource> datasources();
+
+        interface DataSource {
+            Optional<String> password();
+        }
+    }
+
+    @ConfigMapping(prefix = "datasource")
+    interface NamedSecrets {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, DataSource> datasources();
+
+        interface DataSource {
+            Optional<Secret<String>> password();
+        }
+    }
+
+    @ConfigMapping(prefix = "datasource")
+    interface NamedNotSecrets {
+        @WithParentName
+        @WithUnnamedKey("<default>")
+        @WithDefaults
+        Map<String, DataSource> datasources();
+
+        interface DataSource {
+            DevServices devservices();
+
+            interface DevServices {
+                Optional<String> password();
+            }
+        }
+    }
+
     @ConfigMapping(prefix = "secrets")
     interface MissingSecrets {
         Secret<String> secret();

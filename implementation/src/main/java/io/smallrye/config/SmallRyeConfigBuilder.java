@@ -784,6 +784,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             customizer.configBuilder(this);
         }
 
+        mappingsBuilder.addNotSecrets();
+
         return new SmallRyeConfig(this);
     }
 
@@ -890,6 +892,39 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             secrets.add(configClass.getSecrets());
             if (configClass.getHandler().ignoreUnmappedProperties(configClass.getType())) {
                 ignores.add(configClass.getPrefix().isEmpty() ? "*" : configClass.getPrefix() + ".**");
+            }
+        }
+
+        /**
+         * A secret name of a mapping uses a wildcard for each map key, like {@code datasource.*.password}, which also
+         * matches the names of a nested group, like {@code datasource.devservices.password}. The names of the mappings
+         * that are not secrets are more specific, so they do not match.
+         */
+        void addNotSecrets() {
+            List<ConfigClass> allMappings = new ArrayList<>(mappings.size() + mappingsInstances.size());
+            allMappings.addAll(mappings);
+            allMappings.addAll(mappingsInstances.keySet());
+
+            PropertyNamesMatcher<?> wildcardSecrets = new PropertyNamesMatcher<>();
+            for (ConfigClass mapping : allMappings) {
+                for (String secret : mapping.getSecrets()) {
+                    int wildcard = secret.indexOf('*');
+                    if (wildcard != -1) {
+                        wildcardSecrets.add(secret);
+                    }
+                }
+            }
+
+            if (wildcardSecrets.isEmpty()) {
+                return;
+            }
+
+            for (ConfigClass mapping : allMappings) {
+                for (String name : mapping.getProperties().keySet()) {
+                    if (name.indexOf('*') == -1 && wildcardSecrets.matches(name)) {
+                        secrets.addNotSecret(name);
+                    }
+                }
             }
         }
     }

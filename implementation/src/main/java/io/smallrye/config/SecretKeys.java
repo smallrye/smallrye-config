@@ -109,9 +109,32 @@ public final class SecretKeys implements Serializable {
 
     public static class Secrets extends PropertyNamesMatcher<Void> {
         private final Set<String> secrets = new HashSet<>();
+        // names of a mapping that match a secret name with wildcards of a mapping, but are not secrets
+        private final Set<String> notSecrets = new HashSet<>();
 
         public Set<String> getSecrets() {
             return Collections.unmodifiableSet(secrets);
+        }
+
+        @Override
+        public boolean matches(final String name) {
+            // an exact secret name always matches
+            if (!notSecrets.isEmpty() && !getProperties().containsKey(name) && notSecrets.contains(unprofiled(name))) {
+                return false;
+            }
+            return super.matches(name);
+        }
+
+        void addNotSecret(final String name) {
+            notSecrets.add(name);
+        }
+
+        private static String unprofiled(final String name) {
+            if (name.length() > 1 && name.charAt(0) == '%') {
+                int dot = name.indexOf('.');
+                return dot != -1 ? name.substring(dot + 1) : name;
+            }
+            return name;
         }
 
         @Override
