@@ -4,7 +4,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -118,8 +117,20 @@ public final class SecretKeys implements Serializable {
 
         @Override
         public boolean matches(final String name) {
+            if (matchesName(name)) {
+                return true;
+            }
+            // a name with any profile, like %dev.secret or %dev,test.secret, matches with the name without the profile
+            if (name.length() > 1 && name.charAt(0) == '%') {
+                int profileEnd = name.indexOf('.', 1);
+                return profileEnd != -1 && matchesName(name.substring(profileEnd + 1));
+            }
+            return false;
+        }
+
+        private boolean matchesName(final String name) {
             // an exact secret name always matches
-            if (!notSecrets.isEmpty() && !getProperties().containsKey(name) && notSecrets.contains(unprofiled(name))) {
+            if (!notSecrets.isEmpty() && !getProperties().containsKey(name) && notSecrets.contains(name)) {
                 return false;
             }
             return super.matches(name);
@@ -127,14 +138,6 @@ public final class SecretKeys implements Serializable {
 
         void addNotSecret(final String name) {
             notSecrets.add(name);
-        }
-
-        private static String unprofiled(final String name) {
-            if (name.length() > 1 && name.charAt(0) == '%') {
-                int dot = name.indexOf('.');
-                return dot != -1 ? name.substring(dot + 1) : name;
-            }
-            return name;
         }
 
         @Override
@@ -147,15 +150,6 @@ public final class SecretKeys implements Serializable {
         protected void put(String name, Void value) {
             secrets.add(name);
             super.put(name, null);
-        }
-
-        Secrets withProfiles(List<String> profiles) {
-            for (String secret : secrets) {
-                for (String profile : profiles) {
-                    super.add("%" + profile + "." + secret, null);
-                }
-            }
-            return this;
         }
     }
 }

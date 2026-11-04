@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
@@ -131,6 +133,67 @@ class SecretKeysTest {
         assertEquals("secret", mapping.secret());
         assertThrows(SecurityException.class, () -> config.getConfigValue("mapping.secret"),
                 "Not allowed to access secret key mapping.secret");
+    }
+
+    @Test
+    void profiles() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withProfiles(List.of("dev", "test"))
+                .withSources(KeyValuesConfigSource.config(
+                        "secret", "default",
+                        "%dev.secret", "dev",
+                        "%test.db.named.password", "test",
+                        "%dev,test.multiple", "multiple",
+                        "%prod.secret", "prod",
+                        "%prod.db.named.password", "prod",
+                        "not.secret", "value"))
+                .withSecretKeys("secret", "db.*.password", "multiple")
+                .build();
+
+        assertThrows(SecurityException.class, () -> config.getConfigValue("secret"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%dev.secret"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("db.named.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%test.db.named.password"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("multiple"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%dev,test.multiple"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%prod.secret"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%prod.db.named.password"));
+        assertEquals("value", config.getConfigValue("not.secret").getValue());
+
+        ConfigValue secret = SecretKeys.doUnlocked(() -> config.getConfigValue("secret"));
+        assertEquals("dev", secret.getValue());
+        assertTrue(secret.isSecret());
+        ConfigValue password = SecretKeys.doUnlocked(() -> config.getConfigValue("db.named.password"));
+        assertEquals("test", password.getValue());
+        assertTrue(password.isSecret());
+        ConfigValue multiple = SecretKeys.doUnlocked(() -> config.getConfigValue("multiple"));
+        assertEquals("multiple", multiple.getValue());
+        assertTrue(multiple.isSecret());
+
+        Set<String> properties = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(toSet());
+        assertFalse(properties.contains("secret"));
+        assertFalse(properties.contains("db.named.password"));
+        assertFalse(properties.contains("multiple"));
+        assertFalse(properties.contains("%prod.secret"));
+        assertFalse(properties.contains("%prod.db.named.password"));
+        assertTrue(properties.contains("not.secret"));
+    }
+
+    @Test
+    void relocateAndFallbackToSecret() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withInterceptors(new RelocateConfigSourceInterceptor(Map.of("relocate", "secret")))
+                .withInterceptors(new FallbackConfigSourceInterceptor(Map.of("fallback", "secret")))
+                .withSources(KeyValuesConfigSource.config("secret", "12345678"))
+                .withSecretKeys("secret")
+                .build();
+
+        assertThrows(SecurityException.class, () -> config.getConfigValue("relocate"));
+        assertThrows(SecurityException.class, () -> config.getConfigValue("fallback"));
+        assertEquals("12345678", SecretKeys.doUnlocked(() -> config.getConfigValue("relocate")).getValue());
+        assertEquals("12345678", SecretKeys.doUnlocked(() -> config.getConfigValue("fallback")).getValue());
     }
 
     private static Config buildConfig(String... keyValues) {

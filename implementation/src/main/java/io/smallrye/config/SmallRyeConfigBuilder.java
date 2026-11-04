@@ -414,7 +414,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
             @Override
             public OptionalInt getPriority() {
-                return OptionalInt.of(Priorities.LIBRARY + 100);
+                // before the profile interceptor, so a name is matched once, and not once for each profile
+                return OptionalInt.of(Priorities.LIBRARY + 210);
             }
         }));
 

@@ -315,6 +315,10 @@ class ConfigMappingSecretsTest {
         ConfigValue devservices = config.getConfigValue("datasource.devservices.password");
         assertEquals("not-secret", devservices.getValue());
         assertFalse(devservices.isSecret());
+        ConfigValue devservicesProfile = config.getConfigValue("%dev.datasource.devservices.password");
+        assertEquals("not-secret", devservicesProfile.getValue());
+        assertFalse(devservicesProfile.isSecret());
+        assertThrows(SecurityException.class, () -> config.getConfigValue("%dev.datasource.named.password"));
 
         Set<String> properties = stream(config.getPropertyNames().spliterator(), false).collect(toSet());
         assertTrue(properties.contains("datasource.devservices.password"));
