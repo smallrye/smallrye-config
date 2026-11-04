@@ -13,10 +13,13 @@ import io.smallrye.config._private.ConfigMessages;
  * To avoid having to recalculate the list of property names, the filter of secret keys is applied in
  * {@code SmallRyeConfig.ConfigSources.PropertyNames}, so this interceptor does not implement
  * {@link io.smallrye.config.ConfigSourceInterceptor#iterateNames(ConfigSourceInterceptorContext)}.
+ * <p>
+ * The interceptor executes before the {@link ProfileConfigSourceInterceptor}, so the secret keys are matched once with
+ * the name of the lookup, and not with the name of each active profile.
  *
  * @see SecretKeys
  */
-@Priority(Priorities.LIBRARY + 100)
+@Priority(Priorities.LIBRARY + 210)
 public class SecretKeysConfigSourceInterceptor implements ConfigSourceInterceptor {
     @Serial
     private static final long serialVersionUID = 7291982039729980590L;

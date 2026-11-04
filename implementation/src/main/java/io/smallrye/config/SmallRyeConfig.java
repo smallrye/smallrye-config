@@ -803,8 +803,7 @@ public class SmallRyeConfig implements Config, Serializable {
             this.sources = configSources;
             this.defaultValues = defaultValues;
             this.interceptorChain = current;
-            this.propertyNames = new PropertyNames(current, builder.getSecretKeys().withProfiles(profiles),
-                    builder.isCachePropertyNames());
+            this.propertyNames = new PropertyNames(current, builder.getSecretKeys(), builder.isCachePropertyNames());
         }
 
         private static List<ConfigSource> buildSources(final SmallRyeConfigBuilder builder) {
