@@ -11,7 +11,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1106,12 +1105,19 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
         }
     }
 
+    private static void addSuperTypes(final ConfigMappingInterface type, final Set<GeneratedConfigClass> nested) {
+        for (ConfigMappingInterface superType : type.superTypes) {
+            nested.add(superType);
+            addSuperTypes(superType, nested);
+        }
+    }
+
     private static void getNested(final Property[] properties, final Set<GeneratedConfigClass> nested) {
         for (Property property : properties) {
             if (property instanceof GroupProperty groupProperty) {
                 ConfigMappingInterface group = groupProperty.getGroupType();
                 nested.add(group);
-                Collections.addAll(nested, group.superTypes);
+                addSuperTypes(group, nested);
                 getNested(group.getProperties(), nested);
             }
 
@@ -1119,7 +1125,7 @@ public final class ConfigMappingInterface implements GeneratedConfigClass {
                 if (optionalProperty.getNestedProperty() instanceof GroupProperty groupProperty) {
                     ConfigMappingInterface group = groupProperty.getGroupType();
                     nested.add(group);
-                    Collections.addAll(nested, group.superTypes);
+                    addSuperTypes(group, nested);
                     getNested(group.getProperties(), nested);
                 } else if (optionalProperty.getNestedProperty() instanceof CollectionProperty collectionProperty) {
                     getNested(new Property[] { collectionProperty.element }, nested);
