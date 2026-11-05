@@ -284,4 +284,15 @@ class ConfigMappingLoaderTest {
                 .map(GeneratedConfigClass::getInterfaceType).collect(toSet());
         assertEquals(Set.of(ChildConfig.class, ParentConfig.class, GrandParentConfig.class), types);
     }
+
+    interface NestedChildConfig {
+        ChildConfig child();
+    }
+
+    @Test
+    void discoverTransitiveSuperTypesOfNestedGroups() {
+        Set<Class<?>> types = getGeneratedConfigClasses(NestedChildConfig.class).stream()
+                .map(GeneratedConfigClass::getInterfaceType).collect(toSet());
+        assertEquals(Set.of(NestedChildConfig.class, ChildConfig.class, ParentConfig.class, GrandParentConfig.class), types);
+    }
 }
