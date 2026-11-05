@@ -710,4 +710,33 @@ class ConfigurationPropertiesMappingHandlerTest {
         assertEquals(NamingStrategy.KEBAB_CASE, handler.getNamingStrategy(Endpoint.class));
         assertEquals(NamingStrategy.SNAKE_CASE, handler.getNamingStrategy(SnakeEndpoint.class));
     }
+
+    @Test
+    void superclassFields() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(ChildProperties.class)
+                .withDefaultValue("child.name", "child")
+                .withDefaultValue("child.base-name", "base")
+                .withDefaultValue("child.base-port", "8080")
+                .build();
+
+        ChildProperties properties = config.getConfigMapping(ChildProperties.class);
+        assertEquals("child", properties.name);
+        assertEquals("base", properties.baseName);
+        assertEquals(8080, properties.getBasePort());
+    }
+
+    public static class BaseProperties {
+        public String baseName;
+        private int basePort;
+
+        public int getBasePort() {
+            return basePort;
+        }
+    }
+
+    @ConfigurationProperties(prefix = "child")
+    public static class ChildProperties extends BaseProperties {
+        public String name;
+    }
 }

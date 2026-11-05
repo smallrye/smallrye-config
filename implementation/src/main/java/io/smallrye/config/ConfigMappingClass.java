@@ -5,9 +5,12 @@ import static io.smallrye.config.ConfigMappingLoader.loadClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -168,10 +171,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
             final String prefix,
             final ConfigMappingHandler handler) {
         Map<String, String> defaults = new HashMap<>();
-        for (Field field : classType.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
+        for (Field field : fields(classType)) {
             Object value;
             try {
                 field.setAccessible(true);
@@ -313,6 +313,30 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
         return configMappingClass == null ? null : configMappingClass.getInterfaceType();
     }
 
+    /**
+     * The fields of a configuration class that map to configuration properties: the instance fields declared by the
+     * class and by its superclasses, up to {@link Object}. A field declared by a subclass hides a superclass field
+     * with the same name, so the superclass field is left out. Static and synthetic fields are never mapped.
+     *
+     * @param type the configuration class
+     * @return the mapped fields, the class fields first, followed by the fields of each superclass
+     */
+    static List<Field> fields(final Class<?> type) {
+        List<Field> fields = new ArrayList<>();
+        Set<String> names = new HashSet<>();
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            for (Field field : current.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
+                    continue;
+                }
+                if (names.add(field.getName())) {
+                    fields.add(field);
+                }
+            }
+        }
+        return fields;
+    }
+
     static String getGeneratedClassName(Class<?> type) {
         // do not use getSimpleName(), it resolves the enclosing class, which may not be visible to the same
         // class loader as the nested class, and it drops the package for classes in the default package
@@ -328,7 +352,7 @@ public final class ConfigMappingClass implements GeneratedConfigClass {
             final ConfigMappingHandler handler,
             final Set<GeneratedConfigClass> nested) {
 
-        for (Field field : type.getDeclaredFields()) {
+        for (Field field : fields(type)) {
             Class<?> fieldType = field.getType();
             if (Collection.class.isAssignableFrom(fieldType) ||
                     Map.class.isAssignableFrom(fieldType) ||

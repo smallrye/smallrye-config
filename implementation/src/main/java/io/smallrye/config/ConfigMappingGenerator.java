@@ -62,6 +62,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -315,7 +316,7 @@ public class ConfigMappingGenerator {
             }
         }
 
-        Field[] declaredFields = classType.getDeclaredFields();
+        List<Field> declaredFields = ConfigMappingClass.fields(classType);
         for (Field declaredField : declaredFields) {
             MethodVisitor mv = writer.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, declaredField.getName(),
                     getMethodDescriptor(getType(declaredField.getType())), getSignature(declaredField),
@@ -385,22 +386,23 @@ public class ConfigMappingGenerator {
         ctor.visitVarInsn(ASTORE, 1);
 
         for (Field declaredField : declaredFields) {
-            if (Modifier.isStatic(declaredField.getModifiers()) || Modifier.isVolatile(declaredField.getModifiers())
-                    || Modifier.isFinal(declaredField.getModifiers())) {
+            if (Modifier.isVolatile(declaredField.getModifiers()) || Modifier.isFinal(declaredField.getModifiers())) {
                 continue;
             }
 
             String name = declaredField.getName();
             Class<?> type = declaredField.getType();
+            // the field may be inherited, so it is written through the class that declares it
+            Class<?> declaringClass = declaredField.getDeclaringClass();
 
             if (Modifier.isPublic(declaredField.getModifiers())) {
                 ctor.visitVarInsn(ALOAD, 1);
                 ctor.visitVarInsn(ALOAD, 0);
                 ctor.visitMethodInsn(INVOKEINTERFACE, interfaceInternalName, name, getMethodDescriptor(getType(type)),
                         true);
-                ctor.visitFieldInsn(PUTFIELD, classInternalName, name, getDescriptor(type));
+                ctor.visitFieldInsn(PUTFIELD, getInternalName(declaringClass), name, getDescriptor(type));
             } else {
-                ctor.visitLdcInsn(getType(classType));
+                ctor.visitLdcInsn(getType(declaringClass));
                 ctor.visitLdcInsn(name);
                 ctor.visitMethodInsn(INVOKEVIRTUAL, I_CLASS, "getDeclaredField",
                         getMethodDescriptor(getType(Field.class), getType(String.class)), false);

@@ -2,6 +2,7 @@ package io.smallrye.config;
 
 import static io.smallrye.config.ConfigMappingLoader.getGeneratedConfigClasses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -325,5 +326,71 @@ class ConfigMappingClassTest {
     @Test
     void notAMapping() {
         assertThrows(IllegalArgumentException.class, () -> new SmallRyeConfigBuilder().withMapping(String.class));
+    }
+
+    @Test
+    void superclassFields() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SubServer.class, "server")
+                .withDefaultValue("server.host", "localhost")
+                .withDefaultValue("server.port", "8080")
+                .withDefaultValue("server.name", "sub")
+                .withDefaultValue("server.log.enabled", "true")
+                .build();
+
+        SubServer server = config.getConfigMapping(SubServer.class, "server");
+        // inherited public and private fields
+        assertEquals("localhost", server.host);
+        assertEquals(8080, server.getPort());
+        // inherited initializer default
+        assertEquals(30, server.getTimeout());
+        // the subclass field hides the superclass field with the same name
+        assertEquals("sub", server.name);
+        assertEquals("base", server.getBaseName());
+        // nested group declared in the superclass
+        assertTrue(server.log.enabled);
+        assertEquals("localhost", server.getHost());
+        // a static field is not a property
+        assertFalse(config.isPropertyPresent("server.instances"));
+    }
+
+    public static class BaseServer {
+        public static int instances;
+
+        public String host;
+        private int port;
+        private int timeout = 30;
+        public String name = "base";
+        public Log log;
+
+        public int getPort() {
+            return port;
+        }
+
+        public int getTimeout() {
+            return timeout;
+        }
+
+        public String getBaseName() {
+            return name;
+        }
+
+        public String getHost() {
+            return host;
+        }
+    }
+
+    public static class SubServer extends BaseServer {
+        public String name;
+        private String host;
+
+        @Override
+        public String getHost() {
+            return host;
+        }
+    }
+
+    public static class Log {
+        public boolean enabled;
     }
 }

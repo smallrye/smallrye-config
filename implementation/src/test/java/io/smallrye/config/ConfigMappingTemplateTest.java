@@ -647,4 +647,41 @@ class ConfigMappingTemplateTest {
     public interface ServerInterface {
         String host();
     }
+
+    @Test
+    void superclassFieldsFromTemplate() {
+        SubTemplate template = new SubTemplate();
+        template.host = "template";
+        template.setPort(9000);
+        template.name = "sub";
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withMapping(SubTemplate.class, "server", template)
+                .withSources(config("server.host", "localhost"))
+                .build();
+
+        SubTemplate server = config.getConfigMapping(SubTemplate.class, "server");
+        assertSame(template, server);
+        assertEquals("localhost", server.host);
+        // inherited template values are the defaults of the mapping
+        assertEquals(9000, server.getPort());
+        assertEquals("9000", config.getConfigValue("server.port").getValue());
+        assertEquals("sub", server.name);
+    }
+
+    public static class BaseTemplate {
+        public String host;
+        private int port;
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(final int port) {
+            this.port = port;
+        }
+    }
+
+    public static class SubTemplate extends BaseTemplate {
+        public String name;
+    }
 }
