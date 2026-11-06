@@ -1,0 +1,20 @@
+= Configuration Reference
+:version-root: ../
+include::{version-root}_attributes.adoc[]
+
+[width="100%",cols="92%,4%,4%",options="header",]
+|===
+|Configuration Property |Type |Default
+|`smallrye.config.profile` +
+The main xref:config/profiles.adoc[Profile] to activate. |String++[]++ |
+|`smallrye.config.profile.parent` +
+The parent xref:config/profiles.adoc#parent-profile[Profile] to activate. |String |
+|`smallrye.config.locations` +
+xref:config-sources/locations.adoc[Additional config locations] to be loaded with the Config. The configuration supports multiple locations separated by a comma and each must represent a valid `java.net.URI`. |URI++[]++ |
+|`smallrye.config.mapping.validate-unknown` +
+xref:config/mappings.adoc#retrieval[Validates] that a `@ConfigMapping` maps every available configuration name contained in the mapping prefix. |boolean |true
+|`smallrye.config.secret-handlers` +
+The names of the secret handlers to be loaded. A value of `all` loads all available secret handlers and a value of `none` skips the load. |String++[]++ |all
+|`smallrye.config.log.values` +
+Enable logging of configuration values lookup in DEBUG log level. |boolean |false
+|===
