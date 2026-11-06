@@ -167,10 +167,6 @@ public final class ConfigProducerUtil {
 
     static ConfigValue getConfigValue(InjectionPoint injectionPoint, SmallRyeConfig config) {
         String name = getName(injectionPoint);
-        if (name == null) {
-            return null;
-        }
-
         io.smallrye.config.ConfigValue configValue = config.getConfigValue(name);
         if (configValue.getRawValue() == null) {
             configValue = configValue.withValue(getDefaultValue(injectionPoint));
@@ -247,14 +243,25 @@ public final class ConfigProducerUtil {
         return false;
     }
 
-    private static String getName(InjectionPoint injectionPoint) {
-        for (Annotation qualifier : injectionPoint.getQualifiers()) {
-            if (qualifier.annotationType().equals(ConfigProperty.class)) {
-                ConfigProperty configProperty = ((ConfigProperty) qualifier);
-                return getConfigKey(injectionPoint, configProperty);
+    /**
+     * Retrieves the configuration name from the {@link ConfigProperty} qualifier of an {@link InjectionPoint}.
+     *
+     * @param injectionPoint the {@link InjectionPoint}
+     * @return the configuration name
+     * @throws IllegalStateException if the {@link InjectionPoint} is not qualified with {@link ConfigProperty}, which
+     *         happens when a configuration bean is resolved by a lookup that matches any qualifier, like {@code @Any}
+     */
+    static String getName(InjectionPoint injectionPoint) {
+        if (injectionPoint != null) {
+            for (Annotation qualifier : injectionPoint.getQualifiers()) {
+                if (qualifier.annotationType().equals(ConfigProperty.class)) {
+                    ConfigProperty configProperty = ((ConfigProperty) qualifier);
+                    return getConfigKey(injectionPoint, configProperty);
+                }
             }
         }
-        return null;
+        throw InjectionMessages.msg.noConfigPropertyQualifier(
+                injectionPoint != null ? InjectionMessages.formatInjectionPoint(injectionPoint) : "<unknown>");
     }
 
     private static String getDefaultValue(InjectionPoint injectionPoint) {

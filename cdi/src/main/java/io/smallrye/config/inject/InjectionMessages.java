@@ -49,6 +49,12 @@ public interface InjectionMessages {
     @Message(id = 2007, value = "No Converter registered for %s")
     IllegalArgumentException noRegisteredConverter(Class<?> type);
 
+    @Message(id = 2008, value = "The injection point %s is not annotated with @ConfigProperty, so it has no configuration name. "
+            + "SmallRye Config producers only handle @ConfigProperty injection points; this one was probably resolved by a "
+            + "lookup that matches any qualifier, such as @Any. Add a qualifier to the lookup to exclude "
+            + "the configuration beans.")
+    IllegalStateException noConfigPropertyQualifier(String injectionPoint);
+
     /**
      *
      * Formats InjectPoint information for Exception messages.<br>

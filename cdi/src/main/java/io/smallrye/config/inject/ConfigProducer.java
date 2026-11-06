@@ -116,6 +116,8 @@ public class ConfigProducer {
     @Produces
     @ConfigProperty
     protected <T> Supplier<T> produceSupplierConfigProperty(InjectionPoint ip) {
+        // fail when the Supplier is produced, not when it is called, if the injection point is not a @ConfigProperty
+        ConfigProducerUtil.getName(ip);
         return () -> ConfigProducerUtil.getValue(ip, getConfig());
     }
 
