@@ -143,7 +143,7 @@ public abstract class AbstractLocationConfigSourceLoader {
         final ClassLoader useClassloader = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
         try {
             consumeAsPaths(useClassloader, uri.getPath(),
-                    new ConfigSourceClassPathConsumer(classLoader, uri, ordinal, configSources));
+                    new ConfigSourceClassPathConsumer(useClassloader, uri, ordinal, configSources));
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
         } catch (IllegalArgumentException e) {

@@ -98,6 +98,18 @@ class PropertiesLocationConfigSourceFactoryTest {
     }
 
     @Test
+    void nullClassLoader() {
+        List<ConfigSource> sources = PropertiesConfigSourceLoader.inClassPath("additional.properties", 100, null);
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(sources)
+                .addDefaultInterceptors()
+                .withProfile("dev")
+                .build();
+
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+    }
+
+    @Test
     void all() {
         SmallRyeConfig config = buildConfig("./src/test/resources",
                 "https://raw.githubusercontent.com/smallrye/smallrye-config/main/implementation/src/test/resources/config-values.properties");
