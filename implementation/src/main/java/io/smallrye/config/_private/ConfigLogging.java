@@ -70,4 +70,8 @@ public interface ConfigLogging extends BasicLogger {
             "These can cause issues in the mapping. Please, do not mix quoted and unquoted in the same Map key. " +
             "Using %1$s.")
     void mappingMapKeysAmbiguous(String quoted, String unquoted);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 1010, value = "%s in %s does not map to any root")
+    void propertyDoesNotMapToAnyRoot(String name, String location);
 }

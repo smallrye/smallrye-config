@@ -606,6 +606,18 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Sets a reporter to receive the configuration names not used by any Config Mapping. The reporter also sets how
+     * the Config Mapping validation reports the names it does not accept, with {@link ConfigUnknownReporter#mode()}.
+     *
+     * @param reporter the {@link ConfigUnknownReporter}
+     * @return this {@link SmallRyeConfigBuilder}
+     */
+    public SmallRyeConfigBuilder withUnknownReporter(ConfigUnknownReporter reporter) {
+        mappingsBuilder.unknownReporter(reporter);
+        return this;
+    }
+
     public SmallRyeConfigBuilder withValidator(ConfigValidator validator) {
         this.validator = validator;
         return this;
@@ -795,6 +807,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
         private final Map<ConfigClass, Object> mappingsTemplates = new HashMap<>();
         private final PropertyNamesMatcher<?> ignores = new PropertyNamesMatcher<>();
+        private ConfigUnknownReporter unknownReporter = ConfigUnknownReporter.EMPTY;
 
         public void mapping(ConfigClass configClass) {
             Assert.checkNotNullParam("configClass", configClass);
@@ -867,6 +880,11 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             ignores.add(ignoredPath);
         }
 
+        public void unknownReporter(ConfigUnknownReporter unknownReporter) {
+            Assert.checkNotNullParam("unknownReporter", unknownReporter);
+            this.unknownReporter = unknownReporter;
+        }
+
         public Set<ConfigClass> getMappings() {
             return mappings;
         }
@@ -881,6 +899,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
 
         PropertyNamesMatcher<?> getIgnores() {
             return ignores;
+        }
+
+        ConfigUnknownReporter getUnknownReporter() {
+            return unknownReporter;
         }
 
         boolean isEmpty() {

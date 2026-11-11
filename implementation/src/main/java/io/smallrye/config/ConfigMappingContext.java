@@ -231,7 +231,14 @@ public final class ConfigMappingContext {
         return problems;
     }
 
-    void reportUnknown(final PropertyNamesMatcher<?> ignores) {
+    /**
+     * @param ignores the names to exclude from the validation
+     * @param validate <code>true</code> to validate the names not accepted by the reporter, or <code>false</code> if the
+     *        validation is disabled
+     * @param reporter the reporter to hand off unused names, and to set how the validation reports an unknown name
+     */
+    void reportUnknown(final PropertyNamesMatcher<?> ignores, final boolean validate, final ConfigUnknownReporter reporter) {
+        boolean warn = validate && reporter.mode() == ConfigUnknownReporter.Mode.WARN;
         Set<String> prefixes = new HashSet<>();
         for (Map<String, Object> value : this.mappings.values()) {
             // we could also filter prefixes here but it doesn't seem necessary considering the cardinality
@@ -242,22 +249,47 @@ public final class ConfigMappingContext {
         }
 
         for (String propertyName : config.getPropertyNames()) {
-            if (ignores.matches(propertyName) || usedProperties.contains(propertyName)) {
+            if (usedProperties.contains(propertyName)) {
+                continue;
+            }
+
+            if (reporter.accepts(propertyName)) {
+                ConfigValue configValue = config.getConfigValue(propertyName);
+                if (!isEnv(configValue)) {
+                    reporter.report(propertyName, configValue);
+                }
+                continue;
+            }
+
+            if (!validate) {
                 continue;
             }
 
             for (String prefix : prefixes) {
                 if (isPropertyInRoot(propertyName, prefix)) {
-                    ConfigValue configValue = config.getConfigValue(propertyName);
-                    // TODO - https://github.com/quarkusio/quarkus/issues/38479
-                    if (configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME)) {
-                        continue;
+                    // Most names are not in a root, so only match the ignores for the ones that are
+                    if (ignores.matches(propertyName)) {
+                        break;
                     }
-                    problems.add(new Problem(
-                            ConfigMessages.msg.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation())));
+                    ConfigValue configValue = config.getConfigValue(propertyName);
+                    if (!isEnv(configValue)) {
+                        if (warn) {
+                            ConfigLogging.log.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation());
+                        } else {
+                            problems.add(new Problem(
+                                    ConfigMessages.msg.propertyDoesNotMapToAnyRoot(propertyName, configValue.getLocation())));
+                        }
+                    }
+                    // Prefixes may overlap, so stop to report the name only once
+                    break;
                 }
             }
         }
+    }
+
+    private static boolean isEnv(final ConfigValue configValue) {
+        // TODO - https://github.com/quarkusio/quarkus/issues/38479
+        return configValue.getSourceName() != null && configValue.getSourceName().startsWith(EnvConfigSource.NAME);
     }
 
     private static boolean isPropertyInRoot(final String property, final String root) {
