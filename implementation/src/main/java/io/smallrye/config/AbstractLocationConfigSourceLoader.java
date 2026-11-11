@@ -171,24 +171,32 @@ public abstract class AbstractLocationConfigSourceLoader {
                 if (validExtension(resourceUrl.getFile())) {
                     ConfigSource mainSource = loadConfigSourceInternal(resourceUrl, ordinal);
                     configSources.add(mainSource);
-                    configSources.add(new ConfigurableConfigSource((ProfileConfigSourceFactory) profiles -> {
-                        List<ConfigSource> profileSources = new ArrayList<>();
-                        for (int i = profiles.size() - 1; i >= 0; i--) {
-                            int mainOrdinal = mainSource.getOrdinal() + profiles.size() - i + 1;
-                            for (String fileExtension : getFileExtensions()) {
-                                URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
-                                try {
-                                    Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
-                                    while (profileResources.hasMoreElements()) {
-                                        profileSources
-                                                .addAll(loadProfileConfigSource(profileResources.nextElement(), mainOrdinal));
+                    configSources.add(new ConfigurableConfigSource(new ProfileConfigSourceFactory() {
+                        @Override
+                        public Iterable<ConfigSource> getProfileConfigSources(final List<String> profiles) {
+                            List<ConfigSource> profileSources = new ArrayList<>();
+                            for (int i = profiles.size() - 1; i >= 0; i--) {
+                                int ordinal = mainSource.getOrdinal() + profiles.size() - i;
+                                for (String fileExtension : getFileExtensions()) {
+                                    URI profileUri = addProfileName(uri, profiles.get(i), fileExtension);
+                                    try {
+                                        Enumeration<URL> profileResources = classLoader.getResources(profileUri.toString());
+                                        while (profileResources.hasMoreElements()) {
+                                            profileSources
+                                                    .addAll(loadProfileConfigSource(profileResources.nextElement(), ordinal));
+                                        }
+                                    } catch (IOException e) {
+                                        // It is ok to not find the resource here, because it is an optional profile resource.
                                     }
-                                } catch (IOException e) {
-                                    // It is ok to not find the resource here, because it is an optional profile resource.
                                 }
                             }
+                            return profileSources;
                         }
-                        return profileSources;
+
+                        @Override
+                        public OptionalInt getPriority() {
+                            return OptionalInt.of(mainSource.getOrdinal());
+                        }
                     }));
                 }
             }
