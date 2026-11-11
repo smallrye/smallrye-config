@@ -115,6 +115,47 @@ SmallRyeConfig config = new SmallRyeConfigBuilder()
         .build();
 ```
 
+### Reporting unknown names as warnings
+
+An unknown configuration property fails the `SmallRyeConfig` creation with a `ConfigValidationException`. To log a
+warning instead, set the `ConfigUnknownReporter.WARN` reporter in the builder:
+
+```java
+SmallRyeConfig config = new SmallRyeConfigBuilder()
+        .withMapping(Server.class)
+        .withUnknownReporter(ConfigUnknownReporter.WARN)
+        .build();
+```
+
+### Custom reporting of unused names
+
+A `SmallRyeConfig` instance may not know every mapping, for example, if the application reads part of its configuration
+elsewhere. In that case, a `ConfigUnknownReporter` receives the names not used by any mapping and decides what to do
+with them, including names outside the mapping prefixes or ignored with `withMappingIgnore`:
+
+```java
+SmallRyeConfig config = new SmallRyeConfigBuilder()
+        .withMapping(Server.class)
+        .withUnknownReporter(new ConfigUnknownReporter() {
+            @Override
+            public boolean accepts(String name) {
+                return name.startsWith("server.");
+            }
+
+            @Override
+            public void report(String name, ConfigValue configValue) {
+                System.out.println("Unknown " + name + " in " + configValue.getSourceName());
+            }
+        })
+        .build();
+```
+
+Names accepted by the reporter are handled only by the reporter, and all the others follow the regular validation. The
+reporter runs even if the validation is disabled, and it is not called for names provided by environment variables.
+
+By default, the regular validation still fails for the names the reporter does not accept. To log a warning instead,
+override `ConfigUnknownReporter#mode()` to return `ConfigUnknownReporter.Mode.WARN`.
+
 ### Ignoring specific paths
 
 Rather than disabling validation entirely, specific paths can be ignored with
