@@ -9,14 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -264,6 +270,64 @@ class PropertiesLocationConfigSourceFactoryTest {
         assertEquals("dev", config.getConfigValue("my.prop.profile").getValue());
 
         server.stop(0);
+    }
+
+    @Test
+    void fallbackWithProfiles() throws Exception {
+        URLStreamHandler handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                return new URLConnection(u) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public InputStream getInputStream() {
+                        if (u.getFile().contains("-prod.properties")) {
+                            return new ByteArrayInputStream("my.prop=prod\n".getBytes(StandardCharsets.UTF_8));
+                        }
+                        return new ByteArrayInputStream("my.prop=default\n".getBytes(StandardCharsets.UTF_8));
+                    }
+                };
+            }
+        };
+
+        URL mainUrl = new URL("custom", null, -1, "META-INF/microprofile-config.properties", handler);
+        URL prodUrl = new URL("custom", null, -1, "META-INF/microprofile-config-prod.properties", handler);
+
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Enumeration<URL> getResources(String name) {
+                if (name.equals("META-INF/microprofile-config.properties")) {
+                    return Collections.enumeration(List.of(mainUrl));
+                }
+                if (name.equals("META-INF/microprofile-config-prod.properties")) {
+                    return Collections.enumeration(List.of(prodUrl));
+                }
+                return Collections.emptyEnumeration();
+            }
+
+            @Override
+            public URL getResource(String name) {
+                if (name.equals("META-INF/microprofile-config.properties")) {
+                    return mainUrl;
+                }
+                if (name.equals("META-INF/microprofile-config-prod.properties")) {
+                    return prodUrl;
+                }
+                return null;
+            }
+        };
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .forClassLoader(classLoader)
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withProfile("prod")
+                .build();
+
+        assertEquals("prod", config.getConfigValue("my.prop").getValue());
     }
 
     @Test
