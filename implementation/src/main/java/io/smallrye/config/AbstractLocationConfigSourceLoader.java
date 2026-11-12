@@ -11,14 +11,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 
@@ -146,7 +149,8 @@ public abstract class AbstractLocationConfigSourceLoader {
                     new ConfigSourceClassPathConsumer(useClassloader, uri, ordinal, configSources));
         } catch (IOException e) {
             throw ConfigMessages.msg.failedToLoadResource(e, uri.toString());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ProviderNotFoundException | FileSystemNotFoundException | NoSuchElementException
+                | SecurityException e) {
             return fallbackToUnknownProtocol(uri, ordinal, useClassloader);
         }
         return configSources;

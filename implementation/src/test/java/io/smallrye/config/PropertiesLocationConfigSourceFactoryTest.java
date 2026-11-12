@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -113,6 +114,86 @@ class PropertiesLocationConfigSourceFactoryTest {
                 .build();
 
         assertEquals("1234", config.getConfigValue("my.prop").getValue());
+    }
+
+    @Test
+    void providerNotFoundFallback() throws Exception {
+        URLStreamHandler handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                return new URLConnection(u) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public InputStream getInputStream() {
+                        return new ByteArrayInputStream("my.prop=1234\n".getBytes(StandardCharsets.UTF_8));
+                    }
+                };
+            }
+        };
+
+        URL url = new URL("custom", null, -1, "test.properties", handler);
+
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Enumeration<URL> getResources(String name) {
+                if (name.equals("META-INF/microprofile-config.properties")) {
+                    return Collections.enumeration(List.of(url));
+                }
+                return Collections.emptyEnumeration();
+            }
+
+            @Override
+            public URL getResource(String name) {
+                if (name.equals("META-INF/microprofile-config.properties")) {
+                    return url;
+                }
+                return null;
+            }
+        };
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .forClassLoader(classLoader)
+                .addDefaultSources()
+                .build();
+
+        assertEquals("1234", config.getConfigValue("my.prop").getValue());
+    }
+
+    @Test
+    void providerNotFoundExceptionFallback() {
+        AbstractLocationConfigSourceLoader loader = new AbstractLocationConfigSourceLoader() {
+            @Override
+            protected String[] getFileExtensions() {
+                return new String[] { "properties" };
+            }
+
+            @Override
+            protected ConfigSource loadConfigSource(final URL url, final int ordinal) throws IOException {
+                return new PropertiesConfigSource(url, ordinal);
+            }
+
+            @Override
+            protected List<ConfigSource> fallbackToUnknownProtocol(final URI uri, final int ordinal,
+                    final ClassLoader classLoader) {
+                return List.of(new MapBackedConfigSource("test", Map.of("key", "value"), ordinal) {
+                });
+            }
+        };
+
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Enumeration<URL> getResources(String name) {
+                throw new java.nio.file.ProviderNotFoundException("Provider jar not found");
+            }
+        };
+
+        List<ConfigSource> sources = loader.loadConfigSources(new String[] { "META-INF/microprofile-config.properties" }, 100,
+                classLoader);
+        assertEquals(1, sources.size());
+        assertEquals("value", sources.get(0).getValue("key"));
     }
 
     @Test
