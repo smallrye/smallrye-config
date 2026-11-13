@@ -334,7 +334,13 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                     expressions = Boolean.parseBoolean(expressionsValue.getValue());
                 }
 
+                // the handlers are mapped by name, so the last one with a given name wins. The discovered handlers
+                // come first, so that a handler set in the builder has priority over a discovered one
                 List<SecretKeysHandler> secretKeysHandlers = new ArrayList<>();
+                if (isAddDiscoveredSecretKeysHandlers()) {
+                    secretKeysHandlers.addAll(discoverSecretKeysHandlers(context));
+                }
+
                 for (SecretKeysHandlerWithName secretKeysHandler : SmallRyeConfigBuilder.this.secretKeysHandlers) {
                     secretKeysHandlers.add(secretKeysHandler.getSecretKeysHandler(new ConfigSourceContext() {
                         @Override
@@ -347,10 +353,6 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
                             return context.iterateNames();
                         }
                     }));
-                }
-
-                if (isAddDiscoveredSecretKeysHandlers()) {
-                    secretKeysHandlers.addAll(discoverSecretKeysHandlers(context));
                 }
 
                 return new ExpressionConfigSourceInterceptor(expressions, secretKeysHandlers);
