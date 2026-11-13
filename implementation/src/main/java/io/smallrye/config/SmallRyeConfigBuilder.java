@@ -62,6 +62,16 @@ import io.smallrye.config.SecretKeys.Secrets;
 import io.smallrye.config._private.ConfigMessages;
 
 /**
+ * Builder for {@link SmallRyeConfig} instances.
+ * <p>
+ * Provides a fluent API to configure and build a {@link SmallRyeConfig} with custom
+ * {@linkplain ConfigSource configuration sources}, {@linkplain Converter converters},
+ * {@linkplain ConfigSourceInterceptor interceptors}, {@linkplain ConfigMapping config mappings},
+ * profiles, default values, secret keys, validators, and customizers.
+ * <p>
+ * Most of the builder methods only record the intent to add a component. The {@link SmallRyeConfig} instance and its
+ * components are only created when {@link #build()} is called.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
  */
 public class SmallRyeConfigBuilder implements ConfigBuilder {
@@ -91,33 +101,94 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private boolean addDiscoveredValidator = false;
     private boolean cachePropertyNames = true;
 
+    /**
+     * Constructs a new {@code SmallRyeConfigBuilder}.
+     */
+    public SmallRyeConfigBuilder() {
+    }
+
+    /**
+     * Enables the discovery of {@link SmallRyeConfigBuilderCustomizer} instances with the
+     * {@link java.util.ServiceLoader} mechanism. The customizers are loaded from the configured class loader and
+     * executed when {@link #build()} is called.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SmallRyeConfigBuilderCustomizer
+     */
     public SmallRyeConfigBuilder addDiscoveredCustomizers() {
         addDiscoveredCustomizers = true;
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation enables the discovery of {@link ConfigSource}, {@link ConfigSourceProvider} and
+     * {@link ConfigSourceFactory} instances with the {@link java.util.ServiceLoader} mechanism. The configuration
+     * sources are loaded from the configured class loader when {@link #build()} is called.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     @Override
     public SmallRyeConfigBuilder addDiscoveredSources() {
         addDiscoveredSources = true;
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation enables the discovery of {@link Converter} instances with the
+     * {@link java.util.ServiceLoader} mechanism. The converters are loaded from the configured class loader when
+     * {@link #build()} is called.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     @Override
     public SmallRyeConfigBuilder addDiscoveredConverters() {
         addDiscoveredConverters = true;
         return this;
     }
 
+    /**
+     * Enables the discovery of {@link ConfigSourceInterceptor} and {@link ConfigSourceInterceptorFactory} instances
+     * with the {@link java.util.ServiceLoader} mechanism. The interceptors are loaded from the configured class
+     * loader when {@link #build()} is called.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigSourceInterceptor
+     */
     public SmallRyeConfigBuilder addDiscoveredInterceptors() {
         addDiscoveredInterceptors = true;
         return this;
     }
 
+    /**
+     * Enables the discovery of {@link SecretKeysHandler} and {@link SecretKeysHandlerFactory} instances with the
+     * {@link java.util.ServiceLoader} mechanism. The handlers are loaded from the configured class loader when
+     * {@link #build()} is called, and may be restricted to a subset of handler names with the
+     * {@code smallrye.config.secret-handlers} configuration property. A handler set with
+     * {@link #withSecretKeysHandlers(SecretKeysHandler...)} has priority over a discovered one that uses the same
+     * name.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SecretKeysHandler
+     * @see #withSecretKeysHandlers(SecretKeysHandler...)
+     */
     public SmallRyeConfigBuilder addDiscoveredSecretKeysHandlers() {
         addDiscoveredSecretKeysHandlers = true;
         return this;
     }
 
+    /**
+     * Enables the discovery of a {@link ConfigValidator} instance with the {@link java.util.ServiceLoader} mechanism.
+     * The validator is loaded from the configured class loader when {@link #build()} is called. A validator set with
+     * {@link #withValidator(ConfigValidator)} has priority, in which case no discovery takes place.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigValidator
+     * @see #withValidator(ConfigValidator)
+     */
     public SmallRyeConfigBuilder addDiscoveredValidator() {
         addDiscoveredValidator = true;
         return this;
@@ -174,30 +245,71 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return ConfigValidator.EMPTY;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation adds both the system sources and the properties sources when {@link #build()} is called
+     * (by descending ordinal):
+     * <ul>
+     * <li>({@code 400}) {@link SysPropConfigSource} for System properties</li>
+     * <li>({@code 300}) {@link EnvConfigSource} for Environment variables</li>
+     * <li>({@code 295}) {@link DotEnvConfigSourceProvider} for the {@code .env} file in the current working
+     * directory</li>
+     * <li>({@code 260}) {@code application.properties} in the {@code config} folder, located in the current working
+     * directory</li>
+     * <li>({@code 250}) {@code application.properties} in the classpath</li>
+     * <li>({@code 100}) {@code META-INF/microprofile-config.properties} in the classpath</li>
+     * </ul>
+     * This supersedes {@link #addSystemSources()} and {@link #addPropertiesSources()}.
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     @Override
     public SmallRyeConfigBuilder addDefaultSources() {
         addDefaultSources = true;
         return this;
     }
 
+    /**
+     * Adds the default system configuration sources when the configuration is built (by descending ordinal):
+     * <ul>
+     * <li>({@code 400}) {@link SysPropConfigSource} for System properties</li>
+     * <li>({@code 300}) {@link EnvConfigSource} for Environment variables</li>
+     * <li>({@code 295}) {@link DotEnvConfigSourceProvider} for the {@code .env} file in the current working
+     * directory</li>
+     * </ul>
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     public SmallRyeConfigBuilder addSystemSources() {
         addSystemSources = true;
         return this;
     }
 
+    /**
+     * Adds the default properties configuration sources when the configuration is built (by descending ordinal):
+     * <ul>
+     * <li>({@code 260}) {@code application.properties} in the {@code config} folder, located in the current working
+     * directory</li>
+     * <li>({@code 250}) {@code application.properties} in the classpath</li>
+     * <li>({@code 100}) {@code META-INF/microprofile-config.properties} in the classpath</li>
+     * </ul>
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     public SmallRyeConfigBuilder addPropertiesSources() {
         addPropertiesSources = true;
         return this;
     }
 
-    protected List<ConfigSource> getDefaultSources() {
+    List<ConfigSource> getDefaultSources() {
         List<ConfigSource> defaultSources = new ArrayList<>();
         defaultSources.addAll(getSystemSources());
         defaultSources.addAll(getPropertiesSources());
         return defaultSources;
     }
 
-    protected List<ConfigSource> getSystemSources() {
+    List<ConfigSource> getSystemSources() {
         List<ConfigSource> sources = new ArrayList<>();
         sources.add(new SysPropConfigSource());
         sources.add(new EnvConfigSource());
@@ -205,7 +317,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return sources;
     }
 
-    protected List<ConfigSource> getPropertiesSources() {
+    List<ConfigSource> getPropertiesSources() {
         List<ConfigSource> sources = new ArrayList<>();
         sources.addAll(
                 inFileSystem(Paths.get(System.getProperty("user.dir"), "config", "application.properties").toUri().toString(),
@@ -215,6 +327,20 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return sources;
     }
 
+    /**
+     * Adds the default configuration source interceptors when the configuration is built.
+     * <p>
+     * The default interceptors include:
+     * <ul>
+     * <li>{@link ProfileConfigSourceInterceptor} to handle configuration profiles</li>
+     * <li>{@link RelocateConfigSourceInterceptor} to handle profile relocations</li>
+     * <li>{@link ExpressionConfigSourceInterceptor} to expand configuration expressions and secret keys</li>
+     * <li>{@link SecretKeysConfigSourceInterceptor} to protect secret keys</li>
+     * <li>{@link LoggingConfigSourceInterceptor} to log configuration values lookup</li>
+     * </ul>
+     *
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     public SmallRyeConfigBuilder addDefaultInterceptors() {
         this.addDefaultInterceptors = true;
         return this;
@@ -442,33 +568,95 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return interceptors;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation uses the class loader to:
+     * <ul>
+     * <li>discover the {@link ConfigSource}, {@link ConfigSourceProvider}, {@link ConfigSourceFactory},
+     * {@link Converter}, {@link ConfigSourceInterceptor}, {@link ConfigSourceInterceptorFactory},
+     * {@link SecretKeysHandler}, {@link SecretKeysHandlerFactory}, {@link ConfigValidator} and
+     * {@link SmallRyeConfigBuilderCustomizer} instances with the {@link java.util.ServiceLoader} mechanism</li>
+     * <li>look up the classpath {@linkplain ConfigSource configuration sources} added with
+     * {@link #addDefaultSources()} and {@link #addPropertiesSources()}</li>
+     * <li>find the {@link ConfigMappingHandler} of the registered config classes</li>
+     * </ul>
+     * If not set, the context class loader of the thread that created this builder is used.
+     * <p>
+     * A config class is resolved with the class loader set at the time it is registered, so this method must be
+     * called before {@link #withMapping(Class)} and the remaining mapping methods.
+     *
+     * @param classLoader the class loader
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #getClassLoader()
+     */
     @Override
     public SmallRyeConfigBuilder forClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
     }
 
+    /**
+     * Registers {@link SmallRyeConfigBuilderCustomizer} instances to customize this builder when building the
+     * configuration.
+     *
+     * @param customizers the customizers to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SmallRyeConfigBuilderCustomizer
+     */
     public SmallRyeConfigBuilder withCustomizers(SmallRyeConfigBuilderCustomizer... customizers) {
         Collections.addAll(this.customizers, customizers);
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation registers the {@linkplain ConfigSource configuration sources} as they are. They are only
+     * sorted by their ordinal when the configuration is built.
+     *
+     * @param configSources the configuration sources to add
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     @Override
     public SmallRyeConfigBuilder withSources(ConfigSource... configSources) {
         Collections.addAll(sources, configSources);
         return this;
     }
 
+    /**
+     * Adds a collection of {@link ConfigSource} instances to the builder.
+     *
+     * @param configSources the collection of configuration sources to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withSources(ConfigSource...)
+     */
     public SmallRyeConfigBuilder withSources(Collection<ConfigSource> configSources) {
         sources.addAll(configSources);
         return this;
     }
 
+    /**
+     * Adds a {@link ConfigSourceProvider} instance to the builder. The provider is called with the configured class
+     * loader to retrieve its {@linkplain ConfigSource configuration sources} when the configuration is built.
+     *
+     * @param provider the configuration source provider to add
+     * @return this {@link SmallRyeConfigBuilder}
+     */
     public SmallRyeConfigBuilder withSources(ConfigSourceProvider provider) {
         sourceProviders.add(provider);
         return this;
     }
 
+    /**
+     * Adds {@link ConfigSourceFactory} instances to the builder. Each factory is initialized in priority order when
+     * the configuration is built, with access to the {@linkplain ConfigSource configuration sources} initialized
+     * before it.
+     *
+     * @param configSourceFactories the configuration source factories to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigSourceFactory
+     */
     public SmallRyeConfigBuilder withSources(ConfigSourceFactory... configSourceFactories) {
         for (ConfigSourceFactory configSourceFactory : configSourceFactories) {
             sources.add(new ConfigurableConfigSource(configSourceFactory));
@@ -476,6 +664,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Adds {@link ConfigSourceInterceptor} instances to the builder. An interceptor priority is assigned with the
+     * {@code jakarta.annotation.Priority} annotation, or {@link ConfigSourceInterceptorFactory#DEFAULT_PRIORITY} if
+     * the annotation is not present, and the interceptor with the highest priority is executed first in the chain.
+     *
+     * @param interceptors the interceptors to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigSourceInterceptor
+     */
     public SmallRyeConfigBuilder withInterceptors(ConfigSourceInterceptor... interceptors) {
         for (ConfigSourceInterceptor interceptor : interceptors) {
             this.interceptors.add(new InterceptorWithPriority(interceptor));
@@ -483,6 +680,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Adds {@link ConfigSourceInterceptorFactory} instances to the builder. Each factory is initialized when the
+     * configuration is built, with access to the interceptors already initialized, and its
+     * {@link ConfigSourceInterceptorFactory#getPriority()} determines the position of the interceptor in the chain.
+     *
+     * @param interceptorFactories the interceptor factories to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigSourceInterceptorFactory
+     */
     public SmallRyeConfigBuilder withInterceptorFactories(ConfigSourceInterceptorFactory... interceptorFactories) {
         for (ConfigSourceInterceptorFactory interceptorFactory : interceptorFactories) {
             this.interceptors.add(new InterceptorWithPriority(interceptorFactory));
@@ -490,6 +696,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Adds {@link SecretKeysHandler} instances to the builder. A handler decodes or decrypts the secret configuration
+     * values expressed as {@code ${handler::value}}, where the {@code handler} is the name of the handler. A handler
+     * added here has priority over a handler discovered with {@link #addDiscoveredSecretKeysHandlers()} that uses the
+     * same name.
+     *
+     * @param secretKeysHandlers the secret keys handlers to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SecretKeysHandler
+     */
     public SmallRyeConfigBuilder withSecretKeysHandlers(SecretKeysHandler... secretKeysHandlers) {
         for (SecretKeysHandler secretKeysHandler : secretKeysHandlers) {
             this.secretKeysHandlers.add(new SecretKeysHandlerWithName(secretKeysHandler));
@@ -497,6 +713,16 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Adds {@link SecretKeysHandlerFactory} instances to the builder. Each factory is initialized when the
+     * configuration is built, with access to the {@linkplain ConfigSource configuration sources}, which allows the
+     * handler to be configured with configuration values. A handler added here has priority over a handler
+     * discovered with {@link #addDiscoveredSecretKeysHandlers()} that uses the same name.
+     *
+     * @param secretKeyHandlerFactories the secret keys handler factories to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SecretKeysHandlerFactory
+     */
     public SmallRyeConfigBuilder withSecretKeyHandlerFactories(SecretKeysHandlerFactory... secretKeyHandlerFactories) {
         for (SecretKeysHandlerFactory secretKeyHandlerFactory : secretKeyHandlerFactories) {
             this.secretKeysHandlers.add(new SecretKeysHandlerWithName(secretKeyHandlerFactory));
@@ -504,18 +730,53 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Sets the active profile name. Multiple profiles can be specified as a comma-separated string, in which case
+     * the last listed profile has priority.
+     * <p>
+     * A profile set with this method has priority over the profiles set with the {@code smallrye.config.profile}
+     * configuration property, which are not looked up at all in that case. Calling this method automatically enables
+     * the default interceptors.
+     *
+     * @param profile the profile name or comma-separated list of profile names
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withProfiles(List)
+     * @see #addDefaultInterceptors()
+     */
     public SmallRyeConfigBuilder withProfile(String profile) {
         addDefaultInterceptors();
         this.profiles.addAll(convertProfile(profile));
         return this;
     }
 
+    /**
+     * Sets the active profile names, where the last profile of the list has priority.
+     * <p>
+     * Profiles set with this method have priority over the profiles set with the {@code smallrye.config.profile}
+     * configuration property, which are not looked up at all in that case. Calling this method automatically enables
+     * the default interceptors.
+     *
+     * @param profiles the list of profiles to activate
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withProfile(String)
+     * @see #addDefaultInterceptors()
+     */
     public SmallRyeConfigBuilder withProfiles(List<String> profiles) {
         addDefaultInterceptors();
         this.profiles.addAll(profiles);
         return this;
     }
 
+    /**
+     * Registers configuration property names as secret keys.
+     * <p>
+     * Secret keys are omitted from {@link SmallRyeConfig#getPropertyNames()}, excluded from mapping {@code toString()}
+     * representations, and require an unlocked context to be retrieved programmatically.
+     *
+     * @param keys the configuration property names to treat as secrets
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see SecretKeys
+     */
     public SmallRyeConfigBuilder withSecretKeys(String... keys) {
         for (String key : keys) {
             secrets.add(key);
@@ -523,24 +784,68 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Registers a default value for a configuration property name. The default values are provided by the
+     * {@link DefaultValuesConfigSource}, with the lowest possible ordinal, so a value from any other
+     * {@linkplain ConfigSource configuration source} overrides the default.
+     *
+     * @param name the configuration property name
+     * @param value the default value
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see DefaultValuesConfigSource
+     */
     public SmallRyeConfigBuilder withDefaultValue(String name, String value) {
         this.defaults.put(name, value);
         return this;
     }
 
+    /**
+     * Registers a map of default values for configuration property names.
+     *
+     * @param defaultValues a map of configuration property names and their default values
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #withDefaultValue(String, String)
+     */
     public SmallRyeConfigBuilder withDefaultValues(Map<String, String> defaultValues) {
         this.defaults.put(defaultValues);
         return this;
     }
 
+    /**
+     * Registers a {@link ConfigMapping} class or interface, with the prefix set in {@link ConfigMapping#prefix()}.
+     * The mapping is populated when the configuration is built and the instance is retrieved with
+     * {@link SmallRyeConfig#getConfigMapping(Class)}.
+     *
+     * @param type the config mapping class or interface
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigMapping
+     */
     public SmallRyeConfigBuilder withMapping(Class<?> type) {
         return withMapping(ConfigClass.configClass(type));
     }
 
+    /**
+     * Registers a {@link ConfigMapping} class or interface with a configuration property prefix. The mapping is
+     * populated when the configuration is built and the instance is retrieved with
+     * {@link SmallRyeConfig#getConfigMapping(Class, String)}.
+     *
+     * @param type the config mapping class or interface
+     * @param prefix the prefix to override {@link ConfigMapping#prefix()}
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigMapping
+     */
     public SmallRyeConfigBuilder withMapping(Class<?> type, String prefix) {
         return withMapping(ConfigClass.configClass(type, prefix));
     }
 
+    /**
+     * Registers a {@link ConfigClass} mapping, which pairs the config type with the configuration prefix it maps to
+     * and the handler responsible for its processing.
+     *
+     * @param configClass the config class mapping
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigClass
+     */
     public SmallRyeConfigBuilder withMapping(ConfigClass configClass) {
         mappingsBuilder.mapping(configClass);
         return this;
@@ -554,6 +859,7 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
      * @param prefix the prefix of the mapping
      * @param template the instance of the config class to populate
      * @return this {@link SmallRyeConfigBuilder}
+     * @param <T> the type of the config class
      * @see MappingBuilder#mappingTemplate(ConfigClass, Object)
      */
     public <T> SmallRyeConfigBuilder withMapping(Class<T> type, String prefix, T template) {
@@ -609,11 +915,32 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * Sets the {@link ConfigValidator} used to validate the config mapping instances when the configuration is built.
+     * The validator replaces any previously set validator and has priority over a validator discovered with
+     * {@link #addDiscoveredValidator()}.
+     *
+     * @param validator the validator to use
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see ConfigValidator
+     */
     public SmallRyeConfigBuilder withValidator(ConfigValidator validator) {
         this.validator = validator;
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation resolves the target type of each {@link Converter} from its generic type, and assigns the
+     * priority with the {@code jakarta.annotation.Priority} annotation, or {@code 100} if the annotation is not
+     * present. A converter is only registered if no other converter with a higher priority was registered for the
+     * same target type.
+     *
+     * @param converters the converters to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @throws IllegalStateException if the target type of a converter cannot be resolved
+     */
     @Override
     public SmallRyeConfigBuilder withConverters(Converter<?>[] converters) {
         for (Converter<?> converter : converters) {
@@ -626,32 +953,83 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation only registers the {@link Converter} if no other converter with a higher priority was
+     * registered for the same target type.
+     *
+     * @param type the target type of the converter
+     * @param priority the priority of the converter
+     * @param converter the converter to add
+     * @return this {@link SmallRyeConfigBuilder}
+     * @param <T> the target type of the converter
+     */
     @Override
     public <T> SmallRyeConfigBuilder withConverter(Class<T> type, int priority, Converter<T> converter) {
         addConverter(type, priority, converter, converters);
         return this;
     }
 
+    /**
+     * Returns the list of configuration sources added to this builder. The list is mutable and backs the builder, so
+     * changes to it are reflected in the built configuration.
+     *
+     * @return the list of configuration sources
+     */
     public List<ConfigSource> getSources() {
         return sources;
     }
 
+    /**
+     * Returns the list of configuration source providers added to this builder. The list is mutable and backs the
+     * builder, so changes to it are reflected in the built configuration.
+     *
+     * @return the list of configuration source providers
+     */
     public List<ConfigSourceProvider> getSourceProviders() {
         return sourceProviders;
     }
 
+    /**
+     * Returns the converters registered with this builder. The map is mutable and backs the builder, so changes to
+     * it are reflected in the built configuration.
+     *
+     * @return the map of converters keyed by target type
+     */
     public Map<Type, ConverterWithPriority> getConverters() {
         return converters;
     }
 
-    public List<InterceptorWithPriority> getInterceptors() {
+    /**
+     * Returns the interceptors registered with this builder, not sorted by their priority. The list is mutable and
+     * backs the builder, so changes to it are reflected in the built configuration.
+     *
+     * @return the list of interceptors with priorities
+     */
+    List<InterceptorWithPriority> getInterceptors() {
         return interceptors;
     }
 
+    /**
+     * Returns the active profiles set in this builder. The list is mutable and backs the builder, so changes to it
+     * are reflected in the built configuration.
+     *
+     * @return the list of active profiles
+     */
     public List<String> getProfiles() {
         return profiles;
     }
 
+    /**
+     * Returns the {@link ConfigValidator} to validate the config mapping instances. A validator set with
+     * {@link #withValidator(ConfigValidator)} has priority over a discovered one, so the discovery only runs if no
+     * validator was set and {@link #addDiscoveredValidator()} is enabled. The discovered validator is set in this
+     * builder, so the discovery runs only once.
+     *
+     * @return the config validator, or {@link ConfigValidator#EMPTY} if none is set or discovered
+     * @see #withValidator(ConfigValidator)
+     */
     public ConfigValidator getValidator() {
         if (validator == null && isAddDiscoveredValidator()) {
             this.validator = discoverValidator();
@@ -659,116 +1037,306 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return validator == null ? ConfigValidator.EMPTY : validator;
     }
 
+    /**
+     * Returns the default values registered with this builder, which are provided to the configuration by the
+     * {@link DefaultValuesConfigSource}.
+     *
+     * @return the default values
+     * @see #withDefaultValue(String, String)
+     */
     public Defaults getDefaults() {
         return defaults;
     }
 
+    /**
+     * Returns the secret keys registered with this builder, including the ones collected from the
+     * {@linkplain ConfigMapping config mappings} members wrapped with {@link Secret}.
+     *
+     * @return the secret keys
+     * @see #withSecretKeys(String...)
+     */
     public Secrets getSecretKeys() {
         return secrets;
     }
 
+    /**
+     * Returns the {@link MappingBuilder} of this builder, which holds the registered config mappings, instances and
+     * templates.
+     *
+     * @return the mapping builder
+     */
     public MappingBuilder getMappingsBuilder() {
         return mappingsBuilder;
     }
 
+    /**
+     * Returns the {@link ClassLoader} set in this builder, or the context class loader of the thread that created
+     * this builder if none was set.
+     *
+     * @return the class loader
+     * @see #forClassLoader(ClassLoader)
+     */
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
+    /**
+     * Checks if the {@linkplain SmallRyeConfigBuilderCustomizer customizers} discovery is enabled.
+     *
+     * @return {@code true} if discovered customizers will be added, or {@code false} otherwise
+     * @see #addDiscoveredCustomizers()
+     */
     public boolean isAddDiscoveredCustomizers() {
         return addDiscoveredCustomizers;
     }
 
+    /**
+     * Checks if the default configuration sources will be added to the configuration.
+     *
+     * @return {@code true} if default sources will be added, or {@code false} otherwise
+     * @see #addDefaultSources()
+     */
     public boolean isAddDefaultSources() {
         return addDefaultSources;
     }
 
+    /**
+     * Checks if the default system configuration sources will be added to the configuration.
+     *
+     * @return {@code true} if system sources will be added, or {@code false} otherwise
+     * @see #addSystemSources()
+     */
     public boolean isAddSystemSources() {
         return addSystemSources;
     }
 
+    /**
+     * Checks if the default properties configuration sources will be added to the configuration.
+     *
+     * @return {@code true} if properties sources will be added, or {@code false} otherwise
+     * @see #addPropertiesSources()
+     */
     public boolean isAddPropertiesSources() {
         return addPropertiesSources;
     }
 
+    /**
+     * Checks if the default interceptors will be added to the configuration.
+     *
+     * @return {@code true} if default interceptors will be added, or {@code false} otherwise
+     * @see #addDefaultInterceptors()
+     */
     public boolean isAddDefaultInterceptors() {
         return addDefaultInterceptors;
     }
 
+    /**
+     * Checks if the {@linkplain ConfigSource configuration sources} discovery is enabled.
+     *
+     * @return {@code true} if discovered sources will be added, or {@code false} otherwise
+     * @see #addDiscoveredSources()
+     */
     public boolean isAddDiscoveredSources() {
         return addDiscoveredSources;
     }
 
+    /**
+     * Checks if the {@linkplain Converter converters} discovery is enabled.
+     *
+     * @return {@code true} if discovered converters will be added, or {@code false} otherwise
+     * @see #addDiscoveredConverters()
+     */
     public boolean isAddDiscoveredConverters() {
         return addDiscoveredConverters;
     }
 
+    /**
+     * Checks if the {@linkplain ConfigSourceInterceptor interceptors} discovery is enabled.
+     *
+     * @return {@code true} if discovered interceptors will be added, or {@code false} otherwise
+     * @see #addDiscoveredInterceptors()
+     */
     public boolean isAddDiscoveredInterceptors() {
         return addDiscoveredInterceptors;
     }
 
+    /**
+     * Checks if the {@linkplain SecretKeysHandler secret keys handlers} discovery is enabled.
+     *
+     * @return {@code true} if discovered secret keys handlers will be added, or {@code false} otherwise
+     * @see #addDiscoveredSecretKeysHandlers()
+     */
     public boolean isAddDiscoveredSecretKeysHandlers() {
         return addDiscoveredSecretKeysHandlers;
     }
 
+    /**
+     * Checks if the {@linkplain ConfigValidator validator} discovery is enabled.
+     *
+     * @return {@code true} if a discovered validator will be added, or {@code false} otherwise
+     * @see #addDiscoveredValidator()
+     */
     public boolean isAddDiscoveredValidator() {
         return addDiscoveredValidator;
     }
 
+    /**
+     * Checks if the property names are cached in the created {@link SmallRyeConfig}. An updated list of property
+     * names may always be retrieved with {@link SmallRyeConfig#getLatestPropertyNames()}.
+     *
+     * @return {@code true} if property names caching is enabled, or {@code false} otherwise
+     * @see SmallRyeConfig#getPropertyNames()
+     */
     public boolean isCachePropertyNames() {
         return cachePropertyNames;
     }
 
+    /**
+     * Sets whether to add default configuration sources.
+     *
+     * @param addDefaultSources {@code true} to add default sources, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDefaultSources()
+     */
     public SmallRyeConfigBuilder setAddDefaultSources(final boolean addDefaultSources) {
         this.addDefaultSources = addDefaultSources;
         return this;
     }
 
+    /**
+     * Sets whether to add default system configuration sources.
+     *
+     * @param addSystemSources {@code true} to add system sources, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addSystemSources()
+     */
     public SmallRyeConfigBuilder setAddSystemSources(final boolean addSystemSources) {
         this.addSystemSources = addSystemSources;
         return this;
     }
 
+    /**
+     * Sets whether to add default properties configuration sources.
+     *
+     * @param addPropertiesSources {@code true} to add properties sources, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addPropertiesSources()
+     */
     public SmallRyeConfigBuilder setAddPropertiesSources(final boolean addPropertiesSources) {
         this.addPropertiesSources = addPropertiesSources;
         return this;
     }
 
+    /**
+     * Sets whether to add default interceptors.
+     *
+     * @param addDefaultInterceptors {@code true} to add default interceptors, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDefaultInterceptors()
+     */
     public SmallRyeConfigBuilder setAddDefaultInterceptors(final boolean addDefaultInterceptors) {
         this.addDefaultInterceptors = addDefaultInterceptors;
         return this;
     }
 
+    /**
+     * Sets whether to add discovered configuration sources.
+     *
+     * @param addDiscoveredSources {@code true} to add discovered sources, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDiscoveredSources()
+     */
     public SmallRyeConfigBuilder setAddDiscoveredSources(final boolean addDiscoveredSources) {
         this.addDiscoveredSources = addDiscoveredSources;
         return this;
     }
 
+    /**
+     * Sets whether to add discovered converters.
+     *
+     * @param addDiscoveredConverters {@code true} to add discovered converters, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDiscoveredConverters()
+     */
     public SmallRyeConfigBuilder setAddDiscoveredConverters(final boolean addDiscoveredConverters) {
         this.addDiscoveredConverters = addDiscoveredConverters;
         return this;
     }
 
+    /**
+     * Sets whether to add discovered interceptors.
+     *
+     * @param addDiscoveredInterceptors {@code true} to add discovered interceptors, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDiscoveredInterceptors()
+     */
     public SmallRyeConfigBuilder setAddDiscoveredInterceptors(final boolean addDiscoveredInterceptors) {
         this.addDiscoveredInterceptors = addDiscoveredInterceptors;
         return this;
     }
 
+    /**
+     * Sets whether to add discovered secret keys handlers.
+     *
+     * @param addDiscoveredSecretKeysHandlers {@code true} to add discovered secret keys handlers, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDiscoveredSecretKeysHandlers()
+     */
     public SmallRyeConfigBuilder setAddDiscoveredSecretKeysHandlers(final boolean addDiscoveredSecretKeysHandlers) {
         this.addDiscoveredSecretKeysHandlers = addDiscoveredSecretKeysHandlers;
         return this;
     }
 
+    /**
+     * Sets whether to add a discovered validator.
+     *
+     * @param addDiscoveredValidator {@code true} to add a discovered validator, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #addDiscoveredValidator()
+     */
     public SmallRyeConfigBuilder setAddDiscoveredValidator(final boolean addDiscoveredValidator) {
         this.addDiscoveredValidator = addDiscoveredValidator;
         return this;
     }
 
+    /**
+     * Sets whether to cache property names in the created {@link SmallRyeConfig}.
+     *
+     * @param cachePropertyNames {@code true} to enable caching of property names, or {@code false} otherwise
+     * @return this {@link SmallRyeConfigBuilder}
+     * @see #isCachePropertyNames()
+     */
     public SmallRyeConfigBuilder setCachePropertyNames(boolean cachePropertyNames) {
         this.cachePropertyNames = cachePropertyNames;
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation creates the {@link SmallRyeConfig} instance in the following order:
+     * <ol>
+     * <li>the {@linkplain SmallRyeConfigBuilderCustomizer customizers}, registered and discovered, are executed in
+     * ascending priority order, and may still change this builder</li>
+     * <li>the {@linkplain ConfigSource configuration sources}, registered, provided by a
+     * {@link ConfigSourceProvider}, discovered and default, are collected, together with the
+     * {@link DefaultValuesConfigSource} holding the default values, and sorted by descending ordinal</li>
+     * <li>the {@linkplain ConfigSourceInterceptor interceptors}, registered, discovered and default, are initialized
+     * in priority order and chained</li>
+     * <li>the {@linkplain ConfigSourceFactory configuration source factories} are initialized with the interceptor
+     * chain, so that their {@linkplain ConfigSource configuration sources} can be configured with the configuration
+     * available so far</li>
+     * <li>the {@linkplain Converter converters}, registered and discovered, are merged by target type</li>
+     * <li>the {@linkplain ConfigMapping config mappings} are populated and validated with the
+     * {@link ConfigValidator}</li>
+     * </ol>
+     * The {@link SmallRyeConfig} instance is not registered in the {@link SmallRyeConfigProviderResolver}.
+     *
+     * @return the {@link SmallRyeConfig} instance
+     * @throws ConfigValidationException if a {@linkplain ConfigMapping config mapping} cannot be populated from the
+     *         configuration. Every mapping problem is reported in a single exception
+     * @see SmallRyeConfigBuilderCustomizer
+     */
     @Override
     public SmallRyeConfig build() {
         if (addDiscoveredCustomizers) {
@@ -793,12 +1361,25 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
         return new SmallRyeConfig(this);
     }
 
+    /**
+     * Builder for the config class mappings, instances and templates registered with the
+     * {@link SmallRyeConfigBuilder}.
+     * <p>
+     * Registering a config class also registers the defaults, the secrets and the ignored paths it requires, so a
+     * config class must always be registered with this builder and not added directly to the collections it holds.
+     */
     public final class MappingBuilder {
         private final Set<ConfigClass> mappings = new HashSet<>();
         private final Map<ConfigClass, Object> mappingsInstances = new IdentityHashMap<>();
         private final Map<ConfigClass, Object> mappingsTemplates = new HashMap<>();
         private final PropertyNamesMatcher<?> ignores = new PropertyNamesMatcher<>();
 
+        /**
+         * Registers a {@link ConfigClass} mapping. The config class is resolved again with the configured class
+         * loader if it is not the context class loader of the current thread.
+         *
+         * @param configClass the config class mapping
+         */
         public void mapping(ConfigClass configClass) {
             Assert.checkNotNullParam("configClass", configClass);
             ConfigClass resolved = !classLoader.equals(currentThread().getContextClassLoader())
@@ -808,6 +1389,15 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             addDefaultsAndIgnores(resolved);
         }
 
+        /**
+         * Registers an existing instance for the specified {@link ConfigClass} mapping. The instance is used as is,
+         * so it is not populated with the configuration values, and the configuration names of the mapping are
+         * ignored when validating the unknown properties.
+         *
+         * @param configClass the config class mapping
+         * @param instance the config class instance
+         * @see #mappingTemplate(ConfigClass, Object)
+         */
         public void mappingInstance(ConfigClass configClass, Object instance) {
             Assert.checkNotNullParam("configClass", configClass);
             Assert.checkNotNullParam("instance", instance);
@@ -865,19 +1455,47 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
             mapping(resolved);
         }
 
+        /**
+         * Registers a configuration path to ignore when performing config mapping validations. The path may use the
+         * wildcards described in {@link SmallRyeConfigBuilder#withMappingIgnore(String)}.
+         *
+         * @param ignoredPath the path to ignore
+         * @see SmallRyeConfigBuilder#withMappingIgnore(String)
+         */
         public void ignoredPath(String ignoredPath) {
             Assert.checkNotNullParam("ignoredPath", ignoredPath);
             ignores.add(ignoredPath);
         }
 
+        /**
+         * Returns the registered {@link ConfigClass} mappings, including the config classes registered with a
+         * template. The set is mutable and backs the builder, but a config class should be registered with
+         * {@link #mapping(ConfigClass)}, so its defaults, secrets and ignored paths are registered as well.
+         *
+         * @return the set of config class mappings
+         */
         public Set<ConfigClass> getMappings() {
             return mappings;
         }
 
+        /**
+         * Returns the registered {@link ConfigClass} mapping instances. The map is mutable and backs the builder,
+         * but an instance should be registered with {@link #mappingInstance(ConfigClass, Object)}, so its defaults,
+         * secrets and ignored paths are registered as well.
+         *
+         * @return the map of config class mapping instances
+         */
         public Map<ConfigClass, Object> getMappingsInstances() {
             return mappingsInstances;
         }
 
+        /**
+         * Returns the registered {@link ConfigClass} mapping templates. The map is mutable and backs the builder,
+         * but a template should be registered with {@link #mappingTemplate(ConfigClass, Object)}, so its defaults,
+         * secrets and ignored paths are registered as well.
+         *
+         * @return the map of config class mapping templates
+         */
         public Map<ConfigClass, Object> getMappingsTemplates() {
             return mappingsTemplates;
         }
