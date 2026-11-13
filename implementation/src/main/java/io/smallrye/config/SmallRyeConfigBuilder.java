@@ -75,7 +75,8 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     private final Defaults defaults = new Defaults();
     private final Secrets secrets = new Secrets();
     private final List<SecretKeysHandlerWithName> secretKeysHandlers = new ArrayList<>();
-    private ConfigValidator validator = ConfigValidator.EMPTY;
+    // null when no validator was set, so that a discovered one does not override a validator set in the builder
+    private ConfigValidator validator = null;
     private final MappingBuilder mappingsBuilder = new MappingBuilder();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean addDiscoveredCustomizers = false;
@@ -650,10 +651,10 @@ public class SmallRyeConfigBuilder implements ConfigBuilder {
     }
 
     public ConfigValidator getValidator() {
-        if (isAddDiscoveredValidator()) {
+        if (validator == null && isAddDiscoveredValidator()) {
             this.validator = discoverValidator();
         }
-        return validator;
+        return validator == null ? ConfigValidator.EMPTY : validator;
     }
 
     public Defaults getDefaults() {
