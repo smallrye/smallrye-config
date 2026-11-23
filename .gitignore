@@ -63,8 +63,5 @@ client/shade/dependency-reduced-pom.xml
 # Jenv
 .java-version
 
-# MkDocs
-site
-
 # formatter cache directories
 .cache
