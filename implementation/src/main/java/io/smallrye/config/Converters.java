@@ -16,11 +16,15 @@
 package io.smallrye.config;
 
 import static io.smallrye.config.common.utils.StringUtil.unquoted;
+import static java.lang.invoke.MethodType.methodType;
 
 import java.io.File;
 import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -338,7 +342,8 @@ public final class Converters {
      */
     @SuppressWarnings("unchecked")
     public static <T> Converter<T> getImplicitConverter(Class<? extends T> type) {
-        return (Converter<T>) ALL_CONVERTERS.getOrDefault(type, Implicit.getConverter(type));
+        Converter<?> converter = ALL_CONVERTERS.get(type);
+        return (Converter<T>) (converter != null ? converter : Implicit.getConverter(type));
     }
 
     /**
@@ -1634,19 +1639,87 @@ public final class Converters {
     }
 
     static final class Implicit {
+        private static final ClassLoader OWN_LOADER = Converters.class.getClassLoader();
+
         /**
-         * Implicit converters are deliberately not cached here. The converter is an instance of a class loaded by
-         * the loader of {@link Converters}, while the type it converts to is frequently loaded by an ancestor
-         * loader (a JDK type such as {@link java.time.Duration}, for instance). Anchoring the converter to the type
-         * (in a {@link ClassValue}, or in any map keyed by the type) therefore keeps the loader of
-         * {@link Converters} alive for as long as the type is alive, which in a container that creates a
-         * {@link ClassLoader} per application means the loader can never be collected.
-         * <p>
-         * Callers that want to cache the result must do so with a lifetime no longer than their own, as
-         * {@link Converters#resolveConverter(Map, Class)} does.
+         * Marks a type that has no implicit converter in {@link #ANCESTOR_CACHE}, which cannot hold {@code null}.
          */
-        @SuppressWarnings({ "unchecked", "rawtypes" })
+        private static final Converter<?> NONE = new Converter<Object>() {
+            @Override
+            public Object convert(final String value) {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        /**
+         * Implicit converters of types loaded by the loader of {@link Converters} or by one of its descendants.
+         * The entry lives in the type's {@link Class}, so it is collected with the type, and the converter it holds
+         * references only the type and classes of this loader, which the type's loader already reaches through its
+         * parent chain. Nothing is kept alive that was not already.
+         */
+        private static final ClassValue<Converter<?>> DESCENDANT_CACHE = new ClassValue<Converter<?>>() {
+            @Override
+            protected Converter<?> computeValue(final Class<?> type) {
+                return compute(type);
+            }
+        };
+
+        /**
+         * Implicit converters of types loaded by an ancestor of the loader of {@link Converters} (JDK types, for
+         * instance). Such a type outlives this loader, so a {@link ClassValue} entry on it would pin this loader
+         * for as long as the type is alive, which in a container with a loader per application is forever. A
+         * strong map owned by this loader instead goes away with it, and the keys it pins outlive it anyway.
+         */
+        private static final ConcurrentHashMap<Class<?>, Converter<?>> ANCESTOR_CACHE = new ConcurrentHashMap<>();
+
+        /**
+         * Get the implicit converter for {@code type}, or {@code null} if it has none. Implicit converters are
+         * stateless and depend only on the type, so they are computed once per type and shared by every
+         * {@link SmallRyeConfig} instance. Where the converter is cached depends on which loader the type comes from,
+         * see {@link #DESCENDANT_CACHE} and {@link #ANCESTOR_CACHE}; a type from an unrelated loader (neither an
+         * ancestor nor a descendant of ours) is not cached at all, as either cache would keep one of the two
+         * loaders alive through the other.
+         */
+        @SuppressWarnings("unchecked")
         static <T> Converter<T> getConverter(Class<? extends T> type) {
+            ClassLoader typeLoader = type.getClassLoader();
+            if (isOwnOrDescendant(typeLoader)) {
+                return (Converter<T>) DESCENDANT_CACHE.get(type);
+            }
+            if (isAncestor(typeLoader)) {
+                Converter<?> converter = ANCESTOR_CACHE.computeIfAbsent(type, t -> {
+                    Converter<?> computed = compute(t);
+                    return computed != null ? computed : NONE;
+                });
+                return converter == NONE ? null : (Converter<T>) converter;
+            }
+            return compute(type);
+        }
+
+        private static boolean isOwnOrDescendant(final ClassLoader typeLoader) {
+            for (ClassLoader loader = typeLoader; loader != null; loader = loader.getParent()) {
+                if (loader == OWN_LOADER) {
+                    return true;
+                }
+            }
+            // the bootstrap loader is everyone's ancestor, so a null OWN_LOADER makes every type a descendant
+            return OWN_LOADER == null;
+        }
+
+        private static boolean isAncestor(final ClassLoader typeLoader) {
+            if (typeLoader == null) {
+                return true;
+            }
+            for (ClassLoader loader = OWN_LOADER; loader != null; loader = loader.getParent()) {
+                if (loader == typeLoader) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        private static <T> Converter<T> compute(Class<? extends T> type) {
             if (type.isEnum()) {
                 return new HyphenateEnumConverter(type);
             }
@@ -1714,17 +1787,37 @@ public final class Converters {
                     e.isAccessible();
         }
 
+        /** The erased shape every factory handle is widened to; see {@link StaticMethodConverter#handle}. */
+        private static final MethodType CONVERT_TYPE = methodType(Object.class, String.class);
+
         static final class StaticMethodConverter<T> implements Converter<T>, Serializable {
             @Serial
             private static final long serialVersionUID = 3350265927359848883L;
 
             private final Class<? extends T> clazz;
             private final Method method;
+            /**
+             * The factory method as a direct handle adapted to {@code (String)Object}, or {@code null} when it could
+             * not be unreflected (the reflective path is used then). The adaptation only widens references, so it
+             * is a view over the direct handle and {@code invokeExact} on it uses the invoker the JDK pregenerates;
+             * {@link Method#invoke} instead builds a spreading accessor per method on first use, which spins
+             * bytecode that no AOT cache holds.
+             */
+            private final transient MethodHandle handle;
 
             StaticMethodConverter(Class<? extends T> clazz, Method method) {
                 assert clazz == method.getReturnType();
                 this.clazz = clazz;
                 this.method = method;
+                this.handle = unreflect(method);
+            }
+
+            private static MethodHandle unreflect(final Method method) {
+                try {
+                    return MethodHandles.lookup().unreflect(method).asType(CONVERT_TYPE);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
             }
 
             @Override
@@ -1732,10 +1825,17 @@ public final class Converters {
                 if (value.isEmpty()) {
                     return null;
                 }
+                if (handle == null) {
+                    try {
+                        return clazz.cast(method.invoke(null, value));
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw ConfigMessages.msg.staticMethodConverterFailure(e);
+                    }
+                }
                 try {
-                    return clazz.cast(method.invoke(null, value));
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw ConfigMessages.msg.staticMethodConverterFailure(e);
+                    return clazz.cast((Object) handle.invokeExact(value));
+                } catch (Throwable t) {
+                    throw ConfigMessages.msg.staticMethodConverterFailure(t);
                 }
             }
 
@@ -1772,20 +1872,39 @@ public final class Converters {
             private static final long serialVersionUID = 3350265927359848883L;
 
             private final Constructor<? extends T> ctor;
+            /** See {@link StaticMethodConverter#handle}. */
+            private final transient MethodHandle handle;
 
             public ConstructorConverter(final Constructor<? extends T> ctor) {
                 this.ctor = ctor;
+                this.handle = unreflect(ctor);
             }
 
+            private static MethodHandle unreflect(final Constructor<?> ctor) {
+                try {
+                    return MethodHandles.lookup().unreflectConstructor(ctor).asType(CONVERT_TYPE);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
+            }
+
+            @SuppressWarnings("unchecked")
             @Override
             public T convert(String value) {
                 if (value.isEmpty()) {
                     return null;
                 }
+                if (handle == null) {
+                    try {
+                        return ctor.newInstance(value);
+                    } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                        throw ConfigMessages.msg.constructorConverterFailure(e);
+                    }
+                }
                 try {
-                    return ctor.newInstance(value);
-                } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-                    throw ConfigMessages.msg.constructorConverterFailure(e);
+                    return (T) (Object) handle.invokeExact(value);
+                } catch (Throwable t) {
+                    throw ConfigMessages.msg.constructorConverterFailure(t);
                 }
             }
 
@@ -1823,8 +1942,27 @@ public final class Converters {
 
             public HyphenateEnumConverter(final Class<E> enumType) {
                 this.enumType = enumType;
-                for (E enumValue : this.enumType.getEnumConstants()) {
+                for (E enumValue : enumConstants(enumType)) {
                     values.put(hyphenate(enumValue.name()), enumValue);
+                }
+            }
+
+            /**
+             * {@link Class#getEnumConstants()} calls {@code values()} through {@link Method#invoke}, whose first use
+             * builds a reflective accessor and spins bytecode for it. A direct handle widened to {@code ()Object} is a
+             * view with a pregenerated invoker. Falls back to the reflective call when the enum is not accessible.
+             */
+            @SuppressWarnings("unchecked")
+            private static <E> E[] enumConstants(final Class<E> enumType) {
+                try {
+                    Method values = enumType.getMethod("values");
+                    if (!isAccessible(values)) {
+                        values.setAccessible(true);
+                    }
+                    MethodHandle handle = MethodHandles.lookup().unreflect(values).asType(methodType(Object.class));
+                    return (E[]) (Object) handle.invokeExact();
+                } catch (Throwable t) {
+                    return enumType.getEnumConstants();
                 }
             }
 
